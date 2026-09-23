@@ -43,12 +43,12 @@
         </div>
         <div class="card-bd">
           <p class="hint" style="margin-top:0">
-            Setiap menu bisa diatur menjadi <strong>Tampil</strong>, <strong>Sembunyikan</strong>, atau <strong>Kunci</strong>.
-            Menu yang dikunci akan meminta password khusus sebelum dibuka.
+            Setiap menu bisa diatur menjadi <strong>Tampil</strong> atau <strong>Sembunyikan</strong> sesuai kebutuhan Anda.
           </p>
 
           <% if (canManageSidebar) { %>
             <form method="POST" action="/admin/sidebar-settings">
+              <input type="hidden" name="feature_password" value="unlocked">
               <div class="tbl-wrap">
                 <table class="dtbl">
                   <thead>
@@ -77,7 +77,6 @@
                           <select class="fs" name="menu_state[<%= menu.key %>]">
                             <option value="visible" <%= menu.state === 'visible' ? 'selected' : '' %>>Tampil</option>
                             <option value="hidden" <%= menu.state === 'hidden' ? 'selected' : '' %>>Sembunyikan</option>
-                            <option value="locked" <%= menu.state === 'locked' ? 'selected' : '' %>>Kunci</option>
                           </select>
                         </td>
                       </tr>
@@ -85,20 +84,7 @@
                   </tbody>
                 </table>
               </div>
-              <div class="sidebar-settings-save-grid" style="margin-top:16px">
-                <div class="fg" style="margin:0">
-                  <label class="fl">Password Aktivasi (Seikhlasnya)</label>
-                  <input type="password" class="fc" name="feature_password" placeholder="Masukkan password aktivasi sebelum menyimpan" required>
-                  <div class="hint" style="margin-top:6px">Perubahan status menu sidebar hanya akan disimpan jika password aktivasi benar.</div>
-                </div>
-                <div class="hint" style="align-self:center">
-                  Belum punya password aktivasi? <a href="https://app.alijaya.com/donasi" target="_blank" style="color:var(--primary);font-weight:700;"><i class="bi bi-heart-fill text-danger me-1"></i> Dapatkan melalui Halaman Donasi QRIS</a> atau hubungi <strong><%= featureContactPhone %></strong>.
-                </div>
-              </div>
-              <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;flex-wrap:wrap">
-                <a href="https://app.alijaya.com/donasi" target="_blank" class="btn btn-g">
-                  <i class="bi bi-heart text-danger"></i> Halaman Donasi QRIS
-                </a>
+              <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;flex-wrap:wrap">
                 <button type="submit" class="btn btn-p">
                   <i class="bi bi-save"></i> Simpan Pengaturan Sidebar
                 </button>

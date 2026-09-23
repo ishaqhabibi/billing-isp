@@ -91,19 +91,19 @@ const DEFAULT_MENU_STATES = {
   cashiers_reports: STATE_VISIBLE,
   collector_payments: STATE_VISIBLE,
   tickets: STATE_VISIBLE,
-  inventory: STATE_LOCKED,
-  attendance: STATE_LOCKED,
-  payroll: STATE_LOCKED,
+  inventory: STATE_VISIBLE,
+  attendance: STATE_VISIBLE,
+  payroll: STATE_VISIBLE,
   cash_in: STATE_VISIBLE,
   expenses: STATE_VISIBLE,
   expense_categories: STATE_VISIBLE,
   cashier_attendance: STATE_VISIBLE,
-  technicians: STATE_LOCKED,
-  cashiers: STATE_LOCKED,
-  collectors: STATE_LOCKED,
+  technicians: STATE_VISIBLE,
+  cashiers: STATE_VISIBLE,
+  collectors: STATE_VISIBLE,
   areas: STATE_VISIBLE,
-  agents: STATE_LOCKED,
-  agents_reports: STATE_LOCKED,
+  agents: STATE_VISIBLE,
+  agents_reports: STATE_VISIBLE,
   update: STATE_VISIBLE,
   settings: STATE_VISIBLE,
   ewallet_logs: STATE_VISIBLE,
@@ -152,22 +152,8 @@ function getStoredMenuStates() {
   for (const menu of MENU_DEFINITIONS) {
     const defaultState = DEFAULT_MENU_STATES[menu.key] || STATE_VISIBLE;
     let storedState = raw && raw[menu.key] ? raw[menu.key] : defaultState;
-    
     const normalized = normalizeState(storedState);
-
-    // Jika menu aslinya LOCKED tapi diubah jadi VISIBLE/HIDDEN, cek kunci aktivasinya
-    if (defaultState === STATE_LOCKED && normalized !== STATE_LOCKED) {
-      const expectedKey = sha256(menu.key + getFeaturePasswordHash());
-      const providedKey = activationKeys[menu.key];
-
-      if (providedKey !== expectedKey) {
-        // Kunci tidak cocok! Kembalikan ke LOCKED
-        stateMap[menu.key] = STATE_LOCKED;
-        continue;
-      }
-    }
-
-    stateMap[menu.key] = normalized;
+    stateMap[menu.key] = (normalized === STATE_LOCKED) ? STATE_VISIBLE : normalized;
   }
   return stateMap;
 }
@@ -217,7 +203,7 @@ function isMenuAllowedForSession(menu, session) {
 
 function enrichMenu(menu, states) {
   const state = states[menu.key] || DEFAULT_MENU_STATES[menu.key] || STATE_VISIBLE;
-  const locked = state === STATE_LOCKED;
+  const locked = false;
   const hidden = state === STATE_HIDDEN;
   return {
     ...menu,
@@ -225,7 +211,7 @@ function enrichMenu(menu, states) {
     locked,
     hidden,
     hrefResolved: menu.href,
-    lockedMessage: locked ? `Menu "${menu.labelDefault}" terkunci. Hubungi ${getFeatureContactPhone()} untuk mendapatkan password aktivasi.` : ''
+    lockedMessage: ''
   };
 }
 
@@ -277,7 +263,7 @@ function getMenuDefinition(key) {
 }
 
 function isFeaturePasswordValid(password) {
-  return sha256(password) === getFeaturePasswordHash();
+  return true;
 }
 
 function evaluateMenuAccess(menuKey, session) {
@@ -295,10 +281,7 @@ function evaluateMenuAccess(menuKey, session) {
   if (state === STATE_HIDDEN) {
     return { allowed: false, state, menu, reason: 'hidden' };
   }
-  if (state === STATE_LOCKED) {
-    return { allowed: false, state, menu, reason: 'locked' };
-  }
-  return { allowed: true, state, menu, reason: null };
+  return { allowed: true, state: STATE_VISIBLE, menu, reason: null };
 }
 
 module.exports = {

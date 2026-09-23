@@ -32,8 +32,9 @@ function createArea(data) {
   const existing = db.prepare('SELECT id FROM areas WHERE LOWER(TRIM(name)) = LOWER(TRIM(?))').get(name);
   if (existing) throw new Error(`Area "${name}" sudah ada.`);
 
-  const stmt = db.prepare('INSERT INTO areas (name, description) VALUES (?, ?)');
-  return stmt.run(name, String(data.description || '').trim());
+  const code = String(data.code || '').trim().toUpperCase();
+  const stmt = db.prepare('INSERT INTO areas (name, description, code) VALUES (?, ?, ?)');
+  return stmt.run(name, String(data.description || '').trim(), code);
 }
 
 /**
@@ -50,6 +51,7 @@ function updateArea(id, data) {
   if (existing) throw new Error(`Nama Area "${newName}" sudah digunakan oleh area lain.`);
 
   const description = String(data.description || '').trim();
+  const code = String(data.code || '').trim().toUpperCase();
 
   // If area name changed, update references in customers, collectors, technicians
   if (oldArea.name !== newName) {
@@ -58,8 +60,8 @@ function updateArea(id, data) {
     db.prepare('UPDATE technicians SET area = ? WHERE LOWER(TRIM(area)) = LOWER(TRIM(?))').run(newName, oldArea.name);
   }
 
-  const stmt = db.prepare('UPDATE areas SET name = ?, description = ? WHERE id = ?');
-  return stmt.run(newName, description, id);
+  const stmt = db.prepare('UPDATE areas SET name = ?, description = ?, code = ? WHERE id = ?');
+  return stmt.run(newName, description, code, id);
 }
 
 /**

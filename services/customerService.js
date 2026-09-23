@@ -96,8 +96,8 @@ function getAllCustomers(search = '', routerId = null, filterStatus = '', filter
 
   if (search) {
     const s = `%${search}%`;
-    whereClauses.push(`(c.name LIKE ? OR c.phone LIKE ? OR c.nik LIKE ? OR c.genieacs_tag LIKE ? OR c.address LIKE ? OR c.area LIKE ? OR c.pppoe_username LIKE ? OR c.static_ip LIKE ? OR c.hotspot_username LIKE ?)`);
-    params.push(s, s, s, s, s, s, s, s, s);
+    whereClauses.push(`(c.name LIKE ? OR c.phone LIKE ? OR c.nik LIKE ? OR c.customer_code LIKE ? OR c.genieacs_tag LIKE ? OR c.address LIKE ? OR c.area LIKE ? OR c.pppoe_username LIKE ? OR c.static_ip LIKE ? OR c.hotspot_username LIKE ?)`);
+    params.push(s, s, s, s, s, s, s, s, s, s);
   }
 
   const rId = routerId ? Number(routerId) : null;
@@ -174,13 +174,16 @@ function createCustomer(data) {
     }
   }
 
+  const customerCode = data.customer_code ? String(data.customer_code).trim().toUpperCase() : null;
+
   return db.prepare(`
-    INSERT INTO customers (nik, name, phone, email, address, area, package_id, router_id, olt_id, odp_id, pon_port, lat, lng, genieacs_tag, pppoe_username, pppoe_password, pppoe_remote_address, isolir_profile, status, install_date, expired_at, notes, auto_isolate, isolate_day, connection_type, static_ip, mac_address, hotspot_username, hotspot_password, hotspot_profile, collector_id, is_radius)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO customers (nik, name, phone, email, address, area, customer_code, package_id, router_id, olt_id, odp_id, pon_port, lat, lng, genieacs_tag, pppoe_username, pppoe_password, pppoe_remote_address, isolir_profile, status, install_date, expired_at, notes, auto_isolate, isolate_day, connection_type, static_ip, mac_address, hotspot_username, hotspot_password, hotspot_profile, collector_id, is_radius)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     data.nik ? String(data.nik).trim() : '',
     data.name, data.phone || '', data.email || '', data.address || '',
     data.area ? String(data.area).trim() : '',
+    customerCode,
     data.package_id ? parseInt(data.package_id) : null,
     data.router_id ? parseInt(data.router_id) : null,
     data.olt_id ? parseInt(data.olt_id) : null,
@@ -210,7 +213,7 @@ function createCustomer(data) {
 }
 
 function updateCustomer(id, data) {
-  const prev = db.prepare('SELECT package_id, expired_at, install_date FROM customers WHERE id=?').get(id);
+  const prev = db.prepare('SELECT * FROM customers WHERE id=?').get(id);
   const newPkgId = data.package_id ? parseInt(data.package_id, 10) : null;
   const pkgChanged = prev && Number(prev.package_id || 0) !== Number(newPkgId || 0);
 
@@ -223,13 +226,18 @@ function updateCustomer(id, data) {
     }
   }
 
+  const customerCode = data.customer_code !== undefined
+    ? (data.customer_code ? String(data.customer_code).trim().toUpperCase() : null)
+    : (prev ? prev.customer_code : null);
+
   const result = db.prepare(`
-    UPDATE customers SET nik=?, name=?, phone=?, email=?, address=?, area=?, package_id=?, router_id=?, olt_id=?, odp_id=?, pon_port=?, lat=?, lng=?, genieacs_tag=?, pppoe_username=?, pppoe_password=?, pppoe_remote_address=?, isolir_profile=?, status=?, install_date=?, expired_at=?, notes=?, auto_isolate=?, isolate_day=?, cable_path=?, connection_type=?, static_ip=?, mac_address=?, hotspot_username=?, hotspot_password=?, hotspot_profile=?, collector_id=?, is_radius=?
+    UPDATE customers SET nik=?, name=?, phone=?, email=?, address=?, area=?, customer_code=?, package_id=?, router_id=?, olt_id=?, odp_id=?, pon_port=?, lat=?, lng=?, genieacs_tag=?, pppoe_username=?, pppoe_password=?, pppoe_remote_address=?, isolir_profile=?, status=?, install_date=?, expired_at=?, notes=?, auto_isolate=?, isolate_day=?, cable_path=?, connection_type=?, static_ip=?, mac_address=?, hotspot_username=?, hotspot_password=?, hotspot_profile=?, collector_id=?, is_radius=?
     WHERE id=?
   `).run(
-    data.nik !== undefined ? (data.nik ? String(data.nik).trim() : '') : (prev.nik || ''),
+    data.nik !== undefined ? (data.nik ? String(data.nik).trim() : '') : (prev ? (prev.nik || '') : ''),
     data.name, data.phone || '', data.email || '', data.address || '',
     data.area ? String(data.area).trim() : '',
+    customerCode,
     data.package_id ? parseInt(data.package_id) : null,
     data.router_id ? parseInt(data.router_id) : null,
     data.olt_id ? parseInt(data.olt_id) : null,
@@ -507,6 +515,10 @@ function findCustomerByAny(val) {
     const p1 = db.prepare('SELECT id FROM customers WHERE phone LIKE ?').get(`%${suffix}`);
     if (p1) return getCustomerById(p1.id);
   }
+
+  // 1b. Try Customer Code (Exact Match)
+  const byCode = db.prepare('SELECT id FROM customers WHERE customer_code = ? OR customer_code = ?').get(cleanVal, cleanVal.toUpperCase());
+  if (byCode) return getCustomerById(byCode.id);
 
   // 2. Try GenieACS Tag (Exact Match)
   const byTag = db.prepare('SELECT id FROM customers WHERE genieacs_tag = ?').get(cleanVal);

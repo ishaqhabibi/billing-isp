@@ -155,6 +155,7 @@
           <thead>
             <tr>
               <th>#</th>
+              <th>Kode ID</th>
               <th><%= t('admin.customers.table.name', 'Nama') %></th>
               <th><%= t('admin.customers.table.phone_tag', 'Telepon / Tag ONU') %></th>
               <th><%= t('admin.customers.table.package', 'Paket') %></th>
@@ -167,11 +168,16 @@
           </thead>
           <tbody>
           <% if (customers.length === 0) { %>
-            <tr><td colspan="8" class="text-center text-muted" style="padding:32px"><%= t('admin.customers.empty', 'Belum ada pelanggan') %></td></tr>
+            <tr><td colspan="10" class="text-center text-muted" style="padding:32px"><%= t('admin.customers.empty', 'Belum ada pelanggan') %></td></tr>
           <% } %>
           <% customers.forEach((c, i) => { %>
             <tr>
               <td class="text-muted"><%= i+1 %></td>
+              <td>
+                <span class="badge" style="background:rgba(59,130,246,0.12);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);font-family:monospace;font-weight:800;letter-spacing:0.5px;font-size:11px;">
+                  <%= c.customer_code || ('AJ-' + String(c.id).padStart(4, '0')) %>
+                </span>
+              </td>
               <td class="fw6">
                 <a href="javascript:void(0)" onclick="viewCustDetail(<%= i %>)" style="color:var(--primary);text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:5px;cursor:pointer;" title="Klik untuk lihat detail pelanggan & MikroTik">
                   <%= c.name %>
@@ -328,24 +334,31 @@
         <div style="background: rgba(255, 255, 255, 0.02); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px;">
           <div class="fw6 mb-2" style="font-size:13px; color:var(--text);"><i class="bi bi-person-vcard text-info me-1"></i> Informasi Pribadi Pelanggan</div>
           <div class="form-row">
+            <div class="fg">
+              <label class="fl" style="font-weight:700;color:var(--primary);"><i class="bi bi-upc-scan"></i> Kode Pelanggan (ID)</label>
+              <div style="display:flex;gap:6px;">
+                <input class="fc" name="customer_code" id="add_customer_code" placeholder="Contoh: PGG0104" style="font-family:monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
+                <button type="button" class="btn btn-g btn-sm" onclick="triggerAutoGenerateCode('add')" title="Generate Kode & PPPoE"><i class="bi bi-magic text-primary"></i> Auto</button>
+              </div>
+              <small class="text-muted" style="font-size:11px;">Format: <strong>[AREA][ODP][PORT]</strong> (otomatis terisi saat Area, ODP, & Port dipilih).</small>
+            </div>
+            <div class="fg">
+              <label class="fl"><i class="bi bi-card-text"></i> NIK / No. KTP (Opsional)</label>
+              <input class="fc" name="nik" placeholder="Contoh: 3201xxxxxxxxxxxx">
+            </div>
+          </div>
+          <div class="form-row">
             <div class="fg"><label class="fl">Nama Lengkap *</label><input class="fc" name="name" required placeholder="Contoh: John Doe"></div>
             <div class="fg"><label class="fl">No. Telepon / WA *</label><input class="fc" name="phone" placeholder="Contoh: 08123456789" required></div>
           </div>
           <div class="form-row">
             <div class="fg">
-              <label class="fl"><i class="bi bi-card-text"></i> NIK / No. KTP (Opsional)</label>
-              <input class="fc" name="nik" placeholder="Contoh: 3201xxxxxxxxxxxx">
-            </div>
-            <div class="fg"><label class="fl">Email (Notifikasi Billing)</label><input class="fc" name="email" type="email" placeholder="customer@example.com"></div>
-          </div>
-          <div class="form-row">
-            <div class="fg">
               <label class="fl"><i class="bi bi-geo-alt"></i> Area / Wilayah</label>
-              <select class="fs" name="area" id="add_area">
+              <select class="fs" name="area" id="add_area" onchange="autoGenerateCustomerCode('add')">
                 <option value="">-- Pilih Area --</option>
                 <% if (typeof masterAreas !== 'undefined' && masterAreas && masterAreas.length > 0) { %>
                   <% masterAreas.forEach(a => { %>
-                    <option value="<%= a.name %>"><%= a.name %></option>
+                    <option value="<%= a.name %>" data-code="<%= a.code || '' %>"><%= a.name %><%= a.code ? ' [' + a.code + ']' : '' %></option>
                   <% }) %>
                 <% } else if (typeof areas !== 'undefined') { %>
                   <% areas.forEach(a => { %>
@@ -354,6 +367,7 @@
                 <% } %>
               </select>
             </div>
+            <div class="fg"><label class="fl">Email (Notifikasi Billing)</label><input class="fc" name="email" type="email" placeholder="customer@example.com"></div>
           </div>
           <div class="fg"><label class="fl">Alamat Lengkap</label><textarea class="fc" name="address" placeholder="Jl. Raya No. 123..."></textarea></div>
         </div>
@@ -531,18 +545,18 @@
             </div>
             <div class="fg">
               <label class="fl">ODP</label>
-              <select class="fs" name="odp_id">
+              <select class="fs" name="odp_id" id="add_odp_id" onchange="autoGenerateCustomerCode('add')">
                 <option value="">-- Tanpa ODP --</option>
                 <% if (typeof odps !== 'undefined') { %>
                   <% odps.forEach(o => { %>
-                    <option value="<%= o.id %>"><%= o.name %></option>
+                    <option value="<%= o.id %>" data-name="<%= o.name %>"><%= o.name %></option>
                   <% }) %>
                 <% } %>
               </select>
             </div>
           </div>
           <div class="form-row">
-            <div class="fg"><label class="fl">Port PON / ODP</label><input class="fc" name="pon_port" placeholder="Contoh: PON 1/1, ODP-01"></div>
+            <div class="fg"><label class="fl">Port PON / ODP</label><input class="fc" name="pon_port" id="add_pon_port" oninput="autoGenerateCustomerCode('add')" placeholder="Contoh: 1, 2, 4 (Nomor Port ODP)"></div>
             <div class="fg" id="add_mac_field" style="display:none">
               <label class="fl">MAC Address (Opsional)</label>
               <input class="fc" name="mac_address" placeholder="Contoh: AA:BB:CC:DD:EE:FF">
@@ -628,24 +642,30 @@
         <div style="background: rgba(255, 255, 255, 0.02); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px;">
           <div class="fw6 mb-2" style="font-size:13px; color:var(--text);"><i class="bi bi-person-vcard text-info me-1"></i> Informasi Pribadi Pelanggan</div>
           <div class="form-row">
+            <div class="fg">
+              <label class="fl" style="font-weight:700;color:var(--primary);"><i class="bi bi-upc-scan"></i> Kode Pelanggan (ID)</label>
+              <div style="display:flex;gap:6px;">
+                <input class="fc" name="customer_code" id="e_customer_code" placeholder="Contoh: PGG0104" style="font-family:monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
+                <button type="button" class="btn btn-g btn-sm" onclick="triggerAutoGenerateCode('edit')" title="Generate Kode dari Area/ODP/Port"><i class="bi bi-magic text-primary"></i> Auto</button>
+              </div>
+            </div>
+            <div class="fg">
+              <label class="fl"><i class="bi bi-card-text"></i> NIK / No. KTP (Opsional)</label>
+              <input class="fc" name="nik" id="e_nik" placeholder="Contoh: 3201xxxxxxxxxxxx">
+            </div>
+          </div>
+          <div class="form-row">
             <div class="fg"><label class="fl">Nama Lengkap *</label><input class="fc" name="name" id="e_name" required></div>
             <div class="fg"><label class="fl">No. Telepon / WA *</label><input class="fc" name="phone" id="e_phone" required></div>
           </div>
           <div class="form-row">
             <div class="fg">
-              <label class="fl"><i class="bi bi-card-text"></i> NIK / No. KTP (Opsional)</label>
-              <input class="fc" name="nik" id="e_nik" placeholder="Contoh: 3201xxxxxxxxxxxx">
-            </div>
-            <div class="fg"><label class="fl">Email (Notifikasi Billing)</label><input class="fc" name="email" id="e_email" type="email"></div>
-          </div>
-          <div class="form-row">
-            <div class="fg">
               <label class="fl"><i class="bi bi-geo-alt"></i> Area / Wilayah</label>
-              <select class="fs" name="area" id="e_area">
+              <select class="fs" name="area" id="e_area" onchange="autoGenerateCustomerCode('edit')">
                 <option value="">-- Pilih Area --</option>
                 <% if (typeof masterAreas !== 'undefined' && masterAreas && masterAreas.length > 0) { %>
                   <% masterAreas.forEach(a => { %>
-                    <option value="<%= a.name %>"><%= a.name %></option>
+                    <option value="<%= a.name %>" data-code="<%= a.code || '' %>"><%= a.name %><%= a.code ? ' [' + a.code + ']' : '' %></option>
                   <% }) %>
                 <% } else if (typeof areas !== 'undefined') { %>
                   <% areas.forEach(a => { %>
@@ -654,6 +674,7 @@
                 <% } %>
               </select>
             </div>
+            <div class="fg"><label class="fl">Email (Notifikasi Billing)</label><input class="fc" name="email" id="e_email" type="email"></div>
           </div>
           <div class="fg"><label class="fl">Alamat Lengkap</label><textarea class="fc" name="address" id="e_address"></textarea></div>
         </div>
@@ -819,18 +840,18 @@
             </div>
             <div class="fg">
               <label class="fl">ODP</label>
-              <select class="fs" name="odp_id" id="e_odp_id">
+              <select class="fs" name="odp_id" id="e_odp_id" onchange="autoGenerateCustomerCode('edit')">
                 <option value="">-- Tanpa ODP --</option>
                 <% if (typeof odps !== 'undefined') { %>
                   <% odps.forEach(o => { %>
-                    <option value="<%= o.id %>"><%= o.name %></option>
+                    <option value="<%= o.id %>" data-name="<%= o.name %>"><%= o.name %></option>
                   <% }) %>
                 <% } %>
               </select>
             </div>
           </div>
           <div class="form-row">
-            <div class="fg"><label class="fl">Port PON / ODP</label><input class="fc" name="pon_port" id="e_pon_port"></div>
+            <div class="fg"><label class="fl">Port PON / ODP</label><input class="fc" name="pon_port" id="e_pon_port" oninput="autoGenerateCustomerCode('edit')" placeholder="Contoh: 1, 2, 4 (Nomor Port ODP)"></div>
             <div class="fg" id="e_mac_field" style="display:none">
               <label class="fl">MAC Address (Opsional)</label>
               <input class="fc" name="mac_address" id="e_mac_address" placeholder="Contoh: AA:BB:CC:DD:EE:FF">
@@ -987,7 +1008,7 @@
       <div class="d-flex justify-content-between align-items-center mb-3 p-3" style="background:var(--panel2);border:1px solid rgba(148,163,184,0.15);border-radius:12px">
         <div>
           <h5 id="v_cust_name" class="m-0 font-weight-bold" style="color:var(--text);font-size:16px">-</h5>
-          <span class="text-muted" style="font-size:12px">ID Pelanggan: #<strong id="v_cust_id">-</strong></span>
+          <span class="text-muted" style="font-size:12px">ID Pelanggan: #<strong id="v_cust_id">-</strong> &bull; Kode: <strong id="v_cust_code" style="color:var(--primary);font-family:monospace;">-</strong></span>
         </div>
         <div id="v_online_badge">
           <!-- Badge Online/Offline inserted dynamically -->
@@ -1311,6 +1332,7 @@ function viewCustDetail(idx) {
 
     if (document.getElementById('v_cust_name')) document.getElementById('v_cust_name').textContent = c.name || '-';
     if (document.getElementById('v_cust_id')) document.getElementById('v_cust_id').textContent = c.id || '-';
+    if (document.getElementById('v_cust_code')) document.getElementById('v_cust_code').textContent = c.customer_code || ('AJ-' + String(c.id).padStart(4, '0'));
 
     if (document.getElementById('v_online_badge')) {
       if (isOnline) {
@@ -1623,6 +1645,7 @@ function editCust(idx) {
   if (!c) return;
   currentEditCustomerId = c.id || '';
   document.getElementById('editForm').action='/admin/customers/'+c.id+'/update';
+  if (document.getElementById('e_customer_code')) document.getElementById('e_customer_code').value=c.customer_code||'';
   document.getElementById('e_name').value=c.name||'';
   if (document.getElementById('e_nik')) document.getElementById('e_nik').value=c.nik||'';
   document.getElementById('e_phone').value=c.phone||'';
@@ -1966,6 +1989,95 @@ async function loadMikrotikProfiles(routerId = '') {
 }
 loadRouterLists('add');
 loadRouterLists('edit');
+
+// ─── GENERATE KODE PELANGGAN & PPPOE CREDENTIALS ([AREA][ODP][PORT]) ───────
+function generateRandomPassword(length = 6) {
+  const chars = '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ';
+  let pass = '';
+  for (let i = 0; i < length; i++) {
+    pass += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return pass;
+}
+
+function autoGenerateCustomerCode(type = 'add') {
+  const prefix = type === 'add' ? 'add_' : 'e_';
+  const areaSelect = document.getElementById(prefix + 'area');
+  const odpSelect = document.getElementById(prefix + 'odp_id');
+  const portInput = document.getElementById(prefix + 'pon_port');
+  const codeInput = document.getElementById(prefix + 'customer_code');
+
+  if (!areaSelect || !odpSelect || !portInput || !codeInput) return;
+
+  // 1. Get Area Code (from data-code, or derive 3 letters from area name)
+  let areaCode = '';
+  if (areaSelect.selectedIndex > 0) {
+    const opt = areaSelect.options[areaSelect.selectedIndex];
+    const dataCode = opt ? opt.getAttribute('data-code') : '';
+    if (dataCode && dataCode.trim()) {
+      areaCode = dataCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    } else if (opt && opt.value) {
+      areaCode = opt.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
+    }
+  }
+
+  // 2. Get ODP Number (extract digits from ODP name, pad to 2 digits)
+  let odpNumber = '';
+  if (odpSelect.selectedIndex > 0) {
+    const opt = odpSelect.options[odpSelect.selectedIndex];
+    const odpName = (opt ? (opt.getAttribute('data-name') || opt.text || '') : '').trim();
+    const digitsMatch = odpName.match(/\d+/);
+    if (digitsMatch) {
+      odpNumber = String(digitsMatch[0]).padStart(2, '0');
+    } else if (opt && opt.value) {
+      odpNumber = String(opt.value).padStart(2, '0');
+    }
+  }
+
+  // 3. Get Port Number (extract digits from PON/ODP port input, pad to 2 digits)
+  let portNumber = '';
+  const portVal = (portInput.value || '').trim();
+  const portMatch = portVal.match(/\d+/);
+  if (portMatch) {
+    portNumber = String(portMatch[0]).padStart(2, '0');
+  }
+
+  // If user has chosen area, ODP, or port:
+  if (areaCode || odpNumber || portNumber) {
+    const finalArea = areaCode || 'PGG';
+    const finalOdp = odpNumber || '01';
+    const finalPort = portNumber || '01';
+    const customerCode = `${finalArea}${finalOdp}${finalPort}`;
+
+    codeInput.value = customerCode;
+
+    if (type === 'add') {
+      // Auto-fill PPPoE Username with lowercase of customer code
+      const pppoeUsernameDefault = document.querySelector('#addModal input[name="pppoe_username"]');
+      const pppoeUsernameManual = document.getElementById('add_pppoe_username_manual');
+      const lowerCode = customerCode.toLowerCase();
+
+      if (pppoeUsernameDefault) pppoeUsernameDefault.value = lowerCode;
+      if (pppoeUsernameManual) pppoeUsernameManual.value = lowerCode;
+
+      // Auto-generate secure random password if empty
+      const passInput = document.getElementById('add_pppoe_password');
+      if (passInput && !passInput.value) {
+        passInput.value = generateRandomPassword(6);
+      }
+
+      // Auto-fill Tag GenieACS if empty
+      const tagInput = document.querySelector('#addModal input[name="genieacs_tag"]');
+      if (tagInput && (!tagInput.value || tagInput.value.trim() === '')) {
+        tagInput.value = lowerCode;
+      }
+    }
+  }
+}
+
+function triggerAutoGenerateCode(type) {
+  autoGenerateCustomerCode(type);
+}
 
 setTimeout(()=>document.querySelectorAll('.alert').forEach(a=>a.style.display='none'),4000);
 </script>

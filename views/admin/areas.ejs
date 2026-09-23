@@ -40,6 +40,7 @@
           <thead>
             <tr>
               <th>#</th>
+              <th>Kode Area</th>
               <th>Nama Area / Wilayah</th>
               <th>Keterangan / Deskripsi</th>
               <th>Jumlah Pelanggan</th>
@@ -49,11 +50,16 @@
           </thead>
           <tbody>
             <% if (!areas || areas.length === 0) { %>
-              <tr><td colspan="6" class="text-center text-muted" style="padding:24px">Belum ada data area. Klik "Tambah Area Baru" untuk membuat area.</td></tr>
+              <tr><td colspan="7" class="text-center text-muted" style="padding:24px">Belum ada data area. Klik "Tambah Area Baru" untuk membuat area.</td></tr>
             <% } else { %>
               <% areas.forEach((a, idx) => { %>
                 <tr>
                   <td><%= idx + 1 %></td>
+                  <td>
+                    <span class="badge" style="background:rgba(59,130,246,0.15);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);font-family:monospace;font-weight:800;font-size:12px;letter-spacing:0.5px;">
+                      <%= a.code || '-' %>
+                    </span>
+                  </td>
                   <td>
                     <strong style="color:var(--text);font-size:14px"><i class="bi bi-geo-alt text-primary me-1"></i><%= a.name %></strong>
                   </td>
@@ -89,8 +95,13 @@
       <div class="mh"><span class="mt"><i class="bi bi-geo-alt-fill"></i> Tambah Area Baru</span><button type="button" class="mc" onclick="closeModal('addAreaModal')">&times;</button></div>
       <div class="mbody">
         <div class="fg">
+          <label class="fl">Kode Area (3-4 Huruf) *</label>
+          <input type="text" name="code" class="fc" placeholder="Contoh: PGG, UJG, TJP" maxlength="10" style="text-transform:uppercase;font-family:monospace;font-weight:700;" required>
+          <small class="text-muted" style="font-size:11px;">Digunakan untuk awalan Kode Pelanggan & Username PPPoE (contoh format: [AREA][ODP][PORT] -> PGG0104).</small>
+        </div>
+        <div class="fg">
           <label class="fl">Nama Area / Wilayah *</label>
-          <input type="text" name="name" class="fc" placeholder="Contoh: Kelurahan Sukamaju, Blok C1-C10" required>
+          <input type="text" name="name" class="fc" placeholder="Contoh: Pegagan, Ujungaris, Tanjupura" required>
         </div>
         <div class="fg">
           <label class="fl">Keterangan / Catatan (Opsional)</label>
@@ -111,6 +122,11 @@
     <form id="editAreaForm" method="POST">
       <div class="mh"><span class="mt"><i class="bi bi-pencil-square"></i> Edit Data Area</span><button type="button" class="mc" onclick="closeModal('editAreaModal')">&times;</button></div>
       <div class="mbody">
+        <div class="fg">
+          <label class="fl">Kode Area (3-4 Huruf) *</label>
+          <input type="text" name="code" id="e-area-code" class="fc" maxlength="10" style="text-transform:uppercase;font-family:monospace;font-weight:700;" required>
+          <small class="text-muted" style="font-size:11px;">Digunakan untuk awalan Kode Pelanggan & Username PPPoE.</small>
+        </div>
         <div class="fg">
           <label class="fl">Nama Area / Wilayah *</label>
           <input type="text" name="name" id="e-area-name" class="fc" required>
@@ -137,6 +153,7 @@ function closeModal(id){document.getElementById(id).classList.remove('show')}
 
 function editArea(a){
   document.getElementById('editAreaForm').action = '/admin/areas/' + a.id + '/update';
+  document.getElementById('e-area-code').value = a.code || '';
   document.getElementById('e-area-name').value = a.name || '';
   document.getElementById('e-area-desc').value = a.description || '';
   openModal('editAreaModal');

@@ -1846,12 +1846,14 @@ router.post('/customers', requireAdminSession, express.urlencoded({ extended: tr
         
         if (targetProfile) {
           try {
+            const secretComment = [req.body.name, req.body.nik].filter(Boolean).join(' / ') || req.body.name;
             await mikrotikService.createPppoeSecret({
               username: req.body.pppoe_username,
               password: password,
               profile: targetProfile,
               remoteAddress: remoteAddress,
-              routerId: req.body.router_id
+              routerId: req.body.router_id,
+              comment: secretComment
             });
             logger.info(`[Add Customer] Created PPPoE secret "${req.body.pppoe_username}" in MikroTik (RADIUS ${radiusEnabled ? 'ON' : 'OFF'})`);
           } catch (mErr) {
@@ -2058,10 +2060,16 @@ router.post('/customers/:id/update', requireAdminSession, express.urlencoded({ e
             const secrets = await mikrotikService.getPppoeSecrets(req.body.router_id);
             const existingSecret = secrets.find(s => String(s.name || '').trim() === newUsername);
             
+            const secretComment = [req.body.name, req.body.nik].filter(Boolean).join(' / ') || req.body.name;
             if (existingSecret) {
-              // Secret sudah ada, hanya update profile
+              // Secret sudah ada, update profile & comment
               await mikrotikService.setPppoeProfile(newUsername, targetProfile, req.body.router_id);
-              logger.info(`[Edit Customer] Updated PPPoE profile for "${newUsername}" to "${targetProfile}"`);
+              if (existingSecret['.id'] || existingSecret.id) {
+                try {
+                  await mikrotikService.updatePppoeSecret(existingSecret['.id'] || existingSecret.id, { comment: secretComment }, req.body.router_id);
+                } catch (cErr) {}
+              }
+              logger.info(`[Edit Customer] Updated PPPoE profile & comment for "${newUsername}"`);
             } else if (newPassword) {
               // Secret belum ada DAN ada password, create secret baru ke MikroTik
               await mikrotikService.createPppoeSecret({
@@ -2069,7 +2077,8 @@ router.post('/customers/:id/update', requireAdminSession, express.urlencoded({ e
                 password: newPassword,
                 profile: targetProfile,
                 remoteAddress: remoteAddress,
-                routerId: req.body.router_id
+                routerId: req.body.router_id,
+                comment: secretComment
               });
               logger.info(`[Edit Customer] Created NEW PPPoE secret for "${newUsername}" in MikroTik`);
             } else {

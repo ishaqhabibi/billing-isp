@@ -98,7 +98,7 @@ function getLegacyACS() {
 
 function getAxiosConfig(server) {
     const config = {
-        timeout: 15000,
+        timeout: 3000, // 3s timeout to prevent page freezing when ACS IP is unreachable
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json'

@@ -109,13 +109,67 @@ document.addEventListener('DOMContentLoaded', () => {
       <i class="bi bi-box-arrow-left"></i><span><%= t('common.logout', 'Logout') %></span>
     </a>
     <div class="mt-4 px-3 py-2 text-center" style="border-top: 1px solid rgba(255,255,255,0.1);">
-      <a href="https://github.com/alijayanet/billing-rtrw" target="_blank"
-        style="color: #94a3b8; font-size: 11px; text-decoration: none; font-weight: 600;">
-        ALIJAYA BILLING SYSTEM
+      <a href="javascript:void(0)"
+        style="color: #94a3b8; font-size: 11px; text-decoration: none; font-weight: 600; cursor: default;">
+        <%= (typeof company !== 'undefined' && company) ? company : 'BIONFIBER' %> BILLING SYSTEM
       </a>
     </div>
   </nav>
 </aside>
+
+<script>
+(function() {
+  const sb = document.getElementById('sidebar');
+  if (!sb) return;
+
+  function restoreSidebarScroll() {
+    const savedScroll = sessionStorage.getItem('sidebar_scroll_pos');
+    if (savedScroll !== null) {
+      sb.scrollTop = parseInt(savedScroll, 10);
+    } else {
+      const active = sb.querySelector('.sb-item.active');
+      if (active) {
+        active.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }
+
+  // Restore immediately before paint
+  restoreSidebarScroll();
+
+  // Restore again on DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', restoreSidebarScroll);
+  }
+
+  // Double check after full load and ensure active item is visible
+  window.addEventListener('load', function() {
+    restoreSidebarScroll();
+    const active = sb.querySelector('.sb-item.active');
+    if (active) {
+      const sbRect = sb.getBoundingClientRect();
+      const aRect = active.getBoundingClientRect();
+      if (aRect.top < sbRect.top || aRect.bottom > sbRect.bottom) {
+        active.scrollIntoView({ block: 'nearest' });
+        sessionStorage.setItem('sidebar_scroll_pos', sb.scrollTop);
+      }
+    }
+  });
+
+  // Track scroll position
+  sb.addEventListener('scroll', function() {
+    sessionStorage.setItem('sidebar_scroll_pos', sb.scrollTop);
+  }, { passive: true });
+
+  // Save on clicking any link in sidebar
+  sb.addEventListener('click', function(e) {
+    const link = e.target.closest('a');
+    if (link) {
+      sessionStorage.setItem('sidebar_scroll_pos', sb.scrollTop);
+    }
+  });
+})();
+</script>
 
 <div id="lockedMenuModal" style="display:none;position:fixed;inset:0;z-index:1200;background:rgba(2,6,23,.72);backdrop-filter:blur(4px);padding:16px;align-items:center;justify-content:center">
   <div style="width:min(100%,420px);background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(30,41,59,.98));border:1px solid rgba(148,163,184,.18);border-radius:18px;box-shadow:0 24px 60px rgba(2,6,23,.45);overflow:hidden">

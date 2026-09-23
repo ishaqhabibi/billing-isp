@@ -668,7 +668,7 @@ async function deletePppoeSecret(id, routerId = null) {
   }
 }
 
-async function createPppoeSecret({ username, password, profile, remoteAddress, routerId = null }) {
+async function createPppoeSecret({ username, password, profile, remoteAddress, routerId = null, comment = null }) {
   let conn = null;
   try {
     conn = await getConnection(routerId);
@@ -683,11 +683,16 @@ async function createPppoeSecret({ username, password, profile, remoteAddress, r
     if (remoteAddress && remoteAddress.trim()) {
       secretData['remote-address'] = remoteAddress.trim();
     }
+
+    // Add comment if provided (e.g. "Nama / NIK")
+    if (comment && String(comment).trim()) {
+      secretData.comment = String(comment).trim();
+    }
     
     const res = await conn.client.menu('/ppp/secret').add(secretData);
     listCache.delete(cacheKey(routerId, 'pppoeSecrets'));
     listCache.delete(cacheKey(routerId, 'pppoeActive'));
-    logger.info(`[MikroTik] Created PPPoE secret: ${username} with profile ${profile}`);
+    logger.info(`[MikroTik] Created PPPoE secret: ${username} with profile ${profile}${comment ? ' [comment: ' + comment + ']' : ''}`);
     return res;
   } catch (e) {
     logger.error(`Error creating PPPoE secret for ${username}:`, e);
