@@ -137,8 +137,31 @@
 
     <!-- OLT Configuration -->
     <div class="card">
-      <div class="card-hd">
+      <div class="card-hd" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <h6 style="margin:0"><i class="bi bi-gear"></i> Konfigurasi OLT</h6>
+        <% if (typeof olts !== 'undefined' && olts && olts.length > 0) { %>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label style="font-size:11px; font-weight:600; color:var(--muted); margin:0;">Isi Cepat dari OLT Terdaftar:</label>
+            <select class="fs" id="registeredOltSelect" onchange="fillOltFromRegistered(this)" style="font-size:12px; padding:4px 10px; min-width:200px;">
+              <option value="">-- Pilih OLT Terdaftar --</option>
+              <% olts.forEach(o => { 
+                  let brandName = (o.brand || '').toLowerCase();
+                  let vendorVal = 'Hioso';
+                  if (brandName.includes('zte')) vendorVal = 'ZTE';
+                  else if (brandName.includes('huawei')) vendorVal = 'Huawei';
+                  else if (brandName.includes('fiberhome')) vendorVal = 'Fiberhome';
+                  else if (brandName.includes('vsol')) vendorVal = 'VSOL';
+                  else if (brandName.includes('cdata')) vendorVal = 'CData';
+                  else if (brandName.includes('hsgq')) vendorVal = 'HSGQ';
+                  else if (brandName.includes('hioso')) vendorVal = 'Hioso';
+              %>
+                <option value="<%= o.id %>" data-vendor="<%= vendorVal %>" data-host="<%= o.host %>" data-port="<%= o.telnet_port || 22 %>" data-user="<%= o.web_user || 'admin' %>" data-pass="<%= o.web_password || '' %>">
+                  <%= o.name %> (<%= (o.brand || '').toUpperCase() %> - <%= o.host %>)
+                </option>
+              <% }) %>
+            </select>
+          </div>
+        <% } %>
       </div>
       <div class="card-bd">
         <form method="POST" action="/admin/onu-provision/configure-olt">
@@ -211,10 +234,10 @@
           </button>
         </div>
         <div class="card-bd">
-          <% if (oltConfig.vendor === 'ZTE') { %>
+          <% if (oltConfig.vendor === 'ZTE' || oltConfig.vendor === 'VSOL' || oltConfig.vendor === 'CData' || oltConfig.vendor === 'HSGQ' || oltConfig.vendor === 'Hioso') { %>
             <div class="fg">
-              <label class="fl">PON Interface (contoh: 1/1/1)</label>
-              <input type="text" class="fc" id="scanPon" placeholder="1/1/1">
+              <label class="fl">PON Interface (contoh: 1/1/1 atau epon0/1)</label>
+              <input type="text" class="fc" id="scanPon" placeholder="1/1/1 atau epon0/1">
             </div>
           <% } else { %>
             <div class="form-row3">
@@ -512,6 +535,35 @@ function switchTab(tabName) {
   // Show selected tab
   document.getElementById('tab-' + tabName).classList.add('active');
   event.target.classList.add('active');
+}
+
+function fillOltFromRegistered(selectEl) {
+  const opt = selectEl.options[selectEl.selectedIndex];
+  if (!opt || !opt.value) return;
+  
+  const vendor = opt.dataset.vendor || '';
+  const host = opt.dataset.host || '';
+  const port = opt.dataset.port || '22';
+  const user = opt.dataset.user || '';
+  const pass = opt.dataset.pass || '';
+  
+  const vendorSelect = document.getElementById('oltVendor');
+  if (vendorSelect && vendor) {
+    vendorSelect.value = vendor;
+    if (typeof toggleVendorFields === 'function') toggleVendorFields();
+  }
+  
+  const hostInput = document.querySelector('input[name="host"]');
+  if (hostInput) hostInput.value = host;
+  
+  const portInput = document.querySelector('input[name="port"]');
+  if (portInput) portInput.value = port;
+  
+  const userInput = document.querySelector('input[name="username"]');
+  if (userInput) userInput.value = user;
+  
+  const passInput = document.querySelector('input[name="password"]');
+  if (passInput) passInput.value = pass;
 }
 
 function toggleVendorFields() {

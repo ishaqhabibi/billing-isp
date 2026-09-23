@@ -11,6 +11,71 @@ function getSecureSessionSecretFallback() {
   return runtimeSessionSecret;
 }
 
+let dbInstance = null;
+function getDb() {
+  if (!dbInstance) {
+    try {
+      dbInstance = require('./database');
+      dbInstance.exec(`
+        CREATE TABLE IF NOT EXISTS system_settings (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        );
+      `);
+    } catch (_) {}
+  }
+  return dbInstance;
+}
+
+function parseDbSettingValue(key, value) {
+  if (value === undefined || value === null) return undefined;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  if (key === 'whatsapp_admin_numbers') {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (_) {}
+      return value ? value.split(',').map(s => s.trim()).filter(Boolean) : [];
+    }
+    return [];
+  }
+  if (typeof value === 'string' && (value.startsWith('{') || value.startsWith('['))) {
+    try {
+      return JSON.parse(value);
+    } catch (_) {}
+  }
+  return value;
+}
+
+function getDbSetting(key) {
+  try {
+    const db = getDb();
+    if (!db) return undefined;
+    const row = db.prepare('SELECT value FROM system_settings WHERE key = ?').get(key);
+    return row ? parseDbSettingValue(key, row.value) : undefined;
+  } catch (_) {
+    return undefined;
+  }
+}
+
+function getAllDbSettings() {
+  try {
+    const db = getDb();
+    if (!db) return {};
+    const rows = db.prepare('SELECT key, value FROM system_settings').all();
+    const res = {};
+    for (const r of rows) {
+      res[r.key] = parseDbSettingValue(r.key, r.value);
+    }
+    return res;
+  } catch (_) {
+    return {};
+  }
+}
+
 // Cache untuk settings dengan timestamp
 let settingsCache = null;
 let settingsCacheTime = 0;
@@ -24,6 +89,19 @@ let watcher = null;
 function getSettings() {
   try {
     const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8')) || {};
+    
+    // Gabungkan dengan SQLite system_settings (prioritas tertinggi)
+    const dbOverrides = getAllDbSettings();
+    Object.assign(settings, dbOverrides);
+    
+    // Pastikan whatsapp_admin_numbers selalu berupa Array
+    if (!Array.isArray(settings.whatsapp_admin_numbers)) {
+      if (typeof settings.whatsapp_admin_numbers === 'string' && settings.whatsapp_admin_numbers) {
+        settings.whatsapp_admin_numbers = settings.whatsapp_admin_numbers.split(',').map(s => s.trim()).filter(Boolean);
+      } else {
+        settings.whatsapp_admin_numbers = [];
+      }
+    }
     
     // Secure fallback for session_secret
     const defaultSecret = 'rahasia-portal-pelanggan-default-ganti-ini';
@@ -65,6 +143,9 @@ function getSettingsWithCache() {
 
 // Helper untuk mendapatkan nilai setting dengan fallback
 function getSetting(key, defaultValue = null) {
+  const dbVal = getDbSetting(key);
+  if (dbVal !== undefined) return dbVal;
+
   const settings = getSettingsWithCache();
   return settings[key] !== undefined ? settings[key] : defaultValue;
 }
@@ -117,17 +198,58 @@ function startSettingsWatcher() {
 // Mulai watcher saat modul dimuat
 startSettingsWatcher();
 
-// Menyimpan pengaturan ke settings.json
-function saveSettings(newSettings) {
+// Menyimpan pengaturan (ke SQLite dan opsional ke settings.json)
+function saveSettings(newSettings, options = { syncFile: true }) {
   try {
+    // 1. Simpan selalu ke SQLite system_settings (aman, persisten, dan tidak memicu nodemon restart)
+    const db = getDb();
+    if (db) {
+      const stmt = db.prepare(`
+        INSERT INTO system_settings (key, value)
+        VALUES (?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value
+      `);
+      for (const [k, v] of Object.entries(newSettings)) {
+        let valToStore = v;
+        if (typeof v === 'boolean') {
+          valToStore = v ? 'true' : 'false';
+        } else if (typeof v === 'object' && v !== null) {
+          valToStore = JSON.stringify(v);
+        } else {
+          valToStore = String(v ?? '');
+        }
+        stmt.run(k, valToStore);
+      }
+    }
+
+    // 2. Update memory cache langsung
+    if (settingsCache) {
+      Object.assign(settingsCache, newSettings);
+    }
+
+    // 3. Jika syncFile === false, jangan sentuh settings.json di disk (hindari nodemon restart)
+    if (options && options.syncFile === false) {
+      return true;
+    }
+
     const currentSettings = getSettings();
+    let hasChanges = false;
+    for (const [k, v] of Object.entries(newSettings)) {
+      if (String(currentSettings[k] ?? '') !== String(v ?? '')) {
+        hasChanges = true;
+        break;
+      }
+    }
+    if (!hasChanges) {
+      return true; // Tidak ada perubahan, lewati penulisan disk untuk mencegah event watch yang tidak perlu
+    }
     const updatedSettings = { ...currentSettings, ...newSettings };
     fs.writeFileSync(settingsPath, JSON.stringify(updatedSettings, null, 2), 'utf-8');
     settingsCache = updatedSettings;
     settingsCacheTime = Date.now();
     return true;
   } catch (error) {
-    logger.error(`[settings] Error saving settings.json: ${error.message}`);
+    logger.error(`[settings] Error saving settings: ${error.message}`);
     return false;
   }
 }

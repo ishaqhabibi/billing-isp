@@ -7,17 +7,171 @@
   <link rel="manifest" href="/admin/manifest.webmanifest">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="/css/admin.css">
+  <style>
+    /* Settings Tabbed UI Modern Styling */
+    .settings-tabs-wrapper {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: var(--bg);
+      padding: 6px 0 14px 0;
+      margin-bottom: 6px;
+    }
+    .settings-tabs-nav {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 6px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      scrollbar-width: none;
+    }
+    .settings-tabs-nav::-webkit-scrollbar { display: none; }
+    .s-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 16px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+      position: relative;
+    }
+    .s-tab-btn:hover {
+      background: var(--bg3);
+      color: var(--text);
+    }
+    .s-tab-btn.active {
+      background: var(--brand);
+      color: #fff !important;
+      border-color: var(--brand);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+    }
+    .s-tab-btn .tab-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+      box-shadow: 0 0 6px #10b981;
+    }
+    .s-tab-btn.active .tab-dot {
+      background: #fff;
+      box-shadow: 0 0 6px #fff;
+    }
+    .s-tab-pane {
+      display: none;
+      animation: tabFadeIn 0.2s ease-out;
+    }
+    .s-tab-pane.active {
+      display: block;
+    }
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .section-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    }
+    .section-card-hd {
+      padding: 13px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .section-card-hd h6 {
+      margin: 0;
+      font-size: 13.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+    }
+    .section-card-bd {
+      padding: 18px;
+    }
+    .gateway-subcard {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+      transition: border-color 0.2s;
+    }
+    .gateway-subcard:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+    .gateway-subcard-hd {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .gateway-subcard-title {
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+    }
+    .settings-save-footer {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-top: 18px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+  </style>
 </head>
 <body>
 <%- include('partials/sidebar', { activePage: (typeof activePage !== 'undefined' && activePage ? activePage : 'settings'), company }) %>
 <div class="mw">
   <div class="topbar">
-    <div class="tb-title"><button class="hb-menu" onclick="toggleSidebar()"><i class="bi bi-list"></i></button><i class="bi bi-gear"></i> <%= t('admin.settings.system_title', 'Pengaturan Sistem') %></div>
-    <div class="tb-right">
+    <div class="tb-title">
+      <button class="hb-menu" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+      <i class="bi bi-gear-fill" style="color:var(--brand);"></i> <%= t('admin.settings.system_title', 'Pengaturan Sistem') %>
+    </div>
+    <div class="tb-right" style="display:flex; align-items:center; gap:10px;">
+      <% const logsOnly = (typeof viewMode !== 'undefined' && viewMode === 'ewallet_logs'); %>
+      <% if (!logsOnly) { %>
+        <button type="submit" form="mainSettingsForm" class="btn btn-p btn-sm" id="topSaveBtn">
+          <i class="bi bi-floppy-fill"></i> Simpan Pengaturan
+        </button>
+      <% } %>
+      <a href="<%= logsOnly ? '/admin/settings' : '/admin/ewallet-logs' %>" class="btn btn-g btn-sm" title="<%= logsOnly ? 'Kembali ke Pengaturan' : 'Buka Log Notifikasi E-Wallet' %>">
+        <i class="bi bi-<%= logsOnly ? 'arrow-left' : 'wallet2' %>"></i> <%= logsOnly ? 'Pengaturan' : 'Log E-Wallet' %>
+      </a>
       <span class="adm-badge"><i class="bi bi-person-fill"></i> <%= (typeof session !== 'undefined' && session && session.isCashier) ? t('admin.role.cashier', 'Kasir') : t('admin.role.admin', 'Admin') %></span>
       <a href="/admin/logout" class="btn btn-g btn-sm"><i class="bi bi-box-arrow-left"></i> <%= t('common.logout', 'Logout') %></a>
     </div>
   </div>
+
   <div class="page">
 
     <% if (msg) { %>
@@ -26,9 +180,8 @@
     </div>
     <% } %>
 
-    <% const logsOnly = (typeof viewMode !== 'undefined' && viewMode === 'ewallet_logs'); %>
-
     <% if (logsOnly) { %>
+    <!-- LOG NOTIFIKASI E-WALLET (VIEW MODE) -->
     <div class="card mb16">
       <div class="card-hd" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
         <h6 style="margin:0"><i class="bi bi-wallet2"></i> <%= t('admin.settings.ewallet_logs.title', 'Log Notifikasi E-Wallet (Webhook)') %></h6>
@@ -84,24 +237,341 @@
         </div>
       </div>
     </div>
-    <% } else { %>
-    <div class="card mb16">
-      <div class="card-hd" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-        <h6 style="margin:0"><i class="bi bi-wallet2"></i> <%= t('admin.settings.ewallet_logs.title', 'Log Notifikasi E-Wallet (Webhook)') %></h6>
-        <a class="btn btn-p btn-sm" href="/admin/ewallet-logs"><i class="bi bi-box-arrow-up-right"></i> <%= t('common.open', 'Buka') %></a>
-      </div>
-      <div class="card-bd">
-        <div class="hint">Log notifikasi e-wallet dipindah ke halaman khusus agar pengaturan tidak terdorong ke bawah.</div>
-      </div>
-    </div>
     <% } %>
 
     <% if (!logsOnly) { %>
-    <form method="POST" action="/admin/settings">
+    <!-- HORIZONTAL TABBED NAVIGATION (KONSEP 1) -->
+    <div class="settings-tabs-wrapper">
+      <div class="settings-tabs-nav" id="settingsTabsNav">
+        <button type="button" class="s-tab-btn active" data-tab="tab-general" onclick="switchSettingsTab('tab-general', this)">
+          <i class="bi bi-building"></i> <span>Umum & Profil</span>
+        </button>
+        <button type="button" class="s-tab-btn" data-tab="tab-network" onclick="switchSettingsTab('tab-network', this)">
+          <i class="bi bi-hdd-network"></i> <span>MikroTik & Jaringan</span>
+        </button>
+        <button type="button" class="s-tab-btn" data-tab="tab-acs" onclick="switchSettingsTab('tab-acs', this)">
+          <i class="bi bi-router"></i> <span>ACS TR-069</span>
+          <% if (settings.use_builtin_acs) { %><span class="tab-dot" title="Built-in ACS Aktif"></span><% } %>
+        </button>
+        <button type="button" class="s-tab-btn" data-tab="tab-bot" onclick="switchSettingsTab('tab-bot', this)">
+          <i class="bi bi-chat-dots"></i> <span>WhatsApp & Telegram</span>
+          <% if (settings.whatsapp_enabled || settings.telegram_enabled) { %><span class="tab-dot" title="Bot Aktif"></span><% } %>
+        </button>
+        <button type="button" class="s-tab-btn" data-tab="tab-payment" onclick="switchSettingsTab('tab-payment', this)">
+          <i class="bi bi-credit-card-2-front"></i> <span>Pembayaran & QRIS</span>
+          <% if (settings.qris_static_enabled || settings.tripay_enabled || settings.midtrans_enabled || settings.xendit_enabled || settings.duitku_enabled) { %><span class="tab-dot" title="Gateway Aktif"></span><% } %>
+        </button>
+        <button type="button" class="s-tab-btn" data-tab="tab-digiflazz" onclick="switchSettingsTab('tab-digiflazz', this)">
+          <i class="bi bi-lightning-charge"></i> <span>Digiflazz PPOB</span>
+        </button>
+        <button type="button" class="s-tab-btn" data-tab="tab-security" onclick="switchSettingsTab('tab-security', this)">
+          <i class="bi bi-shield-lock"></i> <span>Keamanan Admin</span>
+        </button>
+      </div>
+    </div>
 
-        <div class="card mb16">
-          <div class="card-hd"><h6><i class="bi bi-telegram"></i> <%= t('admin.settings.telegram.title', 'Pengaturan Telegram Bot (Backup Admin)') %></h6></div>
-          <div class="card-bd">
+    <!-- MAIN SETTINGS FORM (WRAPS ALL TABS) -->
+    <form id="mainSettingsForm" method="POST" action="/admin/settings">
+      <input type="hidden" name="_active_tab" id="active_tab_input" value="general">
+
+      <!-- ========================================== -->
+      <!-- TAB 1: UMUM & PROFIL                       -->
+      <!-- ========================================== -->
+      <div id="tab-general" class="s-tab-pane active">
+        <!-- Profil Perusahaan & Brand -->
+        <div class="section-card">
+          <div class="section-card-hd">
+            <h6><i class="bi bi-building"></i> Identitas Perusahaan & Portal</h6>
+          </div>
+          <div class="section-card-bd">
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl"><%= t('admin.settings.company_name', 'Nama Aplikasi / Perusahaan') %></label>
+                <input class="fc" name="company_header" value="<%= settings.company_header || '' %>" placeholder="BIONFIBER">
+              </div>
+              <div class="fg">
+                <label class="fl"><%= t('admin.settings.owner_name', 'Nama Manajer / Owner') %></label>
+                <input class="fc" name="company_manager" value="<%= settings.company_manager || '' %>" placeholder="Admin Pusat">
+              </div>
+            </div>
+
+            <div class="fg">
+              <label class="fl">URL Publik Aplikasi (Public Base URL)</label>
+              <input class="fc" name="public_base_url" value="<%= settings.public_base_url || '' %>" placeholder="https://billing.alijayanet.net">
+              <div style="font-size:10px; color:var(--muted); margin-top:4px">Digunakan untuk menyusun tautan login pelanggan yang dikirim via WhatsApp. Contoh: <span class="mono">https://billing.alijayanet.net</span></div>
+            </div>
+
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl"><%= t('admin.settings.primary_phone', 'Telepon Utama (CS / WhatsApp)') %></label>
+                <input class="fc" name="company_phone" value="<%= settings.company_phone || '' %>" placeholder="081234567890">
+              </div>
+              <div class="fg">
+                <label class="fl"><%= t('admin.settings.company_email', 'Email Perusahaan') %></label>
+                <input class="fc" name="company_email" value="<%= settings.company_email || '' %>" placeholder="support@isp.com">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl"><%= t('admin.settings.footer_info', 'Info Footer') %></label>
+                <input class="fc" name="footer_info" value="<%= settings.footer_info || '' %>" placeholder="BIONFIBER Billing System">
+              </div>
+              <div class="fg">
+                <label class="fl"><%= t('admin.settings.operational_hours', 'Jam Operasional') %></label>
+                <input class="fc" name="operational_hours" value="<%= settings.operational_hours || '' %>" placeholder="Setiap Hari: 08.00 - 22.00 WIB">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Logo Aplikasi -->
+        <div class="section-card">
+          <div class="section-card-hd">
+            <h6><i class="bi bi-image"></i> Logo Aplikasi</h6>
+          </div>
+          <div class="section-card-bd">
+            <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap">
+              <div style="text-align:center; padding:10px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; min-width:140px;">
+                <div style="font-size:11px; color:var(--muted); margin-bottom:6px;">Logo Saat Ini</div>
+                <img src="/img/logo.png?v=<%= Date.now() %>" alt="Current Logo" style="height:48px; max-width:120px; object-fit:contain;">
+              </div>
+              <div style="flex:1; min-width:240px;">
+                <label class="fl">Upload File Logo Baru (PNG/JPG/WebP, Maks 2MB)</label>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+                  <input class="fc" type="file" id="logo_upload_file" name="logo_file" accept="image/png,image/jpeg,image/jpg,image/webp" style="flex:1;">
+                  <button class="btn btn-s" type="button" id="logo_upload_btn" style="height:38px"><i class="bi bi-upload"></i> Upload Logo</button>
+                </div>
+                <div style="font-size:10px; color:var(--muted); margin-top:4px">Logo akan langsung di-upload dan menimpa logo lama secara otomatis.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lokasi Kantor & Geofencing Absensi -->
+        <div class="section-card">
+          <div class="section-card-hd">
+            <h6><i class="bi bi-geo-alt"></i> Lokasi Kantor & Geofencing Absensi Karyawan</h6>
+          </div>
+          <div class="section-card-bd">
+            <div class="fg">
+              <label class="fl"><%= t('admin.settings.office_address', 'Alamat Kantor Lengkap') %></label>
+              <input class="fc" name="company_address" value="<%= settings.company_address || '' %>" placeholder="Jl. Utama No. 123">
+            </div>
+
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl"><%= t('admin.settings.office_lat', 'Latitude Kantor') %></label>
+                <input class="fc" name="office_lat" value="<%= settings.office_lat || '' %>" placeholder="-6.xxx / -8.xxx">
+              </div>
+              <div class="fg">
+                <label class="fl"><%= t('admin.settings.office_lng', 'Longitude Kantor') %></label>
+                <input class="fc" name="office_lng" value="<%= settings.office_lng || '' %>" placeholder="106.xxx / 113.xxx">
+              </div>
+            </div>
+
+            <div class="form-row" style="margin-top:10px">
+              <div class="fg">
+                <label class="fl"><i class="bi bi-shield-check"></i> Validasi Geofencing Absensi</label>
+                <select class="fs" name="attendance_geofencing">
+                  <option value="true" <%= settings.attendance_geofencing === 'true' || settings.attendance_geofencing === true ? 'selected' : '' %>>Aktif (Wajib di Radius Kantor)</option>
+                  <option value="false" <%= settings.attendance_geofencing === 'false' || settings.attendance_geofencing === false ? 'selected' : '' %>>Nonaktif (Bebas / Remote)</option>
+                </select>
+              </div>
+              <div class="fg">
+                <label class="fl"><i class="bi bi-bullseye"></i> Radius Absensi (meter)</label>
+                <input type="number" class="fc" name="attendance_radius" value="<%= settings.attendance_radius || '100' %>" placeholder="100" min="10" max="1000">
+              </div>
+            </div>
+            <div class="hint" style="margin-top:6px; color:var(--muted)">
+              <i class="bi bi-info-circle"></i> Karyawan hanya bisa absen masuk/pulang jika berada dalam radius meter yang ditentukan dari koordinat kantor.
+            </div>
+          </div>
+        </div>
+
+        <!-- Sistem & Server -->
+        <div class="section-card">
+          <div class="section-card-hd">
+            <h6><i class="bi bi-cpu"></i> Konfigurasi Server & Autentikasi</h6>
+          </div>
+          <div class="section-card-bd">
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl"><%= t('admin.settings.server_port', 'Port Server Aplikasi') %></label>
+                <input class="fc" type="number" name="server_port" value="<%= settings.server_port || 3001 %>">
+              </div>
+              <div class="fg">
+                <label class="fl"><%= t('admin.settings.timezone', 'Zona Waktu (Timezone)') %></label>
+                <select class="fs" name="timezone">
+                  <option value="Asia/Jakarta" <%= settings.timezone === 'Asia/Jakarta' ? 'selected' : '' %>>WIB (Asia/Jakarta)</option>
+                  <option value="Asia/Makassar" <%= settings.timezone === 'Asia/Makassar' ? 'selected' : '' %>>WITA (Asia/Makassar)</option>
+                  <option value="Asia/Jayapura" <%= settings.timezone === 'Asia/Jayapura' ? 'selected' : '' %>>WIT (Asia/Jayapura)</option>
+                </select>
+              </div>
+              <div class="fg">
+                <label class="fl"><%= t('admin.settings.customer_otp_login', 'Login OTP Pelanggan') %></label>
+                <select class="fs" name="login_otp_enabled">
+                  <option value="true" <%= settings.login_otp_enabled ? 'selected' : '' %>><%= t('admin.settings.otp_enabled', 'Aktif (Kirim via WhatsApp)') %></option>
+                  <option value="false" <%= !settings.login_otp_enabled ? 'selected' : '' %>><%= t('admin.settings.otp_disabled', 'Nonaktif (Langsung Tanpa OTP)') %></option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-save-footer">
+          <button type="submit" class="btn btn-p"><i class="bi bi-floppy-fill"></i> Simpan Pengaturan Umum</button>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 2: MIKROTIK & JARINGAN                 -->
+      <!-- ========================================== -->
+      <div id="tab-network" class="s-tab-pane">
+        <!-- Multi-Router Setting -->
+        <div class="section-card">
+          <div class="section-card-hd">
+            <h6><i class="bi bi-shuffle"></i> Mode Operasional Router MikroTik</h6>
+          </div>
+          <div class="section-card-bd">
+            <div class="form-row">
+              <div class="fg" style="flex:1">
+                <label class="fl">Mode Router Sistem</label>
+                <select class="fs" name="multi_router_mode" id="multi_router_mode_select" onchange="toggleMultiRouterUI()">
+                  <option value="active" <%= (settings.multi_router_mode === 'active' || !settings.multi_router_mode) ? 'selected' : '' %>>Aktif (Multiple Router Mode)</option>
+                  <option value="disabled" <%= settings.multi_router_mode === 'disabled' ? 'selected' : '' %>>Nonaktif (Single Router Mode)</option>
+                </select>
+                <div class="hint" style="margin-top:4px">Aktif: pelanggan diarahkan ke router masing-masing. Nonaktif: seluruh pelanggan menggunakan 1 router default.</div>
+              </div>
+              <div class="fg" id="default_router_div" style="flex:1; <%= (settings.multi_router_mode === 'disabled') ? '' : 'display:none' %>">
+                <label class="fl">Default Router ID <span style="color:var(--muted); font-weight:normal;">(Opsional)</span></label>
+                <input class="fc" type="number" name="default_router_id" id="default_router_id" value="<%= settings.default_router_id || '' %>" placeholder="Kosongkan untuk auto-detect" min="1">
+                <div class="hint" style="margin-top:4px">Jika kosong, sistem menggunakan router aktif pertama (ID terkecil).</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MikroTik Utama -->
+        <div class="section-card">
+          <div class="section-card-hd">
+            <h6><i class="bi bi-hdd-network"></i> Koneksi Router Utama (Default Fallback)</h6>
+            <a href="/admin/routers" class="btn btn-g btn-sm" style="text-decoration:none;"><i class="bi bi-hdd-stack"></i> Kelola Multi Router</a>
+          </div>
+          <div class="section-card-bd">
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">MikroTik IP / Host Domain</label>
+                <input class="fc" name="mikrotik_host" value="<%= settings.mikrotik_host || '' %>" placeholder="192.168.1.1 atau host.domain.com">
+              </div>
+              <div class="fg">
+                <label class="fl">MikroTik API Port</label>
+                <input class="fc" type="number" name="mikrotik_port" value="<%= settings.mikrotik_port || 8728 %>" placeholder="8728">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">API Username</label>
+                <input class="fc" name="mikrotik_user" value="<%= settings.mikrotik_user || '' %>" placeholder="admin">
+              </div>
+              <div class="fg">
+                <label class="fl">API Password</label>
+                <input class="fc" type="password" name="mikrotik_password" value="<%= settings.mikrotik_password || '' %>">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-save-footer">
+          <button type="submit" class="btn btn-p"><i class="bi bi-floppy-fill"></i> Simpan Pengaturan Jaringan</button>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 3: ACS TR-069                          -->
+      <!-- ========================================== -->
+      <div id="tab-acs" class="s-tab-pane">
+        <div class="section-card">
+          <div class="section-card-hd">
+            <h6><i class="bi bi-router"></i> Server ACS TR-069 (GenieACS / Built-in)</h6>
+            <a href="/admin/acs" class="btn btn-g btn-sm" style="text-decoration:none;"><i class="bi bi-box-arrow-up-right"></i> Buka ACS Pro</a>
+          </div>
+          <div class="section-card-bd">
+            <div class="fg" style="margin-bottom:16px; background:rgba(99,102,241,0.06); padding:14px; border-radius:10px; border:1px dashed rgba(99,102,241,0.3);">
+              <label class="fl" style="display:flex; align-items:center; gap:10px; font-weight:700; cursor:pointer; margin:0; font-size:14px;">
+                <input type="checkbox" name="use_builtin_acs" value="true" id="use_builtin_acs" <%= (settings.use_builtin_acs === true || settings.use_builtin_acs === 'true') ? 'checked' : '' %> onchange="toggleAcsFields()" style="width:18px;height:18px;">
+                Gunakan Built-in ACS Server (TR-069 Internal)
+              </label>
+              <div style="font-size:11px; color:var(--muted); margin-top:6px; padding-left:28px;">
+                Jika diaktifkan, aplikasi akan bertindak sebagai server ACS TR-069 sendiri (endpoint: <span class="mono" style="font-weight:700; color:var(--brand);">/acs</span>) tanpa perlu menginstal atau menghubungkan server GenieACS eksternal terpisah.
+              </div>
+            </div>
+
+            <!-- External GenieACS Fields -->
+            <div id="genieacs_external_fields" <% if (settings.use_builtin_acs === true || settings.use_builtin_acs === 'true') { %>style="display:none;"<% } %>>
+              <div class="fg">
+                <label class="fl">GenieACS API URL</label>
+                <input class="fc" name="genieacs_url" value="<%= settings.genieacs_url || '' %>" placeholder="http://192.168.8.89:7557">
+              </div>
+              <div class="form-row">
+                <div class="fg">
+                  <label class="fl">GenieACS Username</label>
+                  <input class="fc" name="genieacs_username" value="<%= settings.genieacs_username || '' %>">
+                </div>
+                <div class="fg">
+                  <label class="fl">GenieACS Password</label>
+                  <input class="fc" type="password" name="genieacs_password" value="<%= settings.genieacs_password || '' %>">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-save-footer">
+          <button type="submit" class="btn btn-p"><i class="bi bi-floppy-fill"></i> Simpan Pengaturan ACS</button>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 4: WHATSAPP & TELEGRAM                 -->
+      <!-- ========================================== -->
+      <div id="tab-bot" class="s-tab-pane">
+        <!-- WhatsApp Bot -->
+        <div class="section-card">
+          <div class="section-card-hd">
+            <h6><i class="bi bi-whatsapp" style="color:#25d366;"></i> Bot WhatsApp (Notifikasi & Tagihan)</h6>
+            <a href="/admin/whatsapp-chat" class="btn btn-g btn-sm" style="text-decoration:none;"><i class="bi bi-chat"></i> Status WA</a>
+          </div>
+          <div class="section-card-bd">
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Status Bot WhatsApp</label>
+                <select class="fs" name="whatsapp_enabled">
+                  <option value="true" <%= settings.whatsapp_enabled ? 'selected' : '' %>>Aktif</option>
+                  <option value="false" <%= !settings.whatsapp_enabled ? 'selected' : '' %>>Nonaktif</option>
+                </select>
+              </div>
+              <div class="fg">
+                <label class="fl">Jeda Antar Pesan Broadcast (Detik)</label>
+                <input class="fc" type="number" name="whatsapp_broadcast_delay" value="<%= settings.whatsapp_broadcast_delay || 2 %>" min="1" max="60">
+                <div style="font-size:10px; color:var(--muted); margin-top:4px">Rekomendasi minimal 2 detik agar terhindar dari pemblokiran spam oleh WhatsApp.</div>
+              </div>
+            </div>
+
+            <div class="fg">
+              <label class="fl">Nomor Admin WA (Pisahkan dengan koma jika lebih dari satu)</label>
+              <input class="fc" name="whatsapp_admin_numbers" value="<%= (Array.isArray(settings.whatsapp_admin_numbers) ? settings.whatsapp_admin_numbers : (typeof settings.whatsapp_admin_numbers === 'string' && settings.whatsapp_admin_numbers ? settings.whatsapp_admin_numbers.split(',').map(s => s.trim()).filter(Boolean) : [])).join(', ') %>" placeholder="6281xxx, 6282xxx">
+              <div style="font-size:10px; color:var(--muted); margin-top:4px">Nomor admin menerima notifikasi monitoring & status sistem. Nomor teknisi diambil dari menu <a href="/admin/technicians" style="color:var(--brand);font-weight:600">Data Teknisi</a>.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Telegram Bot -->
+        <div class="section-card">
+          <div class="section-card-hd">
+            <h6><i class="bi bi-telegram" style="color:#0088cc;"></i> Bot Telegram (Backup Notifikasi Admin)</h6>
+          </div>
+          <div class="section-card-bd">
             <div class="form-row">
               <div class="fg">
                 <label class="fl"><%= t('admin.settings.telegram.status', 'Status Bot Telegram') %></label>
@@ -125,310 +595,50 @@
           </div>
         </div>
 
-        <div class="card mb16">
-          <div class="card-hd"><h6><i class="bi bi-whatsapp"></i> <%= t('admin.settings.whatsapp.title', 'Pengaturan WhatsApp') %></h6></div>
-          <div class="card-bd settings-grid">
-        
-        <!-- General Info -->
-        <div>
-          <h6 style="font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px"><i class="bi bi-info-circle"></i> <%= t('admin.settings.app_info', 'Info Aplikasi') %></h6>
-          <div class="fg">
-            <label class="fl"><%= t('admin.settings.company_name', 'Nama Aplikasi / Perusahaan') %></label>
-            <input class="fc" name="company_header" value="<%= settings.company_header || '' %>">
-          </div>
-          <div class="fg">
-            <label class="fl">URL Publik Aplikasi (Public Base URL)</label>
-            <input class="fc" name="public_base_url" value="<%= settings.public_base_url || '' %>" placeholder="https://billing.alijayanet.net">
-            <div style="font-size:10px; color:var(--muted); margin-top:4px">Digunakan untuk menyusun tautan login pelanggan yang dikirim via WhatsApp. Contoh: <span class="mono">https://billing.alijayanet.net</span></div>
-          </div>
-          <div class="fg">
-            <label class="fl"><%= t('admin.settings.footer_info', 'Info Footer') %></label>
-            <input class="fc" name="footer_info" value="<%= settings.footer_info || '' %>">
-          </div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl"><%= t('admin.settings.owner_name', 'Nama Manajer / Owner') %></label>
-              <input class="fc" name="company_manager" value="<%= settings.company_manager || '' %>" placeholder="Admin Pusat">
-            </div>
-            <div class="fg">
-              <label class="fl"><%= t('admin.settings.primary_phone', 'Telepon Utama (CS)') %></label>
-              <input class="fc" name="company_phone" value="<%= settings.company_phone || '' %>" placeholder="081234567890">
-            </div>
-          </div>
-          <div class="fg">
-            <label class="fl"><%= t('admin.settings.company_email', 'Email Perusahaan') %></label>
-            <input class="fc" name="company_email" value="<%= settings.company_email || '' %>" placeholder="support@isp.com">
-          </div>
-          <div class="fg">
-            <label class="fl"><%= t('admin.settings.office_address', 'Alamat Kantor') %></label>
-            <input class="fc" name="company_address" value="<%= settings.company_address || '' %>" placeholder="Jl. Utama No. 123">
-          </div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl"><%= t('admin.settings.office_lat', 'Latitude Kantor') %></label>
-              <input class="fc" name="office_lat" value="<%= settings.office_lat || '' %>" placeholder="-6.xxx">
-            </div>
-            <div class="fg">
-              <label class="fl"><%= t('admin.settings.office_lng', 'Longitude Kantor') %></label>
-              <input class="fc" name="office_lng" value="<%= settings.office_lng || '' %>" placeholder="106.xxx">
-            </div>
-          <div class="hint" style="margin-top:6px;color:var(--muted)">
-            <i class="bi bi-info-circle"></i> Koordinat kantor digunakan untuk validasi lokasi absensi karyawan (geofencing)
-          </div>
-          <div class="form-row" style="margin-top:12px">
-            <div class="fg">
-              <label class="fl">
-                <i class="bi bi-shield-check"></i> Geofencing Absensi
-              </label>
-              <select class="fs" name="attendance_geofencing">
-                <option value="true" <%= settings.attendance_geofencing === 'true' || settings.attendance_geofencing === true ? 'selected' : '' %>>Aktif (Validasi Lokasi)</option>
-                <option value="false" <%= settings.attendance_geofencing === 'false' || settings.attendance_geofencing === false ? 'selected' : '' %>>Nonaktif (Bebas)</option>
-              </select>
-            </div>
-            <div class="fg">
-              <label class="fl">
-                <i class="bi bi-geo-alt"></i> Radius Absensi (meter)
-              </label>
-              <input type="number" class="fc" name="attendance_radius" value="<%= settings.attendance_radius || '100' %>" placeholder="100" min="10" max="1000">
-            </div>
-          </div>
-          <div class="hint" style="margin-top:6px;color:var(--warning)">
-            <i class="bi bi-exclamation-triangle"></i> <strong>Geofencing:</strong> Karyawan hanya bisa absen jika berada dalam radius yang ditentukan dari koordinat kantor. Nonaktifkan jika karyawan bekerja remote/lapangan.
-          </div>
-          </div>
-          <div class="fg">
-            <label class="fl"><%= t('admin.settings.operational_hours', 'Jam Operasional') %></label>
-            <input class="fc" name="operational_hours" value="<%= settings.operational_hours || '' %>" placeholder="Setiap Hari: 08.00 - 22.00 WIB">
-          </div>
-          <div class="fg" style="margin-top:15px; border-top: 1px dashed var(--border); padding-top: 15px;">
-            <label class="fl">Ganti Logo Aplikasi (Portal Pelanggan & Login)</label>
-            <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap">
-              <div style="flex: 1 1 200px">
-                <input class="fc" type="file" id="logo_upload_file" name="logo_file" accept="image/png,image/jpeg,image/jpg,image/webp">
-                <div style="font-size:10px; color:var(--muted); margin-top:4px">Format file: PNG/JPG/WebP. Ukuran maks 2MB. Logo akan langsung di-upload dan menimpa yang lama.</div>
-              </div>
-              <button class="btn btn-s" type="button" id="logo_upload_btn" style="height:38px"><i class="bi bi-upload"></i> Upload Logo</button>
-            </div>
-            <div style="margin-top:10px; display:flex; gap:12px; align-items:center;">
-              <div style="font-size:10px; color:var(--muted)">Logo Saat Ini:</div>
-              <img src="/img/logo.png?v=<%= Date.now() %>" alt="Current Logo" style="height:40px; object-fit:contain; background:rgba(255,255,255,0.05); border-radius:6px; padding:4px; border:1px solid var(--border)">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl"><%= t('admin.settings.server_port', 'Port Server') %></label>
-              <input class="fc" type="number" name="server_port" value="<%= settings.server_port || 3001 %>">
-            </div>
-            <div class="fg">
-              <label class="fl"><%= t('admin.settings.timezone', 'Zona Waktu') %></label>
-              <select class="fs" name="timezone">
-                <option value="Asia/Jakarta" <%= settings.timezone === 'Asia/Jakarta' ? 'selected' : '' %>>WIB (Asia/Jakarta)</option>
-                <option value="Asia/Makassar" <%= settings.timezone === 'Asia/Makassar' ? 'selected' : '' %>>WITA (Asia/Makassar)</option>
-                <option value="Asia/Jayapura" <%= settings.timezone === 'Asia/Jayapura' ? 'selected' : '' %>>WIT (Asia/Jayapura)</option>
-              </select>
-            </div>
-            <div class="fg">
-              <label class="fl"><%= t('admin.settings.customer_otp_login', 'Login OTP Pelanggan') %></label>
-              <select class="fs" name="login_otp_enabled">
-                <option value="true" <%= settings.login_otp_enabled ? 'selected' : '' %>><%= t('admin.settings.otp_enabled', 'Aktif (Kirim via WA)') %></option>
-                <option value="false" <%= !settings.login_otp_enabled ? 'selected' : '' %>><%= t('admin.settings.otp_disabled', 'Nonaktif (Langsung)') %></option>
-              </select>
-            </div>
-          </div>
-          <div class="hint" style="margin-top:6px;color:var(--warning)">
-            <i class="bi bi-info-circle"></i> <strong>Pembayaran Kolektor:</strong> Pengaturan approval pembayaran kolektor sekarang diatur per akun kolektor pada menu Manajemen Kolektor, bukan dari pengaturan global.
-          </div>
+        <div class="settings-save-footer">
+          <button type="submit" class="btn btn-p"><i class="bi bi-floppy-fill"></i> Simpan Pengaturan Bot</button>
         </div>
+      </div>
 
-        <!-- GenieACS & MikroTik -->
-        <div>
-          <h6 style="font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px"><i class="bi bi-router"></i> <%= t('admin.settings.external_api', 'API Eksternal') %></h6>
-          
-          <div class="fg" style="margin-bottom:16px; background:rgba(59,130,246,0.08); padding:12px; border-radius:8px; border:1px dashed rgba(59,130,246,0.3);">
-            <label class="fl" style="display:flex; align-items:center; gap:8px; font-weight:bold; cursor:pointer; margin:0;">
-              <input type="checkbox" name="use_builtin_acs" value="true" id="use_builtin_acs" <%= settings.use_builtin_acs ? 'checked' : '' %> onchange="toggleAcsFields()">
-              Gunakan Built-in ACS Server (TR-069)
-            </label>
-            <div style="font-size:10px; color:var(--muted); margin-top:4px; padding-left:20px;">
-              Jika diaktifkan, aplikasi akan bertindak sebagai server ACS TR-069 sendiri (endpoint: <span class="mono" style="font-weight:700;">/acs</span>) tanpa perlu server GenieACS terpisah.
-            </div>
+      <!-- ========================================== -->
+      <!-- TAB 5: PEMBAYARAN & QRIS                   -->
+      <!-- ========================================== -->
+      <div id="tab-payment" class="s-tab-pane">
+        <!-- Default Gateway Selector & Callback Info -->
+        <div class="section-card">
+          <div class="section-card-hd">
+            <h6><i class="bi bi-wallet2"></i> Gateway Pembayaran Utama & Callback Webhook</h6>
           </div>
-
-          <script>
-            function toggleAcsFields() {
-              const chk = document.getElementById('use_builtin_acs');
-              const fields = document.getElementById('genieacs_external_fields');
-              if (chk && fields) {
-                fields.style.display = chk.checked ? 'none' : 'block';
-              }
-            }
-          </script>
-
-          <div id="genieacs_external_fields" <% if (settings.use_builtin_acs) { %>style="display:none;"<% } %>>
-            <div class="fg">
-              <label class="fl">GenieACS API URL</label>
-              <input class="fc" name="genieacs_url" value="<%= settings.genieacs_url || '' %>" placeholder="http://192.168.8.89:7557">
-            </div>
+          <div class="section-card-bd">
             <div class="form-row">
               <div class="fg">
-                <label class="fl">GenieACS Username</label>
-                <input class="fc" name="genieacs_username" value="<%= settings.genieacs_username || '' %>">
+                <label class="fl">Default Payment Gateway Aktif</label>
+                <select class="fs" name="default_gateway">
+                  <option value="tripay" <%= settings.default_gateway === 'tripay' ? 'selected' : '' %>>Tripay</option>
+                  <option value="midtrans" <%= settings.default_gateway === 'midtrans' ? 'selected' : '' %>>Midtrans</option>
+                  <option value="xendit" <%= settings.default_gateway === 'xendit' ? 'selected' : '' %>>Xendit</option>
+                  <option value="duitku" <%= settings.default_gateway === 'duitku' ? 'selected' : '' %>>Duitku</option>
+                </select>
+                <div class="hint" style="margin-top:4px">Gateway yang diprioritaskan saat pelanggan melakukan pembayaran online.</div>
               </div>
               <div class="fg">
-                <label class="fl">GenieACS Password</label>
-                <input class="fc" type="password" name="genieacs_password" value="<%= settings.genieacs_password || '' %>">
+                <label class="fl">Link Callback Webhook (Salin ke Dashboard Gateway)</label>
+                <div style="display:flex;gap:8px">
+                  <input class="fc" id="webhook_url" readonly value="<%= (typeof paymentWebhookUrl !== 'undefined' && paymentWebhookUrl) ? paymentWebhookUrl : ('http://' + (settings.server_host || 'localhost') + ':' + (settings.server_port || 3001) + '/customer/payment/callback') %>">
+                  <button type="button" class="btn btn-g" onclick="copyWebhook()"><i class="bi bi-copy"></i></button>
+                </div>
+                <div style="font-size:10px; color:var(--muted); margin-top:4px">Gunakan URL ini di kolom Webhook / Notification URL pada Tripay, Midtrans, atau Duitku.</div>
               </div>
             </div>
           </div>
-
-          <!-- Multi-Router Mode Settings -->
-          <div class="form-row" style="margin-top:20px; background:rgba(34,197,94,0.08); padding:12px; border-radius:8px; border:1px dashed rgba(34,197,94,0.3);">
-            <div class="fg" style="flex:1">
-              <label class="fl"><i class="bi bi-shuffle"></i> Mode Multi-Router</label>
-              <select class="fs" name="multi_router_mode" id="multi_router_mode_select" onchange="toggleMultiRouterUI()">
-                <option value="active" <%= (settings.multi_router_mode === 'active' || !settings.multi_router_mode) ? 'selected' : '' %>>Aktif (Multiple Router)</option>
-                <option value="disabled" <%= settings.multi_router_mode === 'disabled' ? 'selected' : '' %>>Nonaktif (Single Router Mode)</option>
-              </select>
-              <div class="hint">Pilih mode operasional MikroTik: Aktif untuk multi-router, Nonaktif untuk single router dengan fallback otomatis</div>
-            </div>
-            <div class="fg" id="default_router_div" style="flex:1; <%= (settings.multi_router_mode === 'disabled') ? '' : 'display:none' %>">
-              <label class="fl">Default Router ID <span style="color:var(--muted); font-weight:normal;">(Opsional)</span></label>
-              <input class="fc" type="number" name="default_router_id" id="default_router_id" value="<%= settings.default_router_id || '' %>" placeholder="Kosongkan untuk auto-detect" min="1">
-              <div class="hint">Opsional. Jika kosong, sistem auto-detect router pertama (ID terkecil). Jika diisi, gunakan nilai ini.</div>
-            </div>
-          </div>
-
-          <script>
-            function toggleMultiRouterUI() {
-              const mode = document.getElementById('multi_router_mode_select')?.value || 'active';
-              const div = document.getElementById('default_router_div');
-              if (div) {
-                div.style.display = (mode === 'disabled') ? 'block' : 'none';
-              }
-            }
-          </script>
-
-          <div class="form-row" style="margin-top:20px">
-            <div class="fg">
-              <label class="fl">MikroTik IP / Host</label>
-              <input class="fc" name="mikrotik_host" value="<%= settings.mikrotik_host || '' %>" placeholder="192.168.1.1">
-            </div>
-            <div class="fg">
-              <label class="fl">MikroTik API Port</label>
-              <input class="fc" type="number" name="mikrotik_port" value="<%= settings.mikrotik_port || 8728 %>" placeholder="8728">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl">MikroTik API User</label>
-              <input class="fc" name="mikrotik_user" value="<%= settings.mikrotik_user || '' %>">
-            </div>
-            <div class="fg">
-              <label class="fl">MikroTik API Password</label>
-              <input class="fc" type="password" name="mikrotik_password" value="<%= settings.mikrotik_password || '' %>">
-            </div>
-          </div>
-
-          <div class="form-row" style="margin-top:20px">
-            <div class="fg">
-              <label class="fl">Digiflazz Username</label>
-              <input class="fc" name="digiflazz_username" value="<%= settings.digiflazz_username || '' %>" placeholder="username digiflazz">
-            </div>
-            <div class="fg">
-              <label class="fl">Digiflazz API Key</label>
-              <input class="fc" type="password" name="digiflazz_api_key" value="<%= settings.digiflazz_api_key || '' %>" placeholder="api key digiflazz">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl">Digiflazz Webhook Secret</label>
-              <input class="fc" name="digiflazz_webhook_secret" value="<%= settings.digiflazz_webhook_secret || '' %>" placeholder="secret untuk verifikasi webhook">
-              <div style="font-size:10px; color:var(--muted); margin-top:4px">Header yang dicek: <span class="mono">X-Hub-Signature</span> (HMAC-SHA1) dan event di <span class="mono">X-Digiflazz-Event</span>.</div>
-            </div>
-            <div class="fg">
-              <label class="fl">Digiflazz Webhook ID (Opsional)</label>
-              <input class="fc" name="digiflazz_webhook_id" value="<%= settings.digiflazz_webhook_id || '' %>" placeholder="contoh: ABC123">
-              <div style="font-size:10px; color:var(--muted); margin-top:4px">Dipakai untuk validasi ping event (hook_id). Tidak wajib untuk transaksi.</div>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl">Webhook URL</label>
-              <div class="hint"><span class="mono"><%= (typeof digiflazzWebhookUrl !== 'undefined' && digiflazzWebhookUrl) ? digiflazzWebhookUrl : ('http://' + (settings.server_host || 'localhost') + ':' + (settings.server_port || 3001) + '/webhook/digiflazz') %></span></div>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl">Digiflazz Markup (Rp)</label>
-              <input class="fc" type="number" name="digiflazz_markup" value="<%= settings.digiflazz_markup || 0 %>" min="0">
-              <div style="font-size:10px; color:var(--muted); margin-top:4px">Dipakai saat Sync Produk: harga jual = modal + markup.</div>
-            </div>
-            <div class="fg">
-              <label class="fl">Halaman Admin Digiflazz</label>
-              <div class="hint"><a href="/admin/digiflazz" style="color:var(--brand);font-weight:700;text-decoration:none">Buka Dashboard Digiflazz</a></div>
-            </div>
-          </div>
         </div>
 
-        <!-- Admin Auth -->
-        <div>
-          <h6 style="font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px"><i class="bi bi-shield-lock"></i> Kredensial Admin</h6>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl">Username Admin</label>
-              <input class="fc" name="admin_username" value="<%= settings.admin_username || '' %>">
-            </div>
-            <div class="fg">
-              <label class="fl">Password Admin</label>
-              <input class="fc" type="password" name="admin_password" value="<%= settings.admin_password || '' %>">
-            </div>
+        <!-- QRIS Statis -->
+        <div class="section-card">
+          <div class="section-card-hd">
+            <h6><i class="bi bi-qr-code-scan"></i> QRIS Statis & Dinamis (Semi-Otomatis)</h6>
           </div>
-          <div class="fg">
-            <label class="fl">Admin API Key (Untuk akses luar)</label>
-            <input class="fc" name="admin_api_key" value="<%= settings.admin_api_key || '' %>">
-          </div>
-        </div>
-
-        <!-- WhatsApp -->
-        <div>
-          <h6 style="font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px"><i class="bi bi-whatsapp"></i> Integrasi WhatsApp</h6>
-          <div class="fg">
-            <label class="fl">Enable WhatsApp Bot</label>
-            <select class="fs" name="whatsapp_enabled">
-              <option value="true" <%= settings.whatsapp_enabled ? 'selected' : '' %>>Aktif</option>
-              <option value="false" <%= !settings.whatsapp_enabled ? 'selected' : '' %>>Nonaktif</option>
-            </select>
-          </div>
-          <div class="fg">
-            <label class="fl">Nomor Admin WA (Pisahkan dengan koma)</label>
-            <input class="fc" name="whatsapp_admin_numbers" value="<%= (settings.whatsapp_admin_numbers || []).join(', ') %>" placeholder="6281xxx, 6282xxx">
-            <div style="font-size:10px; color:var(--muted); margin-top:4px">Nomor admin akan menerima notifikasi monitoring sistem. Nomor teknisi diambil otomatis dari <a href="/admin/technicians" style="color:var(--brand);font-weight:600">Data Teknisi</a>.</div>
-          </div>
-          <div class="fg">
-            <label class="fl">Jeda Antar Pesan Broadcast (Detik)</label>
-            <input class="fc" type="number" name="whatsapp_broadcast_delay" value="<%= settings.whatsapp_broadcast_delay || 2 %>" min="1" max="60">
-            <div style="font-size:10px; color:var(--muted); margin-top:4px">Rekomendasi: Minimal 2 detik agar tidak terdeteksi spam oleh WhatsApp.</div>
-          </div>
-        </div>
-
-        <!-- Payment Gateway -->
-        <div class="settings-span-2">
-          <h6 style="font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px"><i class="bi bi-wallet2"></i> Pengaturan Payment Gateway</h6>
-          
-          <div class="form-row3" style="margin-bottom: 20px;">
-            <div class="fg">
-              <label class="fl">Default Gateway</label>
-              <select class="fs" name="default_gateway">
-                <option value="tripay" <%= settings.default_gateway === 'tripay' ? 'selected' : '' %>>Tripay</option>
-                <option value="midtrans" <%= settings.default_gateway === 'midtrans' ? 'selected' : '' %>>Midtrans</option>
-                <option value="xendit" <%= settings.default_gateway === 'xendit' ? 'selected' : '' %>>Xendit</option>
-                <option value="duitku" <%= settings.default_gateway === 'duitku' ? 'selected' : '' %>>Duitku</option>
-              </select>
-            </div>
-          </div>
-
-          <div style="background: rgba(0,0,0,0.02); padding: 15px; border-radius: 12px; margin-bottom: 15px;">
-            <h6 style="font-size:12px; margin-bottom: 10px;">QRIS Statis (Semi-Otomatis)</h6>
+          <div class="section-card-bd">
             <div class="form-row3">
               <div class="fg">
                 <label class="fl">Status QRIS Statis</label>
@@ -437,106 +647,37 @@
                   <option value="false" <%= (settings.qris_static_enabled === false || settings.qris_static_enabled === 'false') ? 'selected' : '' %>>Nonaktif</option>
                 </select>
               </div>
-              <div class="fg">
-                <label class="fl">QRIS Static QR URL</label>
-                <input class="fc" name="qris_static_qr_url" value="<%= settings.qris_static_qr_url || '' %>" placeholder="https://.../qris.png atau link QRIS">
-              </div>
-              <div class="fg">
-                <label class="fl">Catatan</label>
-                <input class="fc" value="Portal pelanggan akan menampilkan QRIS + nominal unik (kode bayar)." readonly>
+              <div class="fg" style="flex:2">
+                <label class="fl">URL Gambar QRIS</label>
+                <input class="fc" name="qris_static_qr_url" value="<%= settings.qris_static_qr_url || '' %>" placeholder="https://.../qris.png atau link gambar QRIS">
               </div>
             </div>
+
             <div class="fg" style="margin-top:10px">
-              <label class="fl">QRIS Static Payload (String)</label>
-              <textarea class="fc" name="qris_static_payload" rows="3" placeholder="000201010211...6304XXXX"><%= settings.qris_static_payload || '' %></textarea>
-              <div style="font-size:10px; color:var(--muted); margin-top:4px">Jika diisi, sistem akan membuat QRIS dinamis per transaksi (nominal langsung terisi saat scan). Jika kosong, sistem pakai URL gambar seperti biasa.</div>
+              <label class="fl">QRIS Static Payload (String EMVCo)</label>
+              <textarea class="fc" name="qris_static_payload" rows="2" placeholder="000201010211...6304XXXX"><%= settings.qris_static_payload || '' %></textarea>
+              <div style="font-size:10px; color:var(--muted); margin-top:4px">Jika diisi, sistem dapat mencetak QRIS dinamis per transaksi dengan nominal pas. Jika kosong, sistem menampilkan gambar di atas.</div>
             </div>
-            <div style="margin-top:10px">
-              <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap">
-                <div class="fg" style="min-width:260px; flex: 1 1 260px">
-                  <label class="fl">Upload Gambar QRIS (opsional)</label>
+
+            <div style="margin-top:12px; display:flex; gap:16px; align-items:center; flex-wrap:wrap">
+              <div class="fg" style="min-width:260px; flex:1;">
+                <label class="fl">Upload File Gambar QRIS</label>
+                <div style="display:flex; gap:8px">
                   <input class="fc" type="file" id="qris_upload_file" name="qris_file" accept="image/png,image/jpeg,image/jpg,image/webp">
-                  <div style="font-size:10px; color:var(--muted); margin-top:4px">Jika di-upload, sistem akan menyimpan file dan otomatis mengisi URL QRIS.</div>
+                  <button class="btn btn-s" type="button" id="qris_upload_btn" style="height:38px"><i class="bi bi-upload"></i> Upload</button>
                 </div>
-                <button class="btn btn-s" type="button" id="qris_upload_btn" style="height:38px"><i class="bi bi-upload"></i> Upload</button>
               </div>
+              <% if (settings.qris_static_qr_url) { %>
+                <div style="display:flex; gap:10px; align-items:center;">
+                  <img src="<%= settings.qris_static_qr_url %>" alt="QRIS" style="height:60px; width:60px; object-fit:contain; background:#fff; border-radius:8px; padding:4px; border:1px solid var(--border)">
+                  <div style="font-size:11px; color:var(--muted)">Preview QRIS Aktif</div>
+                </div>
+              <% } %>
             </div>
-            <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
-            <script>
-              (function () {
-                const fileInput = document.getElementById('qris_upload_file');
-                const btn = document.getElementById('qris_upload_btn');
-                if (!fileInput || !btn) return;
 
-                const normalizePayload = (raw) => {
-                  let s = String(raw || '').replace(/[\r\n\t]+/g, '').trim();
-                  const idx = s.indexOf('000201');
-                  if (idx > 0) s = s.slice(idx);
-                  const lastCrc = s.lastIndexOf('6304');
-                  if (lastCrc >= 0 && s.length >= lastCrc + 8) s = s.slice(0, lastCrc + 8);
-                  return s;
-                };
-
-                const decodeQrPayloadInBrowser = async (file) => {
-                  try {
-                    if (!window.jsQR) return '';
-                    const url = URL.createObjectURL(file);
-                    const img = new Image();
-                    img.decoding = 'async';
-                    img.src = url;
-                    await new Promise((resolve, reject) => {
-                      img.onload = () => resolve();
-                      img.onerror = () => reject(new Error('Gagal membaca gambar'));
-                    });
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                    if (!ctx) return '';
-                    canvas.width = img.naturalWidth || img.width || 0;
-                    canvas.height = img.naturalHeight || img.height || 0;
-                    if (!canvas.width || !canvas.height) return '';
-                    ctx.drawImage(img, 0, 0);
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const res = window.jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: 'attemptBoth' });
-                    URL.revokeObjectURL(url);
-                    if (!res || !res.data) return '';
-                    const s = normalizePayload(res.data);
-                    return s.startsWith('000201') ? s : '';
-                  } catch {
-                    return '';
-                  }
-                };
-
-                btn.addEventListener('click', async () => {
-                  const f = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
-                  if (!f) return;
-                  const fd = new FormData();
-                  fd.append('qris_file', f);
-                  const payload = await decodeQrPayloadInBrowser(f);
-                  if (payload) fd.append('qris_payload', payload);
-                  btn.disabled = true;
-                  try {
-                    const r = await fetch('/admin/settings/qris-upload', { method: 'POST', body: fd, credentials: 'same-origin' });
-                    if (!r.ok) throw new Error('Upload gagal');
-                    window.location.href = '/admin/settings';
-                  } catch (e) {
-                    window.location.href = '/admin/settings';
-                  } finally {
-                    btn.disabled = false;
-                  }
-                });
-              })();
-            </script>
-            <% if (settings.qris_static_qr_url) { %>
-              <div style="margin-top:10px; display:flex; gap:12px; align-items:center; flex-wrap:wrap">
-                <div style="font-size:10px; color:var(--muted)">Preview:</div>
-                <img src="<%= settings.qris_static_qr_url %>" alt="QRIS" style="height:72px; width:72px; object-fit:contain; background:#fff; border-radius:12px; padding:8px; border:1px solid rgba(0,0,0,0.08)">
-                <div style="font-size:10px; color:var(--muted)">Gunakan tombol <span style="font-weight:700">QR</span> di menu Billing untuk membuat nominal unik per invoice.</div>
-              </div>
-            <% } %>
-
-            <!-- Webhook Integration for MacroDroid -->
-            <div style="margin-top: 15px; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 15px;">
-              <h6 style="font-size:11px; margin-bottom: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;"><i class="bi bi-phone"></i> Webhook Notifikasi SMS/E-Wallet (MacroDroid)</h6>
+            <!-- MacroDroid Webhook Integration -->
+            <div style="margin-top:16px; border-top:1px dashed var(--border); padding-top:14px;">
+              <h6 style="font-size:12px; margin-bottom:8px; color:var(--text); font-weight:700;"><i class="bi bi-phone"></i> Webhook Notifikasi E-Wallet / SMS (MacroDroid)</h6>
               <div class="fg">
                 <label class="fl">Link Webhook MacroDroid (URL POST)</label>
                 <div style="display:flex;gap:8px">
@@ -546,145 +687,295 @@
                     const macroWebhookUrl = base ? (base + '/api/webhook/v1/payment-notif?secret_key=' + secret) : '/api/webhook/v1/payment-notif?secret_key=' + secret;
                   %>
                   <input class="fc" id="macro_webhook_url" readonly value="<%= macroWebhookUrl %>">
-                  <button type="button" class="btn btn-g" onclick="copyInput('macro_webhook_url', 'Link Webhook')"><i class="bi bi-copy"></i></button>
+                  <button type="button" class="btn btn-g" onclick="copyInput('macro_webhook_url', 'Link Webhook MacroDroid')"><i class="bi bi-copy"></i></button>
                 </div>
-                <div style="font-size:10px; color:var(--muted); margin-top:4px">Kirimkan request HTTP POST ke URL ini dari MacroDroid Anda (sudah termasuk kunci rahasia).</div>
+                <div style="font-size:10px; color:var(--muted); margin-top:4px">Kirimkan request HTTP POST ke URL ini dari aplikasi MacroDroid HP Anda untuk pencatatan otomatis transaksi DANA, GoPay, OVO, dll.</div>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Tripay Section -->
-          <div style="background: rgba(0,0,0,0.02); padding: 15px; border-radius: 12px; margin-bottom: 15px;">
-            <h6 style="font-size:12px; margin-bottom: 10px;">Tripay Configuration</h6>
-            <div class="form-row3">
-              <div class="fg">
-                <label class="fl">Status Tripay</label>
-                <select class="fs" name="tripay_enabled">
-                  <option value="true" <%= settings.tripay_enabled === true ? 'selected' : '' %>>Aktif</option>
-                  <option value="false" <%= settings.tripay_enabled === false ? 'selected' : '' %>>Nonaktif</option>
-                </select>
-              </div>
-              <div class="fg">
-                <label class="fl">Tripay API Key</label>
-                <input class="fc" name="tripay_api_key" value="<%= settings.tripay_api_key || '' %>" type="password">
-              </div>
-              <div class="fg">
-                <label class="fl">Tripay Private Key</label>
-                <input class="fc" name="tripay_private_key" value="<%= settings.tripay_private_key || '' %>" type="password">
-              </div>
-            </div>
-            <div class="form-row3">
-              <div class="fg">
-                <label class="fl">Tripay Merchant Code</label>
-                <input class="fc" name="tripay_merchant_code" value="<%= settings.tripay_merchant_code || '' %>" placeholder="Txxxx">
-              </div>
-              <div class="fg">
-                <label class="fl">Tripay Mode</label>
-                <select class="fs" name="tripay_mode">
-                  <option value="sandbox" <%= settings.tripay_mode === 'sandbox' ? 'selected' : '' %>>Sandbox</option>
-                  <option value="live" <%= settings.tripay_mode === 'live' ? 'selected' : '' %>>Live</option>
-                </select>
-              </div>
-            </div>
+        <!-- Otomatis Payment Gateways: Tripay, Midtrans, Xendit, Duitku -->
+        <div class="section-card">
+          <div class="section-card-hd">
+            <h6><i class="bi bi-credit-card"></i> Konfigurasi Akun Payment Gateway</h6>
           </div>
+          <div class="section-card-bd">
 
-          <!-- Midtrans Section -->
-          <div style="background: rgba(0,0,0,0.02); padding: 15px; border-radius: 12px;">
-            <h6 style="font-size:12px; margin-bottom: 10px;">Midtrans Configuration</h6>
-            <div class="form-row3">
-              <div class="fg">
-                <label class="fl">Status Midtrans</label>
-                <select class="fs" name="midtrans_enabled">
-                  <option value="true" <%= settings.midtrans_enabled === true ? 'selected' : '' %>>Aktif</option>
-                  <option value="false" <%= settings.midtrans_enabled === false ? 'selected' : '' %>>Nonaktif</option>
-                </select>
+            <!-- Tripay -->
+            <div class="gateway-subcard">
+              <div class="gateway-subcard-hd">
+                <span class="gateway-subcard-title"><i class="bi bi-lightning-fill text-warning"></i> Tripay Payment Gateway</span>
+                <span class="badge <%= settings.tripay_enabled ? 's' : 'w' %>"><%= settings.tripay_enabled ? 'Aktif' : 'Nonaktif' %></span>
               </div>
-              <div class="fg">
-                <label class="fl">Midtrans Server Key</label>
-                <input class="fc" name="midtrans_server_key" value="<%= settings.midtrans_server_key || '' %>" type="password">
+              <div class="form-row3">
+                <div class="fg">
+                  <label class="fl">Status Tripay</label>
+                  <select class="fs" name="tripay_enabled">
+                    <option value="true" <%= settings.tripay_enabled === true ? 'selected' : '' %>>Aktif</option>
+                    <option value="false" <%= settings.tripay_enabled === false ? 'selected' : '' %>>Nonaktif</option>
+                  </select>
+                </div>
+                <div class="fg">
+                  <label class="fl">Tripay Mode</label>
+                  <select class="fs" name="tripay_mode">
+                    <option value="sandbox" <%= settings.tripay_mode === 'sandbox' ? 'selected' : '' %>>Sandbox</option>
+                    <option value="live" <%= settings.tripay_mode === 'live' ? 'selected' : '' %>>Live</option>
+                  </select>
+                </div>
+                <div class="fg">
+                  <label class="fl">Merchant Code</label>
+                  <input class="fc" name="tripay_merchant_code" value="<%= settings.tripay_merchant_code || '' %>" placeholder="Txxxx">
+                </div>
               </div>
-              <div class="fg">
-                <label class="fl">Midtrans Mode</label>
-                <select class="fs" name="midtrans_mode">
-                  <option value="sandbox" <%= settings.midtrans_mode === 'sandbox' ? 'selected' : '' %>>Sandbox</option>
-                  <option value="live" <%= settings.midtrans_mode === 'live' ? 'selected' : '' %>>Live</option>
-                </select>
+              <div class="form-row">
+                <div class="fg">
+                  <label class="fl">API Key</label>
+                  <input class="fc" name="tripay_api_key" value="<%= settings.tripay_api_key || '' %>" type="password">
+                </div>
+                <div class="fg">
+                  <label class="fl">Private Key</label>
+                  <input class="fc" name="tripay_private_key" value="<%= settings.tripay_private_key || '' %>" type="password">
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Xendit Section -->
-          <div style="background: rgba(0,0,0,0.02); padding: 15px; border-radius: 12px; margin-top: 15px;">
-            <h6 style="font-size:12px; margin-bottom: 10px;">Xendit Configuration</h6>
-            <div class="form-row2">
-              <div class="fg">
-                <label class="fl">Status Xendit</label>
-                <select class="fs" name="xendit_enabled">
-                  <option value="true" <%= settings.xendit_enabled === true ? 'selected' : '' %>>Aktif</option>
-                  <option value="false" <%= settings.xendit_enabled === false ? 'selected' : '' %>>Nonaktif</option>
-                </select>
+            <!-- Midtrans -->
+            <div class="gateway-subcard">
+              <div class="gateway-subcard-hd">
+                <span class="gateway-subcard-title"><i class="bi bi-credit-card-fill text-primary"></i> Midtrans Payment Gateway</span>
+                <span class="badge <%= settings.midtrans_enabled ? 's' : 'w' %>"><%= settings.midtrans_enabled ? 'Aktif' : 'Nonaktif' %></span>
               </div>
-              <div class="fg">
-                <label class="fl">Xendit Secret API Key</label>
-                <input class="fc" name="xendit_api_key" value="<%= settings.xendit_api_key || '' %>" type="password" placeholder="xnd_development_...">
+              <div class="form-row3">
+                <div class="fg">
+                  <label class="fl">Status Midtrans</label>
+                  <select class="fs" name="midtrans_enabled">
+                    <option value="true" <%= settings.midtrans_enabled === true ? 'selected' : '' %>>Aktif</option>
+                    <option value="false" <%= settings.midtrans_enabled === false ? 'selected' : '' %>>Nonaktif</option>
+                  </select>
+                </div>
+                <div class="fg">
+                  <label class="fl">Midtrans Mode</label>
+                  <select class="fs" name="midtrans_mode">
+                    <option value="sandbox" <%= settings.midtrans_mode === 'sandbox' ? 'selected' : '' %>>Sandbox</option>
+                    <option value="live" <%= settings.midtrans_mode === 'live' ? 'selected' : '' %>>Live</option>
+                  </select>
+                </div>
+                <div class="fg">
+                  <label class="fl">Server Key</label>
+                  <input class="fc" name="midtrans_server_key" value="<%= settings.midtrans_server_key || '' %>" type="password">
+                </div>
               </div>
             </div>
-            <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">Xendit menggunakan callback token yang disetting di dashboard Xendit.</div>
-          </div>
 
-          <!-- Duitku Section -->
-          <div style="background: rgba(0,0,0,0.02); padding: 15px; border-radius: 12px; margin-top: 15px;">
-            <h6 style="font-size:12px; margin-bottom: 10px;">Duitku Configuration</h6>
-            <div class="form-row3">
-              <div class="fg">
-                <label class="fl">Status Duitku</label>
-                <select class="fs" name="duitku_enabled">
-                  <option value="true" <%= settings.duitku_enabled === true ? 'selected' : '' %>>Aktif</option>
-                  <option value="false" <%= settings.duitku_enabled === false ? 'selected' : '' %>>Nonaktif</option>
-                </select>
+            <!-- Xendit -->
+            <div class="gateway-subcard">
+              <div class="gateway-subcard-hd">
+                <span class="gateway-subcard-title"><i class="bi bi-shield-shaded text-info"></i> Xendit Payment Gateway</span>
+                <span class="badge <%= settings.xendit_enabled ? 's' : 'w' %>"><%= settings.xendit_enabled ? 'Aktif' : 'Nonaktif' %></span>
               </div>
-              <div class="fg">
-                <label class="fl">Duitku Merchant Code</label>
-                <input class="fc" name="duitku_merchant_code" value="<%= settings.duitku_merchant_code || '' %>" placeholder="Dxxxx">
+              <div class="form-row">
+                <div class="fg">
+                  <label class="fl">Status Xendit</label>
+                  <select class="fs" name="xendit_enabled">
+                    <option value="true" <%= settings.xendit_enabled === true ? 'selected' : '' %>>Aktif</option>
+                    <option value="false" <%= settings.xendit_enabled === false ? 'selected' : '' %>>Nonaktif</option>
+                  </select>
+                </div>
+                <div class="fg">
+                  <label class="fl">Secret API Key</label>
+                  <input class="fc" name="xendit_api_key" value="<%= settings.xendit_api_key || '' %>" type="password" placeholder="xnd_development_...">
+                </div>
+              </div>
+            </div>
+
+            <!-- Duitku -->
+            <div class="gateway-subcard">
+              <div class="gateway-subcard-hd">
+                <span class="gateway-subcard-title"><i class="bi bi-cash-coin text-success"></i> Duitku Payment Gateway</span>
+                <span class="badge <%= settings.duitku_enabled ? 's' : 'w' %>"><%= settings.duitku_enabled ? 'Aktif' : 'Nonaktif' %></span>
+              </div>
+              <div class="form-row3">
+                <div class="fg">
+                  <label class="fl">Status Duitku</label>
+                  <select class="fs" name="duitku_enabled">
+                    <option value="true" <%= settings.duitku_enabled === true ? 'selected' : '' %>>Aktif</option>
+                    <option value="false" <%= settings.duitku_enabled === false ? 'selected' : '' %>>Nonaktif</option>
+                  </select>
+                </div>
+                <div class="fg">
+                  <label class="fl">Duitku Mode</label>
+                  <select class="fs" name="duitku_mode">
+                    <option value="sandbox" <%= settings.duitku_mode === 'sandbox' ? 'selected' : '' %>>Sandbox</option>
+                    <option value="live" <%= settings.duitku_mode === 'live' ? 'selected' : '' %>>Live</option>
+                  </select>
+                </div>
+                <div class="fg">
+                  <label class="fl">Merchant Code</label>
+                  <input class="fc" name="duitku_merchant_code" value="<%= settings.duitku_merchant_code || '' %>" placeholder="Dxxxx">
+                </div>
               </div>
               <div class="fg">
                 <label class="fl">Duitku API Key</label>
                 <input class="fc" name="duitku_api_key" value="<%= settings.duitku_api_key || '' %>" type="password">
               </div>
             </div>
-            <div class="form-row2">
+
+          </div>
+        </div>
+
+        <div class="settings-save-footer">
+          <button type="submit" class="btn btn-p"><i class="bi bi-floppy-fill"></i> Simpan Pengaturan Pembayaran</button>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 6: DIGIFLAZZ & PPOB                    -->
+      <!-- ========================================== -->
+      <div id="tab-digiflazz" class="s-tab-pane">
+        <div class="section-card">
+          <div class="section-card-hd">
+            <h6><i class="bi bi-lightning-charge-fill" style="color:#f59e0b;"></i> Integrasi Digiflazz (Pulsa, PLN, Paket Data, Game)</h6>
+            <a href="/admin/digiflazz" class="btn btn-g btn-sm" style="text-decoration:none;"><i class="bi bi-box-arrow-up-right"></i> Buka Dashboard Digiflazz</a>
+          </div>
+          <div class="section-card-bd">
+            <div class="form-row">
               <div class="fg">
-                <label class="fl">Duitku Mode</label>
-                <select class="fs" name="duitku_mode">
-                  <option value="sandbox" <%= settings.duitku_mode === 'sandbox' ? 'selected' : '' %>>Sandbox</option>
-                  <option value="live" <%= settings.duitku_mode === 'live' ? 'selected' : '' %>>Live</option>
-                </select>
+                <label class="fl">Digiflazz Username</label>
+                <input class="fc" name="digiflazz_username" value="<%= settings.digiflazz_username || '' %>" placeholder="username akun digiflazz">
+              </div>
+              <div class="fg">
+                <label class="fl">Digiflazz API Key</label>
+                <input class="fc" type="password" name="digiflazz_api_key" value="<%= settings.digiflazz_api_key || '' %>" placeholder="api key digiflazz">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Digiflazz Webhook Secret</label>
+                <input class="fc" name="digiflazz_webhook_secret" value="<%= settings.digiflazz_webhook_secret || '' %>" placeholder="secret untuk verifikasi webhook">
+                <div style="font-size:10px; color:var(--muted); margin-top:4px">Digunakan untuk verifikasi signature <span class="mono">X-Hub-Signature</span> (HMAC-SHA1).</div>
+              </div>
+              <div class="fg">
+                <label class="fl">Digiflazz Webhook ID (Opsional)</label>
+                <input class="fc" name="digiflazz_webhook_id" value="<%= settings.digiflazz_webhook_id || '' %>" placeholder="contoh: ABC123">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Webhook URL untuk Digiflazz</label>
+                <div class="hint"><span class="mono"><%= (typeof digiflazzWebhookUrl !== 'undefined' && digiflazzWebhookUrl) ? digiflazzWebhookUrl : ('http://' + (settings.server_host || 'localhost') + ':' + (settings.server_port || 3001) + '/webhook/digiflazz') %></span></div>
+              </div>
+              <div class="fg">
+                <label class="fl">Keuntungan / Markup Harga Jual (Rp)</label>
+                <input class="fc" type="number" name="digiflazz_markup" value="<%= settings.digiflazz_markup || 0 %>" min="0">
+                <div style="font-size:10px; color:var(--muted); margin-top:4px">Diterapkan otomatis saat sync produk: Harga Jual = Harga Modal + Markup.</div>
               </div>
             </div>
           </div>
-
-          <div class="fg" style="margin-top: 15px;">
-            <label class="fl">Link Webhook (Copy ke Dashboard Gateway)</label>
-            <div style="display:flex;gap:8px">
-              <input class="fc" id="webhook_url" readonly value="<%= (typeof paymentWebhookUrl !== 'undefined' && paymentWebhookUrl) ? paymentWebhookUrl : ('http://' + (settings.server_host || 'localhost') + ':' + (settings.server_port || 3001) + '/customer/payment/callback') %>">
-              <button type="button" class="btn btn-g" onclick="copyWebhook()"><i class="bi bi-copy"></i></button>
-            </div>
-            <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">Gunakan link ini untuk kolom Webhook URL di Tripay atau Midtrans Notification URL.</div>
-          </div>
         </div>
 
+        <div class="settings-save-footer">
+          <button type="submit" class="btn btn-p"><i class="bi bi-floppy-fill"></i> Simpan Pengaturan Digiflazz</button>
+        </div>
       </div>
-      
-          <div class="card-bd" style="border-top:1px solid var(--border);padding-top:20px;text-align:right">
-            <button type="submit" class="btn btn-p"><i class="bi bi-save"></i> Simpan Pengaturan</button>
+
+      <!-- ========================================== -->
+      <!-- TAB 7: KEAMANAN ADMIN                      -->
+      <!-- ========================================== -->
+      <div id="tab-security" class="s-tab-pane">
+        <div class="section-card">
+          <div class="section-card-hd">
+            <h6><i class="bi bi-shield-lock-fill"></i> Kredensial Administrator & API Key</h6>
+          </div>
+          <div class="section-card-bd">
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Username Login Admin</label>
+                <input class="fc" name="admin_username" value="<%= settings.admin_username || '' %>">
+              </div>
+              <div class="fg">
+                <label class="fl">Password Login Admin</label>
+                <input class="fc" type="password" name="admin_password" value="<%= settings.admin_password || '' %>">
+              </div>
+            </div>
+
+            <div class="fg" style="margin-top:10px">
+              <label class="fl">Admin API Key (Untuk Integrasi Luar / Skrip External)</label>
+              <input class="fc" name="admin_api_key" value="<%= settings.admin_api_key || '' %>">
+              <div style="font-size:10px; color:var(--muted); margin-top:4px">Jangan bagikan API Key ini kepada pihak yang tidak berwenang.</div>
+            </div>
           </div>
         </div>
+
+        <div class="settings-save-footer">
+          <button type="submit" class="btn btn-p"><i class="bi bi-floppy-fill"></i> Simpan Pengaturan Keamanan</button>
+        </div>
+      </div>
+
     </form>
     <% } %>
+
   </div>
 </div>
 
+<script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
+// Tab Switching System with URL Hash Support
+function switchSettingsTab(tabId, btn) {
+  document.querySelectorAll('.s-tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.s-tab-pane').forEach(p => p.classList.remove('active'));
+  
+  if (btn) {
+    btn.classList.add('active');
+  } else {
+    const matchedBtn = document.querySelector(`.s-tab-btn[data-tab="${tabId}"]`);
+    if (matchedBtn) matchedBtn.classList.add('active');
+  }
+  
+  const target = document.getElementById(tabId);
+  if (target) target.classList.add('active');
+  
+  // Update URL hash and hidden form input
+  const hashName = tabId.replace('tab-', '');
+  const activeInput = document.getElementById('active_tab_input');
+  if (activeInput) activeInput.value = hashName;
+  if (history.replaceState) {
+    history.replaceState(null, null, '#' + hashName);
+  } else {
+    location.hash = hashName;
+  }
+}
+
+// On load: restore active tab from URL hash if present
+window.addEventListener('DOMContentLoaded', () => {
+  const hash = window.location.hash.replace('#', '');
+  if (hash) {
+    const targetTab = 'tab-' + hash;
+    const btn = document.querySelector(`.s-tab-btn[data-tab="${targetTab}"]`);
+    if (btn) {
+      switchSettingsTab(targetTab, btn);
+    }
+  }
+});
+
+function toggleAcsFields() {
+  const chk = document.getElementById('use_builtin_acs');
+  const fields = document.getElementById('genieacs_external_fields');
+  if (chk && fields) {
+    fields.style.display = chk.checked ? 'none' : 'block';
+  }
+}
+
+function toggleMultiRouterUI() {
+  const mode = document.getElementById('multi_router_mode_select')?.value || 'active';
+  const div = document.getElementById('default_router_div');
+  if (div) {
+    div.style.display = (mode === 'disabled') ? 'block' : 'none';
+  }
+}
+
 function copyInput(id, name) {
   const el = document.getElementById(id);
   if (el) {
@@ -693,12 +984,16 @@ function copyInput(id, name) {
     alert(name + ' berhasil disalin!');
   }
 }
+
 function copyWebhook() {
   const el = document.getElementById('webhook_url');
-  el.select();
-  document.execCommand('copy');
-  alert('Link Webhook berhasil disalin!');
+  if (el) {
+    el.select();
+    document.execCommand('copy');
+    alert('Link Webhook berhasil disalin!');
+  }
 }
+
 async function syncTelegram() {
   try {
     const res = await fetch('/admin/api/telegram/sync', { method: 'POST' });
@@ -938,6 +1233,72 @@ async function clearEwalletLogs() {
     } finally {
       btn.disabled = false;
       btn.innerHTML = '<i class="bi bi-upload"></i> Upload Logo';
+    }
+  });
+})();
+
+// QRIS Upload JavaScript
+(function () {
+  const fileInput = document.getElementById('qris_upload_file');
+  const btn = document.getElementById('qris_upload_btn');
+  if (!fileInput || !btn) return;
+
+  const normalizePayload = (raw) => {
+    let s = String(raw || '').replace(/[\r\n\t]+/g, '').trim();
+    const idx = s.indexOf('000201');
+    if (idx > 0) s = s.slice(idx);
+    const lastCrc = s.lastIndexOf('6304');
+    if (lastCrc >= 0 && s.length >= lastCrc + 8) s = s.slice(0, lastCrc + 8);
+    return s;
+  };
+
+  const decodeQrPayloadInBrowser = async (file) => {
+    try {
+      if (!window.jsQR) return '';
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = url;
+      await new Promise((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Gagal membaca gambar'));
+      });
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return '';
+      canvas.width = img.naturalWidth || img.width || 0;
+      canvas.height = img.naturalHeight || img.height || 0;
+      if (!canvas.width || !canvas.height) return '';
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const res = window.jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: 'attemptBoth' });
+      URL.revokeObjectURL(url);
+      if (!res || !res.data) return '';
+      const s = normalizePayload(res.data);
+      return s.startsWith('000201') ? s : '';
+    } catch {
+      return '';
+    }
+  };
+
+  btn.addEventListener('click', async () => {
+    const f = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+    if (!f) return;
+    const fd = new FormData();
+    fd.append('qris_file', f);
+    const payload = await decodeQrPayloadInBrowser(f);
+    if (payload) fd.append('qris_payload', payload);
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Uploading...';
+    try {
+      const r = await fetch('/admin/settings/qris-upload', { method: 'POST', body: fd, credentials: 'same-origin' });
+      if (!r.ok) throw new Error('Upload gagal');
+      window.location.href = '/admin/settings#payment';
+    } catch (e) {
+      window.location.href = '/admin/settings#payment';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-upload"></i> Upload';
     }
   });
 })();

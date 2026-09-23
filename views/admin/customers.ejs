@@ -28,6 +28,97 @@
       .mf { flex-wrap: wrap !important; gap: 8px !important; }
       .mf button, .mf a { flex: 1 1 100% !important; text-align: center !important; justify-content: center !important; }
     }
+
+    /* Customer Detail Modal Professional Styling */
+    .cust-detail-tab-btn {
+      flex: 1;
+      padding: 9px 14px;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .cust-detail-tab-btn:hover {
+      color: var(--text);
+      background: rgba(255,255,255,0.05);
+    }
+    .cust-detail-tab-btn.active {
+      background: var(--bg2) !important;
+      color: var(--primary) !important;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+    .cust-detail-pane {
+      display: none;
+      animation: fadeInCustPane 0.2s ease forwards;
+    }
+    .cust-detail-pane.active {
+      display: block;
+    }
+    @keyframes fadeInCustPane {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Modal Grid & Card Layout Classes */
+    .cust-modal-grid-2 {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+    .cust-modal-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .cust-modal-grid-traffic {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .cust-card-panel {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .cust-kpi-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 12px;
+      text-align: center;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .cust-kpi-card:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      transform: translateY(-2px);
+    }
+    @media (max-width: 768px) {
+      .cust-modal-grid-2 {
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
+      }
+      .cust-modal-grid-3 {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+      }
+      .cust-modal-grid-traffic {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -996,162 +1087,291 @@
   </div>
 </div>
 
-<!-- Modal Detail & Koneksi Pelanggan -->
+<!-- Modal Detail & Koneksi Pelanggan (Professional Modern Redesign) -->
 <div class="mo" id="viewDetailModal">
-  <div class="mb" style="max-width:700px">
-    <div class="mh">
-      <span class="mt" id="v_title"><i class="bi bi-eye-fill"></i> Detail & Informasi Koneksi Pelanggan</span>
-      <button type="button" class="mc" onclick="closeModal('viewDetailModal')">&times;</button>
-    </div>
-    <div class="mbody" style="padding:16px 20px">
-      <!-- Status Badge & Quick Info -->
-      <div class="d-flex justify-content-between align-items-center mb-3 p-3" style="background:var(--panel2);border:1px solid rgba(148,163,184,0.15);border-radius:12px">
-        <div>
-          <h5 id="v_cust_name" class="m-0 font-weight-bold" style="color:var(--text);font-size:16px">-</h5>
-          <span class="text-muted" style="font-size:12px">ID Pelanggan: #<strong id="v_cust_id">-</strong> &bull; Kode: <strong id="v_cust_code" style="color:var(--primary);font-family:monospace;">-</strong></span>
+  <div class="mb" style="max-width:780px; width:95vw; border-radius:18px; padding:0; overflow:hidden; border:1px solid var(--border); box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+    
+    <!-- Header Hero Profile Banner -->
+    <div style="background:linear-gradient(135deg, rgba(99,102,241,0.15), rgba(56,189,248,0.08)); padding:20px 24px; border-bottom:1px solid var(--border); position:relative;">
+      <button type="button" class="mc" onclick="closeModal('viewDetailModal')" style="position:absolute; right:18px; top:18px; font-size:24px; border:none; background:transparent; color:var(--muted); cursor:pointer;">&times;</button>
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; padding-right:32px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, var(--primary), #818cf8); color:#fff; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; box-shadow:0 4px 14px rgba(99,102,241,0.35);">
+            <i class="bi bi-person-fill"></i>
+          </div>
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <h4 id="v_cust_name" style="margin:0; font-size:18px; font-weight:800; color:var(--text);">-</h4>
+              <span id="v_cust_code" class="badge bp" style="font-family:monospace; font-weight:700; font-size:12px; padding:3px 8px;">-</span>
+            </div>
+            <div style="font-size:12px; color:var(--muted); margin-top:2px;">
+              ID: #<strong id="v_cust_id">-</strong> &bull; Router: <span id="v_router_name" style="font-weight:600; color:var(--text);">-</span>
+            </div>
+          </div>
         </div>
         <div id="v_online_badge">
           <!-- Badge Online/Offline inserted dynamically -->
         </div>
       </div>
-
-      <!-- Grid Data MikroTik & Koneksi -->
-      <div class="mb-3">
-        <div class="fw6 mb-2 text-primary" style="font-size:13px"><i class="bi bi-router"></i> Data Informasi Koneksi MikroTik</div>
-        <div style="background:var(--panel2);border:1px solid rgba(148,163,184,0.15);border-radius:10px;padding:12px">
-          <table class="tbl" style="width:100%;border-collapse:collapse;font-size:12px">
-            <tr>
-              <td style="width:38%;color:var(--muted);padding:6px 0">Username PPPoE / Hotspot</td>
-              <td style="padding:6px 0">
-                <code id="v_username" style="font-weight:700;color:#38bdf8;font-size:13px">-</code>
-                <button class="btn btn-g btn-sm py-0 px-2 ms-2" onclick="copyToClipboard('v_username', 'Username')"><i class="bi bi-copy"></i> Copy</button>
-              </td>
-            </tr>
-            <tr>
-              <td style="color:var(--muted);padding:6px 0">Password PPPoE / Hotspot</td>
-              <td style="padding:6px 0">
-                <code id="v_password" style="font-weight:700;color:#f472b6;font-size:13px">-</code>
-                <button class="btn btn-g btn-sm py-0 px-2 ms-2" onclick="copyToClipboard('v_password', 'Password')"><i class="bi bi-copy"></i> Copy</button>
-              </td>
-            </tr>
-            <tr>
-              <td style="color:var(--muted);padding:6px 0">IP Address (Sesi / Static)</td>
-              <td style="padding:6px 0">
-                <code id="v_ip" style="font-weight:700;color:#4ade80;font-size:13px">-</code>
-                <button class="btn btn-g btn-sm py-0 px-2 ms-2" onclick="copyToClipboard('v_ip', 'IP Address')"><i class="bi bi-copy"></i> Copy</button>
-              </td>
-            </tr>
-            <tr>
-              <td style="color:var(--muted);padding:6px 0">MAC Address / Caller-ID</td>
-              <td style="padding:6px 0">
-                <code id="v_mac" style="font-weight:700;color:#fbbf24;font-size:12px">-</code>
-                <button class="btn btn-g btn-sm py-0 px-2 ms-2" onclick="copyToClipboard('v_mac', 'MAC Address')"><i class="bi bi-copy"></i> Copy</button>
-              </td>
-            </tr>
-            <tr>
-              <td style="color:var(--muted);padding:6px 0">Router Target</td>
-              <td id="v_router_name" style="padding:6px 0">-</td>
-            </tr>
-            <tr>
-              <td style="color:var(--muted);padding:6px 0">Tipe Koneksi</td>
-              <td id="v_conn_type" style="padding:6px 0">-</td>
-            </tr>
-            <tr>
-              <td style="color:var(--muted);padding:6px 0">Uptime Sesi Active</td>
-              <td style="padding:6px 0"><strong id="v_uptime" style="color:var(--text)">-</strong></td>
-            </tr>
-          </table>
+      
+      <!-- Quick Ribbon Pills -->
+      <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; font-size:12px;">
+        <div style="background:var(--bg3); padding:7px 12px; border-radius:8px; border:1px solid var(--border); display:flex; align-items:center; gap:6px;">
+          <i class="bi bi-box-seam text-primary"></i> <span class="text-muted">Paket:</span> <strong id="v_package">-</strong>
         </div>
-      </div>
-
-      <!-- Grid Trafik Data & Pemakaian -->
-      <div class="mb-3">
-        <div class="fw6 mb-2 text-primary" style="font-size:13px"><i class="bi bi-arrow-down-up"></i> Data Statistik Trafik Data & Pemakaian</div>
-        <div style="background:var(--panel2);border:1px solid rgba(148,163,184,0.15);border-radius:10px;padding:12px">
-          <div class="row g-2 text-center mb-2">
-            <div class="col-6">
-              <div style="background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.2);border-radius:8px;padding:10px">
-                <div style="font-size:11px;color:#38bdf8;font-weight:700"><i class="bi bi-arrow-down-circle me-1"></i>RX (Download)</div>
-                <div id="v_rx_fmt" style="font-size:18px;font-weight:900;color:var(--text);margin-top:2px">-</div>
-                <div id="v_rx_bytes" style="font-size:11px;color:var(--muted)">0 Bytes</div>
-              </div>
-            </div>
-            <div class="col-6">
-              <div style="background:rgba(244,114,182,0.1);border:1px solid rgba(244,114,182,0.2);border-radius:8px;padding:10px">
-                <div style="font-size:11px;color:#f472b6;font-weight:700"><i class="bi bi-arrow-up-circle me-1"></i>TX (Upload)</div>
-                <div id="v_tx_fmt" style="font-size:18px;font-weight:900;color:var(--text);margin-top:2px">-</div>
-                <div id="v_tx_bytes" style="font-size:11px;color:var(--muted)">0 Bytes</div>
-              </div>
-            </div>
-          </div>
-          <div class="d-flex justify-content-between align-items-center" style="font-size:12px;padding:4px 4px 0 4px">
-            <span class="text-muted">Total Kuota Terpakai (FUP):</span>
-            <strong id="v_total_fup" style="color:var(--text)">0 GB</strong>
-          </div>
+        <div style="background:var(--bg3); padding:7px 12px; border-radius:8px; border:1px solid var(--border); display:flex; align-items:center; gap:6px;">
+          <i class="bi bi-clock-history text-warning"></i> <span id="v_expired_at">-</span>
         </div>
-      </div>
-
-      <!-- Info Pelanggan Tambahan -->
-      <div>
-        <div class="fw6 mb-2 text-primary" style="font-size:13px"><i class="bi bi-person-vcard"></i> Data Informasi Pelanggan</div>
-        <div style="background:var(--panel2);border:1px solid rgba(148,163,184,0.15);border-radius:10px;padding:12px">
-          <table class="tbl" style="width:100%;border-collapse:collapse;font-size:12px">
-            <tr>
-              <td style="width:38%;color:var(--muted);padding:6px 0">NIK / No. KTP</td>
-              <td style="padding:6px 0">
-                <code id="v_nik" style="font-weight:700;color:var(--text);font-size:12px">-</code>
-                <button class="btn btn-g btn-sm py-0 px-2 ms-2" onclick="copyToClipboard('v_nik', 'NIK')"><i class="bi bi-copy"></i> Copy</button>
-              </td>
-            </tr>
-            <tr>
-              <td style="width:38%;color:var(--muted);padding:6px 0">No. Telepon / WhatsApp</td>
-              <td style="padding:6px 0">
-                <code id="v_phone" style="font-weight:700;color:var(--text);font-size:12px">-</code>
-                <button class="btn btn-g btn-sm py-0 px-2 ms-2" onclick="copyToClipboard('v_phone', 'No HP')"><i class="bi bi-copy"></i> Copy</button>
-              </td>
-            </tr>
-            <tr>
-              <td style="color:var(--muted);padding:6px 0">Alamat & Area</td>
-              <td id="v_address_area" style="padding:6px 0">-</td>
-            </tr>
-            <tr>
-              <td style="color:var(--muted);padding:6px 0">Paket Internet</td>
-              <td id="v_package" style="padding:6px 0">-</td>
-            </tr>
-            <tr>
-              <td style="color:var(--muted);padding:6px 0">Masa Aktif (Prabayar)</td>
-              <td id="v_expired_at" style="padding:6px 0">-</td>
-            </tr>
-            <tr>
-              <td style="color:var(--muted);padding:6px 0">Saldo Dompet Pelanggan</td>
-              <td style="padding:6px 0">
-                <span id="v_balance" style="font-weight:700;color:#10b981;font-size:14px">Rp 0</span>
-                <button type="button" class="btn btn-s btn-sm py-0 px-2 ms-2" onclick="openTopupFromDetail()"><i class="bi bi-wallet2"></i> Kelola Saldo</button>
-              </td>
-            </tr>
-            <tr>
-              <td style="color:var(--muted);padding:6px 0">Tag ONU (GenieACS)</td>
-              <td style="padding:6px 0">
-                <code id="v_genieacs" style="font-weight:700;color:var(--text);font-size:12px">-</code>
-                <button class="btn btn-g btn-sm py-0 px-2 ms-2" onclick="copyToClipboard('v_genieacs', 'GenieACS Tag')"><i class="bi bi-copy"></i> Copy</button>
-              </td>
-            </tr>
-            <tr>
-              <td style="color:var(--muted);padding:6px 0">Status Akun & Auto-Isolir</td>
-              <td id="v_status_account" style="padding:6px 0">-</td>
-            </tr>
-          </table>
+        <div style="background:var(--bg3); padding:7px 12px; border-radius:8px; border:1px solid var(--border); display:flex; align-items:center; gap:6px;">
+          <i class="bi bi-wallet2 text-success"></i> <span class="text-muted">Saldo:</span> <strong id="v_balance" style="color:#10b981;">Rp 0</strong>
+          <button type="button" class="btn btn-s btn-sm py-0 px-2 ms-1" style="font-size:11px; padding:2px 8px;" onclick="openTopupFromDetail()"><i class="bi bi-plus"></i></button>
         </div>
       </div>
     </div>
-    <div class="mf d-flex justify-content-between align-items-center">
+
+    <!-- Segmented Tab Navigation -->
+    <div style="padding:12px 24px 0 24px; background:var(--bg2); border-bottom:1px solid var(--border);">
+      <div style="display:flex; gap:6px; background:var(--bg3); padding:4px; border-radius:12px; border:1px solid var(--border); overflow-x:auto;">
+        <button type="button" class="cust-detail-tab-btn active" id="tab_btn_conn" onclick="switchCustDetailTab('conn', this)">
+          <i class="bi bi-router me-1"></i> Koneksi & MikroTik
+        </button>
+        <button type="button" class="cust-detail-tab-btn" id="tab_btn_wifi" onclick="switchCustDetailTab('wifi', this)">
+          <i class="bi bi-wifi me-1"></i> Modem & Wi-Fi (ACS)
+          <span id="v_tab_cpe_dot" style="display:none; width:7px; height:7px; border-radius:50%; background:#10b981; margin-left:4px;"></span>
+        </button>
+        <button type="button" class="cust-detail-tab-btn" id="tab_btn_profile" onclick="switchCustDetailTab('profile', this)">
+          <i class="bi bi-person-vcard me-1"></i> Data Pelanggan
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal Body Content -->
+    <div class="mbody" style="padding:20px 24px; max-height:60vh; overflow-y:auto;">
+      
+      <!-- TAB 1: KONEKSI & MIKROTIK -->
+      <div id="cust_tab_conn" class="cust-detail-pane active">
+        <div class="cust-modal-grid-2">
+          <!-- Credentials & Session Card -->
+          <div class="cust-card-panel">
+            <div class="fw6 mb-3 text-primary d-flex align-items-center justify-content-between" style="font-size:13px; display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+              <span><i class="bi bi-key me-1"></i> Akun & Kredensial MikroTik</span>
+              <span class="badge bp" style="font-size:11px;" id="v_conn_type">PPPOE</span>
+            </div>
+            <div style="display:grid; gap:10px; font-size:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+                <span class="text-muted">Username PPPoE / Hotspot</span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <code id="v_username" style="font-weight:700; color:#38bdf8; font-size:13px;">-</code>
+                  <button type="button" class="btn btn-g btn-sm py-0 px-2" style="font-size:11px; padding:2px 7px;" onclick="copyToClipboard('v_username', 'Username')"><i class="bi bi-copy"></i></button>
+                </div>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+                <span class="text-muted">Password PPPoE / Hotspot</span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <code id="v_password" style="font-weight:700; color:#f472b6; font-size:13px;">-</code>
+                  <button type="button" class="btn btn-g btn-sm py-0 px-2" style="font-size:11px; padding:2px 7px;" onclick="copyToClipboard('v_password', 'Password')"><i class="bi bi-copy"></i></button>
+                </div>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+                <span class="text-muted">IP Address (Sesi / Static)</span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <code id="v_ip" style="font-weight:700; color:#4ade80; font-size:13px;">-</code>
+                  <button type="button" class="btn btn-g btn-sm py-0 px-2" style="font-size:11px; padding:2px 7px;" onclick="copyToClipboard('v_ip', 'IP Address')"><i class="bi bi-copy"></i></button>
+                </div>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+                <span class="text-muted">MAC Address (Caller ID)</span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <code id="v_mac" style="font-weight:700; color:#fbbf24; font-size:12px;">-</code>
+                  <button type="button" class="btn btn-g btn-sm py-0 px-2" style="font-size:11px; padding:2px 7px;" onclick="copyToClipboard('v_mac', 'MAC Address')"><i class="bi bi-copy"></i></button>
+                </div>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:7px 0;">
+                <span class="text-muted">Uptime Sesi Aktif</span>
+                <strong id="v_uptime" style="color:var(--text);">-</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Traffic Stats Card -->
+          <div class="cust-card-panel" style="display:flex; flex-direction:column; justify-content:space-between; gap:14px;">
+            <div>
+              <div class="fw6 mb-3 text-primary" style="font-size:13px; margin-bottom:14px;"><i class="bi bi-arrow-down-up me-1"></i> Trafik Data Live</div>
+              <div class="cust-modal-grid-traffic">
+                <div style="background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.2); border-radius:10px; padding:14px 10px; text-align:center;">
+                  <div style="font-size:11px; color:#38bdf8; font-weight:700;"><i class="bi bi-arrow-down-circle me-1"></i>Download (RX)</div>
+                  <div id="v_rx_fmt" style="font-size:18px; font-weight:900; color:var(--text); margin-top:4px;">-</div>
+                  <div id="v_rx_bytes" style="font-size:10px; color:var(--muted); margin-top:2px;">0 Bytes</div>
+                </div>
+                <div style="background:rgba(244,114,182,0.08); border:1px solid rgba(244,114,182,0.2); border-radius:10px; padding:14px 10px; text-align:center;">
+                  <div style="font-size:11px; color:#f472b6; font-weight:700;"><i class="bi bi-arrow-up-circle me-1"></i>Upload (TX)</div>
+                  <div id="v_tx_fmt" style="font-size:18px; font-weight:900; color:var(--text); margin-top:4px;">-</div>
+                  <div id="v_tx_bytes" style="font-size:10px; color:var(--muted); margin-top:2px;">0 Bytes</div>
+                </div>
+              </div>
+            </div>
+            <div style="background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+              <span class="text-muted">Total Kuota FUP:</span>
+              <strong id="v_total_fup" style="color:var(--text); font-weight:800;">-</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: MODEM & WI-FI (ACS TR-069) -->
+      <div id="cust_tab_wifi" class="cust-detail-pane">
+        <div id="v_cpe_card">
+          <!-- Top Bar Modem -->
+          <div style="background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:14px 18px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:36px; height:36px; border-radius:10px; background:rgba(16,185,129,0.15); color:#10b981; display:flex; align-items:center; justify-content:center; font-size:18px;">
+                <i class="bi bi-router"></i>
+              </div>
+              <div>
+                <div style="font-size:13px; font-weight:800; color:var(--text);" id="v_cpe_model">Memuat perangkat...</div>
+                <div style="font-size:11px; color:var(--muted);">SN: <code id="v_cpe_sn" style="color:var(--primary); font-weight:700;">-</code></div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span id="v_cpe_status_badge" class="badge bm" style="font-size:11px; padding:5px 10px;">Mengecek...</span>
+              <span id="v_cpe_rx" class="badge" style="background:#0284c7; color:#fff; font-family:monospace; font-size:11px; padding:5px 10px;">- dBm</span>
+            </div>
+          </div>
+
+          <!-- 3 Highlight Cards: SSID, Users, Uptime -->
+          <div class="cust-modal-grid-3" style="margin-bottom:16px;">
+            <div class="cust-kpi-card">
+              <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;"><i class="bi bi-broadcast text-primary me-1"></i>Nama Wi-Fi (SSID)</div>
+              <div id="v_cpe_ssid" style="font-size:15px; font-weight:800; color:var(--primary); margin-top:8px; word-break:break-all;">-</div>
+            </div>
+            <div class="cust-kpi-card">
+              <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;"><i class="bi bi-people-fill text-success me-1"></i>Pengguna Konek</div>
+              <div id="v_cpe_clients" style="font-size:22px; font-weight:900; color:#10b981; margin-top:4px;">-</div>
+            </div>
+            <div class="cust-kpi-card">
+              <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;"><i class="bi bi-stopwatch text-warning me-1"></i>Uptime Modem</div>
+              <div id="v_cpe_uptime" style="font-size:13px; font-weight:800; color:var(--text); margin-top:8px;">-</div>
+            </div>
+          </div>
+
+          <!-- Action Buttons Bar -->
+          <div style="background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:14px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div style="font-size:12px; color:var(--muted);">
+              <i class="bi bi-shield-check text-success me-1"></i> Kelola konfigurasi Wi-Fi modem secara remote via TR-069.
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button type="button" class="btn btn-p btn-sm" onclick="openCustomerWifiModal()" style="font-weight:700;">
+                <i class="bi bi-pencil-square me-1"></i> Ganti Nama & Password WiFi
+              </button>
+              <button type="button" class="btn btn-g btn-sm" onclick="rebootCustomerDevice()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Reboot Modem
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: DATA PELANGGAN -->
+      <div id="cust_tab_profile" class="cust-detail-pane">
+        <div class="cust-card-panel">
+          <div class="fw6 mb-3 text-primary" style="font-size:13px; margin-bottom:14px;"><i class="bi bi-person-vcard me-1"></i> Rincian Informasi Pelanggan</div>
+          <table class="tbl" style="width:100%; border-collapse:collapse; font-size:12px;">
+            <tr>
+              <td style="width:35%; color:var(--muted); padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.06);">NIK / No. KTP</td>
+              <td style="padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+                <code id="v_nik" style="font-weight:700; color:var(--text); font-size:12px;">-</code>
+                <button type="button" class="btn btn-g btn-sm py-0 px-2 ms-2" style="font-size:11px; padding:2px 7px;" onclick="copyToClipboard('v_nik', 'NIK')"><i class="bi bi-copy"></i></button>
+              </td>
+            </tr>
+            <tr>
+              <td style="color:var(--muted); padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.06);">No. Telepon / WhatsApp</td>
+              <td style="padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+                <code id="v_phone" style="font-weight:700; color:var(--text); font-size:12px;">-</code>
+                <button type="button" class="btn btn-g btn-sm py-0 px-2 ms-2" style="font-size:11px; padding:2px 7px;" onclick="copyToClipboard('v_phone', 'No HP')"><i class="bi bi-copy"></i></button>
+              </td>
+            </tr>
+            <tr>
+              <td style="color:var(--muted); padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.06);">Alamat & Area</td>
+              <td id="v_address_area" style="padding:9px 0; font-weight:600; border-bottom:1px solid rgba(255,255,255,0.06);">-</td>
+            </tr>
+            <tr>
+              <td style="color:var(--muted); padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.06);">Tag ONU (GenieACS)</td>
+              <td style="padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+                <code id="v_genieacs" style="font-weight:700; color:var(--primary); font-size:12px;">-</code>
+                <button type="button" class="btn btn-g btn-sm py-0 px-2 ms-2" style="font-size:11px; padding:2px 7px;" onclick="copyToClipboard('v_genieacs', 'GenieACS Tag')"><i class="bi bi-copy"></i></button>
+              </td>
+            </tr>
+            <tr>
+              <td style="color:var(--muted); padding:9px 0;">Status Akun & Auto Isolir</td>
+              <td id="v_status_account" style="padding:9px 0; font-weight:600;">-</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer Action Bar -->
+    <div class="mf d-flex justify-content-between align-items-center" style="background:var(--bg2); padding:14px 24px; border-top:1px solid var(--border); margin:0; display:flex; justify-content:space-between; align-items:center;">
       <form id="v_disconnect_form" method="POST" action="" style="display:inline" onsubmit="return confirm('Apakah Anda yakin ingin MEMUTUS koneksi aktif pelanggan ini dari MikroTik?')">
-        <button type="submit" class="btn btn-d btn-sm fw-bold" style="background:#ef4444;color:#fff;border:none;padding:6px 14px">
+        <button type="submit" class="btn btn-d btn-sm fw-bold" style="background:rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.3); padding:6px 14px;">
           <i class="bi bi-power me-1"></i> Putus Sesi Active MikroTik
         </button>
       </form>
-      <button type="button" class="btn btn-g" onclick="closeModal('viewDetailModal')">Tutup</button>
+      <button type="button" class="btn btn-g btn-sm px-4" onclick="closeModal('viewDetailModal')">
+        Tutup
+      </button>
     </div>
+  </div>
+</div>
+
+<!-- Modal Ubah Wi-Fi Pelanggan (TR-069) -->
+<div class="mo" id="customerWifiModal" style="z-index:2100">
+  <div class="mb" style="max-width:460px">
+    <div class="mh">
+      <span class="mt"><i class="bi bi-wifi text-primary"></i> Ubah Nama & Password Wi-Fi</span>
+      <button type="button" class="mc" onclick="closeModal('customerWifiModal')">&times;</button>
+    </div>
+    <form id="customerWifiForm" onsubmit="submitCustomerWifi(event)">
+      <div class="mbody" style="padding:16px 20px">
+        <input type="hidden" id="wifi_target_tag" value="">
+        <div class="alert alert-i mb-3" style="font-size:12px;padding:8px 12px;">
+          <i class="bi bi-info-circle me-1"></i> Perintah perubahan akan dikirim langsung ke modem pelanggan via protokol TR-069.
+        </div>
+        <div class="fg mb-3">
+          <label class="fl">Nama Pelanggan</label>
+          <input type="text" class="fc" id="wifi_cust_name" readonly style="opacity:0.8;background:var(--panel2)">
+        </div>
+        <div class="fg mb-3">
+          <label class="fl">Nama Wi-Fi (SSID) Baru</label>
+          <input type="text" class="fc" id="wifi_new_ssid" placeholder="Contoh: KELUARGA-NET">
+          <small class="text-muted" style="font-size:11px">Kosongkan jika hanya ingin mengganti password.</small>
+        </div>
+        <div class="fg mb-3">
+          <label class="fl">Password Wi-Fi Baru</label>
+          <div style="position:relative">
+            <input type="password" class="fc" id="wifi_new_password" placeholder="Minimal 8 karakter" minlength="8" style="padding-right:40px">
+            <button type="button" onclick="togglePassVisibility('wifi_new_password', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:var(--muted);cursor:pointer;padding:4px">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+          <small class="text-muted" style="font-size:11px">Minimal 8 karakter. Kosongkan jika hanya ingin mengganti SSID.</small>
+        </div>
+        <div class="fg mb-2">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
+            <input type="checkbox" id="wifi_notify_wa" checked>
+            <span>Kirim konfirmasi ke WhatsApp pelanggan</span>
+          </label>
+        </div>
+      </div>
+      <div class="mf d-flex justify-content-between">
+        <button type="button" class="btn btn-g" onclick="closeModal('customerWifiModal')">Batal</button>
+        <button type="submit" class="btn btn-p" id="btn_save_wifi">
+          <i class="bi bi-save"></i> Simpan Perubahan Wi-Fi
+        </button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -1318,6 +1538,19 @@ function copyToClipboard(elementId, label) {
   });
 }
 
+function switchCustDetailTab(tabKey, btn) {
+  document.querySelectorAll('.cust-detail-pane').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.cust-detail-tab-btn').forEach(el => el.classList.remove('active'));
+  const target = document.getElementById('cust_tab_' + tabKey);
+  if (target) target.classList.add('active');
+  if (btn) {
+    btn.classList.add('active');
+  } else {
+    const defaultBtn = document.getElementById('tab_btn_' + tabKey);
+    if (defaultBtn) defaultBtn.classList.add('active');
+  }
+}
+
 function viewCustDetail(idx) {
   try {
     const c = customersData[idx];
@@ -1400,11 +1633,152 @@ function viewCustDetail(idx) {
     }
 
     currentDetailIdx = idx;
+    switchCustDetailTab('conn', document.getElementById('tab_btn_conn'));
     openModal('viewDetailModal');
+    loadCustomerCpeInfo(c);
     fetchLiveSessions();
   } catch (err) {
     console.error('Error in viewCustDetail:', err);
     alert('Terjadi kesalahan saat memuat detail pelanggan: ' + err.message);
+  }
+}
+
+let currentCustomerCpeTag = null;
+let currentCustomerObj = null;
+
+async function loadCustomerCpeInfo(c) {
+  currentCustomerObj = c;
+  const cpeCard = document.getElementById('v_cpe_card');
+  const cpeDot = document.getElementById('v_tab_cpe_dot');
+  if (cpeDot) cpeDot.style.display = 'none';
+  if (!cpeCard) return;
+
+  const targetTag = (c.genieacs_tag || c.pppoe_username || '').trim();
+  currentCustomerCpeTag = targetTag;
+
+  if (!targetTag) {
+    cpeCard.style.display = 'none';
+    if (cpeDot) cpeDot.style.display = 'none';
+    return;
+  }
+
+  cpeCard.style.display = 'block';
+  document.getElementById('v_cpe_status_badge').className = 'badge bm';
+  document.getElementById('v_cpe_status_badge').textContent = 'Memuat ACS...';
+  document.getElementById('v_cpe_ssid').textContent = '...';
+  document.getElementById('v_cpe_clients').textContent = '...';
+  document.getElementById('v_cpe_uptime').textContent = '...';
+  document.getElementById('v_cpe_model').textContent = '-';
+  document.getElementById('v_cpe_sn').textContent = '-';
+  document.getElementById('v_cpe_rx').textContent = '-';
+
+  try {
+    const res = await fetch('/admin/api/device/' + encodeURIComponent(targetTag));
+    if (!res.ok) {
+      if (cpeDot) cpeDot.style.display = 'none';
+      document.getElementById('v_cpe_status_badge').className = 'badge bm';
+      document.getElementById('v_cpe_status_badge').textContent = 'Tidak Terhubung ke ACS';
+      document.getElementById('v_cpe_ssid').textContent = '-';
+      document.getElementById('v_cpe_clients').textContent = '0 User';
+      document.getElementById('v_cpe_uptime').textContent = '-';
+      return;
+    }
+    const d = await res.json();
+    const isOnline = (d.status || '').toLowerCase() === 'online';
+    if (cpeDot) cpeDot.style.display = isOnline ? 'inline-block' : 'none';
+    document.getElementById('v_cpe_status_badge').className = 'badge ' + (isOnline ? 'bs' : 'bd');
+    document.getElementById('v_cpe_status_badge').textContent = isOnline ? 'Online' : 'Offline';
+
+    document.getElementById('v_cpe_ssid').textContent = d.ssid || '-';
+    
+    // Connected users count
+    let clientCount = 0;
+    if (Array.isArray(d.connectedUsers)) clientCount = d.connectedUsers.length;
+    else if (d.totalAssociations) clientCount = d.totalAssociations;
+    document.getElementById('v_cpe_clients').textContent = clientCount + ' User';
+    
+    document.getElementById('v_cpe_uptime').textContent = d.uptime || d.pppoeUptime || '-';
+    document.getElementById('v_cpe_model').textContent = d.model || d.productClass || 'CPE';
+    document.getElementById('v_cpe_sn').textContent = d.serialNumber || d.phone || targetTag;
+    document.getElementById('v_cpe_rx').textContent = (d.rxPower && d.rxPower !== '-') ? (d.rxPower + ' dBm') : '-';
+  } catch (err) {
+    if (cpeDot) cpeDot.style.display = 'none';
+    document.getElementById('v_cpe_status_badge').className = 'badge bm';
+    document.getElementById('v_cpe_status_badge').textContent = 'Gagal Memuat';
+  }
+}
+
+function openCustomerWifiModal() {
+  if (!currentCustomerObj || !currentCustomerCpeTag) return alert('Data perangkat/pelanggan tidak ditemukan.');
+  document.getElementById('wifi_target_tag').value = currentCustomerCpeTag;
+  document.getElementById('wifi_cust_name').value = currentCustomerObj.name + ' (' + (currentCustomerObj.pppoe_username || currentCustomerObj.code || '') + ')';
+  const currSsid = document.getElementById('v_cpe_ssid').textContent;
+  document.getElementById('wifi_new_ssid').value = (currSsid && currSsid !== '-' && currSsid !== '...') ? currSsid : '';
+  document.getElementById('wifi_new_password').value = '';
+  openModal('customerWifiModal');
+}
+
+async function submitCustomerWifi(e) {
+  e.preventDefault();
+  const tag = document.getElementById('wifi_target_tag').value;
+  const ssid = document.getElementById('wifi_new_ssid').value.trim();
+  const password = document.getElementById('wifi_new_password').value.trim();
+  const notifyWa = document.getElementById('wifi_notify_wa').checked;
+  const btn = document.getElementById('btn_save_wifi');
+
+  if (!ssid && !password) return alert('Silakan isi nama SSID atau password baru.');
+  if (password && password.length < 8) return alert('Password Wi-Fi minimal 8 karakter.');
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Mengirim ke Modem...';
+
+  try {
+    const res = await fetch('/admin/api/device/' + encodeURIComponent(tag) + '/wifi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ssid, password, notifyWa })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert(data.message || 'Pengaturan Wi-Fi berhasil diperbarui!');
+      closeModal('customerWifiModal');
+      if (currentCustomerObj) loadCustomerCpeInfo(currentCustomerObj);
+    } else {
+      alert('Gagal: ' + (data.error || 'Terjadi kesalahan'));
+    }
+  } catch (err) {
+    alert('Error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-save"></i> Simpan Perubahan Wi-Fi';
+  }
+}
+
+async function rebootCustomerDevice() {
+  if (!currentCustomerCpeTag) return;
+  if (!confirm('Apakah Anda yakin ingin me-reboot modem pelanggan ini? Koneksi internet pelanggan akan terputus sementara selama modem restart.')) return;
+  try {
+    const res = await fetch('/admin/api/device/' + encodeURIComponent(currentCustomerCpeTag) + '/reboot', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      alert('Perintah reboot berhasil dikirimkan ke modem!');
+    } else {
+      alert('Gagal reboot: ' + (data.error || 'Perangkat tidak merespons'));
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+function togglePassVisibility(inputId, btn) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  if (el.type === 'password') {
+    el.type = 'text';
+    btn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+  } else {
+    el.type = 'password';
+    btn.innerHTML = '<i class="bi bi-eye"></i>';
   }
 }
 
@@ -1486,6 +1860,7 @@ function filterByStatus(statusVal) {
 window.filterByStatus = filterByStatus;
 window.viewCustDetail = viewCustDetail;
 window.copyToClipboard = copyToClipboard;
+window.switchCustDetailTab = switchCustDetailTab;
 
 const PAY_MNS = JSON.parse(document.getElementById('pay-months-data').textContent);
 const PAY_I18N = JSON.parse(document.getElementById('pay-i18n-data').textContent);

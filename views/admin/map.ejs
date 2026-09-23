@@ -10,26 +10,28 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.Editable/1.2.0/Leaflet.Editable.js"></script>
   <style>
     /* Main Layout & Map */
-    #map { height: calc(100vh - 270px); min-height: 480px; border-radius: 12px; margin-top: 10px; z-index: 1; background: #e2e8f0; border: 1px solid #cbd5e1; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+    #map { height: calc(100vh - 270px); min-height: 480px; border-radius: 12px; margin-top: 10px; z-index: 1; background: var(--bg2); border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
     
-    /* Stats Cards on Map */
-    .map-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 12px; }
-    .msc { padding: 12px 14px; border-radius: 12px; background: white; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
+    /* Stats Cards on Map (2 Cards: ONU Aktif & ONU Tidak Aktif) */
+    .map-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px; }
+    @media (max-width: 600px) { .map-stats { grid-template-columns: 1fr; } }
+    .msc { padding: 12px 16px; border-radius: 12px; background: var(--bg2); border: 1px solid var(--border); display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
     .msc-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-    .msc-p { background: #eff6ff; color: #3b82f6; }
-    .msc-s { background: #f0fdf4; color: #10b981; }
-    .msc-d { background: #fef2f2; color: #ef4444; }
-    .msc-w { background: #fff7ed; color: #f59e0b; }
-    .msc-info .val { font-size: 20px; font-weight: 800; line-height: 1.2; color: #0f172a; }
-    .msc-info .lbl { font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+    .msc-p { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .msc-s { background: rgba(16,185,129,0.15); color: #10b981; }
+    .msc-d { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .msc-w { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .msc-v { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+    .msc-info .val { font-size: 20px; font-weight: 800; line-height: 1.2; color: var(--text); }
+    .msc-info .lbl { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
 
     /* Map Search & Control Toolbar */
     .map-toolbar {
-      background: white;
-      border: 1px solid #cbd5e1;
+      background: var(--bg2);
+      border: 1px solid var(--border);
       border-radius: 14px;
       padding: 10px 14px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
       display: flex;
       flex-wrap: wrap;
       align-items: center;
@@ -48,26 +50,26 @@
       width: 100%;
       padding: 9px 36px 9px 38px;
       border-radius: 10px;
-      border: 1.5px solid #cbd5e1;
-      background: #f8fafc;
+      border: 1.5px solid var(--border);
+      background: var(--bg3);
       font-weight: 600;
       font-size: 13px;
-      color: #0f172a;
+      color: var(--text);
       outline: none;
       transition: all 0.2s ease;
       box-sizing: border-box;
     }
     .map-search-input:focus {
-      border-color: #3b82f6;
-      background: #ffffff;
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.18);
+      border-color: var(--primary);
+      background: var(--bg);
+      box-shadow: 0 0 0 3px var(--pdim);
     }
     .map-search-icon {
       position: absolute;
       left: 12px;
       top: 50%;
       transform: translateY(-50%);
-      color: #64748b;
+      color: var(--muted);
       font-size: 15px;
       pointer-events: none;
     }
@@ -78,7 +80,7 @@
       transform: translateY(-50%);
       background: transparent;
       border: none;
-      color: #94a3b8;
+      color: var(--muted);
       font-size: 16px;
       cursor: pointer;
       display: none;
@@ -93,10 +95,10 @@
       top: calc(100% + 6px);
       left: 0;
       right: 0;
-      background: #ffffff;
-      border: 1px solid #cbd5e1;
+      background: var(--bg2);
+      border: 1px solid var(--border);
       border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.35);
       max-height: 380px;
       overflow-y: auto;
       z-index: 1000;
@@ -105,11 +107,11 @@
     .map-search-dropdown.active { display: block; }
     .ms-header {
       padding: 8px 12px;
-      background: #f8fafc;
-      border-bottom: 1px solid #e2e8f0;
+      background: var(--bg3);
+      border-bottom: 1px solid var(--border);
       font-size: 11px;
       font-weight: 800;
-      color: #64748b;
+      color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
       display: flex;
@@ -117,7 +119,7 @@
     }
     .ms-item {
       padding: 10px 12px;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid var(--border);
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -126,7 +128,7 @@
     }
     .ms-item:last-child { border-bottom: none; }
     .ms-item:hover, .ms-item.selected {
-      background: #eff6ff;
+      background: var(--bg3);
     }
     .ms-item-icon {
       width: 34px;
@@ -138,28 +140,29 @@
       font-size: 16px;
       flex-shrink: 0;
     }
-    .ms-item-icon.active { background: #dcfce7; color: #15803d; }
-    .ms-item-icon.suspended { background: #fee2e2; color: #b91c1c; }
-    .ms-item-icon.odp { background: #fef3c7; color: #b45309; }
+    .ms-item-icon.active { background: rgba(16,185,129,0.18); color: #10b981; }
+    .ms-item-icon.suspended { background: rgba(239,68,68,0.18); color: #ef4444; }
+    .ms-item-icon.odp { background: rgba(245,158,11,0.18); color: #f59e0b; }
+    .ms-item-icon.odc { background: rgba(139,92,246,0.18); color: #a855f7; }
     .ms-item-info { flex: 1; min-width: 0; }
     .ms-item-name {
       font-weight: 800;
       font-size: 13px;
-      color: #0f172a;
+      color: var(--text);
       display: flex;
       align-items: center;
       gap: 6px;
     }
     .ms-item-name mark {
-      background: #fef08a;
-      padding: 0 2px;
-      border-radius: 2px;
+      background: rgba(253,224,71,0.3);
+      color: #fde047;
+      padding: 0 3px;
+      border-radius: 3px;
       font-weight: 900;
-      color: #0f172a;
     }
     .ms-item-meta {
       font-size: 11.5px;
-      color: #64748b;
+      color: var(--muted);
       font-weight: 600;
       margin-top: 2px;
       white-space: nowrap;
@@ -174,13 +177,14 @@
       text-transform: uppercase;
       flex-shrink: 0;
     }
-    .ms-badge-active { background: #dcfce7; color: #166534; }
-    .ms-badge-suspended { background: #fee2e2; color: #991b1b; }
-    .ms-badge-odp { background: #fef3c7; color: #92400e; }
+    .ms-badge-active { background: rgba(16,185,129,0.18); color: #10b981; }
+    .ms-badge-suspended { background: rgba(239,68,68,0.18); color: #ef4444; }
+    .ms-badge-odp { background: rgba(245,158,11,0.18); color: #f59e0b; }
+    .ms-badge-odc { background: rgba(139,92,246,0.18); color: #a855f7; }
     .ms-empty {
       padding: 18px 14px;
       text-align: center;
-      color: #64748b;
+      color: var(--muted);
       font-size: 12.5px;
       font-weight: 600;
     }
@@ -192,14 +196,21 @@
       gap: 6px;
       flex-wrap: wrap;
     }
+    .filter-divider {
+      width: 1px;
+      height: 22px;
+      background: var(--border);
+      margin: 0 4px;
+      display: inline-block;
+    }
     .map-pill-btn {
       padding: 6px 12px;
       border-radius: 8px;
-      border: 1px solid #cbd5e1;
-      background: #f8fafc;
+      border: 1px solid var(--border);
+      background: var(--bg3);
       font-size: 12px;
       font-weight: 700;
-      color: #334155;
+      color: var(--text);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -207,12 +218,12 @@
       transition: all 0.15s ease;
       user-select: none;
     }
-    .map-pill-btn:hover { background: #f1f5f9; border-color: #94a3b8; }
+    .map-pill-btn:hover { background: var(--bg); border-color: var(--primary); }
     .map-pill-btn.active {
-      background: #2563eb;
-      border-color: #2563eb;
-      color: white;
-      box-shadow: 0 2px 6px rgba(37,99,235,0.3);
+      background: var(--primary) !important;
+      border-color: var(--primary) !important;
+      color: #ffffff !important;
+      box-shadow: 0 2px 8px var(--pdim) !important;
     }
     .map-pill-btn i { font-size: 13px; }
 
@@ -351,6 +362,68 @@
       display: inline-block;
     }
 
+    /* ODC Marker Node */
+    .odc-marker-node {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+    .odc-marker-node:hover {
+      z-index: 9500 !important;
+      transform: scale(1.25);
+    }
+    .odc-marker-pin {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #ffffff;
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.45), 0 3px 8px rgba(0,0,0,0.4);
+      flex-shrink: 0;
+      z-index: 3;
+    }
+    .odc-marker-label {
+      position: absolute;
+      top: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+      text-align: center;
+      white-space: nowrap;
+      z-index: 2;
+    }
+    .odc-marker-name {
+      font-weight: 800;
+      font-size: 11px;
+      color: #c084fc;
+      text-shadow: 
+        -1.5px -1.5px 0 #0f172a,  
+         1.5px -1.5px 0 #0f172a,
+        -1.5px  1.5px 0 #0f172a,
+         1.5px  1.5px 0 #0f172a,
+         0 2px 5px rgba(0,0,0,0.95);
+      letter-spacing: 0.2px;
+      line-height: 1.1;
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: inline-block;
+    }
+    .hide-marker-labels .odc-marker-label {
+      display: none !important;
+    }
+
     /* Pulse Highlight on Focus */
     @keyframes focusPulse {
       0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.9), 0 0 20px rgba(59, 130, 246, 0.9); }
@@ -358,34 +431,35 @@
       100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0), 0 0 0 rgba(59, 130, 246, 0); }
     }
     .marker-pulse-highlight .onu-marker-pin,
-    .marker-pulse-highlight .odp-marker-pin {
+    .marker-pulse-highlight .odp-marker-pin,
+    .marker-pulse-highlight .odc-marker-pin {
       animation: focusPulse 0.8s ease-out 3;
       transform: scale(1.3);
       transition: transform 0.3s ease;
     }
 
     /* Popups */
-    .cust-popup { width: 300px; max-width: 300px; box-sizing: border-box; }
-    .cp-head { display: flex; align-items: center; gap: 10px; padding: 6px 0 10px; border-bottom: 1px solid rgba(148, 163, 184, 0.35); }
-    .cp-avatar { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: linear-gradient(135deg, rgba(59,130,246,0.18), rgba(6,182,212,0.18)); color: #0f172a; border: 1px solid rgba(148, 163, 184, 0.35); }
+    .cust-popup, .popup-content { width: 300px; max-width: 300px; box-sizing: border-box; }
+    .cp-head { display: flex; align-items: center; gap: 10px; padding: 6px 0 10px; border-bottom: 1px solid var(--border); }
+    .cp-avatar { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: rgba(99,102,241,0.18); color: var(--primary); border: 1px solid var(--border); }
     .cp-title { min-width: 0; flex: 1; }
-    .cp-name { font-weight: 900; font-size: 14px; color: #0f172a; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cp-name { font-weight: 900; font-size: 14px; color: var(--text); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cp-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-    .cp-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 999px; font-weight: 800; font-size: 11px; line-height: 1; border: 1px solid rgba(148, 163, 184, 0.35); background: rgba(255,255,255,0.9); color: #0f172a; }
+    .cp-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 999px; font-weight: 800; font-size: 11px; line-height: 1; border: 1px solid var(--border); background: var(--bg3); color: var(--text); }
     .cp-chip i { font-size: 12px; opacity: 0.9; }
-    .cp-chip-active { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.25); color: #065f46; }
-    .cp-chip-suspended { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.25); color: #7f1d1d; }
+    .cp-chip-active { background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.3); color: #10b981; }
+    .cp-chip-suspended { background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.3); color: #ef4444; }
     .cp-meta { display: grid; grid-template-columns: 1fr; gap: 6px; padding-top: 10px; }
-    .cp-meta-item { display: flex; gap: 8px; align-items: flex-start; color: #334155; font-size: 12px; }
-    .cp-meta-item i { margin-top: 2px; color: #64748b; font-size: 13px; }
+    .cp-meta-item { display: flex; gap: 8px; align-items: flex-start; color: var(--text); font-size: 12px; }
+    .cp-meta-item i { margin-top: 2px; color: var(--muted); font-size: 13px; }
     .cp-meta-item span { overflow: hidden; text-overflow: ellipsis; }
-    .cp-traffic { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(148, 163, 184, 0.35); }
-    .cp-traffic-head { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 12px; color: #0f172a; margin-bottom: 8px; }
+    .cp-traffic { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+    .cp-traffic-head { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 12px; color: var(--text); margin-bottom: 8px; }
     .cp-traffic-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-    .cp-chart { position: relative; border-radius: 12px; padding: 8px; border: 1px solid rgba(148, 163, 184, 0.35); background: linear-gradient(180deg, rgba(248,250,252,0.95), rgba(255,255,255,0.95)); overflow: hidden; box-sizing: border-box; min-width: 0; }
-    .cp-chart-label { display: flex; align-items: center; gap: 6px; font-weight: 900; font-size: 11px; color: #0f172a; margin-bottom: 4px; }
+    .cp-chart { position: relative; border-radius: 12px; padding: 8px; border: 1px solid var(--border); background: var(--bg3); overflow: hidden; box-sizing: border-box; min-width: 0; }
+    .cp-chart-label { display: flex; align-items: center; gap: 6px; font-weight: 900; font-size: 11px; color: var(--text); margin-bottom: 4px; }
     .cp-spark { width: 100%; height: 60px; display: block; }
-    .cp-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #64748b; background: rgba(255,255,255,0.75); backdrop-filter: blur(2px); opacity: 0; pointer-events: none; }
+    .cp-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: var(--muted); background: var(--bg2); opacity: 0; pointer-events: none; }
     .cp-overlay.on { opacity: 1; }
     .popup-actions { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
     .btn-wa { background: #25D366; border: 1px solid #25D366; color: #0b1220 !important; font-weight: 800; }
@@ -400,20 +474,20 @@
       animation: flow 1s linear infinite;
     }
 
-    /* Tabbed Data Panel (ONU & ODP) */
+    /* Tabbed Data Panel (ONU, ODP & ODC) */
     .data-tabs-panel {
-      background: white;
-      border: 1px solid #e2e8f0;
+      background: var(--bg2);
+      border: 1px solid var(--border);
       border-radius: 14px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
       margin-top: 16px;
       margin-bottom: 24px;
       overflow: hidden;
     }
     .data-tabs-nav {
       display: flex;
-      border-bottom: 1px solid #e2e8f0;
-      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg3);
       padding: 6px 10px 0 10px;
       gap: 6px;
     }
@@ -424,7 +498,7 @@
       border-top-left-radius: 10px;
       border-top-right-radius: 10px;
       background: transparent;
-      color: #64748b;
+      color: var(--muted);
       font-weight: 800;
       font-size: 13px;
       cursor: pointer;
@@ -433,24 +507,23 @@
       gap: 8px;
       transition: all 0.15s ease;
     }
-    .tab-btn:hover { color: #0f172a; background: rgba(255,255,255,0.6); }
+    .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.04); }
     .tab-btn.active {
-      background: white;
-      color: #2563eb;
-      border-color: #e2e8f0;
-      box-shadow: 0 -2px 6px rgba(0,0,0,0.02);
+      background: var(--bg2);
+      color: var(--primary);
+      border-color: var(--border);
     }
     .tab-badge {
-      background: #e2e8f0;
-      color: #475569;
+      background: var(--bg);
+      color: var(--muted);
       font-size: 11px;
       padding: 2px 7px;
       border-radius: 999px;
       font-weight: 800;
     }
     .tab-btn.active .tab-badge {
-      background: #dbeafe;
-      color: #1d4ed8;
+      background: var(--pdim);
+      color: var(--primary);
     }
     .tab-content {
       padding: 14px;
@@ -469,22 +542,23 @@
     .table-search-input {
       padding: 8px 12px;
       border-radius: 8px;
-      border: 1px solid #cbd5e1;
-      background: #f8fafc;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
       font-size: 12.5px;
       font-weight: 600;
       outline: none;
       min-width: 240px;
     }
     .table-search-input:focus {
-      border-color: #3b82f6;
-      background: white;
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+      border-color: var(--primary);
+      background: var(--bg);
+      box-shadow: 0 0 0 3px var(--pdim);
     }
     .table-wrap {
       max-height: 320px;
       overflow-y: auto;
-      border: 1px solid #eef2f7;
+      border: 1px solid var(--border);
       border-radius: 10px;
     }
     .data-table {
@@ -493,58 +567,56 @@
     }
     .data-table th, .data-table td {
       padding: 10px 12px;
-      border-bottom: 1px solid #eef2f7;
+      border-bottom: 1px solid var(--border);
       vertical-align: middle;
       font-size: 12.5px;
+      color: var(--text);
     }
     .data-table th {
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.3px;
-      color: #64748b;
+      color: var(--muted);
       font-weight: 800;
       position: sticky;
       top: 0;
-      background: #f8fafc;
+      background: var(--bg3);
       z-index: 2;
     }
     .data-table tr:hover td {
+      background: rgba(255,255,255,0.03);
+    }
+    html[data-theme="light"] .data-table tr:hover td {
       background: #f8fafc;
     }
 
-    /* Editable Handles Visibility */
-    .leaflet-vertex-icon {
-      background: #ff0000 !important;
-      border: 2px solid #ffffff !important;
-      border-radius: 50% !important;
-      box-shadow: 0 0 10px rgba(255,0,0,1) !important;
-      width: 18px !important;
-      height: 18px !important;
-      margin-left: -9px !important;
-      margin-top: -9px !important;
-      z-index: 9999 !important;
-      display: block !important;
-      cursor: move !important;
-    }
-    .leaflet-middle-marker {
-      background: #00ff00 !important;
-      border: 2px solid #ffffff !important;
-      border-radius: 50% !important;
-      box-shadow: 0 0 8px rgba(0,255,0,1) !important;
-      width: 14px !important;
-      height: 14px !important;
-      margin-left: -7px !important;
-      margin-top: -7px !important;
-      z-index: 9998 !important;
-      display: block !important;
-      cursor: crosshair !important;
-      opacity: 0.9 !important;
+    /* Leaflet Popups Dark & Light Integration */
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+      background: var(--bg2) !important;
+      color: var(--text) !important;
+      border: 1px solid var(--border) !important;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.35) !important;
     }
 
     /* Modal Picker Maps */
-    #picker-map, #edit-picker-map { height: 250px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #cbd5e1; z-index: 1; }
+    #picker-map, #edit-picker-map, #odc-picker-map, #edit-odc-picker-map { height: 250px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border); z-index: 1; }
     #cable-drawing-map { height: 450px; border-radius: 8px; border: 1px solid #cbd5e1; z-index: 1; background: #e5e7eb; }
     .picker-icon-odp { color: #f59e0b; font-size: 24px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); display: block; width: 24px; height: 24px; text-align: center; line-height: 24px; }
+    .picker-icon-odc { color: #8b5cf6; font-size: 24px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); display: block; width: 24px; height: 24px; text-align: center; line-height: 24px; }
+    .smart-delete-opt {
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      background: var(--bg3);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .smart-delete-opt:hover { border-color: var(--primary); }
+    .smart-delete-opt input[type="radio"] { margin-top: 3px; }
   </style>
 </head>
 <body>
@@ -557,8 +629,9 @@
       <i class="bi bi-map"></i>
       <span><%= title %></span>
     </div>
-    <div class="tb-right">
-      <button class="btn btn-p btn-sm" onclick="openModal('addOdpModal')"><i class="bi bi-plus-circle"></i> <%= t('admin.map.add_odp', 'Tambah ODP') %></button>
+    <div class="tb-right" style="display: flex; gap: 8px;">
+      <button class="btn btn-sm" style="background:#8b5cf6; border:1px solid #7c3aed; color:#fff;" onclick="openModal('addOdcModal')"><i class="bi bi-diagram-3-fill"></i> Tambah ODC</button>
+      <button class="btn btn-p btn-sm" onclick="openModal('addOdpModal')"><i class="bi bi-box-seam-fill"></i> <%= t('admin.map.add_odp', 'Tambah ODP') %></button>
     </div>
   </div>
 
@@ -567,34 +640,20 @@
       <div class="alert alert-<%= msg.type==='error'?'d':'s' %>"><%= msg.text %></div>
     <% } %>
 
-    <!-- Quick Stats -->
+    <!-- Quick Stats: 2 Cards (ONU Aktif & ONU Tidak Aktif) -->
     <div class="map-stats">
-      <div class="msc">
-        <div class="msc-icon msc-w"><i class="bi bi-box-seam-fill"></i></div>
-        <div class="msc-info">
-          <div class="val"><%= odps.length %></div>
-          <div class="lbl"><%= t('admin.map.stats.total_odp', 'Total ODP') %></div>
-        </div>
-      </div>
       <div class="msc">
         <div class="msc-icon msc-s"><i class="bi bi-router-fill"></i></div>
         <div class="msc-info">
-          <div class="val"><%= customers.filter(c => c.status === 'active' && c.lat && c.lng).length %></div>
-          <div class="lbl">ONU Aktif (Peta)</div>
+          <div class="val"><%= customers.filter(c => c.status === 'active').length %></div>
+          <div class="lbl">ONU Aktif</div>
         </div>
       </div>
       <div class="msc">
         <div class="msc-icon msc-d"><i class="bi bi-exclamation-triangle-fill"></i></div>
         <div class="msc-info">
-          <div class="val"><%= customers.filter(c => c.status !== 'active' && c.lat && c.lng).length %></div>
-          <div class="lbl">ONU Isolir (Peta)</div>
-        </div>
-      </div>
-      <div class="msc">
-        <div class="msc-icon msc-p"><i class="bi bi-geo-alt-fill"></i></div>
-        <div class="msc-info">
-          <div class="val"><%= customers.filter(c => !c.lat || !c.lng).length %></div>
-          <div class="lbl">Tanpa GPS</div>
+          <div class="val"><%= customers.filter(c => c.status !== 'active').length %></div>
+          <div class="lbl">ONU Tidak Aktif</div>
         </div>
       </div>
     </div>
@@ -607,7 +666,7 @@
           id="mapGlobalSearch" 
           class="map-search-input" 
           type="text" 
-          placeholder="Cari nama pelanggan, PPPoE, No HP, SN ONU, alamat, ODP..."
+          placeholder="Cari nama pelanggan, PPPoE, No HP, SN ONU, alamat, ODC, ODP..."
           autocomplete="off"
         >
         <button id="mapSearchClearBtn" class="map-search-clear" onclick="clearMapSearch()" title="Hapus pencarian">&times;</button>
@@ -622,17 +681,32 @@
         </div>
       </div>
 
-      <!-- Quick Filter Pills -->
+      <!-- Quick Filter Pills: ODC, ODP, Pelanggan, Aktif, Non-Aktif, Label, Fit Peta -->
       <div class="map-filter-group">
-        <button type="button" class="map-pill-btn active" id="pillAll" onclick="applyStatusFilter('all')" title="Tampilkan semua marker">
+        <button type="button" class="map-pill-btn active" id="pillEntAll" onclick="setEntityFilter('all')" title="Tampilkan semua entitas">
           <i class="bi bi-grid-fill"></i> Semua
         </button>
-        <button type="button" class="map-pill-btn" id="pillActive" onclick="applyStatusFilter('active')" title="Hanya ONU aktif">
-          <i class="bi bi-check-circle-fill text-success"></i> Aktif (<%= customers.filter(c => c.status === 'active' && c.lat && c.lng).length %>)
+        <button type="button" class="map-pill-btn" id="pillEntOdc" onclick="setEntityFilter('odc')" title="Hanya ODC">
+          <i class="bi bi-diagram-3-fill" style="color: #a855f7;"></i> ODC (<%= (typeof odcs !== 'undefined' && odcs) ? odcs.length : 0 %>)
         </button>
-        <button type="button" class="map-pill-btn" id="pillSuspended" onclick="applyStatusFilter('suspended')" title="Hanya ONU isolir">
-          <i class="bi bi-x-circle-fill text-danger"></i> Isolir (<%= customers.filter(c => c.status !== 'active' && c.lat && c.lng).length %>)
+        <button type="button" class="map-pill-btn" id="pillEntOdp" onclick="setEntityFilter('odp')" title="Hanya ODP">
+          <i class="bi bi-box-seam-fill text-warning"></i> ODP (<%= odps.length %>)
         </button>
+        <button type="button" class="map-pill-btn" id="pillEntCust" onclick="setEntityFilter('customer')" title="Hanya Pelanggan">
+          <i class="bi bi-router-fill text-info"></i> Pelanggan (<%= customers.length %>)
+        </button>
+
+        <span class="filter-divider"></span>
+
+        <button type="button" class="map-pill-btn" id="pillStatActive" onclick="setStatusFilter('active')" title="Hanya pelanggan aktif">
+          <i class="bi bi-check-circle-fill text-success"></i> Aktif (<%= customers.filter(c => c.status === 'active').length %>)
+        </button>
+        <button type="button" class="map-pill-btn" id="pillStatSuspended" onclick="setStatusFilter('suspended')" title="Hanya pelanggan non-aktif / isolir">
+          <i class="bi bi-x-circle-fill text-danger"></i> Non-Aktif (<%= customers.filter(c => c.status !== 'active').length %>)
+        </button>
+
+        <span class="filter-divider"></span>
+
         <button type="button" class="map-pill-btn active" id="pillLabels" onclick="toggleMarkerLabels()" title="Sembunyikan/Tampilkan label nama di marker">
           <i class="bi bi-tag-fill text-primary"></i> <span id="labelToggleText">Label: ON</span>
         </button>
@@ -645,7 +719,7 @@
     <!-- The Map Container -->
     <div id="map"></div>
 
-    <!-- Bottom Tabbed Panel: ONU Pelanggan & ODP -->
+    <!-- Bottom Tabbed Panel: ONU Pelanggan, ODP & ODC -->
     <div class="data-tabs-panel">
       <div class="data-tabs-nav">
         <button type="button" class="tab-btn active" onclick="switchDataTab('onu-tab', this)">
@@ -657,6 +731,11 @@
           <i class="bi bi-box-seam-fill"></i>
           <span>Daftar ODP (Box)</span>
           <span class="tab-badge"><%= odps.length %></span>
+        </button>
+        <button type="button" class="tab-btn" onclick="switchDataTab('odc-tab', this)">
+          <i class="bi bi-diagram-3-fill" style="color: #8b5cf6;"></i>
+          <span>Daftar ODC (Cabinet)</span>
+          <span class="tab-badge"><%= (typeof odcs !== 'undefined' && odcs) ? odcs.length : 0 %></span>
         </button>
       </div>
 
@@ -712,13 +791,13 @@
                     data-hasgps="<%= hasGps ? '1' : '0' %>"
                   >
                     <td>
-                      <div style="font-weight: 800; color: #0f172a;"><%= c.name %></div>
-                      <div style="font-size: 11px; color: #64748b;"><i class="bi bi-telephone"></i> <%= c.phone || '-' %></div>
+                      <div style="font-weight: 800; color: var(--text);"><%= c.name %></div>
+                      <div style="font-size: 11px; color: var(--muted);"><i class="bi bi-telephone"></i> <%= c.phone || '-' %></div>
                     </td>
                     <td>
                       <div style="font-weight: 700; font-family: monospace; font-size: 12px; color: #2563eb;"><%= c.pppoe_username || '-' %></div>
                       <% if (c.genieacs_tag) { %>
-                        <div style="font-size: 11px; color: #64748b;"><i class="bi bi-tag"></i> <%= c.genieacs_tag %></div>
+                        <div style="font-size: 11px; color: var(--muted);"><i class="bi bi-tag"></i> <%= c.genieacs_tag %></div>
                       <% } %>
                     </td>
                     <td>
@@ -736,7 +815,7 @@
                     </td>
                     <td>
                       <% if (hasGps) { %>
-                        <span style="font-size: 11.5px; font-family: monospace; color: #334155; font-weight: 700;">
+                        <span style="font-size: 11.5px; font-family: monospace; color: var(--text); font-weight: 700;">
                           <%= Number(c.lat).toFixed(5) %>, <%= Number(c.lng).toFixed(5) %>
                         </span>
                       <% } else { %>
@@ -757,7 +836,7 @@
                   </tr>
                 <% }) %>
               <% } else { %>
-                <tr><td colspan="6" style="padding: 16px; text-align: center; color: #64748b;">Belum ada data pelanggan.</td></tr>
+                <tr><td colspan="6" style="padding: 16px; text-align: center; color: var(--muted);">Belum ada data pelanggan.</td></tr>
               <% } %>
             </tbody>
           </table>
@@ -775,9 +854,11 @@
             <thead>
               <tr>
                 <th>Nama ODP</th>
+                <th>Koneksi Induk</th>
+                <th>Pelanggan</th>
                 <th>Deskripsi</th>
                 <th>Koordinat</th>
-                <th style="width: 120px; text-align: right;">Aksi</th>
+                <th style="width: 130px; text-align: right;">Aksi</th>
               </tr>
             </thead>
             <tbody id="odpsTbody">
@@ -785,27 +866,104 @@
                 <% odps.forEach(o => { %>
                   <tr data-name="<%= String(o.name || '').toLowerCase() %>" data-desc="<%= String(o.description || '').toLowerCase() %>">
                     <td>
-                      <div style="font-weight: 800; color: #0f172a;"><i class="bi bi-box-seam-fill text-warning me-1"></i> <%= o.name %></div>
+                      <div style="font-weight: 800; color: var(--text);"><i class="bi bi-box-seam-fill text-warning me-1"></i> <%= o.name %></div>
                     </td>
                     <td>
-                      <div style="font-size: 12px; color: #64748b;"><%= o.description || '-' %></div>
+                      <% if (o.odc_name) { %>
+                        <div style="font-size: 11.5px; font-weight: 700; color: #8b5cf6;"><i class="bi bi-diagram-3-fill"></i> ODC: <%= o.odc_name %></div>
+                      <% } %>
+                      <% if (o.parent_odp_name) { %>
+                        <div style="font-size: 11px; font-weight: 700; color: #f59e0b;"><i class="bi bi-box-seam"></i> Induk: <%= o.parent_odp_name %></div>
+                      <% } %>
+                      <% if (!o.odc_name && !o.parent_odp_name) { %>
+                        <div style="font-size: 11.5px; color: var(--muted);">-</div>
+                      <% } %>
                     </td>
                     <td>
-                      <div style="font-size: 11.5px; font-family: monospace; color: #334155; font-weight: 700;">
+                      <div style="font-size: 12px; font-weight: 700;">
+                        <span class="text-primary"><i class="bi bi-people-fill"></i> <%= o.connected_customer_count || 0 %> Pelanggan</span>
+                      </div>
+                      <% if (o.connected_child_odp_count > 0) { %>
+                        <div style="font-size: 11px; color: #f59e0b; font-weight: 600;"><i class="bi bi-diagram-2"></i> <%= o.connected_child_odp_count %> Sub-ODP</div>
+                      <% } %>
+                    </td>
+                    <td>
+                      <div style="font-size: 12px; color: var(--muted);"><%= o.description || '-' %></div>
+                    </td>
+                    <td>
+                      <div style="font-size: 11.5px; font-family: monospace; font-weight: 700;">
                         <%= (Number(o.lat) || 0).toFixed(6) %>, <%= (Number(o.lng) || 0).toFixed(6) %>
                       </div>
                     </td>
                     <td>
                       <div style="display: flex; gap: 4px; justify-content: flex-end;">
                         <button type="button" class="btn btn-sm btn-p" data-odp-id="<%= Number(o.id) %>" onclick="editOdpFromBtn(this)" title="<%= t('common.edit', 'Edit') %>"><i class="bi bi-pencil"></i></button>
-                        <button type="button" class="btn btn-sm btn-d" data-odp-id="<%= Number(o.id) %>" onclick="deleteOdpFromBtn(this)" title="Hapus"><i class="bi bi-trash"></i></button>
+                        <button type="button" class="btn btn-sm btn-d" onclick="promptDeleteOdp(<%= Number(o.id) %>)" title="Hapus ODP"><i class="bi bi-trash"></i></button>
                         <button type="button" class="btn btn-sm btn-g" data-odp-id="<%= Number(o.id) %>" onclick="focusOdpFromBtn(this)" title="Fokus Peta"><i class="bi bi-geo-alt"></i></button>
                       </div>
                     </td>
                   </tr>
                 <% }) %>
               <% } else { %>
-                <tr><td colspan="4" style="padding: 16px; text-align: center; color: #64748b;">Belum ada data ODP.</td></tr>
+                <tr><td colspan="6" style="padding: 16px; text-align: center; color: var(--muted);">Belum ada data ODP.</td></tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 3: DAFTAR ODC -->
+      <div id="odc-tab" class="tab-content">
+        <div class="panel-filter-bar">
+          <input id="odcSearch" class="table-search-input" type="text" placeholder="Cari ODC (nama / deskripsi)...">
+          <button type="button" class="btn btn-sm" style="background:#8b5cf6; border:1px solid #7c3aed; color:#fff;" onclick="openModal('addOdcModal')"><i class="bi bi-diagram-3-fill"></i> Tambah ODC</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Nama ODC</th>
+                <th>OLT Induk</th>
+                <th>ODP Tersambung</th>
+                <th>Deskripsi</th>
+                <th>Koordinat</th>
+                <th style="width: 130px; text-align: right;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="odcsTbody">
+              <% if (typeof odcs !== 'undefined' && odcs && odcs.length > 0) { %>
+                <% odcs.forEach(c => { %>
+                  <tr data-name="<%= String(c.name || '').toLowerCase() %>" data-desc="<%= String(c.description || '').toLowerCase() %>">
+                    <td>
+                      <div style="font-weight: 800; color: var(--text);"><i class="bi bi-diagram-3-fill me-1" style="color: #8b5cf6;"></i> <%= c.name %></div>
+                    </td>
+                    <td>
+                      <div style="font-size: 12px; font-weight: 700; color: var(--text);"><%= c.olt_name || '-' %></div>
+                    </td>
+                    <td>
+                      <span class="cp-chip" style="background: rgba(139,92,246,0.15); color: #8b5cf6; border-color: rgba(139,92,246,0.3);">
+                        <i class="bi bi-box-seam-fill"></i> <%= c.connected_odp_count || 0 %> ODP
+                      </span>
+                    </td>
+                    <td>
+                      <div style="font-size: 12px; color: var(--muted);"><%= c.description || '-' %></div>
+                    </td>
+                    <td>
+                      <div style="font-size: 11.5px; font-family: monospace; font-weight: 700;">
+                        <%= (Number(c.lat) || 0).toFixed(6) %>, <%= (Number(c.lng) || 0).toFixed(6) %>
+                      </div>
+                    </td>
+                    <td>
+                      <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                        <button type="button" class="btn btn-sm btn-p" onclick='editOdc(<%= JSON.stringify(c) %>)' title="<%= t('common.edit', 'Edit') %>"><i class="bi bi-pencil"></i></button>
+                        <button type="button" class="btn btn-sm btn-d" onclick="promptDeleteOdc(<%= Number(c.id) %>)" title="Hapus ODC"><i class="bi bi-trash"></i></button>
+                        <button type="button" class="btn btn-sm btn-g" onclick="focusOdc(<%= Number(c.id) %>)" title="Fokus Peta"><i class="bi bi-geo-alt"></i></button>
+                      </div>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr><td colspan="6" style="padding: 16px; text-align: center; color: var(--muted);">Belum ada data ODC. Silakan klik tombol "Tambah ODC".</td></tr>
               <% } %>
             </tbody>
           </table>
@@ -813,6 +971,91 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- Modal Tambah ODC -->
+<div class="mo" id="addOdcModal">
+  <div class="mb">
+    <form action="/admin/odcs" method="POST">
+      <div class="mh">
+        <span class="mt"><i class="bi bi-diagram-3-fill" style="color: #8b5cf6;"></i> Tambah ODC Baru</span>
+        <button type="button" class="mc" onclick="closeModal('addOdcModal')">&times;</button>
+      </div>
+      <div class="mbody">
+        <div class="fg">
+          <label class="fl">Nama ODC</label>
+          <input type="text" name="name" class="fc" placeholder="Contoh: ODC-WILAYAH-01" required>
+        </div>
+        <% if (typeof olts !== 'undefined' && olts && olts.length > 0) { %>
+          <div class="fg">
+            <label class="fl">OLT Induk (Opsional)</label>
+            <select name="olt_id" class="fc">
+              <option value="">-- Tidak Terhubung ke OLT Tertentu --</option>
+              <% olts.forEach(olt => { %>
+                <option value="<%= olt.id %>"><%= olt.name %> (<%= olt.ip_address || olt.brand %>)</option>
+              <% }) %>
+            </select>
+          </div>
+        <% } %>
+        
+        <label class="fl"><%= t('admin.map.form.pick_location', 'Pilih Lokasi di Peta') %></label>
+        <div id="odc-picker-map"></div>
+
+        <div class="form-row">
+          <div class="fg"><label class="fl"><%= t('admin.map.form.lat', 'Latitude') %></label><input type="text" name="lat" id="new_odc_lat" class="fc" placeholder="-6.xxx" required></div>
+          <div class="fg"><label class="fl"><%= t('admin.map.form.lng', 'Longitude') %></label><input type="text" name="lng" id="new_odc_lng" class="fc" placeholder="106.xxx" required></div>
+        </div>
+        <p class="text-muted" style="font-size: 11px;">*Tips: Klik atau geser marker ungu pada peta untuk menentukan posisi ODC</p>
+        <div class="fg"><label class="fl"><%= t('admin.map.form.description', 'Deskripsi') %></label><textarea name="description" class="fc" rows="2" placeholder="Catatan lokasi / kabinet ODC"></textarea></div>
+      </div>
+      <div class="mf">
+        <button type="button" class="btn btn-g" onclick="closeModal('addOdcModal')"><%= t('common.cancel', 'Batal') %></button>
+        <button type="submit" class="btn" style="background:#8b5cf6; border:1px solid #7c3aed; color:#fff;">Simpan ODC</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Edit ODC -->
+<div class="mo" id="editOdcModal">
+  <div class="mb">
+    <form id="editOdcForm" method="POST">
+      <div class="mh">
+        <span class="mt"><i class="bi bi-diagram-3-fill" style="color: #8b5cf6;"></i> Edit Data ODC</span>
+        <button type="button" class="mc" onclick="closeModal('editOdcModal')">&times;</button>
+      </div>
+      <div class="mbody">
+        <div class="fg">
+          <label class="fl">Nama ODC</label>
+          <input type="text" name="name" id="e_odc_name" class="fc" required>
+        </div>
+        <% if (typeof olts !== 'undefined' && olts && olts.length > 0) { %>
+          <div class="fg">
+            <label class="fl">OLT Induk (Opsional)</label>
+            <select name="olt_id" id="e_odc_olt_id" class="fc">
+              <option value="">-- Tidak Terhubung ke OLT Tertentu --</option>
+              <% olts.forEach(olt => { %>
+                <option value="<%= olt.id %>"><%= olt.name %> (<%= olt.ip_address || olt.brand %>)</option>
+              <% }) %>
+            </select>
+          </div>
+        <% } %>
+
+        <label class="fl"><%= t('admin.map.form.adjust_location', 'Sesuaikan Lokasi di Peta') %></label>
+        <div id="edit-odc-picker-map"></div>
+
+        <div class="form-row">
+          <div class="fg"><label class="fl"><%= t('admin.map.form.lat', 'Latitude') %></label><input type="text" name="lat" id="e_odc_lat" class="fc" required></div>
+          <div class="fg"><label class="fl"><%= t('admin.map.form.lng', 'Longitude') %></label><input type="text" name="lng" id="e_odc_lng" class="fc" required></div>
+        </div>
+        <div class="fg"><label class="fl"><%= t('admin.map.form.description', 'Deskripsi') %></label><textarea name="description" id="e_odc_description" class="fc" rows="2"></textarea></div>
+      </div>
+      <div class="mf">
+        <button type="button" class="btn btn-g" onclick="closeModal('editOdcModal')"><%= t('common.cancel', 'Batal') %></button>
+        <button type="submit" class="btn" style="background:#8b5cf6; border:1px solid #7c3aed; color:#fff;">Update ODC</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -824,6 +1067,31 @@
       <div class="mbody">
         <div class="fg"><label class="fl"><%= t('admin.map.form.name', 'Nama ODP') %></label><input type="text" name="name" class="fc" placeholder="<%= t('admin.map.form.name_placeholder', 'Contoh: ODP-A-01') %>" required></div>
         
+        <div class="form-row">
+          <div class="fg">
+            <label class="fl"><i class="bi bi-diagram-3-fill" style="color:#8b5cf6;"></i> Sambung ke ODC Induk</label>
+            <select name="odc_id" id="new_odp_odc_id" class="fc">
+              <option value="">-- Tanpa ODC (Langsung) --</option>
+              <% if (typeof odcs !== 'undefined' && odcs) { %>
+                <% odcs.forEach(c => { %>
+                  <option value="<%= c.id %>"><%= c.name %></option>
+                <% }) %>
+              <% } %>
+            </select>
+          </div>
+          <div class="fg">
+            <label class="fl"><i class="bi bi-box-seam-fill text-warning"></i> Sambung ke ODP Induk (Kaskade)</label>
+            <select name="parent_odp_id" id="new_odp_parent_id" class="fc">
+              <option value="">-- Bukan Sub-ODP (Utama) --</option>
+              <% if (typeof odps !== 'undefined' && odps) { %>
+                <% odps.forEach(op => { %>
+                  <option value="<%= op.id %>"><%= op.name %></option>
+                <% }) %>
+              <% } %>
+            </select>
+          </div>
+        </div>
+
         <label class="fl"><%= t('admin.map.form.pick_location', 'Pilih Lokasi di Peta') %></label>
         <div id="picker-map"></div>
 
@@ -850,6 +1118,31 @@
       <div class="mbody">
         <div class="fg"><label class="fl"><%= t('admin.map.form.name', 'Nama ODP') %></label><input type="text" name="name" id="e_odp_name" class="fc" required></div>
         
+        <div class="form-row">
+          <div class="fg">
+            <label class="fl"><i class="bi bi-diagram-3-fill" style="color:#8b5cf6;"></i> Sambung ke ODC Induk</label>
+            <select name="odc_id" id="e_odp_odc_id" class="fc">
+              <option value="">-- Tanpa ODC (Langsung) --</option>
+              <% if (typeof odcs !== 'undefined' && odcs) { %>
+                <% odcs.forEach(c => { %>
+                  <option value="<%= c.id %>"><%= c.name %></option>
+                <% }) %>
+              <% } %>
+            </select>
+          </div>
+          <div class="fg">
+            <label class="fl"><i class="bi bi-box-seam-fill text-warning"></i> Sambung ke ODP Induk (Kaskade)</label>
+            <select name="parent_odp_id" id="e_odp_parent_id" class="fc">
+              <option value="">-- Bukan Sub-ODP (Utama) --</option>
+              <% if (typeof odps !== 'undefined' && odps) { %>
+                <% odps.forEach(op => { %>
+                  <option value="<%= op.id %>"><%= op.name %></option>
+                <% }) %>
+              <% } %>
+            </select>
+          </div>
+        </div>
+
         <label class="fl"><%= t('admin.map.form.adjust_location', 'Sesuaikan Lokasi di Peta') %></label>
         <div id="edit-picker-map"></div>
 
@@ -862,6 +1155,138 @@
       <div class="mf">
         <button type="button" class="btn btn-g" onclick="closeModal('editOdpModal')"><%= t('common.cancel', 'Batal') %></button>
         <button type="submit" class="btn btn-p"><%= t('admin.map.edit_modal.update', 'Update ODP') %></button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Smart Delete ODP -->
+<div class="mo" id="smartDeleteOdpModal">
+  <div class="mb" style="max-width: 520px;">
+    <form id="smartDeleteOdpForm" method="POST">
+      <div class="mh" style="border-bottom: 1px solid var(--border);">
+        <span class="mt" style="color: #ef4444;"><i class="bi bi-trash-fill"></i> Hapus ODP: <span id="sdoOdpName"></span></span>
+        <button type="button" class="mc" onclick="closeModal('smartDeleteOdpModal')">&times;</button>
+      </div>
+      <div class="mbody" style="padding-top: 15px;">
+        <div id="sdoWarningBanner" style="display: none; padding: 12px 14px; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; margin-bottom: 14px;">
+          <div style="font-weight: 800; color: #ef4444; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-shield-exclamation" style="font-size: 18px;"></i>
+            <span>ODP Masih Terhubung ke Jaringan!</span>
+          </div>
+          <p style="margin: 6px 0 0 0; font-size: 12px; color: var(--text); line-height: 1.4;">
+            Terdapat <strong id="sdoCustCount" style="color: #ef4444;">0</strong> pelanggan dan <strong id="sdoChildCount" style="color: #f59e0b;">0</strong> sub-ODP yang saat ini tersambung ke ODP ini.
+          </p>
+        </div>
+
+        <div id="sdoOptionsContainer">
+          <p style="font-size: 12.5px; font-weight: 700; color: var(--text); margin-bottom: 10px;">
+            Pilih tindakan penanganan untuk pelanggan & jaringan yang terhubung:
+          </p>
+
+          <label class="smart-delete-opt">
+            <input type="radio" name="action" value="unlink" id="sdoOptUnlink" checked onchange="toggleSdoMigrateSelect()">
+            <div>
+              <div style="font-weight: 800; font-size: 13px; color: var(--text);">
+                <i class="bi bi-link-45deg text-success"></i> Lepaskan Sambungan Saja (Disarankan)
+              </div>
+              <div style="font-size: 11.5px; color: var(--muted); margin-top: 3px;">
+                Status pelanggan menjadi <em>'Tanpa ODP'</em>. Data pelanggan, tagihan bulanan, akun PPPoE, dan profil paket <strong>100% AMAN</strong> tidak akan hilang atau terganggu.
+              </div>
+            </div>
+          </label>
+
+          <label class="smart-delete-opt">
+            <input type="radio" name="action" value="migrate" id="sdoOptMigrate" onchange="toggleSdoMigrateSelect()">
+            <div style="flex: 1;">
+              <div style="font-weight: 800; font-size: 13px; color: var(--text);">
+                <i class="bi bi-arrow-repeat text-primary"></i> Migrasikan ke ODP Lain
+              </div>
+              <div style="font-size: 11.5px; color: var(--muted); margin-top: 3px;">
+                Pindahkan seluruh pelanggan & sub-ODP yang terhubung secara otomatis ke ODP tujuan:
+              </div>
+              <div id="sdoMigrateBox" style="margin-top: 8px; display: none;">
+                <select name="target_odp_id" id="sdoTargetOdpSelect" class="fc" style="font-size: 12px;">
+                  <!-- dynamically populated -->
+                </select>
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <div id="sdoSimpleConfirm" style="display: none; font-size: 13px; color: var(--text);">
+          <p>ODP ini tidak memiliki pelanggan maupun sub-ODP yang tersambung. Apakah Anda yakin ingin menghapus data ODP ini?</p>
+        </div>
+      </div>
+      <div class="mf">
+        <button type="button" class="btn btn-g" onclick="closeModal('smartDeleteOdpModal')">Batal</button>
+        <button type="submit" class="btn btn-d"><i class="bi bi-trash-fill"></i> Konfirmasi & Hapus ODP</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Smart Delete ODC -->
+<div class="mo" id="smartDeleteOdcModal">
+  <div class="mb" style="max-width: 520px;">
+    <form id="smartDeleteOdcForm" method="POST">
+      <div class="mh" style="border-bottom: 1px solid var(--border);">
+        <span class="mt" style="color: #ef4444;"><i class="bi bi-trash-fill"></i> Hapus ODC: <span id="sdcOdcName"></span></span>
+        <button type="button" class="mc" onclick="closeModal('smartDeleteOdcModal')">&times;</button>
+      </div>
+      <div class="mbody" style="padding-top: 15px;">
+        <div id="sdcWarningBanner" style="display: none; padding: 12px 14px; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; margin-bottom: 14px;">
+          <div style="font-weight: 800; color: #ef4444; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-shield-exclamation" style="font-size: 18px;"></i>
+            <span>ODC Memiliki Relasi Downstream ODP!</span>
+          </div>
+          <p style="margin: 6px 0 0 0; font-size: 12px; color: var(--text); line-height: 1.4;">
+            Terdapat <strong id="sdcOdpCount" style="color: #ef4444;">0</strong> ODP yang tersambung ke ODC ini.
+          </p>
+        </div>
+
+        <div id="sdcOptionsContainer">
+          <p style="font-size: 12.5px; font-weight: 700; color: var(--text); margin-bottom: 10px;">
+            Pilih tindakan penanganan ODP downstream:
+          </p>
+
+          <label class="smart-delete-opt">
+            <input type="radio" name="action" value="unlink" id="sdcOptUnlink" checked onchange="toggleSdcMigrateSelect()">
+            <div>
+              <div style="font-weight: 800; font-size: 13px; color: var(--text);">
+                <i class="bi bi-link-45deg text-success"></i> Lepaskan Sambungan Saja (Disarankan)
+              </div>
+              <div style="font-size: 11.5px; color: var(--muted); margin-top: 3px;">
+                Lepaskan relasi ODC pada ODP terhubung. Seluruh ODP & pelanggan di bawahnya <strong>100% AMAN</strong> tidak akan terhapus.
+              </div>
+            </div>
+          </label>
+
+          <label class="smart-delete-opt">
+            <input type="radio" name="action" value="migrate" id="sdcOptMigrate" onchange="toggleSdcMigrateSelect()">
+            <div style="flex: 1;">
+              <div style="font-weight: 800; font-size: 13px; color: var(--text);">
+                <i class="bi bi-arrow-repeat text-primary"></i> Migrasikan ke ODC Lain
+              </div>
+              <div style="font-size: 11.5px; color: var(--muted); margin-top: 3px;">
+                Pindahkan seluruh ODP downstream ke ODC tujuan di bawah ini:
+              </div>
+              <div id="sdcMigrateBox" style="margin-top: 8px; display: none;">
+                <select name="target_odc_id" id="sdcTargetOdcSelect" class="fc" style="font-size: 12px;">
+                  <!-- dynamically populated -->
+                </select>
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <div id="sdcSimpleConfirm" style="display: none; font-size: 13px; color: var(--text);">
+          <p>ODC ini tidak memiliki ODP downstream yang tersambung. Apakah Anda yakin ingin menghapus data ODC ini?</p>
+        </div>
+      </div>
+      <div class="mf">
+        <button type="button" class="btn btn-g" onclick="closeModal('smartDeleteOdcModal')">Batal</button>
+        <button type="submit" class="btn btn-d"><i class="bi bi-trash-fill"></i> Konfirmasi & Hapus ODC</button>
       </div>
     </form>
   </div>
@@ -889,14 +1314,17 @@
 <script id="settings-data" type="application/json"><%- JSON.stringify(settings) %></script>
 <script id="customers-data" type="application/json"><%- JSON.stringify(customers).replace(/<\/script/g, '<\\/script').replace(/<!--/g, '<\\!--') %></script>
 <script id="odps-data" type="application/json"><%- JSON.stringify(odps).replace(/<\/script/g, '<\\/script').replace(/<!--/g, '<\\!--') %></script>
+<script id="odcs-data" type="application/json"><%- JSON.stringify(typeof odcs !== 'undefined' ? odcs : []).replace(/<\/script/g, '<\\/script').replace(/<!--/g, '<\\!--') %></script>
 
 <script>
   const I18N = {
     layerOsm: "<%= t('admin.map.layers.osm', 'OpenStreetMap') %>",
     layerHybrid: "<%= t('admin.map.layers.hybrid', 'Satelit (Hybrid)') %>",
+    layerDark: "Dark Mode (CartoDB)",
     popupDescription: "<%= t('admin.map.popup.description', 'Deskripsi') %>",
     popupLocation: "<%= t('admin.map.popup.location', 'Lokasi') %>",
     popupEdit: "<%= t('common.edit', 'Edit') %>",
+    popupDelete: "Hapus",
     popupStatus: "<%= t('admin.map.popup.status', 'Status') %>",
     popupPackage: "<%= t('admin.map.popup.package', 'Paket') %>",
     popupAddress: "<%= t('admin.map.popup.address', 'Alamat') %>",
@@ -929,44 +1357,100 @@
   let currentEditingPolyline = null;
   let currentEditingCustomer = null;
   let showLabels = true;
-  let currentFilter = 'all';
+  let filterEntity = 'all'; // 'all' | 'odc' | 'odp' | 'customer'
+  let filterStatus = 'all'; // 'all' | 'active' | 'suspended'
 
-  // Tile Layers
-  const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '© OpenStreetMap'
-  });
-
+  // Basemap Tile Layers (Tanpa butuh API key)
   const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
     maxZoom: 20,
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
     attribution: '© Google Satellite'
   });
 
-  osm.addTo(map);
+  const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  });
+
   googleHybrid.addTo(map);
 
   const baseMaps = {
-    [I18N.layerOsm]: osm,
-    [I18N.layerHybrid]: googleHybrid
+    "🛰️ Google Satelit": googleHybrid,
+    "🗺️ OpenStreetMap": osm
   };
 
   L.control.layers(baseMaps).addTo(map);
 
   let customers = [];
   let odps = [];
+  let odcs = [];
   try {
     customers = JSON.parse(document.getElementById('customers-data').textContent || '[]');
     odps = JSON.parse(document.getElementById('odps-data').textContent || '[]');
+    odcs = JSON.parse(document.getElementById('odcs-data').textContent || '[]');
   } catch (e) {
     console.error("Data mapping error:", e);
   }
 
   // Registries for quick search, focus, and filtering
+  const odcMap = {}; // odcId -> { marker, data, coord }
   const odpMap = {}; // odpId -> { marker, data, coord }
   const customerMap = {}; // custId -> { marker, data, polyline }
+  const odcPolylineList = []; // Feeder cables ODC ➔ ODP: { odcId, odpId, line }
+  const odpCascadeLineList = []; // Daisy-chain Parent ODP ➔ Sub ODP: { parentId, childId, line }
 
-  // 1. Render ODP Markers (Clean icon & floating text outline)
+  // 1. Render ODC Markers (Optical Distribution Cabinet - Purple node)
+  odcs.forEach(odc => {
+    if (odc.lat && odc.lng) {
+      const lat = parseFloat(odc.lat);
+      const lng = parseFloat(odc.lng);
+
+      const odcIcon = L.divIcon({
+        className: 'custom-onu-icon',
+        html: `
+          <div class="odc-marker-node" id="odc-node-${odc.id}">
+            <div class="odc-marker-pin" title="${escapeHtml(odc.name)} (ODC)">
+              <i class="bi bi-diagram-3-fill"></i>
+            </div>
+            <div class="odc-marker-label">
+              <span class="odc-marker-name">${escapeHtml(odc.name)}</span>
+            </div>
+          </div>
+        `,
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+      });
+
+      const marker = L.marker([lat, lng], { icon: odcIcon }).addTo(map);
+
+      marker.bindPopup(`
+        <div class="popup-content">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:6px;">
+            <div style="width:32px; height:32px; border-radius:8px; background:rgba(139,92,246,0.18); color:#8b5cf6; display:flex; align-items:center; justify-content:center; font-size:16px;">
+              <i class="bi bi-diagram-3-fill"></i>
+            </div>
+            <div>
+              <div style="font-weight:900; font-size:13.5px; color:var(--text); line-height:1.2;">${escapeHtml(odc.name)}</div>
+              <div style="font-size:11px; font-weight:700; color:#8b5cf6;">KABINET ODC INDUK</div>
+            </div>
+          </div>
+          <div style="font-size:12px; margin-bottom:4px;"><strong>OLT:</strong> ${escapeHtml(odc.olt_name || '-')}</div>
+          <div style="font-size:12px; margin-bottom:4px;"><strong>ODP Terhubung:</strong> <span class="badge" style="background:#8b5cf6; color:#fff; padding:2px 6px; border-radius:4px; font-size:11px;">${odc.connected_odp_count || 0} ODP</span></div>
+          <div style="font-size:12px; margin-bottom:4px;"><strong>${I18N.popupDescription}:</strong> ${escapeHtml(odc.description || '-')}</div>
+          <div style="font-size:11.5px; font-family:monospace; margin-bottom:8px; color:var(--muted);"><strong>${I18N.popupLocation}:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
+          <div class="popup-actions" style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
+            <button class="btn btn-sm btn-p" onclick='editOdc(${JSON.stringify(odc)})'><i class="bi bi-pencil me-1"></i>${I18N.popupEdit}</button>
+            <button class="btn btn-sm btn-d" onclick="promptDeleteOdc(${odc.id}, '${escapeHtml(odc.name)}')"><i class="bi bi-trash me-1"></i>${I18N.popupDelete}</button>
+            <button class="btn btn-sm btn-g" onclick="focusOdc(${odc.id})"><i class="bi bi-geo-alt me-1"></i>Fokus</button>
+          </div>
+        </div>
+      `);
+
+      odcMap[odc.id] = { marker, data: odc, coord: [lat, lng] };
+    }
+  });
+
+  // 2. Render ODP Markers (Optical Distribution Point - Amber node)
   odps.forEach(odp => {
     if (odp.lat && odp.lng) {
       const lat = parseFloat(odp.lat);
@@ -992,11 +1476,24 @@
       
       marker.bindPopup(`
         <div class="popup-content">
-          <h6 style="font-weight: 800; color: #0f172a; margin-bottom: 6px;"><i class="bi bi-box-seam-fill text-warning me-1"></i> ${escapeHtml(odp.name)}</h6>
-          <div><strong>${I18N.popupDescription}:</strong> ${escapeHtml(odp.description || '-')}</div>
-          <div><strong>${I18N.popupLocation}:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
-          <div class="popup-actions" style="margin-top: 10px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:6px;">
+            <div style="width:32px; height:32px; border-radius:8px; background:rgba(245,158,11,0.18); color:#f59e0b; display:flex; align-items:center; justify-content:center; font-size:16px;">
+              <i class="bi bi-box-seam-fill"></i>
+            </div>
+            <div>
+              <div style="font-weight:900; font-size:13.5px; color:var(--text); line-height:1.2;">${escapeHtml(odp.name)}</div>
+              <div style="font-size:11px; font-weight:700; color:#f59e0b;">KOTAK DISTRIBUSI ODP</div>
+            </div>
+          </div>
+          ${odp.odc_name ? `<div style="font-size:12px; margin-bottom:3px;"><i class="bi bi-diagram-3-fill" style="color:#8b5cf6;"></i> <strong>ODC Induk:</strong> ${escapeHtml(odp.odc_name)}</div>` : ''}
+          ${odp.parent_odp_name ? `<div style="font-size:12px; margin-bottom:3px;"><i class="bi bi-box-seam text-warning"></i> <strong>ODP Induk:</strong> ${escapeHtml(odp.parent_odp_name)}</div>` : ''}
+          <div style="font-size:12px; margin-bottom:4px;"><strong>Pelanggan:</strong> <span class="badge" style="background:#2563eb; color:#fff; padding:2px 6px; border-radius:4px; font-size:11px;">${odp.connected_customer_count || 0} ONU</span></div>
+          <div style="font-size:12px; margin-bottom:4px;"><strong>${I18N.popupDescription}:</strong> ${escapeHtml(odp.description || '-')}</div>
+          <div style="font-size:11.5px; font-family:monospace; margin-bottom:8px; color:var(--muted);"><strong>${I18N.popupLocation}:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
+          <div class="popup-actions" style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
             <button class="btn btn-sm btn-p" onclick='editOdp(${JSON.stringify(odp)})'><i class="bi bi-pencil me-1"></i>${I18N.popupEdit}</button>
+            <button class="btn btn-sm btn-d" onclick="promptDeleteOdp(${odp.id}, '${escapeHtml(odp.name)}')"><i class="bi bi-trash me-1"></i>${I18N.popupDelete}</button>
+            <button class="btn btn-sm btn-g" onclick="focusOdp(${odp.id})"><i class="bi bi-geo-alt me-1"></i>Fokus</button>
           </div>
         </div>
       `);
@@ -1009,7 +1506,42 @@
     }
   });
 
-  // 2. Render Customer ONU Markers (Clean pin & floating text outline without box)
+  // 3. Connect Cables: ODC ➔ ODP (Feeder) & Parent ODP ➔ Sub ODP (Cascade)
+  odps.forEach(odp => {
+    if (odp.lat && odp.lng) {
+      const odpCoord = [parseFloat(odp.lat), parseFloat(odp.lng)];
+
+      // A. ODC ➔ ODP cable line (Feeder Cable - Purple)
+      if (odp.odc_id && odcMap[odp.odc_id]) {
+        const odcEntry = odcMap[odp.odc_id];
+        const odcLine = L.polyline([odcEntry.coord, odpCoord], {
+          color: '#8b5cf6',
+          weight: 3.5,
+          opacity: 0.85,
+          dashArray: '8, 6',
+          className: 'flowing-line'
+        }).addTo(map);
+        odcLine.bindTooltip(`Kabel Feeder: ODC (${escapeHtml(odcEntry.data.name)}) ➔ ODP (${escapeHtml(odp.name)})`, { sticky: true });
+        odcPolylineList.push({ odcId: odp.odc_id, odpId: odp.id, line: odcLine });
+      }
+
+      // B. Parent ODP ➔ Sub ODP cascade cable line (Amber)
+      if (odp.parent_odp_id && odpMap[odp.parent_odp_id]) {
+        const parentEntry = odpMap[odp.parent_odp_id];
+        const cascadeLine = L.polyline([parentEntry.coord, odpCoord], {
+          color: '#f59e0b',
+          weight: 3,
+          opacity: 0.85,
+          dashArray: '6, 6',
+          className: 'flowing-line'
+        }).addTo(map);
+        cascadeLine.bindTooltip(`Kabel Distribusi Kaskade: ODP ${escapeHtml(parentEntry.data.name)} ➔ ODP ${escapeHtml(odp.name)}`, { sticky: true });
+        odpCascadeLineList.push({ parentId: odp.parent_odp_id, childId: odp.id, line: cascadeLine });
+      }
+    }
+  });
+
+  // 4. Render Customer ONU Markers & Drop Cables
   customers.forEach(cust => {
     if (cust.lat && cust.lng) {
       const lat = parseFloat(cust.lat);
@@ -1032,11 +1564,13 @@
 
         polyline = L.polyline(pathCoords, {
           color: is_active ? '#3b82f6' : '#ef4444',
-          weight: 3,
+          weight: 2.5,
           opacity: 0.8,
-          dashArray: '10, 10',
+          dashArray: '8, 8',
           className: 'flowing-line'
         }).addTo(map);
+
+        polyline.bindTooltip(`Drop Cable: ODP (${escapeHtml(cust.odp_name || 'ODP')}) ➔ Pelanggan (${escapeHtml(cust.name)})`, { sticky: true });
 
         polyline.on('click', (e) => {
           if (currentEditingPolyline === polyline) {
@@ -1166,13 +1700,23 @@
     const matchedOdps = odps.filter(o => {
       return (
         String(o.name || '').toLowerCase().includes(q) ||
-        String(o.description || '').toLowerCase().includes(q)
+        String(o.description || '').toLowerCase().includes(q) ||
+        String(o.odc_name || '').toLowerCase().includes(q)
+      );
+    });
+
+    const matchedOdcs = odcs.filter(c => {
+      return (
+        String(c.name || '').toLowerCase().includes(q) ||
+        String(c.description || '').toLowerCase().includes(q) ||
+        String(c.olt_name || '').toLowerCase().includes(q)
       );
     });
 
     currentSearchResults = [
       ...matchedCustomers.map(c => ({ type: 'customer', data: c })),
-      ...matchedOdps.map(o => ({ type: 'odp', data: o }))
+      ...matchedOdps.map(o => ({ type: 'odp', data: o })),
+      ...matchedOdcs.map(c => ({ type: 'odc', data: c }))
     ];
 
     selectedSearchIndex = -1;
@@ -1214,7 +1758,7 @@
               </span>
             </div>
           `;
-        } else {
+        } else if (item.type === 'odp') {
           const o = item.data;
           html += `
             <div class="ms-item" data-index="${index}" onclick="selectSearchResult(${index})">
@@ -1226,9 +1770,26 @@
                   <span>${highlightMatch(o.name, query)}</span>
                   <span style="font-size: 10px; color: #b45309; font-weight: 700;">(ODP Box)</span>
                 </div>
-                <div class="ms-item-meta">${highlightMatch(o.description || 'Titik Distribusi ODP', query)}</div>
+                <div class="ms-item-meta">${highlightMatch(o.description || (o.odc_name ? 'ODC: ' + o.odc_name : 'Titik Distribusi ODP'), query)}</div>
               </div>
               <span class="ms-item-badge ms-badge-odp">ODP</span>
+            </div>
+          `;
+        } else if (item.type === 'odc') {
+          const c = item.data;
+          html += `
+            <div class="ms-item" data-index="${index}" onclick="selectSearchResult(${index})">
+              <div class="ms-item-icon odc">
+                <i class="bi bi-diagram-3-fill"></i>
+              </div>
+              <div class="ms-item-info">
+                <div class="ms-item-name">
+                  <span>${highlightMatch(c.name, query)}</span>
+                  <span style="font-size: 10px; color: #8b5cf6; font-weight: 700;">(ODC Cabinet)</span>
+                </div>
+                <div class="ms-item-meta">${highlightMatch(c.description || (c.olt_name ? 'OLT: ' + c.olt_name : 'Titik Distribusi Feeder ODC'), query)}</div>
+              </div>
+              <span class="ms-item-badge ms-badge-odc">ODC</span>
             </div>
           `;
         }
@@ -1252,8 +1813,10 @@
 
     if (item.type === 'customer') {
       focusCustomer(item.data.id);
-    } else {
+    } else if (item.type === 'odp') {
       focusOdp(item.data.id);
+    } else if (item.type === 'odc') {
+      focusOdc(item.data.id);
     }
   }
 
@@ -1355,23 +1918,28 @@
     }, 800);
   }
 
+  function focusOdc(id) {
+    const entry = odcMap[id];
+    if (!entry) return;
+
+    const { marker, coord } = entry;
+    map.flyTo(coord, 18, { duration: 1 });
+
+    setTimeout(() => {
+      marker.openPopup();
+      const node = document.getElementById(`odc-node-${id}`);
+      if (node) {
+        node.classList.add('marker-pulse-highlight');
+        setTimeout(() => node.classList.remove('marker-pulse-highlight'), 2500);
+      }
+    }, 800);
+  }
+
   function editOdpFromBtn(btn) {
     if (!btn || !btn.dataset) return;
     const odpId = Number(btn.dataset.odpId);
     const found = odps.find(o => Number(o.id) === odpId);
     if (found) editOdp(found);
-  }
-
-  function deleteOdpFromBtn(btn) {
-    if (!btn || !btn.dataset) return;
-    const odpId = btn.dataset.odpId;
-    if (confirm('Apakah Anda yakin ingin menghapus ODP ini?')) {
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = `/admin/odps/${odpId}/delete`;
-      document.body.appendChild(form);
-      form.submit();
-    }
   }
 
   function focusOdpFromBtn(btn) {
@@ -1380,29 +1948,82 @@
   }
 
   // ─── FILTER & TOGGLE ACTIONS ──────────────────────────────────────────────
-  function applyStatusFilter(status) {
-    currentFilter = status;
-    document.querySelectorAll('.map-filter-group .map-pill-btn').forEach(b => {
-      if (b.id === 'pillAll' && status === 'all') b.classList.add('active');
-      else if (b.id === 'pillActive' && status === 'active') b.classList.add('active');
-      else if (b.id === 'pillSuspended' && status === 'suspended') b.classList.add('active');
-      else if (b.id.startsWith('pill') && b.id !== 'pillLabels') b.classList.remove('active');
+  function setEntityFilter(type) {
+    filterEntity = type;
+    document.getElementById('pillEntAll').classList.toggle('active', type === 'all');
+    document.getElementById('pillEntOdc').classList.toggle('active', type === 'odc');
+    document.getElementById('pillEntOdp').classList.toggle('active', type === 'odp');
+    document.getElementById('pillEntCust').classList.toggle('active', type === 'customer');
+    applyMapFilters();
+  }
+
+  function setStatusFilter(status) {
+    if (filterStatus === status) {
+      filterStatus = 'all'; // toggle off
+    } else {
+      filterStatus = status;
+    }
+    document.getElementById('pillStatActive').classList.toggle('active', filterStatus === 'active');
+    document.getElementById('pillStatSuspended').classList.toggle('active', filterStatus === 'suspended');
+    applyMapFilters();
+  }
+
+  function applyMapFilters() {
+    // 1. ODC Markers
+    const showOdc = (filterEntity === 'all' || filterEntity === 'odc');
+    Object.values(odcMap).forEach(e => {
+      if (showOdc) {
+        if (!map.hasLayer(e.marker)) map.addLayer(e.marker);
+      } else {
+        if (map.hasLayer(e.marker)) map.removeLayer(e.marker);
+      }
     });
 
-    Object.keys(customerMap).forEach(id => {
-      const { marker, data, polyline } = customerMap[id];
+    // 2. ODP Markers
+    const showOdp = (filterEntity === 'all' || filterEntity === 'odp');
+    Object.values(odpMap).forEach(e => {
+      if (showOdp) {
+        if (!map.hasLayer(e.marker)) map.addLayer(e.marker);
+      } else {
+        if (map.hasLayer(e.marker)) map.removeLayer(e.marker);
+      }
+    });
+
+    // 3. Customer Markers & Drop Cables
+    const showCust = (filterEntity === 'all' || filterEntity === 'customer');
+    Object.values(customerMap).forEach(e => {
+      const { marker, data, polyline } = e;
       const isActive = data.status === 'active';
-      let shouldShow = true;
+      let matchStatus = true;
+      if (filterStatus === 'active' && !isActive) matchStatus = false;
+      if (filterStatus === 'suspended' && isActive) matchStatus = false;
 
-      if (status === 'active' && !isActive) shouldShow = false;
-      if (status === 'suspended' && isActive) shouldShow = false;
-
-      if (shouldShow) {
+      const visible = showCust && matchStatus;
+      if (visible) {
         if (!map.hasLayer(marker)) map.addLayer(marker);
         if (polyline && !map.hasLayer(polyline)) map.addLayer(polyline);
       } else {
         if (map.hasLayer(marker)) map.removeLayer(marker);
         if (polyline && map.hasLayer(polyline)) map.removeLayer(polyline);
+      }
+    });
+
+    // 4. Feeder Cables (ODC ➔ ODP)
+    odcPolylineList.forEach(item => {
+      const visible = showOdc || showOdp;
+      if (visible) {
+        if (!map.hasLayer(item.line)) map.addLayer(item.line);
+      } else {
+        if (map.hasLayer(item.line)) map.removeLayer(item.line);
+      }
+    });
+
+    // 5. Cascade Cables (ODP ➔ Sub ODP)
+    odpCascadeLineList.forEach(item => {
+      if (showOdp) {
+        if (!map.hasLayer(item.line)) map.addLayer(item.line);
+      } else {
+        if (map.hasLayer(item.line)) map.removeLayer(item.line);
       }
     });
   }
@@ -1426,10 +2047,13 @@
 
   function fitAllMarkers() {
     const allLayers = [];
-    Object.values(customerMap).forEach(e => {
+    Object.values(odcMap).forEach(e => {
       if (map.hasLayer(e.marker)) allLayers.push(e.marker);
     });
     Object.values(odpMap).forEach(e => {
+      if (map.hasLayer(e.marker)) allLayers.push(e.marker);
+    });
+    Object.values(customerMap).forEach(e => {
       if (map.hasLayer(e.marker)) allLayers.push(e.marker);
     });
 
@@ -1506,6 +2130,145 @@
     input.addEventListener('input', apply);
     apply();
   })();
+
+  // Filter ODC Table
+  (function bindOdcSearch() {
+    const input = document.getElementById('odcSearch');
+    const tbody = document.getElementById('odcsTbody');
+    if (!input || !tbody) return;
+
+    function apply() {
+      const q = String(input.value || '').trim().toLowerCase();
+      const rows = Array.from(tbody.querySelectorAll('tr[data-name]'));
+      rows.forEach(r => {
+        const name = String(r.getAttribute('data-name') || '');
+        const desc = String(r.getAttribute('data-desc') || '');
+        r.style.display = !q || name.includes(q) || desc.includes(q) ? '' : 'none';
+      });
+    }
+
+    input.addEventListener('input', apply);
+    apply();
+  })();
+
+  // ─── SMART DELETE IMPLEMENTATION ──────────────────────────────────────────
+  async function promptDeleteOdp(id, name) {
+    const odpId = Number(id);
+    document.getElementById('smartDeleteOdpForm').action = `/admin/odps/${odpId}/delete`;
+    document.getElementById('sdoOdpName').textContent = name || ('ODP #' + odpId);
+
+    // Populate target ODP options (all other ODPs)
+    const targetSelect = document.getElementById('sdoTargetOdpSelect');
+    targetSelect.innerHTML = '';
+    const otherOdps = odps.filter(o => Number(o.id) !== odpId);
+    if (otherOdps.length > 0) {
+      otherOdps.forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o.id;
+        opt.textContent = `${o.name} (${o.description || 'ODP'})`;
+        targetSelect.appendChild(opt);
+      });
+      document.getElementById('sdoOptMigrate').disabled = false;
+    } else {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = '-- Tidak ada ODP lain untuk migrasi --';
+      targetSelect.appendChild(opt);
+      document.getElementById('sdoOptMigrate').disabled = true;
+    }
+
+    document.getElementById('sdoOptUnlink').checked = true;
+    toggleSdoMigrateSelect();
+
+    try {
+      const res = await fetch(`/admin/api/odps/${odpId}/relations`);
+      const data = await res.json();
+      const custCount = Number(data.customerCount || 0);
+      const childCount = Number(data.childOdpCount || 0);
+
+      document.getElementById('sdoCustCount').textContent = custCount;
+      document.getElementById('sdoChildCount').textContent = childCount;
+
+      if (custCount === 0 && childCount === 0) {
+        document.getElementById('sdoWarningBanner').style.display = 'none';
+        document.getElementById('sdoOptionsContainer').style.display = 'none';
+        document.getElementById('sdoSimpleConfirm').style.display = 'block';
+      } else {
+        document.getElementById('sdoWarningBanner').style.display = 'block';
+        document.getElementById('sdoOptionsContainer').style.display = 'block';
+        document.getElementById('sdoSimpleConfirm').style.display = 'none';
+      }
+    } catch (e) {
+      document.getElementById('sdoWarningBanner').style.display = 'none';
+      document.getElementById('sdoOptionsContainer').style.display = 'block';
+      document.getElementById('sdoSimpleConfirm').style.display = 'none';
+    }
+
+    openModal('smartDeleteOdpModal');
+  }
+
+  function toggleSdoMigrateSelect() {
+    const isMigrate = document.getElementById('sdoOptMigrate').checked;
+    document.getElementById('sdoMigrateBox').style.display = isMigrate ? 'block' : 'none';
+  }
+
+  async function promptDeleteOdc(id, name) {
+    const odcId = Number(id);
+    document.getElementById('smartDeleteOdcForm').action = `/admin/odcs/${odcId}/delete`;
+    document.getElementById('sdcOdcName').textContent = name || ('ODC #' + odcId);
+
+    // Populate target ODC options (all other ODCs)
+    const targetSelect = document.getElementById('sdcTargetOdcSelect');
+    targetSelect.innerHTML = '';
+    const otherOdcs = odcs.filter(c => Number(c.id) !== odcId);
+    if (otherOdcs.length > 0) {
+      otherOdcs.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = `${c.name} (${c.olt_name || 'ODC'})`;
+        targetSelect.appendChild(opt);
+      });
+      document.getElementById('sdcOptMigrate').disabled = false;
+    } else {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = '-- Tidak ada ODC lain untuk migrasi --';
+      targetSelect.appendChild(opt);
+      document.getElementById('sdcOptMigrate').disabled = true;
+    }
+
+    document.getElementById('sdcOptUnlink').checked = true;
+    toggleSdcMigrateSelect();
+
+    try {
+      const res = await fetch(`/admin/api/odcs/${odcId}/relations`);
+      const data = await res.json();
+      const odpCount = Number(data.odpCount || 0);
+
+      document.getElementById('sdcOdpCount').textContent = odpCount;
+
+      if (odpCount === 0) {
+        document.getElementById('sdcWarningBanner').style.display = 'none';
+        document.getElementById('sdcOptionsContainer').style.display = 'none';
+        document.getElementById('sdcSimpleConfirm').style.display = 'block';
+      } else {
+        document.getElementById('sdcWarningBanner').style.display = 'block';
+        document.getElementById('sdcOptionsContainer').style.display = 'block';
+        document.getElementById('sdcSimpleConfirm').style.display = 'none';
+      }
+    } catch (e) {
+      document.getElementById('sdcWarningBanner').style.display = 'none';
+      document.getElementById('sdcOptionsContainer').style.display = 'block';
+      document.getElementById('sdcSimpleConfirm').style.display = 'none';
+    }
+
+    openModal('smartDeleteOdcModal');
+  }
+
+  function toggleSdcMigrateSelect() {
+    const isMigrate = document.getElementById('sdcOptMigrate').checked;
+    document.getElementById('sdcMigrateBox').style.display = isMigrate ? 'block' : 'none';
+  }
 
   // ─── CABLE DRAWING & MODALS ────────────────────────────────────────────────
   let drawingMap, drawingPolyline, drawingMarkers = [];
@@ -1635,7 +2398,7 @@
     }
   }
 
-  // ODP Modal Pickers
+  // ─── ODP MODAL PICKERS ────────────────────────────────────────────────────
   let pickerMap, pickerMarker;
   let editPickerMap, editPickerMarker;
 
@@ -1707,16 +2470,89 @@
     setTimeout(() => editPickerMap.invalidateSize(), 300);
   }
 
-  function openModal(id) { 
-    document.getElementById(id).style.display = 'flex'; 
-    if (id === 'addOdpModal') {
-      const lat = document.getElementById('new_lat').value || officeCoords.lat;
-      const lng = document.getElementById('new_lng').value || officeCoords.lng;
-      initPickerMap(lat, lng);
+  // ─── ODC MODAL PICKERS ────────────────────────────────────────────────────
+  let odcPickerMap, odcPickerMarker;
+  let editOdcPickerMap, editOdcPickerMarker;
+
+  function initOdcPickerMap(lat, lng) {
+    if (!odcPickerMap) {
+      odcPickerMap = L.map('odc-picker-map').setView([lat, lng], 16);
+      L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        maxZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+      }).addTo(odcPickerMap);
+      
+      const odcIcon = L.divIcon({
+        html: '<i class="bi bi-diagram-3-fill picker-icon-odc"></i>',
+        className: 'custom-div-icon',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+
+      odcPickerMarker = L.marker([lat, lng], { draggable: true, icon: odcIcon }).addTo(odcPickerMap);
+      
+      odcPickerMarker.on('dragend', function(e) {
+        const pos = odcPickerMarker.getLatLng();
+        document.getElementById('new_odc_lat').value = pos.lat.toFixed(6);
+        document.getElementById('new_odc_lng').value = pos.lng.toFixed(6);
+      });
+
+      odcPickerMap.on('click', function(e) {
+        odcPickerMarker.setLatLng(e.latlng);
+        document.getElementById('new_odc_lat').value = e.latlng.lat.toFixed(6);
+        document.getElementById('new_odc_lng').value = e.latlng.lng.toFixed(6);
+      });
+    } else {
+      odcPickerMap.setView([lat, lng], 16);
+      odcPickerMarker.setLatLng([lat, lng]);
     }
+    setTimeout(() => odcPickerMap.invalidateSize(), 300);
   }
 
-  function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+  function initEditOdcPickerMap(lat, lng) {
+    if (!editOdcPickerMap) {
+      editOdcPickerMap = L.map('edit-odc-picker-map').setView([lat, lng], 16);
+      L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        maxZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+      }).addTo(editOdcPickerMap);
+      
+      const odcIcon = L.divIcon({
+        html: '<i class="bi bi-diagram-3-fill picker-icon-odc"></i>',
+        className: 'custom-div-icon',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+
+      editOdcPickerMarker = L.marker([lat, lng], { draggable: true, icon: odcIcon }).addTo(editOdcPickerMap);
+      
+      editOdcPickerMarker.on('dragend', function(e) {
+        const pos = editOdcPickerMarker.getLatLng();
+        document.getElementById('e_odc_lat').value = pos.lat.toFixed(6);
+        document.getElementById('e_odc_lng').value = pos.lng.toFixed(6);
+      });
+
+      editOdcPickerMap.on('click', function(e) {
+        editOdcPickerMarker.setLatLng(e.latlng);
+        document.getElementById('e_odc_lat').value = e.latlng.lat.toFixed(6);
+        document.getElementById('e_odc_lng').value = e.latlng.lng.toFixed(6);
+      });
+    } else {
+      editOdcPickerMap.setView([lat, lng], 16);
+      editOdcPickerMarker.setLatLng([lat, lng]);
+    }
+    setTimeout(() => editOdcPickerMap.invalidateSize(), 300);
+  }
+
+  function editOdc(odc) {
+    document.getElementById('editOdcForm').action = '/admin/odcs/' + odc.id + '/update';
+    document.getElementById('e_odc_name').value = odc.name;
+    document.getElementById('e_odc_lat').value = odc.lat;
+    document.getElementById('e_odc_lng').value = odc.lng;
+    document.getElementById('e_odc_description').value = odc.description || '';
+    const oltSelect = document.getElementById('e_odc_olt_id');
+    if (oltSelect) oltSelect.value = odc.olt_id || '';
+    openModal('editOdcModal');
+    initEditOdcPickerMap(parseFloat(odc.lat), parseFloat(odc.lng));
+  }
 
   function editOdp(odp) {
     document.getElementById('editOdpForm').action = '/admin/odps/' + odp.id + '/update';
@@ -1724,26 +2560,28 @@
     document.getElementById('e_odp_lat').value = odp.lat;
     document.getElementById('e_odp_lng').value = odp.lng;
     document.getElementById('e_odp_description').value = odp.description || '';
+    const odcSel = document.getElementById('e_odp_odc_id');
+    if (odcSel) odcSel.value = odp.odc_id || '';
+    const parentSel = document.getElementById('e_odp_parent_id');
+    if (parentSel) parentSel.value = odp.parent_odp_id || '';
     openModal('editOdpModal');
-    initEditPickerMap(odp.lat, odp.lng);
+    initEditPickerMap(parseFloat(odp.lat), parseFloat(odp.lng));
   }
 
-  function deleteOdpFromBtn(btn) {
-    if (!btn || !btn.dataset) return;
-    const odpId = btn.dataset.odpId;
-    if (confirm('Apakah Anda yakin ingin menghapus ODP ini?')) {
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = `/admin/odps/${odpId}/delete`;
-      document.body.appendChild(form);
-      form.submit();
+  function openModal(id) { 
+    document.getElementById(id).style.display = 'flex'; 
+    if (id === 'addOdpModal') {
+      const lat = parseFloat(document.getElementById('new_lat').value) || officeCoords.lat;
+      const lng = parseFloat(document.getElementById('new_lng').value) || officeCoords.lng;
+      initPickerMap(lat, lng);
+    } else if (id === 'addOdcModal') {
+      const lat = parseFloat(document.getElementById('new_odc_lat').value) || officeCoords.lat;
+      const lng = parseFloat(document.getElementById('new_odc_lng').value) || officeCoords.lng;
+      initOdcPickerMap(lat, lng);
     }
   }
 
-  function focusOdpFromBtn(btn) {
-    if (!btn || !btn.dataset) return;
-    focusOdp(btn.dataset.odpId);
-  }
+  function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
   // Right Click on Map to Add ODP
   map.on('contextmenu', function(e) {

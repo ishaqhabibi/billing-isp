@@ -1,0 +1,31 @@
+{
+  "watch": [
+    "app-customer.js",
+    "routes/",
+    "services/",
+    "config/",
+    "middleware/",
+    "utils/"
+  ],
+  "ignore": [
+    "settings.json",
+    "settings*.json",
+    "**/settings.json",
+    "database/",
+    "database/**",
+    "*.db",
+    "*.db-journal",
+    "*.db-wal",
+    "*.db-shm",
+    "*.sqlite",
+    "logs/",
+    "logs/**",
+    "backups/",
+    "backups/**",
+    "auth_info_baileys/",
+    "auth_info_baileys/**",
+    "public/",
+    "public/**"
+  ],
+  "ext": "js,mjs,json"
+}

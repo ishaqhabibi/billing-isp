@@ -671,6 +671,48 @@ function extractUptime(d) {
     return '-';
 }
 
+function extractClientCount(d) {
+    if (!d) return null;
+    let hostsCount = getNestedValue(d, 'InternetGatewayDevice.LANDevice.1.Hosts.HostNumberOfEntries');
+    if (hostsCount !== null && hostsCount !== undefined && hostsCount !== '-') {
+        const count = parseInt(hostsCount, 10);
+        if (!isNaN(count)) return count;
+    }
+    const wlanConfig = getNestedValue(d, 'InternetGatewayDevice.LANDevice.1.WLANConfiguration');
+    if (wlanConfig && typeof wlanConfig === 'object') {
+        let totalAssoc = 0;
+        let found = false;
+        for (const k of Object.keys(wlanConfig)) {
+            const band = wlanConfig[k];
+            if (band && typeof band === 'object') {
+                const assoc = getNestedValue(band, 'TotalAssociations');
+                if (assoc !== null && assoc !== undefined && assoc !== '-') {
+                    const num = parseInt(assoc, 10);
+                    if (!isNaN(num)) {
+                        totalAssoc += num;
+                        found = true;
+                    }
+                } else if (band.AssociatedDevice) {
+                    if (Array.isArray(band.AssociatedDevice)) {
+                        totalAssoc += band.AssociatedDevice.length;
+                        found = true;
+                    } else if (typeof band.AssociatedDevice === 'object') {
+                        totalAssoc += Object.keys(band.AssociatedDevice).length;
+                        found = true;
+                    }
+                }
+            }
+        }
+        if (found) return totalAssoc;
+    }
+    const hostObj = getNestedValue(d, 'InternetGatewayDevice.LANDevice.1.Hosts.Host');
+    if (hostObj) {
+        if (Array.isArray(hostObj)) return hostObj.length;
+        if (typeof hostObj === 'object') return Object.keys(hostObj).length;
+    }
+    return null;
+}
+
 // Middleware: Require Admin Session
 const requireAdmin = (req, res, next) => {
     if (req.session && req.session.isAdmin) {
@@ -846,7 +888,7 @@ async function fetchDevicesFromACS(server, vParams = [], paths = {}, options = {
     try {
         const baseUrl = normalizeUrl(server.url);
         // Gabungkan proyeksi dasar dengan path pencarian
-        let projection = '_id,_lastInform,_ip,_deviceId._Manufacturer,_deviceId._ProductClass,_deviceId._SerialNumber,VirtualParameters,InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1';
+        let projection = '_id,_lastInform,_ip,_deviceId._Manufacturer,_deviceId._ProductClass,_deviceId._SerialNumber,VirtualParameters,InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1,InternetGatewayDevice.LANDevice.1.WLANConfiguration,InternetGatewayDevice.LANDevice.1.Hosts.HostNumberOfEntries,InternetGatewayDevice.DeviceInfo.UpTime,Device.WiFi.SSID';
         
         const params = { projection };
         if (limit !== null) {
@@ -884,6 +926,10 @@ async function fetchDevicesFromACS(server, vParams = [], paths = {}, options = {
             const isOnline = (d._lastInform && (Date.now() - new Date(d._lastInform).getTime() < 900000)) ||
                              (pppoeUser && pppoeUser !== '-' && sessionsMap.has(pppoeUser.toLowerCase()));
 
+            const ssid = extractSsid(d);
+            const uptime = extractUptime(d) || extractPppoeUptime(d);
+            const clientCount = extractClientCount(d);
+
             return {
                 id: d._id,
                 sn: d._deviceId?._SerialNumber || d._id,
@@ -895,6 +941,9 @@ async function fetchDevicesFromACS(server, vParams = [], paths = {}, options = {
                 rx_power: rxPower,
                 pppoe_user: pppoeUser,
                 ip: ip,
+                ssid: (ssid && ssid !== '-') ? ssid : (getNestedValue(d, 'VirtualParameters.SSID') || '-'),
+                uptime: uptime,
+                client_count: clientCount,
                 acs_server_name: server.name,
                 acs_server_id: server.id
             };
@@ -1025,18 +1074,19 @@ router.get('/', async (req, res) => {
                         
                         if (Array.isArray(response.data)) {
                             const devices = response.data.map(d => {
-                                 let rxPower = extractRxPower(d);
-                                
+                                let rxPower = extractRxPower(d);
                                 let pppoeUser = extractPppoeUser(d);
-                                
                                 let ip = extractPppoeIp(d);
-                                
                                 const customerName = getNestedValue(d, 'VirtualParameters.CustomerName') ||
                                                     getNestedValue(d, 'VirtualParameters.customer_name') || '-';
                                 
                                 const isOnline = (d._lastInform && (Date.now() - new Date(d._lastInform).getTime() < 900000)) ||
                                                  (pppoeUser && pppoeUser !== '-' && activeSessionsMap.has(pppoeUser.toLowerCase()));
                                 
+                                const ssid = extractSsid(d);
+                                const uptime = extractUptime(d) || extractPppoeUptime(d);
+                                const clientCount = extractClientCount(d);
+
                                 return {
                                     id: d._id,
                                     sn: d._deviceId?._SerialNumber || d._id,
@@ -1046,8 +1096,12 @@ router.get('/', async (req, res) => {
                                     model: d._deviceId?._ProductClass || '-',
                                     rx_power: rxPower,
                                     pppoe_ip: ip,
+                                    ip: ip,
                                     pppoe_user: pppoeUser,
                                     customer_name: customerName,
+                                    ssid: (ssid && ssid !== '-') ? ssid : (getNestedValue(d, 'VirtualParameters.SSID') || '-'),
+                                    uptime: uptime,
+                                    client_count: clientCount,
                                     acs_server_id: server.id,
                                     acs_server_name: server.name
                                 };
@@ -1501,6 +1555,47 @@ router.get('/api/wifi-settings/:deviceId', requireAdmin, async (req, res) => {
         }
         
         res.json({ success: true, bands });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// POST /admin/acs/api/wifi/:deviceId
+router.post('/api/wifi/:deviceId', requireAdmin, express.json(), async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+        const { ssid, password } = req.body;
+        const cleanSsid = ssid ? String(ssid).trim() : null;
+        const cleanPass = password ? String(password).trim() : null;
+
+        if (!cleanSsid && !cleanPass) {
+            return res.status(400).json({ success: false, error: 'Masukkan nama SSID atau password baru' });
+        }
+        if (cleanPass && cleanPass.length < 8) {
+            return res.status(400).json({ success: false, error: 'Password minimal 8 karakter' });
+        }
+
+        let ssidOk = true;
+        let passOk = true;
+        let errors = [];
+
+        if (cleanSsid) {
+            ssidOk = await customerDevice.updateSSID(deviceId, cleanSsid);
+            if (!ssidOk) errors.push('Gagal mengubah nama SSID');
+        }
+        if (cleanPass) {
+            passOk = await customerDevice.updatePassword(deviceId, cleanPass);
+            if (!passOk) errors.push('Gagal mengubah Password WiFi');
+        }
+
+        const success = (cleanSsid ? ssidOk : true) && (cleanPass ? passOk : true);
+        res.json({
+            success,
+            ssidUpdated: Boolean(cleanSsid && ssidOk),
+            passwordUpdated: Boolean(cleanPass && passOk),
+            message: success ? 'Pengaturan Wi-Fi berhasil diperbarui!' : (errors.join(', ') || 'Gagal memperbarui Wi-Fi'),
+            error: errors.length > 0 ? errors.join(', ') : undefined
+        });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }

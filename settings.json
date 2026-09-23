@@ -72,7 +72,7 @@
   "qris_file": "",
   "use_builtin_acs": false,
   "logo_file": "",
-  "radius_enabled": "0",
+  "radius_enabled": "1",
   "radius_secret": "secret123",
   "radius_auth_port": "1812",
   "radius_acct_port": "1813",

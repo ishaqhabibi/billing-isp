@@ -56,7 +56,15 @@
                 <div class="info-row"><span>PPPoE User</span><span><%= device.pppoeUsername || device.pppoeUser || '-' %></span></div>
                 <div class="info-row"><span>IP Address</span><code><%= device.pppoeIP || device.ip || '-' %></code></div>
                 <div class="info-row"><span>RX Power</span><span class="badge" style="background:var(--primary); color:white;"><%= device.rxPower || '-' %> dBm</span></div>
-                <div class="info-row"><span>SSID</span><span><%= device.ssid || '-' %></span></div>
+                <div class="info-row" style="align-items:center;">
+                    <span>SSID (Nama Wi-Fi)</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <strong style="color:var(--text);"><%= device.ssid || '-' %></strong>
+                        <button type="button" class="btn btn-p btn-sm py-0 px-2" onclick="openDetailWifiModal()" style="font-size:11px;">
+                            <i class="bi bi-pencil-square"></i> Ubah Wi-Fi
+                        </button>
+                    </div>
+                </div>
                 <div class="info-row"><span>Uptime</span><span><%= device.uptime || '-' %></span></div>
                 <div class="info-row"><span>PPPoE Uptime</span><span><%= device.pppoeUptime || '-' %></span></div>
             </div>
@@ -102,5 +110,106 @@
         </footer>
     </div>
 </div>
+
+<!-- Modal Ubah Wi-Fi Perangkat -->
+<div class="mo" id="detailWifiModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:2100; align-items:center; justify-content:center; padding:20px;">
+  <div class="mb" style="background:var(--card-bg); border:1px solid var(--border); border-radius:16px; width:100%; max-width:440px; overflow:hidden; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+      <h6 style="margin:0; font-weight:700;"><i class="bi bi-wifi text-primary"></i> Ubah Nama & Password Wi-Fi</h6>
+      <button type="button" onclick="closeDetailWifiModal()" style="border:none; background:transparent; font-size:20px; color:var(--muted); cursor:pointer;">&times;</button>
+    </div>
+    <form id="detailWifiForm" onsubmit="submitDetailWifi(event)">
+      <div style="padding:20px;">
+        <div style="font-size:12px; padding:10px 14px; background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.2); border-radius:8px; margin-bottom:16px; color:var(--text);">
+          <i class="bi bi-info-circle text-primary me-1"></i> Perintah akan langsung di-push ke modem via TR-069.
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--muted); margin-bottom:6px;">Nama Wi-Fi (SSID) Baru</label>
+          <input type="text" class="fc" id="d_wifi_ssid" value="<%= device.ssid && device.ssid !== '-' ? device.ssid : '' %>" placeholder="Contoh: KELUARGA-NET">
+          <small class="text-muted" style="font-size:11px;">Kosongkan jika hanya ingin mengganti password.</small>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--muted); margin-bottom:6px;">Password Wi-Fi Baru</label>
+          <div style="position:relative;">
+            <input type="password" class="fc" id="d_wifi_password" placeholder="Minimal 8 karakter" minlength="8" style="padding-right:40px;">
+            <button type="button" onclick="togglePassVisibility('d_wifi_password', this)" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); border:none; background:transparent; color:var(--muted); cursor:pointer; padding:4px;">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+          <small class="text-muted" style="font-size:11px;">Minimal 8 karakter. Kosongkan jika hanya ingin mengganti SSID.</small>
+        </div>
+        <div style="margin-bottom:6px;">
+          <label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer;">
+            <input type="checkbox" id="d_wifi_notify_wa" checked>
+            <span>Kirim notifikasi ke WhatsApp pelanggan</span>
+          </label>
+        </div>
+      </div>
+      <div style="padding:14px 20px; background:var(--sub-bg); border-top:1px solid var(--border); display:flex; justify-content:space-between;">
+        <button type="button" class="btn btn-g" onclick="closeDetailWifiModal()">Batal</button>
+        <button type="submit" class="btn btn-p" id="btn_save_detail_wifi">
+          <i class="bi bi-save"></i> Simpan Perubahan
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openDetailWifiModal() {
+  const m = document.getElementById('detailWifiModal');
+  if (m) m.style.display = 'flex';
+}
+function closeDetailWifiModal() {
+  const m = document.getElementById('detailWifiModal');
+  if (m) m.style.display = 'none';
+}
+function togglePassVisibility(inputId, btn) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  if (el.type === 'password') {
+    el.type = 'text';
+    btn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+  } else {
+    el.type = 'password';
+    btn.innerHTML = '<i class="bi bi-eye"></i>';
+  }
+}
+async function submitDetailWifi(e) {
+  e.preventDefault();
+  const ssid = document.getElementById('d_wifi_ssid').value.trim();
+  const password = document.getElementById('d_wifi_password').value.trim();
+  const notifyWa = document.getElementById('d_wifi_notify_wa').checked;
+  const btn = document.getElementById('btn_save_detail_wifi');
+  const tag = '<%= device.phone || device.serialNumber || device.id %>';
+
+  if (!ssid && !password) return alert('Silakan masukkan SSID atau Password baru.');
+  if (password && password.length < 8) return alert('Password Wi-Fi minimal 8 karakter.');
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Menyimpan...';
+
+  try {
+    const res = await fetch('/admin/api/device/' + encodeURIComponent(tag) + '/wifi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ssid, password, notifyWa })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert(data.message || 'Pengaturan Wi-Fi berhasil diperbarui!');
+      closeDetailWifiModal();
+      location.reload();
+    } else {
+      alert('Gagal: ' + (data.error || 'Terjadi kesalahan'));
+    }
+  } catch (err) {
+    alert('Error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-save"></i> Simpan Perubahan';
+  }
+}
+</script>
 </body>
 </html>

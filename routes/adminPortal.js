@@ -15,6 +15,7 @@ const adminSvc = require('../services/adminService');
 const agentSvc = require('../services/agentService');
 const oltSvc = require('../services/oltService');
 const odpSvc = require('../services/odpService');
+const odcSvc = require('../services/odcService');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -177,6 +178,9 @@ function requireAdmin(req, res, next) {
 
 function requireAdminSession(req, res, next) {
   if (req.session?.isAdmin || req.session?.isCashier) return next();
+  if (req.xhr || req.headers['x-requested-with'] === 'XMLHttpRequest' || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+    return res.status(401).json({ error: 'Sesi login telah berakhir. Silakan login kembali.' });
+  }
   return res.redirect('/admin/login');
 }
 
@@ -295,6 +299,9 @@ async function sendPaymentSuccessWA(customerPhone, customerName, periodText, amo
 // Middleware strictly for Admin
 function restrictToAdmin(req, res, next) {
   if (req.session?.isAdmin) return next();
+  if (req.xhr || req.headers['x-requested-with'] === 'XMLHttpRequest' || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+    return res.status(403).json({ error: 'Akses ditolak: Hanya Admin yang dapat melakukan aksi ini.' });
+  }
   req.session._msg = { type: 'error', text: 'Hanya Admin yang dapat mengakses halaman ini.' };
   return res.redirect('/admin');
 }
@@ -688,6 +695,8 @@ router.post('/olts/:id/delete', requireAdminSession, restrictToAdmin, (req, res)
 router.get('/map', requireAdminSession, requireSidebarMenuAccess('map'), (req, res) => {
   const customers = customerSvc.getAllCustomers();
   const odps = odpSvc.getAllOdps();
+  const odcs = odcSvc.getAllOdcs();
+  const olts = oltSvc.getAllOlts();
   
   res.render('admin/map', { 
     title: 'Peta Jaringan', 
@@ -695,6 +704,8 @@ router.get('/map', requireAdminSession, requireSidebarMenuAccess('map'), (req, r
     activePage: 'map', 
     customers, 
     odps,
+    odcs,
+    olts,
     msg: flashMsg(req),
     settings: getSettings()
   });
@@ -879,6 +890,48 @@ router.post('/api/customers/:id/cable-path', requireAdminSession, (req, res) => 
   }
 });
 
+// ─── ODC MANAGEMENT ──────────────────────────────────────────────────────────
+router.post('/odcs', requireAdminSession, restrictToAdmin, express.urlencoded({ extended: true }), (req, res) => {
+  try {
+    odcSvc.createOdc(req.body);
+    req.session._msg = { type: 'success', text: 'ODC berhasil ditambahkan.' };
+  } catch (e) {
+    req.session._msg = { type: 'error', text: 'Gagal: ' + e.message };
+  }
+  res.redirect('/admin/map');
+});
+
+router.post('/odcs/:id/update', requireAdminSession, restrictToAdmin, express.urlencoded({ extended: true }), (req, res) => {
+  try {
+    odcSvc.updateOdc(req.params.id, req.body);
+    req.session._msg = { type: 'success', text: 'ODC berhasil diperbarui.' };
+  } catch (e) {
+    req.session._msg = { type: 'error', text: 'Gagal: ' + e.message };
+  }
+  res.redirect('/admin/map');
+});
+
+router.post('/odcs/:id/delete', requireAdminSession, restrictToAdmin, express.urlencoded({ extended: true }), (req, res) => {
+  try {
+    const { action, target_odc_id } = req.body;
+    odcSvc.deleteOdc(req.params.id, action || 'unlink', target_odc_id);
+    req.session._msg = { type: 'success', text: 'ODC berhasil dihapus.' };
+  } catch (e) {
+    req.session._msg = { type: 'error', text: 'Gagal: ' + e.message };
+  }
+  res.redirect('/admin/map');
+});
+
+router.get('/api/odcs/:id/relations', requireAdminSession, (req, res) => {
+  try {
+    const rels = odcSvc.getOdcRelations(req.params.id);
+    res.json({ ok: true, ...rels });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ─── ODP MANAGEMENT ──────────────────────────────────────────────────────────
 router.post('/odps', requireAdminSession, restrictToAdmin, express.urlencoded({ extended: true }), (req, res) => {
   try {
     odpSvc.createOdp(req.body);
@@ -899,14 +952,24 @@ router.post('/odps/:id/update', requireAdminSession, restrictToAdmin, express.ur
   res.redirect('/admin/map');
 });
 
-router.post('/odps/:id/delete', requireAdminSession, restrictToAdmin, (req, res) => {
+router.post('/odps/:id/delete', requireAdminSession, restrictToAdmin, express.urlencoded({ extended: true }), (req, res) => {
   try {
-    odpSvc.deleteOdp(req.params.id);
+    const { action, target_odp_id } = req.body;
+    odpSvc.deleteOdp(req.params.id, action || 'unlink', target_odp_id);
     req.session._msg = { type: 'success', text: 'ODP berhasil dihapus.' };
   } catch (e) {
     req.session._msg = { type: 'error', text: 'Gagal: ' + e.message };
   }
   res.redirect('/admin/map');
+});
+
+router.get('/api/odps/:id/relations', requireAdminSession, (req, res) => {
+  try {
+    const rels = odpSvc.getOdpRelations(req.params.id);
+    res.json({ ok: true, ...rels });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // --- TECHNICIAN MANAGEMENT ---
@@ -4209,7 +4272,8 @@ router.post('/settings', requireAdminSession, express.urlencoded({ extended: tru
   } catch (e) {
     req.session._msg = { type: 'error', text: 'Gagal: ' + e.message };
   }
-  res.redirect('/admin/settings');
+  const tabHash = (req.body && req.body._active_tab) ? ('#' + req.body._active_tab) : '';
+  res.redirect('/admin/settings' + tabHash);
 });
 
 // ─── BACKUP & RECOVERY ──────────────────────────────────────────────────────
@@ -4758,6 +4822,70 @@ router.post('/api/device/:tag/password', requireAdmin, express.json(), async (re
 router.post('/api/device/:tag/reboot', requireAdmin, async (req, res) => {
   const result = await customerDevice.requestReboot(req.params.tag);
   res.json(result);
+});
+
+router.post('/api/device/:tag/wifi', requireAdmin, express.json(), async (req, res) => {
+  try {
+    const { ssid, password, notifyWa } = req.body;
+    const tag = req.params.tag;
+    const cleanSsid = ssid ? String(ssid).trim() : null;
+    const cleanPass = password ? String(password).trim() : null;
+
+    if (!cleanSsid && !cleanPass) {
+      return res.status(400).json({ success: false, error: 'Masukkan nama SSID atau password baru' });
+    }
+
+    if (cleanPass && cleanPass.length < 8) {
+      return res.status(400).json({ success: false, error: 'Password Wi-Fi minimal 8 karakter' });
+    }
+
+    let ssidOk = true;
+    let passOk = true;
+    let errors = [];
+
+    if (cleanSsid) {
+      ssidOk = await customerDevice.updateSSID(tag, cleanSsid);
+      if (!ssidOk) errors.push('Gagal memperbarui SSID');
+    }
+
+    if (cleanPass) {
+      passOk = await customerDevice.updatePassword(tag, cleanPass);
+      if (!passOk) errors.push('Gagal memperbarui Password Wi-Fi');
+    }
+
+    const success = (cleanSsid ? ssidOk : true) && (cleanPass ? passOk : true);
+
+    if (success && notifyWa !== false) {
+      try {
+        const cust = customerSvc.findCustomerByAny(tag);
+        if (cust && cust.phone) {
+          const now = getNowLocal();
+          let msg = `📶 *PERUBAHAN PENGATURAN WI-FI*\n\n` +
+            `👤 *Pelanggan:* ${cust.name}\n` +
+            `🕒 *Waktu:* ${now}\n\n` +
+            `Informasi Wi-Fi modem Anda telah diperbarui:\n`;
+          if (cleanSsid && ssidOk) msg += `📡 *Nama Wi-Fi (SSID):* ${cleanSsid}\n`;
+          if (cleanPass && passOk) msg += `🔐 *Password Baru:* ${cleanPass}\n`;
+          msg += `\nSilakan pilih SSID baru atau gunakan password baru untuk terhubung kembali ke internet.\n` +
+            `⚠️ Jangan bagikan password ini ke sembarang orang.`;
+          await trySendWhatsappPayment(cust.phone, msg);
+        }
+      } catch (e) {
+        logger.error('[Admin] Gagal kirim notif WiFi via WA: ' + (e.message || e));
+      }
+    }
+
+    res.json({
+      success,
+      ssidUpdated: Boolean(cleanSsid && ssidOk),
+      passwordUpdated: Boolean(cleanPass && passOk),
+      message: success ? 'Pengaturan Wi-Fi berhasil diperbarui!' : (errors.join(', ') || 'Gagal memperbarui Wi-Fi'),
+      error: errors.length > 0 ? errors.join(', ') : undefined
+    });
+  } catch (err) {
+    logger.error('[Admin] Error update wifi:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 router.post('/api/bulk/ssid', requireAdmin, express.json(), async (req, res) => {
@@ -6997,6 +7125,7 @@ router.use('/finance', require('./financePortal'));
 const onuProvisionSvc = require('../services/onuProvisionService');
 
 router.get('/onu-provision', requireAdminSession, restrictToAdmin, (req, res) => {
+  const olts = oltSvc.getAllOlts();
   const oltConfig = {
     vendor: getSetting('olt_vendor', ''),
     host: getSetting('olt_host', ''),
@@ -7011,6 +7140,7 @@ router.get('/onu-provision', requireAdminSession, restrictToAdmin, (req, res) =>
     activePage: 'onu_provision',
     msg: flashMsg(req),
     oltConfig,
+    olts,
     lang: req.session?.lang || 'id'
   });
 });
@@ -7359,7 +7489,7 @@ router.post('/radius-settings', requireAdminSession, restrictToAdmin, async (req
     logger.error('Error saving RADIUS settings:', error);
     req.session._msg = { type: 'danger', text: 'Gagal menyimpan pengaturan: ' + error.message };
   }
-  res.redirect('/admin/radius-settings');
+  res.redirect('/admin/radius-settings#settings');
 });
 
 router.post('/radius/disconnect', requireAdminSession, restrictToAdmin, async (req, res) => {
@@ -7376,15 +7506,69 @@ router.post('/radius/disconnect', requireAdminSession, restrictToAdmin, async (r
   res.redirect('/admin/radius-settings');
 });
 
-router.post('/radius/restart', requireAdminSession, restrictToAdmin, async (req, res) => {
+router.post('/radius/start', requireAdminSession, restrictToAdmin, async (req, res) => {
+  const isJson = req.xhr || req.headers['x-requested-with'] === 'XMLHttpRequest' || (req.headers.accept && req.headers.accept.includes('application/json'));
   try {
+    saveSettings({ radius_enabled: '1' }, { syncFile: false });
     radiusSvc.stop();
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 100));
     radiusSvc.start();
-    req.session._msg = { type: 'success', text: 'Layanan RADIUS Server (UDP Port 1812/1813) berhasil direstart.' };
+    const msg = 'Layanan RADIUS Server (UDP 1812/1813) berhasil diaktifkan dan dijalankan.';
+    if (isJson) {
+      return res.json({ success: true, message: msg, running: true });
+    }
+    req.session._msg = { type: 'success', text: msg };
+  } catch (e) {
+    logger.error('Error starting RADIUS service:', e);
+    const msg = 'Gagal memulai layanan RADIUS: ' + e.message;
+    if (isJson) {
+      return res.status(500).json({ success: false, error: msg });
+    }
+    req.session._msg = { type: 'danger', text: msg };
+  }
+  res.redirect('/admin/radius-settings');
+});
+
+router.post('/radius/stop', requireAdminSession, restrictToAdmin, async (req, res) => {
+  const isJson = req.xhr || req.headers['x-requested-with'] === 'XMLHttpRequest' || (req.headers.accept && req.headers.accept.includes('application/json'));
+  try {
+    saveSettings({ radius_enabled: '0' }, { syncFile: false });
+    radiusSvc.stop();
+    const msg = 'Layanan RADIUS Server berhasil dihentikan (Stopped).';
+    if (isJson) {
+      return res.json({ success: true, message: msg, running: false });
+    }
+    req.session._msg = { type: 'success', text: msg };
+  } catch (e) {
+    logger.error('Error stopping RADIUS service:', e);
+    const msg = 'Gagal menghentikan layanan RADIUS: ' + e.message;
+    if (isJson) {
+      return res.status(500).json({ success: false, error: msg });
+    }
+    req.session._msg = { type: 'danger', text: msg };
+  }
+  res.redirect('/admin/radius-settings');
+});
+
+router.post('/radius/restart', requireAdminSession, restrictToAdmin, async (req, res) => {
+  const isJson = req.xhr || req.headers['x-requested-with'] === 'XMLHttpRequest' || (req.headers.accept && req.headers.accept.includes('application/json'));
+  try {
+    saveSettings({ radius_enabled: '1' }, { syncFile: false });
+    radiusSvc.stop();
+    await new Promise(r => setTimeout(r, 100));
+    radiusSvc.start();
+    const msg = 'Layanan RADIUS Server (UDP Port 1812/1813) berhasil direstart & aktif.';
+    if (isJson) {
+      return res.json({ success: true, message: msg, running: true });
+    }
+    req.session._msg = { type: 'success', text: msg };
   } catch (e) {
     logger.error('Error restarting RADIUS service:', e);
-    req.session._msg = { type: 'danger', text: 'Gagal merestart layanan RADIUS: ' + e.message };
+    const msg = 'Gagal merestart layanan RADIUS: ' + e.message;
+    if (isJson) {
+      return res.status(500).json({ success: false, error: msg });
+    }
+    req.session._msg = { type: 'danger', text: msg };
   }
   res.redirect('/admin/radius-settings');
 });

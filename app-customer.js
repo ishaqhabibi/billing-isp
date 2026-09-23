@@ -17,6 +17,7 @@ const whatsappService = require('./services/whatsappService');
 const mikrotikService = require('./services/mikrotikService');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { scheduleAutoBackup } = require('./services/backupService');
+const SqliteSessionStore = require('./services/sqliteSessionStore');
 
 // Prefer IPv4 to avoid AggregateError (IPv6 timeouts) on some servers
 if (dns.setDefaultResultOrder) {
@@ -83,6 +84,7 @@ app.use(express.text({
   }
 }));
 app.use(session({
+  store: new SqliteSessionStore(db),
   secret: getSetting('session_secret', 'rahasia-portal-pelanggan-default-ganti-ini'),
   resave: false,
   saveUninitialized: false,

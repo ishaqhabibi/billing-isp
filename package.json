@@ -5,7 +5,7 @@
   "main": "app-customer.js",
   "scripts": {
     "start": "node app-customer.js",
-    "dev": "nodemon app-customer.js",
+    "dev": "nodemon --config nodemon.json app-customer.js",
     "postinstall": "echo 'Install complete. If you used sudo, run: sudo chown -R $USER:$USER .'",
     "fix-permissions": "sudo chown -R $USER:$USER ."
   },
@@ -46,6 +46,20 @@
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "settings.json",
+      "settings*.json",
+      "**/settings.json",
+      "database/*",
+      "*.db*",
+      "*.sqlite*",
+      "logs/*",
+      "backups/*",
+      "auth_info_baileys/*",
+      "public/*"
+    ]
   },
   "author": "",
   "license": "ISC"

@@ -133,10 +133,11 @@
                                 <th style="width: 40px;"><input type="checkbox" id="selectAllDevices" onchange="toggleSelectAll(this)"></th>
                                 <th>Device ID / SN</th>
                                 <th>Customer Name</th>
+                                <th>Wi-Fi & Pengguna</th>
                                 <th>IP Address</th>
                                 <th>RX Power</th>
                                 <th>PPPoE User</th>
-                                <th>ACS Server</th>
+                                <th>Uptime</th>
                                 <th>Status</th>
                                 <th>Action</th>
                             </tr>
@@ -160,17 +161,28 @@
                                         <span class="text-muted" style="font-size:12px;">-</span>
                                     <% } %>
                                 </td>
+                                <td>
+                                    <div style="font-weight:600; color:var(--text); font-size:12px; display:flex; align-items:center; gap:4px;">
+                                        <i class="bi bi-wifi text-primary"></i> <span><%= d.ssid || '-' %></span>
+                                    </div>
+                                    <div style="margin-top:3px;">
+                                        <span class="badge bs" style="font-size:10px; padding:2px 7px; font-weight:700;" title="Jumlah Perangkat Terhubung ke Modem">
+                                            <i class="bi bi-people-fill me-1"></i><%= (d.client_count !== null && d.client_count !== undefined) ? (d.client_count + ' User') : '-' %>
+                                        </span>
+                                    </div>
+                                </td>
                                 <td><code><%= d.ip %></code></td>
                                 <td><%= d.rx_power %> dBm</td>
                                 <td><%= d.pppoe_user %></td>
-                                <td><span class="acs-server-tag"><%= d.acs_server_name %></span></td>
+                                <td style="font-size:12px; font-family:monospace;"><%= d.uptime || '-' %></td>
                                 <td>
                                     <span class="status-badge <%= d.isOnline ? 'status-up' : 'status-down' %>">
                                         <%= d.isOnline ? 'Online' : 'Offline' %>
                                     </span>
                                 </td>
                                 <td>
-                                    <div style="display:flex; align-items:center; gap:8px;">
+                                    <div style="display:flex; align-items:center; gap:6px;">
+                                        <button class="btn-action" onclick="openAcsWifiModal('<%= d.id %>', '<%= d.sn %>', '<%= d.ssid || "" %>', '<%= d.customer_name || "" %>')" title="Ganti Nama / Password Wi-Fi" style="color:var(--primary);"><i class="bi bi-wifi"></i></button>
                                         <button class="btn-action" onclick="refreshDevice('<%= d.id %>')" title="Refresh Device"><i class="fas fa-sync"></i></button>
                                         <button class="btn-action" onclick="openAddWanModal('<%= d.id %>', '<%= d.acs_server_id || selectedAcsId %>', '<%= d.sn %>', '<%= d.manufacturer || "" %>', '<%= d.model || "" %>')" title="Add WAN All-in-One"><i class="fas fa-network-wired"></i></button>
                                         <button class="btn-action danger" onclick="deleteDevice('<%= d.id %>', '<%= d.acs_server_id || selectedAcsId %>')" title="Hapus Perangkat"><i class="fas fa-trash"></i></button>
@@ -481,7 +493,112 @@
   </div>
 </div>
 
+<!-- Modal Ubah Wi-Fi Perangkat (TR-069) -->
+<div class="mo" id="acsWifiModal">
+  <div class="mb" style="max-width:460px">
+    <div class="mh">
+      <span class="mt"><i class="bi bi-wifi text-primary"></i> Kelola Wi-Fi Perangkat (TR-069)</span>
+      <button type="button" class="mc" onclick="closeModal('acsWifiModal')">&times;</button>
+    </div>
+    <form id="acsWifiForm" onsubmit="submitAcsWifi(event)">
+      <div class="mbody" style="padding:16px 20px">
+        <input type="hidden" id="acs_wifi_device_id" value="">
+        <div class="alert alert-i mb-3" style="font-size:12px;padding:8px 12px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:8px;color:var(--text)">
+          <i class="bi bi-info-circle me-1 text-primary"></i> Perubahan konfigurasi Wi-Fi akan langsung dikirimkan ke modem via TR-069.
+        </div>
+        <div class="fg mb-3">
+          <label class="fl">Perangkat / Pelanggan</label>
+          <input type="text" class="fc" id="acs_wifi_device_label" readonly style="opacity:0.85;background:var(--sub-bg);font-weight:600;">
+        </div>
+        <div class="fg mb-3">
+          <label class="fl">Nama Wi-Fi (SSID) Baru</label>
+          <input type="text" class="fc" id="acs_wifi_new_ssid" placeholder="Contoh: KELUARGA-NET">
+          <small class="text-muted" style="font-size:11px">Kosongkan jika hanya ingin mengganti password.</small>
+        </div>
+        <div class="fg mb-3">
+          <label class="fl">Password Wi-Fi Baru</label>
+          <div style="position:relative">
+            <input type="password" class="fc" id="acs_wifi_new_password" placeholder="Minimal 8 karakter" minlength="8" style="padding-right:40px">
+            <button type="button" onclick="togglePassVisibility('acs_wifi_new_password', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:var(--muted);cursor:pointer;padding:4px">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+          <small class="text-muted" style="font-size:11px">Minimal 8 karakter. Kosongkan jika hanya ingin mengganti SSID.</small>
+        </div>
+        <div class="fg mb-2">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
+            <input type="checkbox" id="acs_wifi_notify_wa" checked>
+            <span>Kirim notifikasi ke WhatsApp pelanggan jika terhubung</span>
+          </label>
+        </div>
+      </div>
+      <div class="mf d-flex justify-content-between">
+        <button type="button" class="btn btn-g" onclick="closeModal('acsWifiModal')">Batal</button>
+        <button type="submit" class="btn btn-p" id="btn_save_acs_wifi">
+          <i class="bi bi-save"></i> Simpan Wi-Fi
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
+function openAcsWifiModal(id, sn, currentSsid, custName) {
+    document.getElementById('acs_wifi_device_id').value = id;
+    document.getElementById('acs_wifi_device_label').value = (custName && custName !== '-' ? (custName + ' — ') : '') + (sn || id);
+    document.getElementById('acs_wifi_new_ssid').value = (currentSsid && currentSsid !== '-' ? currentSsid : '');
+    document.getElementById('acs_wifi_new_password').value = '';
+    openModal('acsWifiModal');
+}
+
+async function submitAcsWifi(e) {
+    e.preventDefault();
+    const deviceId = document.getElementById('acs_wifi_device_id').value;
+    const ssid = document.getElementById('acs_wifi_new_ssid').value.trim();
+    const password = document.getElementById('acs_wifi_new_password').value.trim();
+    const notifyWa = document.getElementById('acs_wifi_notify_wa').checked;
+    const btn = document.getElementById('btn_save_acs_wifi');
+
+    if (!ssid && !password) return alert('Silakan masukkan nama SSID atau password baru.');
+    if (password && password.length < 8) return alert('Password Wi-Fi minimal 8 karakter.');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Menyimpan...';
+
+    try {
+        const res = await fetch('/admin/api/device/' + encodeURIComponent(deviceId) + '/wifi', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ssid, password, notifyWa })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message || 'Pengaturan Wi-Fi berhasil diperbarui!');
+            closeModal('acsWifiModal');
+            location.reload();
+        } else {
+            alert('Gagal: ' + (data.error || 'Terjadi kesalahan'));
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-save"></i> Simpan Wi-Fi';
+    }
+}
+
+function togglePassVisibility(inputId, btn) {
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    if (el.type === 'password') {
+        el.type = 'text';
+        btn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+    } else {
+        el.type = 'password';
+        btn.innerHTML = '<i class="bi bi-eye"></i>';
+    }
+}
+
 function switchTab(id, btn) {
     document.querySelectorAll('.tab-pane').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));

@@ -21,15 +21,24 @@ try {
   db.pragma('mmap_size = 134217728'); // Memory-mapped I/O 128MB
   db.pragma('busy_timeout = 5000');   // Tunggu 5 detik jika DB locked sebelum error
 
+  // Export db langsung agar modul yang mengimpornya saat startup tidak menerima objek kosong
+  module.exports = db;
+
+  // Baca timezone tanpa require settingsManager untuk menghindari circular dependency
+  let cachedTz = 'Asia/Jakarta';
+  try {
+    const raw = fs.readFileSync(path.join(__dirname, '../settings.json'), 'utf-8');
+    const s = JSON.parse(raw);
+    if (s && s.timezone) cachedTz = s.timezone;
+  } catch (_) {}
+
   // Menambahkan fungsi waktu lokal untuk SQLite sesuai setting timezone
   db.function('NOW_LOCAL', () => {
-    const { getSetting } = require('./settingsManager');
-    const tz = getSetting('timezone', 'Asia/Jakarta');
     const now = new Date();
     
     // Format: YYYY-MM-DD HH:mm:ss
     const options = {
-      timeZone: tz,
+      timeZone: cachedTz,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -1163,6 +1172,31 @@ try {
   }
 } catch(e) {
   console.error('Failed to migrate public_donation_orders:', e);
+}
+
+// Safe migration: ODCS table & ODP hierarchy columns
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS odcs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      olt_id INTEGER REFERENCES olts(id) ON DELETE SET NULL,
+      lat TEXT NOT NULL,
+      lng TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      created_at DATETIME DEFAULT (NOW_LOCAL())
+    );
+  `);
+
+  const odpCols = db.prepare("PRAGMA table_info(odps)").all();
+  if (!odpCols.some(c => c.name === 'odc_id')) {
+    db.exec("ALTER TABLE odps ADD COLUMN odc_id INTEGER REFERENCES odcs(id) ON DELETE SET NULL");
+  }
+  if (!odpCols.some(c => c.name === 'parent_odp_id')) {
+    db.exec("ALTER TABLE odps ADD COLUMN parent_odp_id INTEGER REFERENCES odps(id) ON DELETE SET NULL");
+  }
+} catch(e) {
+  console.error('Failed to migrate odcs/odps:', e);
 }
 
 module.exports = db;

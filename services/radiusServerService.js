@@ -505,29 +505,41 @@ function handleAcctMessage(msg, rinfo) {
  * Menjalankan Server RADIUS (UDP Auth & Acct)
  */
 function start() {
-  if (isRunning) return;
+  if (isRunning && authSocket && acctSocket) {
+    return true;
+  }
+
+  // Jika ada socket lama menggantung, bersihkan dulu
+  stop();
 
   const authPort = parseInt(getSetting('radius_auth_port', 1812), 10) || 1812;
   const acctPort = parseInt(getSetting('radius_acct_port', 1813), 10) || 1813;
 
   try {
-    authSocket = dgram.createSocket('udp4');
+    authSocket = dgram.createSocket({ type: 'udp4', reuseAddr: true });
     authSocket.on('message', handleAuthMessage);
-    authSocket.on('error', (err) => logger.error(`[RADIUS Auth Error] ${err.message}`));
+    authSocket.on('error', (err) => {
+      logger.error(`[RADIUS Auth Error] ${err.message}`);
+    });
     authSocket.bind(authPort, () => {
       logger.info(`[RADIUS] Auth Server mendengarkan pada port UDP ${authPort}`);
     });
 
-    acctSocket = dgram.createSocket('udp4');
+    acctSocket = dgram.createSocket({ type: 'udp4', reuseAddr: true });
     acctSocket.on('message', handleAcctMessage);
-    acctSocket.on('error', (err) => logger.error(`[RADIUS Acct Error] ${err.message}`));
+    acctSocket.on('error', (err) => {
+      logger.error(`[RADIUS Acct Error] ${err.message}`);
+    });
     acctSocket.bind(acctPort, () => {
       logger.info(`[RADIUS] Accounting Server mendengarkan pada port UDP ${acctPort}`);
     });
 
     isRunning = true;
+    return true;
   } catch (err) {
     logger.error(`[RADIUS] Gagal menjalankan server RADIUS: ${err.message}`);
+    stop();
+    return false;
   }
 }
 
@@ -535,15 +547,25 @@ function start() {
  * Menghentikan Server RADIUS
  */
 function stop() {
-  if (!isRunning) return;
   try {
-    if (authSocket) authSocket.close();
-    if (acctSocket) acctSocket.close();
-  } catch (e) {}
+    if (authSocket) {
+      authSocket.removeAllListeners();
+      try { authSocket.close(); } catch (_) {}
+    }
+  } catch (_) {}
+
+  try {
+    if (acctSocket) {
+      acctSocket.removeAllListeners();
+      try { acctSocket.close(); } catch (_) {}
+    }
+  } catch (_) {}
+
   authSocket = null;
   acctSocket = null;
   isRunning = false;
   logger.info(`[RADIUS] Server RADIUS telah dihentikan.`);
+  return true;
 }
 
 /**
