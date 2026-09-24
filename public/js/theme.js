@@ -1,44 +1,66 @@
-(function() {
-  const savedTheme = localStorage.getItem('app-theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', savedTheme);
-  if (savedTheme === 'light') {
-    document.body?.classList.add('light-theme');
+// public/js/theme.js - BionFiber Unified Theme Switcher
+
+function applyAppTheme(theme) {
+  const isLight = (theme === 'light');
+  
+  // Set data-theme attribute on root
+  document.documentElement.setAttribute('data-theme', isLight ? 'light' : 'dark');
+  
+  // Toggle .light-theme class on both html and body
+  if (isLight) {
+    document.documentElement.classList.add('light-theme');
+    if (document.body) document.body.classList.add('light-theme');
+  } else {
+    document.documentElement.classList.remove('light-theme');
+    if (document.body) document.body.classList.remove('light-theme');
   }
-})();
+
+  updateThemeToggleIcons(theme);
+}
 
 function toggleAppTheme() {
-  const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', newTheme);
-  if (document.body) {
-    document.body.classList.toggle('light-theme', newTheme === 'light');
+  const current = localStorage.getItem('app-theme') || 
+                  document.documentElement.getAttribute('data-theme') || 
+                  (document.documentElement.classList.contains('light-theme') ? 'light' : 'dark');
+  const newTheme = (current === 'light') ? 'dark' : 'light';
+  
+  try {
+    localStorage.setItem('app-theme', newTheme);
+  } catch (e) {
+    console.error('Failed to save theme in localStorage', e);
   }
-  localStorage.setItem('app-theme', newTheme);
-  updateThemeToggleIcons(newTheme);
+  
+  applyAppTheme(newTheme);
 }
 
 function updateThemeToggleIcons(theme) {
-  const icons = document.querySelectorAll('.theme-toggle-icon');
-  const btns = document.querySelectorAll('.theme-toggle-btn');
-  icons.forEach(icon => {
-    if (theme === 'light') {
-      icon.className = 'bi bi-sun-fill theme-toggle-icon';
-      icon.style.color = '#f59e0b';
-    } else {
-      icon.className = 'bi bi-moon-stars-fill theme-toggle-icon';
-      icon.style.color = '#fbbf24';
-    }
+  const isLight = (theme === 'light');
+  document.querySelectorAll('.theme-toggle-icon').forEach(icon => {
+    icon.className = isLight ? 'bi bi-sun-fill theme-toggle-icon' : 'bi bi-moon-stars-fill theme-toggle-icon';
+    icon.style.color = isLight ? '#f59e0b' : '#38bdf8';
   });
-  btns.forEach(btn => {
-    btn.setAttribute('title', theme === 'light' ? 'Ganti ke Mode Gelap (Dark)' : 'Ganti ke Mode Terang (Light)');
+  document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+    btn.setAttribute('title', isLight ? 'Ganti ke Mode Gelap (Dark)' : 'Ganti ke Mode Terang (Light)');
   });
 }
 
+// Immediate run
+(function() {
+  try {
+    const saved = localStorage.getItem('app-theme') || 'dark';
+    applyAppTheme(saved);
+  } catch (e) {}
+})();
+
+// Re-apply when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  const theme = localStorage.getItem('app-theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', theme);
-  if (theme === 'light') {
-    document.body?.classList.add('light-theme');
-  }
-  updateThemeToggleIcons(theme);
+  try {
+    const saved = localStorage.getItem('app-theme') || 'dark';
+    applyAppTheme(saved);
+  } catch (e) {}
 });
+
+// Expose globally
+window.applyAppTheme = applyAppTheme;
+window.toggleAppTheme = toggleAppTheme;
+window.updateThemeToggleIcons = updateThemeToggleIcons;

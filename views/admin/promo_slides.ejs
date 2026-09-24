@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f172a">
   <link rel="manifest" href="/admin/manifest.webmanifest">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/admin.css?v=2.6">
 </head>
 <body>
 <%- include('partials/sidebar', { activePage: 'promo_slides', company }) %>
@@ -117,7 +117,7 @@
                   <div style="font-weight:600;"><%= s.title || '(Tanpa Judul)' %></div>
                   <div style="font-size:12px; color:#888; margin-top:4px;"><%= s.description || '-' %></div>
                   <% if (s.url) { %>
-                  <div style="font-size:11px; color:#6366f1; margin-top:4px;"><i class="bi bi-link-45deg"></i> <%= s.url %></div>
+                  <div style="font-size:11px; color:#0052cc; margin-top:4px;"><i class="bi bi-link-45deg"></i> <%= s.url %></div>
                   <% } %>
                 </td>
                 <td><strong><%= s.sort_order %></strong></td>
@@ -159,8 +159,8 @@
   .alert-d { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
   .badge { padding:4px 8px; border-radius:4px; font-size:11px; font-weight:600; }
   .btn { padding:8px 12px; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:6px; text-decoration:none; }
-  .btn-p { background:#6366f1; color:white; }
-  .btn-p:hover { background:#4f46e5; }
+  .btn-p { background:#0052cc; color:white; }
+  .btn-p:hover { background:#004099; }
   .btn-g { background:#64748b; color:white; }
   .btn-g:hover { background:#475569; }
   .btn-d { background:#ef4444; color:white; }
@@ -356,8 +356,8 @@
   
   .fc:focus {
     outline: none;
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    border-color: #0052cc;
+    box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.15);
   }
   
   .hint {

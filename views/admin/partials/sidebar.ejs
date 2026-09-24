@@ -1,51 +1,5 @@
 <!-- views/admin/partials/sidebar.ejs -->
-<script>
-(function() {
-  const savedTheme = localStorage.getItem('app-theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', savedTheme);
-  if (savedTheme === 'light') {
-    document.documentElement.classList.add('light-theme');
-  } else {
-    document.documentElement.classList.remove('light-theme');
-  }
-})();
-
-function toggleAppTheme() {
-  const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', newTheme);
-  if (newTheme === 'light') {
-    document.documentElement.classList.add('light-theme');
-    if (document.body) document.body.classList.add('light-theme');
-  } else {
-    document.documentElement.classList.remove('light-theme');
-    if (document.body) document.body.classList.remove('light-theme');
-  }
-  localStorage.setItem('app-theme', newTheme);
-  updateThemeToggleIcons(newTheme);
-}
-
-function updateThemeToggleIcons(theme) {
-  const isLight = theme === 'light';
-  document.querySelectorAll('.theme-toggle-icon').forEach(icon => {
-    icon.className = isLight ? 'bi bi-sun-fill theme-toggle-icon' : 'bi bi-moon-stars-fill theme-toggle-icon';
-    icon.style.color = isLight ? '#f59e0b' : '#fbbf24';
-  });
-  document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
-    btn.setAttribute('title', isLight ? 'Ganti ke Mode Gelap (Dark)' : 'Ganti ke Mode Terang (Light)');
-  });
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  const theme = localStorage.getItem('app-theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', theme);
-  if (theme === 'light') {
-    document.documentElement.classList.add('light-theme');
-    if (document.body) document.body.classList.add('light-theme');
-  }
-  updateThemeToggleIcons(theme);
-});
-</script>
+<script src="/js/theme.js"></script>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sb-brand">
@@ -110,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     </a>
     <div class="mt-4 px-3 py-2 text-center" style="border-top: 1px solid rgba(255,255,255,0.1);">
       <a href="javascript:void(0)"
-        style="color: #94a3b8; font-size: 11px; text-decoration: none; font-weight: 600; cursor: default;">
+        style="color: #79abfa; font-size: 11px; text-decoration: none; font-weight: 600; cursor: default;">
         <%= (typeof company !== 'undefined' && company) ? company : 'BIONFIBER' %> BILLING SYSTEM
       </a>
     </div>
@@ -244,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.key === 'Escape') hideLockedMenuNotice();
   });
 </script>
-<script src="/js/theme.js"></script>
+
 
 <!-- Bottom Navigation (Mobile Only) -->
 <nav class="bottom-nav" id="bottomNav">

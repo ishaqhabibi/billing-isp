@@ -4,7 +4,7 @@
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
     <title>GenieACS Pro | <%= company %></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/admin.css?v=2.6">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px; margin-bottom:30px; }
@@ -15,10 +15,7 @@
         .stat-info h3 { font-size:28px; font-weight:800; margin:0; line-height:1; }
         .stat-info p { font-size:13px; color:var(--muted); margin:8px 0 0; }
 
-        .acs-box { background:var(--card-bg); border:1px solid var(--border); border-radius:22px; overflow:hidden; }
-        .tab-bar { display:flex; background:var(--sub-bg); border-bottom:1px solid var(--border); }
-        .tab-bar button { padding:18px 25px; background:none; border:none; color:var(--muted); font-weight:600; cursor:pointer; transition:all 0.3s; border-bottom:3px solid transparent; display:flex; align-items:center; gap:8px; font-size:14px; }
-        .tab-bar button.active { color:var(--primary); border-bottom-color:var(--primary); background:rgba(59,130,246,0.05); }
+        .acs-box { background:var(--card-bg); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
 
         .tab-pane { padding:30px; display:none; animation:fadeIn 0.4s ease; }
         .tab-pane.active { display:block; }
@@ -91,11 +88,12 @@
             </div>
         </div>
 
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('devices', this)"><i class="bi bi-display"></i> Devices</button>
+            <button class="tab-btn" onclick="switchTab('servers', this)"><i class="bi bi-server"></i> ACS Servers</button>
+        </div>
+
         <div class="acs-box">
-            <div class="tab-bar">
-                <button class="active" onclick="switchTab('devices', this)"><i class="fas fa-desktop"></i> Devices</button>
-                <button onclick="switchTab('servers', this)"><i class="fas fa-server"></i> ACS Servers</button>
-            </div>
 
             <div id="tab-devices" class="tab-pane active">
                 <form action="/admin/acs/search" method="GET" class="srow">

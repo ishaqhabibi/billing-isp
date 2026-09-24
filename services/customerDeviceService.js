@@ -136,6 +136,13 @@ const parameterPaths = {
     'Device.WiFi.SSID.1.SSID',
     'Device.WiFi.SSID.2.SSID'
   ],
+  wifiPassword: [
+    'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase',
+    'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase',
+    'Device.WiFi.AccessPoint.1.Security.KeyPassphrase',
+    'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.KeyPassphrase',
+    'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.PreSharedKey.1.KeyPassphrase'
+  ],
   rxPower: [
     'VirtualParameters.RXPower',
     'VirtualParameters.redaman',
@@ -746,6 +753,7 @@ function mapDeviceData(device, tag, isPppoeActive = false) {
   const serialNumber = getParameterWithPaths(device, parameterPaths.serialNumber);
   const productClass = getParameterWithPaths(device, parameterPaths.model);
   const softwareVersion = getParameterWithPaths(device, parameterPaths.softwareVersion);
+  const wifiPassword = getParameterWithPaths(device, parameterPaths.wifiPassword);
   const model = productClass;
 
   let lokasi = device?._tags || '-';
@@ -754,6 +762,7 @@ function mapDeviceData(device, tag, isPppoeActive = false) {
   return {
     phone: tag,
     ssid: ssidDisplay,
+    wifiPassword: wifiPassword === 'N/A' ? '' : wifiPassword,
     status,
     lastInform,
     lastInformRaw: lastInformRaw || '',
@@ -804,6 +813,7 @@ function fallbackCustomer(tag) {
   return {
     phone: tag,
     ssid: '-',
+    wifiPassword: '',
     status: 'Tidak ditemukan',
     lastInform: '-',
     lastInformAgo: '-',

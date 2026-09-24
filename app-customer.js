@@ -1628,7 +1628,17 @@ app.get('/admin/manifest.webmanifest', (req, res) => {
     ]
   });
 });
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: 0,
+  etag: false,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.css') || filePath.endsWith('.js')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 // Route: Kebijakan Privasi (Privacy Policy) untuk Google Play Store
 app.get(['/privacy-policy', '/privacy', '/kebijakan-privasi', '/privacy.html'], (req, res) => {

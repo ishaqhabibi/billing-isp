@@ -4,7 +4,7 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title><%= title %> | <%= company %></title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/admin.css?v=2.6">
   <style>
     /* ── ONU STATUS DOT ── */
     .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
@@ -18,12 +18,6 @@
     /* ── MONITORING SECTION ── */
     #monitoring-section{display:none}
     #dashboard-section{display:block}
-
-    /* ── NAV TABS ── */
-    .tab-bar{display:flex;gap:4px;background:var(--bg3);padding:4px;border-radius:10px;margin-bottom:20px;width:fit-content}
-    .tab-btn{padding:8px 20px;border-radius:7px;border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .2s}
-    .tab-btn.active{background:var(--bg2);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.3)}
-    .tab-btn i{margin-right:6px}
 
     /* ── DEVICE STATUS BADGE ── */
     .ds-on{background:rgba(63,185,80,.15);color:#3fb950;border:1px solid rgba(63,185,80,.3)}

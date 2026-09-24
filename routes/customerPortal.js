@@ -1884,7 +1884,7 @@ router.get('/dashboard', async (req, res) => {
     customerBalance,
     isLoggedIn: true,
     showPPOB,
-    notif: msgNotif || (deviceData ? null : dashboardNotif('Data perangkat tidak ditemukan di sistem ONU.', 'warning'))
+    notif: msgNotif || null
   });
 });
 

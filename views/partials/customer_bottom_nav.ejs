@@ -7,15 +7,15 @@
     left: 0;
     right: 0;
     height: 70px;
-    background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(16px) saturate(180%);
-    border-top: 1px solid rgba(99, 102, 241, 0.25);
+    background: var(--isp-navbar, rgba(15, 22, 36, 0.96));
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--isp-border, rgba(255, 255, 255, 0.08));
     display: flex;
     justify-content: space-around;
     align-items: center;
     z-index: 1050;
     padding-bottom: env(safe-area-inset-bottom);
-    box-shadow: 0 -12px 35px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
   }
 
   .nav-item {
@@ -23,11 +23,11 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #cbd5e1;
+    color: var(--isp-text-muted, #94a3b8);
     text-decoration: none;
     font-size: 11px;
     font-weight: 700;
-    transition: all 0.25s ease;
+    transition: all 0.2s ease;
     flex: 1;
     height: 100%;
     cursor: pointer;
@@ -41,16 +41,16 @@
   }
 
   .nav-item:hover {
-    color: #ffffff;
+    color: var(--isp-text-heading, #ffffff);
   }
 
   .nav-item.active {
-    color: #38bdf8;
+    color: var(--isp-primary, #2563eb);
   }
 
   .nav-item.active i {
     transform: translateY(-2px);
-    color: #38bdf8;
+    color: var(--isp-primary, #2563eb);
   }
 
   .nav-item.active::after {
@@ -59,9 +59,8 @@
     bottom: 6px;
     width: 5px;
     height: 5px;
-    background: #38bdf8;
+    background: var(--isp-primary, #2563eb);
     border-radius: 50%;
-    box-shadow: 0 0 8px #38bdf8;
   }
 
   /* Hide on desktop, show only on mobile */
@@ -80,13 +79,9 @@
     <i class="bi bi-house-door-fill"></i>
     <span>Beranda</span>
   </a>
-  <div class="nav-item" onclick="triggerEditSsidNav()" title="Ubah Nama WiFi">
-    <i class="bi bi-wifi text-info"></i>
-    <span>Nama WiFi</span>
-  </div>
-  <div class="nav-item" onclick="triggerEditPasswordNav()" title="Ubah Sandi WiFi">
-    <i class="bi bi-key-fill text-success"></i>
-    <span>Sandi WiFi</span>
+  <div class="nav-item" onclick="triggerRebootNav()" title="Nyalakan Ulang Modem">
+    <i class="bi bi-arrow-clockwise text-danger"></i>
+    <span>Restart</span>
   </div>
   <a href="/customer/dashboard#billing-section" class="nav-item <%= activeNav === 'billing' ? 'active' : '' %>">
     <i class="bi bi-receipt-cutoff text-warning"></i>
@@ -99,22 +94,16 @@
 </nav>
 
 <script>
-  function triggerEditSsidNav() {
-    if (typeof editSsid === 'function') {
+  function triggerRebootNav() {
+    if (typeof rebootDevice === 'function') {
       const devId = (typeof customer !== 'undefined' && customer && customer.id) ? customer.id : '';
-      const ssid = (typeof customer !== 'undefined' && customer && customer.ssid) ? customer.ssid : '';
-      editSsid(devId, ssid);
+      rebootDevice(devId);
     } else {
-      window.location.href = '/customer/dashboard#home-section';
-    }
-  }
-
-  function triggerEditPasswordNav() {
-    if (typeof editPassword === 'function') {
-      const devId = (typeof customer !== 'undefined' && customer && customer.id) ? customer.id : '';
-      editPassword(devId);
-    } else {
-      window.location.href = '/customer/dashboard#home-section';
+      const el = document.getElementById('rebootModal');
+      if (el && typeof bootstrap !== 'undefined') {
+        const m = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
+        m.show();
+      }
     }
   }
 

@@ -4,17 +4,8 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title><%= t('admin.radius.title', 'Pengaturan RADIUS') %> | <%= company %></title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/admin.css?v=2.6">
   <style>
-    .mtabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-    .mtab { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--muted); background: var(--bg2); border: 1px solid var(--border); cursor: pointer; transition: all .2s; }
-    .mtab:hover { color: var(--text); background: rgba(255,255,255,0.06); }
-    .mtab.active { color: #ffffff !important; background: var(--primary) !important; border-color: var(--primary) !important; box-shadow: 0 4px 12px var(--pdim); }
-    
-    html[data-theme="light"] .mtab { background: #ffffff !important; color: #64748b !important; border-color: #cbd5e1 !important; }
-    html[data-theme="light"] .mtab:hover { color: #0f172a !important; background: #f1f5f9 !important; }
-    html[data-theme="light"] .mtab.active { color: #ffffff !important; background: #4f46e5 !important; border-color: #4f46e5 !important; }
-
     @keyframes spin { to { transform: rotate(360deg); } }
     /* RADIUS Modern Redesign Layout */
     .radius-settings-layout {
@@ -242,17 +233,17 @@
       font-size: 13.5px;
       font-weight: 700;
       border-radius: 10px;
-      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+      background: linear-gradient(135deg, #0052cc 0%, #0284c7 100%);
       color: #ffffff;
       border: none;
       cursor: pointer;
-      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.45);
+      box-shadow: 0 4px 15px rgba(0, 82, 204, 0.45);
       transition: all 0.2s ease;
       letter-spacing: 0.2px;
     }
     .btn-save-glow:hover {
-      background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
-      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.65);
+      background: linear-gradient(135deg, #0043a8 0%, #0052cc 100%);
+      box-shadow: 0 6px 20px rgba(0, 82, 204, 0.65);
       transform: translateY(-1px);
     }
     .btn-save-glow:active {

@@ -4,7 +4,7 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title><%= t('admin.nav.finance_report', 'Laporan Keuangan') %> | <%= company %></title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/admin.css?v=2.6">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -210,8 +210,8 @@ new Chart(document.getElementById('revenueChart'), {
     datasets: [{
       label: "<%= t('admin.reports.chart.revenue_label', 'Pendapatan (Rp)') %>",
       data: values,
-      backgroundColor: 'rgba(99,102,241,0.5)',
-      borderColor: '#6366f1',
+      backgroundColor: 'rgba(0, 82, 204, 0.45)',
+      borderColor: '#0052cc',
       borderWidth: 2,
       borderRadius: 6,
     }]

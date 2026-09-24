@@ -4,7 +4,7 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Kolektor | <%= company %></title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/admin.css?v=2.6">
 </head>
 <body>
 <%- include('partials/sidebar', { activePage: 'collectors', company }) %>
@@ -70,7 +70,7 @@
                   <td><code><%= c.username %></code></td>
                   <td><span class="text-muted"><%= c.password %></span></td>
                   <td><%= c.phone || '-' %></td>
-                  <td><span class="badge" style="background:rgba(99,102,241,0.15);color:#818cf8"><%= c.area || '-' %></span></td>
+                  <td><span class="badge" style="background:rgba(0,82,204,0.12);color:#0284c7"><%= c.area || '-' %></span></td>
                   <td>
                     <span class="badge <%= c.is_active ? 'bs' : 'bd' %>"><%= c.is_active ? t('common.active','Aktif') : t('common.inactive','Nonaktif') %></span>
                   </td>
