@@ -1366,6 +1366,30 @@ async function getSystemResource(routerId = null) {
   }
 }
 
+async function pingHost(host, count = 4, routerId = null) {
+  let conn = null;
+  try {
+    conn = await getConnection(routerId);
+    const cleanHost = String(host || '').trim();
+    if (!cleanHost) throw new Error('Host / IP tidak valid');
+    const packets = await withTimeout(
+      conn.api.send([
+        '/ping',
+        `=address=${cleanHost}`,
+        `=count=${Math.min(Math.max(Number(count) || 4, 1), 10)}`
+      ]),
+      8000,
+      'pingHost'
+    );
+    return Array.isArray(packets) ? packets : [];
+  } catch (e) {
+    logger.error(`Error pinging host ${host}:`, e);
+    throw e;
+  } finally {
+    if (conn && conn.api) conn.api.close();
+  }
+}
+
 async function getHotspotProfiles(routerId = null) {
   const ck = cacheKey(routerId, 'hotspotProfiles');
   const cached = getCachedList(ck, 30000);
@@ -2059,6 +2083,7 @@ module.exports = {
   getBackup,
   kickPppoeUser,
   kickHotspotUser,
+  pingHost,
   getSystemIdentity,
   getSystemResource,
   getSystemScripts,

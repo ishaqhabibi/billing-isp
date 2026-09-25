@@ -295,23 +295,28 @@
       position: absolute;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%) rotate(-25deg);
-      font-size: 72px;
+      transform: translate(-50%, -50%) rotate(-22deg);
+      font-size: 50px;
       font-weight: 900;
       letter-spacing: 6px;
       text-transform: uppercase;
-      opacity: 0.07;
+      padding: 10px 30px;
+      border: 4px dashed;
+      border-radius: 14px;
       pointer-events: none;
       user-select: none;
       z-index: 1;
+      white-space: nowrap;
     }
 
     .watermark-stamp.paid {
-      color: var(--success);
+      color: rgba(16, 185, 129, 0.13);
+      border-color: rgba(16, 185, 129, 0.16);
     }
 
     .watermark-stamp.unpaid {
-      color: var(--danger);
+      color: rgba(220, 38, 38, 0.12);
+      border-color: rgba(220, 38, 38, 0.15);
     }
 
     /* Totals & Notes Layout */
@@ -391,18 +396,41 @@
 
     .signature-area {
       text-align: center;
-      min-width: 140px;
+      min-width: 150px;
     }
 
-    .sig-title {
+    .sig-company {
       font-size: 10px;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-bottom: 30px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 6px;
+    }
+
+    .sig-stamp-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .sig-stamp-badge.paid {
+      background-color: #ecfdf5;
+      color: #059669;
+      border: 1px solid #a7f3d0;
+    }
+
+    .sig-stamp-badge.unpaid {
+      background-color: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
     }
 
     .sig-line {
-      border-top: 1.5px solid var(--text-dark);
+      border-top: 1.5px solid var(--border-color);
       margin-bottom: 4px;
     }
 
@@ -504,6 +532,46 @@
   const customerInitial = (customer.name || 'P').charAt(0).toUpperCase();
   const invNo = 'INV-' + String(invoice.id).padStart(4, '0') + '-' + getCurrentTimeInfo().year;
   const periodStr = mns[invoice.period_month - 1] + ' ' + invoice.period_year;
+
+  // ── Tax Breakdown Calculation ──
+  const totalAmount = Number(invoice.amount || 0);
+  const pkgName = customer.package_name || (invoice && invoice.package_name) || 'Layanan Internet Broadband';
+  const usePpn = (customer && customer.use_ppn === 1) || (invoice && invoice.use_ppn === 1);
+  const ppnRate = Number((customer && customer.ppn_percentage) || (invoice && invoice.ppn_percentage) || 11.0);
+  const useUso = (customer && customer.use_uso === 1) || (invoice && invoice.use_uso === 1);
+  const usoRate = useUso ? Number((customer && customer.uso_percentage) || (invoice && invoice.uso_percentage) || 1.75) : 0;
+  const combinedTaxPct = ppnRate + usoRate;
+
+  let dpp = totalAmount;
+  let ppnAmount = 0;
+  let usoAmount = 0;
+  const taxMode = usePpn ? 'excluded' : 'included';
+
+  if (combinedTaxPct > 0) {
+    dpp = Math.round(totalAmount / (1 + (combinedTaxPct / 100)));
+    ppnAmount = Math.round(dpp * (ppnRate / 100));
+    usoAmount = useUso ? Math.round(dpp * (usoRate / 100)) : 0;
+    dpp = totalAmount - ppnAmount - usoAmount;
+  }
+
+  function terbilang(n) {
+    n = Math.floor(Math.abs(Number(n) || 0));
+    if (n === 0) return 'Nol Rupiah';
+    const satuan = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan', 'Sepuluh', 'Sebelas'];
+    function konversi(num) {
+      if (num < 12) return satuan[num];
+      if (num < 20) return konversi(num - 10) + ' Belas';
+      if (num < 100) return konversi(Math.floor(num / 10)) + ' Puluh ' + (num % 10 ? konversi(num % 10) : '');
+      if (num < 200) return 'Seratus ' + (num - 100 ? konversi(num - 100) : '');
+      if (num < 1000) return konversi(Math.floor(num / 100)) + ' Ratus ' + (num % 100 ? konversi(num % 100) : '');
+      if (num < 2000) return 'Seribu ' + (num - 1000 ? konversi(num - 1000) : '');
+      if (num < 1000000) return konversi(Math.floor(num / 1000)) + ' Ribu ' + (num % 1000 ? konversi(num % 1000) : '');
+      if (num < 1000000000) return konversi(Math.floor(num / 1000000)) + ' Juta ' + (num % 1000000 ? konversi(num % 1000000) : '');
+      if (num < 1000000000000) return konversi(Math.floor(num / 1000000000)) + ' Miliar ' + (num % 1000000000 ? konversi(num % 1000000000) : '');
+      return '';
+    }
+    return (konversi(n) + ' Rupiah').replace(/\s+/g, ' ').trim();
+  }
 %>
 
 <div class="invoice-wrapper">
@@ -550,14 +618,14 @@
         <div class="card-heading">Ditagihkan Kepada</div>
         <div class="client-name"><%= customer.name %></div>
         <div class="meta-list">
-          <% if (customer.phone) { %>
-          <div class="meta-item"><span>📱</span> <%= customer.phone %></div>
+          <% if (customer.customer_code || customer.pppoe_username) { %>
+          <div class="meta-item"><span>🆔</span> ID Pelanggan: <%= customer.customer_code || customer.pppoe_username %></div>
           <% } %>
-          <% if (customer.pppoe_username) { %>
-          <div class="meta-item"><span>🔗</span> PPPoE: <%= customer.pppoe_username %></div>
+          <% if (customer.phone) { %>
+          <div class="meta-item"><span>📱</span> No. HP/WA: <%= customer.phone %></div>
           <% } %>
           <% if (customer.address) { %>
-          <div class="meta-item"><span>📍</span> <%= customer.address %></div>
+          <div class="meta-item"><span>📍</span> Alamat: <%= customer.address %></div>
           <% } %>
         </div>
       </div>
@@ -567,20 +635,22 @@
         <div class="card-heading">Informasi Transaksi</div>
         <div class="summary-list">
           <div class="summary-item">
-            <span class="label">Tanggal <%= isPaid ? 'Pembayaran' : 'Tagihan' %></span>
-            <span class="value"><%= isPaid && invoice.paid_at ? formatDateLocal(invoice.paid_at) : getNowLocal() %></span>
+            <span class="label">Periode Tagihan</span>
+            <span class="value" style="font-weight:700;"><%= periodStr %></span>
           </div>
           <div class="summary-item">
-            <span class="label">Periode Tagihan</span>
-            <span class="value"><%= periodStr %></span>
+            <span class="label">Tanggal Terbit</span>
+            <span class="value"><%= formatDateLocal(invoice.created_at || invoice.created_date || new Date()) %></span>
           </div>
-          <div class="summary-item" style="margin-top:6px;">
-            <span class="label">Kasir / Penerima</span>
-            <span class="value"><%= invoice.paid_by_name || 'Sistem' %></span>
+          <div class="summary-item">
+            <span class="label"><%= isPaid ? 'Tanggal Bayar' : 'Jatuh Tempo' %></span>
+            <span class="value"><%= isPaid && invoice.paid_at ? formatDateLocal(invoice.paid_at) : (invoice.due_date ? formatDateLocal(invoice.due_date) : '-') %></span>
           </div>
-          <div class="summary-item" style="margin-top:6px;">
-            <span class="label">Metode Pembayaran</span>
-            <span class="value"><%= invoice.payment_gateway ? invoice.payment_gateway.toUpperCase() : 'Tunai / Transfer' %></span>
+          <div class="summary-item" style="margin-top:4px;">
+            <span class="label">Metode Bayar</span>
+            <span class="value" style="font-weight:700; color:<%= isPaid ? 'var(--success)' : 'var(--primary)' %>;">
+              <%= invoice.payment_gateway ? invoice.payment_gateway.toUpperCase() : (invoice.paid_by_name && invoice.paid_by_name.toLowerCase().includes('cash') ? 'Tunai / Offline' : 'QRIS / Transfer Bank') %>
+            </span>
           </div>
         </div>
       </div>
@@ -591,7 +661,7 @@
       <% if (isPaid) { %>
       <div class="watermark-stamp paid">LUNAS</div>
       <% } else { %>
-      <div class="watermark-stamp unpaid">TAGIHAN</div>
+      <div class="watermark-stamp unpaid">BELUM BAYAR</div>
       <% } %>
 
       <table class="items-table">
@@ -607,55 +677,57 @@
           <tr>
             <td>01</td>
             <td>
-              <div class="item-title">Layanan Internet — <%= customer.package_name || 'Paket Internet Broadband' %></div>
-              <div class="item-sub">Langganan bulanan internet high-speed</div>
+              <div class="item-title">Layanan Internet — <%= pkgName %></div>
+              <div class="item-sub">Langganan Internet Bulanan Unlimited</div>
             </td>
             <td><%= periodStr %></td>
-            <td class="text-right" style="font-weight:700;">Rp <%= Number(invoice.amount || 0).toLocaleString('id-ID') %></td>
+            <td class="text-right" style="font-weight:700;">Rp <%= Number(dpp || 0).toLocaleString('id-ID') %></td>
           </tr>
+          <% if (useUso && usoAmount > 0) { %>
+          <tr>
+            <td>02</td>
+            <td>
+              <div class="item-title">Kontribusi BHP / USO <%= usoRate %>%</div>
+              <div class="item-sub">Universal Service Obligation sesuai regulasi telekomunikasi</div>
+            </td>
+            <td><%= periodStr %></td>
+            <td class="text-right" style="font-weight:700;">Rp <%= Number(usoAmount || 0).toLocaleString('id-ID') %></td>
+          </tr>
+          <% } %>
         </tbody>
       </table>
     </div>
 
-    <!-- Bottom Layout (Notes & Totals) -->
-    <div class="bottom-layout">
-      <div class="notes-card">
-        <div>📋 <strong>Catatan Pembayaran:</strong></div>
-        <div><%= invoice.notes || 'Terima kasih telah berlangganan layanan internet kami. Simpan struk ini sebagai bukti pembayaran yang sah.' %></div>
-        <% if (invoice.payment_order_id) { %>
-        <div style="font-size:10px; margin-top:2px; color:var(--primary);">Referensi Transaksi: <strong><%= invoice.payment_order_id %></strong></div>
-        <% } %>
-      </div>
-
-      <div class="totals-card">
+    <!-- Bottom Layout (Totals Only) -->
+    <div class="bottom-layout" style="display: flex; justify-content: flex-end; margin-bottom: 24px;">
+      <div class="totals-card" style="min-width: 280px;">
         <div class="total-line">
           <span class="lbl">Subtotal</span>
-          <span class="val">Rp <%= Number(invoice.amount || 0).toLocaleString('id-ID') %></span>
+          <span class="val">Rp <%= Number(dpp || 0).toLocaleString('id-ID') %></span>
         </div>
         <div class="total-line">
-          <span class="lbl">Diskon / Potongan</span>
-          <span class="val">Rp 0</span>
+          <span class="lbl">PPN <%= ppnRate %>% <%= taxMode === 'included' ? '(Sudah Termasuk)' : '' %></span>
+          <span class="val">Rp <%= Number(ppnAmount || 0).toLocaleString('id-ID') %></span>
         </div>
+        <% if (useUso && usoAmount > 0) { %>
+        <div class="total-line">
+          <span class="lbl">BHP / USO <%= usoRate %>%</span>
+          <span class="val">Rp <%= Number(usoAmount || 0).toLocaleString('id-ID') %></span>
+        </div>
+        <% } %>
         <div class="total-line grand-total">
           <span class="lbl">Total Bayar</span>
-          <span class="val">Rp <%= Number(invoice.amount || 0).toLocaleString('id-ID') %></span>
+          <span class="val">Rp <%= Number(totalAmount || 0).toLocaleString('id-ID') %></span>
         </div>
       </div>
     </div>
 
-    <!-- Footer & Signatures -->
-    <div class="invoice-footer">
+    <!-- Footer Clean & Minimal -->
+    <div class="invoice-footer" style="display: block; padding-top: 16px; border-top: 1px solid var(--border-color);">
       <div class="footer-info">
-        <div style="font-weight:700; color:var(--text-dark);"><%= company %></div>
-        <div><%= settings.company_address || 'Pusat Layanan Internet' %></div>
-        <div>Dicetak Otomatis pada <%= getNowLocal() %></div>
-      </div>
-
-      <div class="signature-area">
-        <div class="sig-title">Hormat Kami,</div>
-        <div class="sig-line"></div>
-        <div class="sig-name"><%= settings.company_manager || 'Admin Pengelola' %></div>
-        <div class="sig-role">Manajer Operasional</div>
+        <div style="font-weight:700; color:var(--text-dark); font-size: 11px;"><%= company %></div>
+        <div><%= settings.company_address || 'Pusat Layanan Internet' %><% if (settings.whatsapp_admin_numbers && settings.whatsapp_admin_numbers.length > 0) { %> • Telp/WA: +<%= settings.whatsapp_admin_numbers[0] %><% } %></div>
+        <div style="margin-top:4px; color:var(--text-muted); font-size:9.5px;">Faktur ini dicetak otomatis oleh sistem dan sah tanpa tanda tangan basah • <%= getNowLocal() %></div>
       </div>
     </div>
 

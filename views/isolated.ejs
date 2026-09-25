@@ -1,132 +1,224 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Layanan Terisolir | <%= company %></title>
+  <title>Layanan Pelanggan | <%= company %></title>
+  
+  <!-- Early Theme Init to avoid FOUC -->
+  <script>
+    (function() {
+      try {
+        var saved = localStorage.getItem('customer-theme') || localStorage.getItem('app-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', saved);
+      } catch (e) {}
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="icon" href="/img/logo.png">
+
   <style>
-    :root {
-      --bg: #0b132b;
-      --card-bg: #1c2541;
-      --card-border: #3a506b;
-      --primary: #38bdf8;
-      --primary-dark: #0284c7;
-      --accent: #f59e0b;
-      --danger: #ef4444;
-      --danger-bg: rgba(239, 68, 68, 0.12);
-      --success: #10b981;
-      --text: #f8fafc;
+    :root, [data-theme="dark"] {
+      --bg-page: #090d16;
+      --card-bg: #111827;
+      --card-surface: #172133;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-border-strong: rgba(255, 255, 255, 0.16);
+      --text-heading: #ffffff;
+      --text-body: #f8fafc;
       --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #60a5fa;
+      --primary-subtle: rgba(37, 99, 235, 0.16);
+
+      --warning: #f59e0b;
+      --warning-subtle: rgba(245, 158, 11, 0.12);
+      --warning-border: rgba(245, 158, 11, 0.35);
+
+      --danger: #ef4444;
+      --danger-subtle: rgba(239, 68, 68, 0.12);
+      --danger-border: rgba(239, 68, 68, 0.3);
+
+      --success: #10b981;
+      --success-subtle: rgba(16, 185, 129, 0.12);
+      --success-border: rgba(16, 185, 129, 0.35);
+
+      --input-bg: #162032;
+      --shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+      --shadow-modal: 0 25px 60px -10px rgba(0, 0, 0, 0.85);
+      --modal-bg: #111827;
     }
+
+    [data-theme="light"] {
+      --bg-page: #f1f5f9;
+      --card-bg: #ffffff;
+      --card-surface: #f8fafc;
+      --card-border: #e2e8f0;
+      --card-border-strong: #cbd5e1;
+      --text-heading: #0f172a;
+      --text-body: #1e293b;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #1d4ed8;
+      --primary-subtle: #eff6ff;
+
+      --warning: #d97706;
+      --warning-subtle: #fffbeb;
+      --warning-border: #fde68a;
+
+      --danger: #dc2626;
+      --danger-subtle: #fef2f2;
+      --danger-border: #fecaca;
+
+      --success: #059669;
+      --success-subtle: #ecfdf5;
+      --success-border: #a7f3d0;
+
+      --input-bg: #f8fafc;
+      --shadow: 0 20px 35px -10px rgba(15, 23, 42, 0.08);
+      --shadow-modal: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+      --modal-bg: #ffffff;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-page);
+      color: var(--text-body);
       min-height: 100vh;
-      padding: 16px;
+      padding: 20px 16px 40px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
+      transition: background .2s ease, color .2s ease;
+      -webkit-tap-highlight-color: transparent;
     }
+
     .wrapper {
       width: 100%;
-      max-width: 520px;
+      max-width: 480px;
       margin: 0 auto;
     }
-    
-    /* Header Brand */
-    .brand-header {
+
+    /* Top Brand & Theme Bar */
+    .top-bar {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 10px;
+      justify-content: space-between;
       margin-bottom: 20px;
-      padding-top: 8px;
-      text-align: center;
+      padding: 0 4px;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
     .brand-logo {
-      height: 38px;
-      max-width: 120px;
+      height: 34px;
+      max-width: 110px;
       object-fit: contain;
     }
     .brand-title {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 800;
-      color: #ffffff;
-      letter-spacing: .3px;
+      color: var(--text-heading);
+      letter-spacing: -0.3px;
+    }
+    .theme-toggle-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all .2s ease;
+    }
+    .theme-toggle-btn:hover {
+      color: var(--primary-light);
+      border-color: var(--card-border-strong);
     }
 
     /* Main Container Card */
-    .card {
+    .card-portal {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 20px;
-      padding: 24px 20px;
-      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
-      margin-bottom: 16px;
+      padding: 24px 22px;
+      box-shadow: var(--shadow);
       position: relative;
       overflow: hidden;
-    }
-    .card-strip-danger {
-      border-top: 4px solid var(--danger);
-    }
-    .card-strip-success {
-      border-top: 4px solid var(--success);
+      transition: background .2s ease, border-color .2s ease;
     }
 
-    /* Status Badge */
+    /* Badges */
     .status-badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: var(--danger-bg);
-      color: #f87171;
-      border: 1px solid rgba(239, 68, 68, 0.3);
       padding: 6px 14px;
       border-radius: 999px;
-      font-size: 11.5px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .5px;
-      margin-bottom: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .3px;
+      margin-bottom: 14px;
+    }
+    .status-badge.warning {
+      background: var(--warning-subtle);
+      color: var(--warning);
+      border: 1px solid var(--warning-border);
     }
     .status-badge.success {
-      background: rgba(16, 185, 129, 0.15);
-      color: #34d399;
-      border-color: rgba(16, 185, 129, 0.3);
+      background: var(--success-subtle);
+      color: var(--success);
+      border: 1px solid var(--success-border);
     }
 
     h1 {
-      font-size: 22px;
+      font-size: 21px;
       font-weight: 800;
       margin-bottom: 8px;
-      color: #ffffff;
+      color: var(--text-heading);
+      letter-spacing: -0.4px;
+      line-height: 1.3;
     }
     .sub-desc {
       font-size: 13.5px;
       color: var(--text-muted);
       line-height: 1.5;
-      margin-bottom: 18px;
+      margin-bottom: 20px;
     }
 
-    /* Info Grid Pelanggan */
+    /* Customer Info Box */
     .cust-info-box {
-      background: #0f172a;
-      border: 1px solid #334155;
+      background: var(--card-surface);
+      border: 1px solid var(--card-border);
       border-radius: 14px;
-      padding: 14px;
+      padding: 12px 14px;
       margin-bottom: 20px;
     }
     .cust-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 5px 0;
+      padding: 6px 0;
       font-size: 13px;
-      border-bottom: 1px dashed #1e293b;
+      border-bottom: 1px solid var(--card-border);
     }
     .cust-row:last-child {
       border-bottom: none;
@@ -134,59 +226,56 @@
     }
     .cust-row .label {
       color: var(--text-muted);
+      font-weight: 500;
     }
     .cust-row .val {
       font-weight: 700;
-      color: #ffffff;
+      color: var(--text-heading);
       text-align: right;
     }
 
-    /* Invoice List Cards */
-    .section-title {
-      font-size: 14px;
-      font-weight: 800;
-      color: #cbd5e1;
-      text-transform: uppercase;
-      letter-spacing: .5px;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+    /* Invoice Main Card */
     .invoice-card {
-      background: #0f172a;
-      border: 1.5px solid #334155;
+      background: var(--card-surface);
+      border: 1px solid var(--card-border-strong);
       border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 14px;
-      transition: all .2s ease;
-    }
-    .invoice-card:hover {
-      border-color: var(--primary);
+      padding: 18px;
+      margin-bottom: 16px;
+      position: relative;
     }
     .inv-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 8px;
+      align-items: center;
+      margin-bottom: 10px;
     }
     .inv-period {
-      font-size: 15px;
-      font-weight: 800;
-      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-heading);
     }
     .inv-id {
-      font-size: 11.5px;
+      font-size: 12px;
       color: var(--text-muted);
+      font-weight: 600;
+    }
+    .inv-amount-label {
+      font-size: 11.5px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-dim);
+      letter-spacing: .5px;
+      margin-bottom: 2px;
     }
     .inv-amount {
-      font-size: 20px;
+      font-size: 28px;
       font-weight: 900;
-      color: #38bdf8;
-      margin-bottom: 14px;
+      color: var(--primary-light);
+      letter-spacing: -0.5px;
+      margin-bottom: 16px;
     }
 
-    /* Action Buttons */
+    /* Buttons */
     .btn {
       display: inline-flex;
       align-items: center;
@@ -196,95 +285,112 @@
       padding: 13px 18px;
       border-radius: 12px;
       font-size: 14.5px;
-      font-weight: 800;
+      font-weight: 700;
       cursor: pointer;
       text-decoration: none;
       border: none;
       transition: all .2s ease;
       box-sizing: border-box;
+      font-family: inherit;
     }
-    .btn-qris-fast {
-      background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #0284c7 100%);
+    .btn-primary-action {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
       color: #ffffff;
-      box-shadow: 0 8px 20px -4px rgba(2, 132, 199, 0.5);
+      box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.45);
     }
-    .btn-qris-fast:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 24px -4px rgba(2, 132, 199, 0.7);
-    }
-    .btn-qris-fast:active {
-      transform: translateY(0);
+    .btn-primary-action:hover {
+      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px -4px rgba(37, 99, 235, 0.6);
     }
     .btn-secondary {
-      background: #1e293b;
-      color: #cbd5e1;
-      border: 1px solid #334155;
-      font-size: 13px;
-      padding: 10px 14px;
-      margin-top: 8px;
-    }
-    .btn-secondary:hover {
-      background: #334155;
-      color: #ffffff;
-    }
-    .btn-wa {
-      background: #059669;
-      color: #ffffff;
-      box-shadow: 0 6px 16px -2px rgba(5, 150, 105, 0.4);
+      background: var(--card-surface);
+      color: var(--text-body);
+      border: 1px solid var(--card-border);
+      font-size: 13.5px;
       margin-top: 10px;
     }
-    .btn-wa:hover {
-      background: #047857;
+    .btn-secondary:hover {
+      border-color: var(--card-border-strong);
+      background: var(--input-bg);
+      color: var(--text-heading);
+    }
+    .btn-wa-outline {
+      background: transparent;
+      color: #10b981;
+      border: 1px solid var(--success-border);
+      font-size: 13.5px;
+      margin-top: 12px;
+    }
+    .btn-wa-outline:hover {
+      background: var(--success-subtle);
+      border-color: var(--success);
+      color: var(--success);
     }
 
-    /* Fallback Search Box */
-    .search-box {
-      background: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 14px;
-      padding: 14px;
-      margin-top: 14px;
-    }
-    .search-title {
+    /* Auto Reconnect Notice Box */
+    .reconnect-notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: var(--primary-subtle);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+      border-radius: 12px;
+      padding: 12px 14px;
       font-size: 12.5px;
-      font-weight: 700;
-      color: var(--text-muted);
-      margin-bottom: 8px;
+      line-height: 1.45;
+      color: var(--text-body);
+      margin-bottom: 14px;
+    }
+    .reconnect-notice i {
+      font-size: 18px;
+      color: var(--primary-light);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Search Fallback Form */
+    .search-box {
+      background: var(--card-surface);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-top: 12px;
     }
     .search-form {
       display: flex;
       gap: 8px;
+      margin-top: 8px;
     }
     .search-input {
       flex: 1;
-      background: #1e293b;
-      border: 1px solid #475569;
-      color: #ffffff;
-      padding: 10px 12px;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border-strong);
+      color: var(--text-heading);
+      padding: 11px 14px;
       border-radius: 10px;
-      font-size: 13.5px;
+      font-size: 14px;
       outline: none;
+      font-family: inherit;
     }
     .search-input:focus {
       border-color: var(--primary);
     }
     .search-btn {
       width: auto;
-      padding: 10px 16px;
-      background: #0284c7;
+      padding: 11px 18px;
+      background: var(--primary);
       color: #ffffff;
       border-radius: 10px;
-      font-size: 13px;
+      font-size: 14px;
+      font-weight: 700;
     }
 
-    /* MODAL POPUP QRIS */
+    /* Modal QRIS Quick */
     .modal-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(11, 19, 43, 0.85);
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
       backdrop-filter: blur(8px);
       display: flex;
       align-items: center;
@@ -300,15 +406,15 @@
       visibility: visible;
     }
     .modal-card {
-      background: #1e293b;
-      border: 1px solid #475569;
-      border-radius: 22px;
+      background: var(--modal-bg);
+      border: 1px solid var(--card-border-strong);
+      border-radius: 24px;
       width: 100%;
-      max-width: 440px;
-      max-height: 90vh;
+      max-width: 420px;
+      max-height: 92vh;
       overflow-y: auto;
       padding: 24px 20px;
-      box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.8);
+      box-shadow: var(--shadow-modal);
       position: relative;
       transform: scale(0.95);
       transition: all .25s ease;
@@ -319,36 +425,36 @@
     }
     .modal-close {
       position: absolute;
-      top: 16px;
-      right: 18px;
-      background: rgba(255, 255, 255, 0.1);
-      border: none;
-      color: #cbd5e1;
+      top: 16px; right: 16px;
+      background: var(--card-surface);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
       width: 32px;
       height: 32px;
       border-radius: 50%;
-      font-size: 18px;
+      font-size: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      transition: all .15s ease;
     }
     .modal-close:hover {
-      background: rgba(255, 255, 255, 0.2);
-      color: #ffffff;
+      color: var(--text-heading);
+      border-color: var(--card-border-strong);
     }
 
     .qr-container {
       background: #ffffff;
       border-radius: 16px;
-      padding: 14px;
+      padding: 12px;
       margin: 16px auto;
-      width: 260px;
-      height: 260px;
+      width: 240px;
+      height: 240px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     }
     .qr-image {
       width: 100%;
@@ -356,10 +462,10 @@
       object-fit: contain;
     }
     .qr-amount-box {
-      background: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 12px;
-      padding: 12px;
+      background: var(--card-surface);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 12px 14px;
       margin-bottom: 14px;
     }
     .qr-amount-label {
@@ -367,22 +473,24 @@
       color: var(--text-muted);
       text-transform: uppercase;
       font-weight: 700;
+      letter-spacing: .5px;
     }
     .qr-amount-val {
       font-size: 24px;
       font-weight: 900;
-      color: #38bdf8;
-      letter-spacing: .5px;
+      color: var(--primary-light);
+      letter-spacing: -0.5px;
     }
     .qr-unique-badge {
       display: inline-block;
-      font-size: 10.5px;
-      background: rgba(245, 158, 11, 0.2);
-      color: #fbbf24;
-      border: 1px solid rgba(245, 158, 11, 0.35);
+      font-size: 11px;
+      background: var(--warning-subtle);
+      color: var(--warning);
+      border: 1px solid var(--warning-border);
       border-radius: 6px;
       padding: 2px 8px;
       margin-top: 4px;
+      font-weight: 600;
     }
 
     .polling-indicator {
@@ -390,14 +498,15 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      font-size: 12.5px;
-      color: #38bdf8;
-      margin: 12px 0 16px 0;
+      font-size: 12px;
+      color: var(--primary-light);
+      margin: 12px 0 16px;
+      font-weight: 600;
     }
     .spinner-pulse {
-      width: 10px;
-      height: 10px;
-      background-color: #38bdf8;
+      width: 8px;
+      height: 8px;
+      background-color: var(--primary-light);
       border-radius: 50%;
       animation: pulse 1.2s infinite ease-in-out;
     }
@@ -412,22 +521,10 @@
       gap: 10px;
     }
 
-    /* Success Screen */
-    .success-icon {
-      font-size: 64px;
-      color: var(--success);
-      margin-bottom: 12px;
-      animation: popIn .4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    @keyframes popIn {
-      from { transform: scale(0.4); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-
     .footer-note {
       text-align: center;
-      font-size: 11.5px;
-      color: #64748b;
+      font-size: 12px;
+      color: var(--text-dim);
       margin-top: 24px;
       line-height: 1.5;
     }
@@ -437,57 +534,62 @@
 
   <div class="wrapper">
 
-    <!-- BRAND HEADER -->
-    <div class="brand-header">
-      <% if (settings.company_logo) { %>
-        <img src="<%= settings.company_logo %>" class="brand-logo" alt="Logo">
-      <% } else { %>
-        <i class="bi bi-wifi" style="font-size: 28px; color: #38bdf8;"></i>
-      <% } %>
-      <div class="brand-title"><%= company %></div>
+    <!-- TOP BRAND & THEME BAR -->
+    <div class="top-bar">
+      <div class="brand-group">
+        <% if (settings.company_logo) { %>
+          <img src="<%= settings.company_logo %>" class="brand-logo" alt="Logo">
+        <% } else { %>
+          <i class="bi bi-router-fill" style="font-size: 24px; color: var(--primary);"></i>
+        <% } %>
+        <div class="brand-title"><%= company %></div>
+      </div>
+      <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" title="Ubah Tema">
+        <i class="bi bi-sun-fill" id="themeIcon"></i>
+      </button>
     </div>
 
     <!-- KONDISI 1: PELANGGAN SUDAH LUNAS / TIDAK ADA TUNGGAKAN -->
     <% if (customer && !hasUnpaidInvoices) { %>
-      <div class="card card-strip-success" style="text-align: center;">
-        <div class="status-badge success"><i class="bi bi-check-circle-fill"></i> Tidak Ada Tagihan</div>
-        <h1>Semua Tagihan Lunas</h1>
-        <p class="sub-desc">Tidak ada tagihan tertunggak atas nama akun Anda. Jika koneksi belum normal, klik tombol refresh koneksi di bawah:</p>
+      <div class="card-portal" style="text-align: center;">
+        <div class="status-badge success"><i class="bi bi-check-circle-fill"></i> Status Aktif</div>
+        <h1>Semua Tagihan Sudah Lunas</h1>
+        <p class="sub-desc">Tidak ada tagihan tertunggak pada akun Anda. Jika koneksi Anda masih terkendala, klik tombol refresh koneksi berikut:</p>
         
         <div class="cust-info-box" style="text-align: left;">
           <div class="cust-row">
-            <span class="label">Nama Pelanggan</span>
+            <span class="label">Nama Akun</span>
             <span class="val"><%= customer.name %></span>
           </div>
           <div class="cust-row">
-            <span class="label">No. Telepon</span>
+            <span class="label">No. Telepon / WA</span>
             <span class="val"><%= customer.phone %></span>
           </div>
           <% if (customer.package_name) { %>
             <div class="cust-row">
-              <span class="label">Paket Internet</span>
+              <span class="label">Paket Langganan</span>
               <span class="val"><%= customer.package_name %></span>
             </div>
           <% } %>
         </div>
 
         <form action="/customer/reconnect" method="POST">
-          <button type="submit" class="btn btn-qris-fast" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-            <i class="bi bi-arrow-repeat"></i> Pulihkan & Refresh Koneksi Sekarang
+          <button type="submit" class="btn btn-primary-action" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            <i class="bi bi-arrow-repeat"></i> Refresh & Pulihkan Koneksi
           </button>
         </form>
 
         <a href="/customer/dashboard" class="btn btn-secondary">
-          <i class="bi bi-house-door"></i> Buka Portal Pelanggan
+          <i class="bi bi-house-door"></i> Masuk ke Portal Pelanggan
         </a>
       </div>
 
     <!-- KONDISI 2: PELANGGAN MEMILIKI TAGIHAN TERTUNGGAK -->
     <% } else if (customer && hasUnpaidInvoices) { %>
-      <div class="card card-strip-danger">
-        <div class="status-badge"><i class="bi bi-exclamation-triangle-fill"></i> Layanan Terisolir</div>
-        <h1>Akses Dialihkan</h1>
-        <p class="sub-desc">Koneksi internet Anda dialihkan sementara karena tagihan telah melewati batas waktu jatuh tempo. Bayar instan via QRIS di bawah agar layanan langsung aktif kembali.</p>
+      <div class="card-portal">
+        <div class="status-badge warning"><i class="bi bi-pause-circle-fill"></i> Layanan Ditangguhkan</div>
+        <h1>Selesaikan Tagihan Internet</h1>
+        <p class="sub-desc">Akses internet dialihkan sementara karena masa jatuh tempo terlewati. Selesaikan pembayaran via QRIS agar layanan langsung aktif kembali otomatis.</p>
 
         <!-- Box Identitas Pelanggan -->
         <div class="cust-info-box">
@@ -501,43 +603,42 @@
           </div>
           <% if (customer.package_name) { %>
             <div class="cust-row">
-              <span class="label">Paket Langganan</span>
-              <span class="val" style="color: #38bdf8;"><%= customer.package_name %></span>
+              <span class="label">Paket Internet</span>
+              <span class="val"><%= customer.package_name %></span>
             </div>
           <% } %>
         </div>
 
-        <!-- Daftar Tagihan -->
-        <div class="section-title"><i class="bi bi-receipt"></i> Tagihan Belum Dibayar</div>
-
+        <!-- Tagihan Card -->
         <% invoices.forEach(inv => { %>
           <div class="invoice-card">
             <div class="inv-header">
-              <div>
-                <div class="inv-period">Periode: <%= inv.period_month %> / <%= inv.period_year %></div>
-                <div class="inv-id">Invoice #<%= inv.id %></div>
-              </div>
-              <span style="font-size:11px; background:rgba(239,68,68,0.2); color:#fca5a5; padding:3px 8px; border-radius:6px; font-weight:700;">BELUM LUNAS</span>
+              <div class="inv-period">Periode: <%= inv.period_month %> / <%= inv.period_year %></div>
+              <div class="inv-id">INV-<%= inv.id %></div>
             </div>
             
+            <div class="inv-amount-label">Total Tagihan</div>
             <div class="inv-amount">Rp <%= Number(inv.amount || 0).toLocaleString('id-ID') %></div>
 
-            <!-- Tombol Utama: Bayar Cepat QRIS -->
-            <button type="button" class="btn btn-qris-fast" onclick="openQuickQris(<%= inv.id %>, '<%= inv.publicToken %>')">
-              <i class="bi bi-lightning-charge-fill" style="color: #fbbf24;"></i> BAYAR CEPAT VIA QRIS
+            <!-- Single Primary Call-to-Action -->
+            <button type="button" class="btn btn-primary-action" onclick="openQuickQris(<%= inv.id %>, '<%= inv.publicToken %>')">
+              <i class="bi bi-qr-code-scan"></i> Bayar Sekarang via QRIS
             </button>
-
-            <!-- Tombol Cadangan: Metode Lain -->
-            <a href="/customer/payment/create/<%= inv.id %>?t=<%= encodeURIComponent(inv.publicToken) %>" class="btn btn-secondary">
-              <i class="bi bi-credit-card"></i> Opsi Pembayaran Lainnya / Bank Transfer
-            </a>
           </div>
         <% }) %>
 
-        <!-- WhatsApp CS -->
+        <!-- Kepastian Pemulihan Otomatis -->
+        <div class="reconnect-notice">
+          <i class="bi bi-lightning-charge-fill"></i>
+          <div>
+            <strong>Aktivasi Otomatis:</strong> Layanan internet Anda akan pulih dalam 1–3 menit setelah pembayaran terverifikasi, tanpa perlu restart modem.
+          </div>
+        </div>
+
+        <!-- WhatsApp CS Assistance -->
         <% if (adminPhone) { %>
-          <a href="https://wa.me/<%= adminPhone.replace(/\D/g, '') %>?text=Halo%20Admin%20<%= encodeURIComponent(company) %>,%20layanan%20saya%20terisolir%20(Nama:%20<%= encodeURIComponent(customer.name) %>).%20Mohon%20bantuannya." class="btn btn-wa" target="_blank">
-            <i class="bi bi-whatsapp"></i> Hubungi Admin via WhatsApp
+          <a href="https://wa.me/<%= adminPhone.replace(/\D/g, '') %>?text=Halo%20Admin%20<%= encodeURIComponent(company) %>,%20layanan%20saya%20terisolir%20(Nama:%20<%= encodeURIComponent(customer.name) %>).%20Mohon%20bantuannya." class="btn btn-wa-outline" target="_blank" rel="noopener">
+            <i class="bi bi-whatsapp"></i> Butuh Bantuan? Hubungi Customer Service
           </a>
         <% } %>
 
@@ -545,35 +646,34 @@
 
     <!-- KONDISI 3: IP TIDAK TERDETEKSI OTOMATIS (FALLBACK SEARCH) -->
     <% } else { %>
-      <div class="card card-strip-danger">
-        <div class="status-badge"><i class="bi bi-shield-lock-fill"></i> Akses Terbatas</div>
-        <h1>Pemberitahuan Isolir</h1>
-        <p class="sub-desc">Perangkat Anda dialihkan ke portal pembayaran billing <%= company %>. Masukkan Nomor WhatsApp atau ID Pelanggan Anda di bawah ini untuk menampilkan tagihan Anda:</p>
+      <div class="card-portal">
+        <div class="status-badge warning"><i class="bi bi-info-circle-fill"></i> Cek Status Layanan</div>
+        <h1>Pemeriksaan Tagihan</h1>
+        <p class="sub-desc">Perangkat Anda berada pada jaringan <%= company %>. Masukkan No. WhatsApp atau ID Pelanggan Anda untuk memeriksa rincian tagihan:</p>
 
         <!-- Form Pencarian Cepat -->
         <div class="search-box">
-          <div class="search-title">Cari Tagihan Anda:</div>
           <form method="GET" action="/isolated" class="search-form">
-            <input type="text" name="q" class="search-input" value="<%= searchQuery || '' %>" placeholder="No. WA / ID / Username..." required autofocus />
+            <input type="text" name="q" class="search-input" value="<%= searchQuery || '' %>" placeholder="No. WA atau ID Pelanggan..." required autofocus />
             <button type="submit" class="btn search-btn">
               <i class="bi bi-search"></i> Cek
             </button>
           </form>
           <% if (searchQuery && !customer) { %>
-            <div style="font-size: 12px; color: #f87171; margin-top: 8px;">
-              <i class="bi bi-x-circle"></i> Data untuk "<strong><%= searchQuery %></strong>" tidak ditemukan. Pastikan nomor WhatsApp atau ID sudah benar.
+            <div style="font-size: 12.5px; color: var(--danger); margin-top: 10px; font-weight: 500;">
+              <i class="bi bi-x-circle me-1"></i> Data untuk "<strong><%= searchQuery %></strong>" tidak ditemukan. Pastikan data sudah benar.
             </div>
           <% } %>
         </div>
 
-        <div style="margin-top: 20px;">
+        <div style="margin-top: 14px;">
           <a href="/customer/login" class="btn btn-secondary">
             <i class="bi bi-box-arrow-in-right"></i> Masuk ke Portal Pelanggan
           </a>
         </div>
 
         <% if (adminPhone) { %>
-          <a href="https://wa.me/<%= adminPhone.replace(/\D/g, '') %>?text=Halo%20Admin%20<%= encodeURIComponent(company) %>,%20internet%20saya%20terisolir%20tapi%20tagihan%20tidak%20muncul.%20Mohon%20bantuan." class="btn btn-wa" target="_blank">
+          <a href="https://wa.me/<%= adminPhone.replace(/\D/g, '') %>?text=Halo%20Admin%20<%= encodeURIComponent(company) %>,%20internet%20saya%20terisolir%20tapi%20tagihan%20tidak%20muncul.%20Mohon%20bantuan." class="btn btn-wa-outline" target="_blank" rel="noopener">
             <i class="bi bi-whatsapp"></i> Hubungi Customer Service
           </a>
         <% } %>
@@ -581,29 +681,29 @@
     <% } %>
 
     <div class="footer-note">
-      Sistem Billing & Radius Network <%= company %><br>
-      Akses otomatis pulih seketika setelah pembayaran terkonfirmasi.
+      Sistem Billing & Jaringan <%= company %><br>
+      Akses internet pulih otomatis seketika setelah pembayaran terkonfirmasi.
     </div>
 
   </div>
 
   <!-- ============================================================== -->
-  <!-- MODAL POPUP QRIS CEPAT                                          -->
+  <!-- MODAL QUICK QRIS (PREMIUM & CLEAN)                             -->
   <!-- ============================================================== -->
   <div class="modal-overlay" id="qrisModalOverlay">
     <div class="modal-card" id="qrisModalCard">
-      <button type="button" class="modal-close" onclick="closeQuickQris()">&times;</button>
+      <button type="button" class="modal-close" onclick="closeQuickQris()" title="Tutup">&times;</button>
 
       <!-- Step 1: Loading -->
-      <div id="qrisLoadingState" style="padding: 40px 0;">
+      <div id="qrisLoadingState" style="padding: 35px 0;">
         <div class="spinner-pulse" style="width: 20px; height: 20px; margin: 0 auto 16px auto;"></div>
-        <h3 style="font-size: 16px; color: #fff;">Menyiapkan QRIS...</h3>
-        <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px;">Menghubungkan ke gateway pembayaran server</p>
+        <h3 style="font-size: 16px; color: var(--text-heading); font-weight: 700;">Menyiapkan Pembayaran QRIS...</h3>
+        <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px;">Menghubungkan ke gateway pembayaran</p>
       </div>
 
       <!-- Step 2: Content QRIS -->
       <div id="qrisContentState" style="display: none;">
-        <div style="display: flex; align-items: center; justify-content: center; gap: 6px; color: #38bdf8; font-size: 13px; font-weight: 800; text-transform: uppercase;">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--primary-light); font-size: 13px; font-weight: 800; text-transform: uppercase;">
           <i class="bi bi-qr-code-scan"></i> <span id="qrisGatewayTitle">PEMBAYARAN QRIS</span>
         </div>
         <div id="qrisInvoicePeriod" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Tagihan Internet</div>
@@ -615,7 +715,7 @@
 
         <!-- Box Nominal -->
         <div class="qr-amount-box">
-          <div class="qr-amount-label">Total Pembayaran</div>
+          <div class="qr-amount-label">Total yang Harus Dibayar</div>
           <div class="qr-amount-val" id="qrisAmountDisplay">Rp 0</div>
           <div id="qrisUniqueBadge" class="qr-unique-badge" style="display:none;">Termasuk Kode Unik Verifikasi</div>
         </div>
@@ -628,33 +728,33 @@
 
         <!-- Action Buttons -->
         <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" style="margin-top:0;" onclick="copyAmount()" id="copyAmountBtn">
+            <i class="bi bi-clipboard-check"></i> Salin Nominal
+          </button>
           <button type="button" class="btn btn-secondary" style="margin-top:0;" onclick="downloadQrImage()">
             <i class="bi bi-download"></i> Simpan Gambar
-          </button>
-          <button type="button" class="btn btn-secondary" style="margin-top:0;" onclick="copyAmount()">
-            <i class="bi bi-clipboard-check"></i> Salin Nominal
           </button>
         </div>
 
         <!-- Checkout Url Button (Jika ada) -->
         <div id="qrisExternalCheckout" style="margin-top: 10px; display: none;">
-          <a id="qrisCheckoutLink" href="#" target="_blank" class="btn btn-secondary" style="background: rgba(2, 132, 199, 0.2); border-color: #0284c7; color: #38bdf8;">
+          <a id="qrisCheckoutLink" href="#" target="_blank" class="btn btn-secondary">
             <i class="bi bi-box-arrow-up-right"></i> Buka Halaman Gateway
           </a>
         </div>
 
-        <div id="qrisHelpText" style="font-size: 11.5px; color: #94a3b8; margin-top: 14px; line-height: 1.4;">
-          Buka aplikasi m-Banking atau E-Wallet (BCA, BRI, Mandiri, DANA, GoPay, OVO, ShopeePay), pilih menu Scan QRIS, lalu arahkan ke barcode di atas atau unggah dari galeri.
+        <div id="qrisHelpText" style="font-size: 11.5px; color: var(--text-dim); margin-top: 14px; line-height: 1.45;">
+          Buka aplikasi m-Banking atau E-Wallet (BCA, Mandiri, BRI, DANA, GoPay, OVO, ShopeePay), pilih Scan QRIS, lalu bayar sesuai nominal di atas.
         </div>
       </div>
 
       <!-- Step 3: Success State -->
-      <div id="qrisSuccessState" style="display: none; padding: 20px 0;">
-        <i class="bi bi-check-circle-fill success-icon"></i>
-        <h2 style="font-size: 22px; color: #10b981; font-weight: 800; margin-bottom: 6px;">Pembayaran Berhasil!</h2>
-        <p style="font-size: 13.5px; color: #cbd5e1; line-height: 1.5; margin-bottom: 20px;">
+      <div id="qrisSuccessState" style="display: none; padding: 25px 0;">
+        <i class="bi bi-check-circle-fill" style="font-size: 56px; color: var(--success); margin-bottom: 12px; display: inline-block;"></i>
+        <h2 style="font-size: 20px; color: var(--text-heading); font-weight: 800; margin-bottom: 6px;">Pembayaran Berhasil!</h2>
+        <p style="font-size: 13.5px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
           Terima kasih! Pembayaran Anda telah kami terima.<br>
-          <strong style="color: #38bdf8;">Layanan internet Anda sedang diaktifkan kembali otomatis...</strong>
+          <strong style="color: var(--primary-light);">Layanan internet Anda sedang diaktifkan kembali...</strong>
         </p>
         <div class="spinner-pulse" style="margin: 0 auto;"></div>
       </div>
@@ -667,6 +767,32 @@
     let currentPublicToken = null;
     let pollInterval = null;
     let currentAmountNumber = 0;
+
+    // Theme Switcher Logic
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      try {
+        localStorage.setItem('customer-theme', next);
+        localStorage.setItem('app-theme', next);
+      } catch (e) {}
+      updateThemeIcon(next);
+    }
+
+    function updateThemeIcon(theme) {
+      const icon = document.getElementById('themeIcon');
+      if (icon) {
+        icon.className = theme === 'light' ? 'bi bi-moon-stars-fill' : 'bi bi-sun-fill';
+        icon.style.color = theme === 'light' ? '#6366f1' : '#f59e0b';
+      }
+    }
+
+    // Init theme icon on load
+    document.addEventListener('DOMContentLoaded', () => {
+      const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+      updateThemeIcon(cur);
+    });
 
     // Buka Modal QRIS Cepat
     function openQuickQris(invoiceId, token) {
@@ -683,7 +809,6 @@
       contentState.style.display = 'none';
       successState.style.display = 'none';
 
-      // Request ke server untuk generate / fetch QRIS
       fetch(`/isolated/quick-qris/${invoiceId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -702,12 +827,11 @@
           return;
         }
 
-        // Tampilkan konten QRIS
         loadingState.style.display = 'none';
         contentState.style.display = 'block';
 
         document.getElementById('qrisGatewayTitle').innerText = data.gatewayName || 'PEMBAYARAN QRIS';
-        document.getElementById('qrisInvoicePeriod').innerText = `Invoice #${data.invoiceId} • Periode: ${data.periodText || ''}`;
+        document.getElementById('qrisInvoicePeriod').innerText = `INV-${data.invoiceId} • Periode: ${data.periodText || ''}`;
         
         const qrImg = document.getElementById('qrisImage');
         qrImg.src = data.qrDataUrl || '';
@@ -727,7 +851,6 @@
           document.getElementById('qrisHelpText').innerText = data.helpText;
         }
 
-        // Checkout URL jika ada
         const checkoutBox = document.getElementById('qrisExternalCheckout');
         const checkoutLink = document.getElementById('qrisCheckoutLink');
         if (data.checkoutUrl) {
@@ -737,7 +860,6 @@
           checkoutBox.style.display = 'none';
         }
 
-        // Mulai auto-polling status invoice
         startPollingPayment(invoiceId, token);
       })
       .catch(err => {
@@ -746,7 +868,6 @@
       });
     }
 
-    // Tutup Modal
     function closeQuickQris() {
       document.getElementById('qrisModalOverlay').classList.remove('active');
       if (pollInterval) {
@@ -755,7 +876,6 @@
       }
     }
 
-    // Polling Status Pembayaran Real-time
     function startPollingPayment(invoiceId, token) {
       if (pollInterval) clearInterval(pollInterval);
 
@@ -773,19 +893,16 @@
       }, 3000);
     }
 
-    // Tampilkan Layar Sukses
     function showSuccessState() {
       document.getElementById('qrisLoadingState').style.display = 'none';
       document.getElementById('qrisContentState').style.display = 'none';
       document.getElementById('qrisSuccessState').style.display = 'block';
 
-      // Otomatis refresh / redirect dalam 2.5 detik
       setTimeout(() => {
         window.location.reload();
       }, 2500);
     }
 
-    // Unduh / Simpan Gambar QRIS
     function downloadQrImage() {
       const img = document.getElementById('qrisImage');
       if (!img || !img.src) return;
@@ -798,14 +915,32 @@
       document.body.removeChild(link);
     }
 
-    // Salin Nominal ke Clipboard
     function copyAmount() {
       if (!currentAmountNumber) return;
-      navigator.clipboard.writeText(String(currentAmountNumber))
-        .then(() => alert('Nominal Rp ' + Number(currentAmountNumber).toLocaleString('id-ID') + ' berhasil disalin!'))
-        .catch(() => alert('Nominal: Rp ' + currentAmountNumber));
+      const btn = document.getElementById('copyAmountBtn');
+      const origHtml = btn ? btn.innerHTML : '';
+      
+      const copyFn = () => {
+        if (btn) {
+          btn.innerHTML = '<i class="bi bi-check2"></i> Tersalin!';
+          setTimeout(() => { btn.innerHTML = origHtml; }, 2000);
+        }
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(String(currentAmountNumber)).then(copyFn).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = String(currentAmountNumber);
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        copyFn();
+      }
     }
   </script>
 
 </body>
 </html>
+

@@ -1595,11 +1595,24 @@ router.post('/api/agents/:id/prices/:priceId/delete', requireAdmin, restrictToAd
 router.get('/', requireAdminSession, requireSidebarMenuAccess('dashboard'), async (req, res) => {
   try {
     const billing = billingSvc.getDashboardStats();
+    const todayRev = billingSvc.getTodayRevenue ? billingSvc.getTodayRevenue() : { total: 0, count: 0 };
+    const recentPayments = billingSvc.getRecentPayments ? billingSvc.getRecentPayments(6) : [];
     const custStats = customerSvc.getCustomerStats();
+    const ticketStats = ticketSvc.getTicketStats ? ticketSvc.getTicketStats() : { open: 0, inProgress: 0, resolved: 0, total: 0 };
+    const recentTickets = ticketSvc.getAllTickets ? (ticketSvc.getAllTickets() || []).slice(0, 5) : [];
+    const routers = mikrotikService.getAllRouters ? mikrotikService.getAllRouters() : [];
     const settings = getSettings(); // Get current settings
     res.render('admin/dashboard', {
       title: 'Dashboard', company: company(), version: '2.0.0',
-      activePage: 'dashboard', billing, custStats, settings
+      activePage: 'dashboard',
+      billing,
+      todayRev,
+      recentPayments,
+      custStats,
+      ticketStats,
+      recentTickets,
+      routers,
+      settings
     });
   } catch (e) {
     logger.error('Admin dashboard error:', e);
@@ -5590,6 +5603,53 @@ router.post('/api/mikrotik/secrets/:id/delete', requireAdmin, async (req, res) =
   try { await mikrotikService.deletePppoeSecret(req.params.id, req.query.routerId); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+router.post('/api/mikrotik/secrets/:id/toggle', requireAdmin, express.json(), async (req, res) => {
+  try {
+    const { disabled } = req.body;
+    const routerId = req.query.routerId || req.body.routerId;
+    await mikrotikService.updatePppoeSecret(req.params.id, { disabled: disabled ? 'yes' : 'no' }, routerId);
+    res.json({ success: true, disabled: !!disabled });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/api/mikrotik/kick-pppoe', requireAdmin, express.json(), async (req, res) => {
+  try {
+    const { username, routerId } = req.body;
+    if (!username) return res.status(400).json({ success: false, error: 'Username wajib diisi' });
+    const rId = routerId ? (routerId === 'null' ? null : Number(routerId)) : null;
+    const kicked = await mikrotikService.kickPppoeUser(username.trim(), rId);
+    res.json({ success: true, kicked, message: `Sesi PPPoE "${username}" berhasil diputus!` });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+router.post('/api/mikrotik/kick-hotspot', requireAdmin, express.json(), async (req, res) => {
+  try {
+    const { username, routerId } = req.body;
+    if (!username) return res.status(400).json({ success: false, error: 'Username wajib diisi' });
+    const rId = routerId ? (routerId === 'null' ? null : Number(routerId)) : null;
+    const kicked = await mikrotikService.kickHotspotUser(username.trim(), rId);
+    res.json({ success: true, kicked, message: `Sesi Hotspot "${username}" berhasil diputus!` });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+router.post('/api/mikrotik/ping', requireAdmin, express.json(), async (req, res) => {
+  try {
+    const { host, count, routerId } = req.body;
+    if (!host) return res.status(400).json({ success: false, error: 'Host atau IP address wajib diisi' });
+    const rId = routerId ? (routerId === 'null' ? null : Number(routerId)) : null;
+    const results = await mikrotikService.pingHost(host.trim(), count || 4, rId);
+    res.json({ success: true, host, results });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 router.get('/api/mikrotik/hotspot-users', requireAdmin, async (req, res) => {
   try { res.json(await mikrotikService.getHotspotUsers(req.query.routerId)); } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -7493,17 +7553,35 @@ router.post('/radius-settings', requireAdminSession, restrictToAdmin, async (req
 });
 
 router.post('/radius/disconnect', requireAdminSession, restrictToAdmin, async (req, res) => {
+  const isJson = req.xhr || req.headers['x-requested-with'] === 'XMLHttpRequest' || (req.headers.accept && req.headers.accept.includes('application/json'));
   try {
     const { username, session_id, nas_ip } = req.body;
     if (!username) throw new Error('Username tidak boleh kosong');
 
     await radiusSvc.disconnectSession(username, session_id, nas_ip);
-    req.session._msg = { type: 'success', text: `Sesi aktif RADIUS untuk user "${username}" berhasil diputus.` };
+    const msg = `Sesi aktif RADIUS untuk user "${username}" berhasil diputus.`;
+    if (isJson) {
+      return res.json({ success: true, message: msg });
+    }
+    req.session._msg = { type: 'success', text: msg };
   } catch (e) {
     logger.error('Error disconnecting RADIUS session:', e);
-    req.session._msg = { type: 'danger', text: 'Gagal memutus sesi RADIUS: ' + e.message };
+    const err = 'Gagal memutus sesi RADIUS: ' + e.message;
+    if (isJson) {
+      return res.status(500).json({ success: false, error: err });
+    }
+    req.session._msg = { type: 'danger', text: err };
   }
-  res.redirect('/admin/radius-settings');
+  res.redirect('/admin/radius-settings#online');
+});
+
+router.get('/api/radius/online-sessions', requireAdmin, async (req, res) => {
+  try {
+    const sessions = radiusSvc.getOnlineSessions();
+    res.json({ success: true, sessions, count: sessions.length });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
 });
 
 router.post('/radius/start', requireAdminSession, restrictToAdmin, async (req, res) => {

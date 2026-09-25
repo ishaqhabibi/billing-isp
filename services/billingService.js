@@ -339,7 +339,8 @@ function getAllInvoices({ month, year, status, search, limit = 300 } = {}) {
 function getInvoiceById(id) {
   return db.prepare(`
     SELECT i.*, c.name as customer_name, c.phone as customer_phone, c.address, c.genieacs_tag,
-           p.name as package_name
+           p.name as package_name, p.price as package_price,
+           p.use_ppn, p.ppn_percentage, p.use_uso, p.uso_percentage
     FROM invoices i
     JOIN customers c ON i.customer_id = c.id
     LEFT JOIN packages p ON c.package_id = p.id

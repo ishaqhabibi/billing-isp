@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="<%= lang || 'id' %>" data-theme="dark">
+<html lang="<%= (typeof lang !== 'undefined' && lang) ? lang : 'id' %>" data-theme="dark">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= t('customer.dashboard_title', 'Dashboard Pelanggan') %> | <%= (settings && (settings.company_header || settings.company_name)) || 'Portal ISP' %></title>
+  <title><%= (typeof t === 'function' ? t('customer.dashboard_title', 'Dashboard Pelanggan') : 'Dashboard Pelanggan') %> | <%= (typeof settings !== 'undefined' && settings && (settings.company_header || settings.company_name)) || 'Portal ISP' %></title>
   
   <!-- Early Theme Init to avoid FOUC -->
   <script>
@@ -714,6 +714,104 @@
         padding: 13px 14px;
       }
     }
+
+    /* ── ENHANCED UI/UX: PULSING DOT & STATUS ── */
+    .status-pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #10b981;
+      display: inline-block;
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: pulse-green 1.8s infinite;
+    }
+    @keyframes pulse-green {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* ── FILTER BUTTONS FOR BILLING ── */
+    .isp-filter-btn {
+      background: var(--isp-card-surface);
+      border: 1px solid var(--isp-border);
+      color: var(--isp-text-muted);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .isp-filter-btn:hover {
+      color: var(--isp-text-heading);
+      border-color: var(--isp-border-strong);
+    }
+    .isp-filter-btn.active {
+      background: var(--isp-primary-subtle);
+      border-color: var(--isp-border-strong);
+      color: var(--isp-primary-text);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* ── MODERN RECEIPT CARD (MOBILE) ── */
+    .isp-receipt-card {
+      background: var(--isp-card-surface);
+      border: 1px solid var(--isp-border);
+      border-radius: 14px;
+      padding: 15px;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    .isp-receipt-card:hover {
+      border-color: var(--isp-border-strong);
+      transform: translateY(-1px);
+    }
+    .isp-receipt-card.is-unpaid {
+      border-left: 4px solid var(--isp-warning);
+    }
+    .isp-receipt-card.is-paid {
+      border-left: 4px solid var(--isp-success);
+    }
+
+    /* ── MODERN ACCORDION ── */
+    .isp-accordion .accordion-item {
+      background: var(--isp-card-surface) !important;
+      border: 1px solid var(--isp-border) !important;
+      border-radius: 12px !important;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .isp-accordion .accordion-button {
+      background: var(--isp-card-surface) !important;
+      color: var(--isp-text-heading) !important;
+      font-size: 13px !important;
+      font-weight: 700 !important;
+      padding: 13px 16px !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+    .isp-accordion .accordion-button:not(.collapsed) {
+      background: var(--isp-card-hover) !important;
+      color: var(--isp-primary-text) !important;
+    }
+    .isp-accordion .accordion-button::after {
+      filter: invert(0.5);
+    }
+    [data-theme="dark"] .isp-accordion .accordion-button::after {
+      filter: invert(1);
+    }
+    .isp-accordion .accordion-body {
+      background: var(--isp-card-bg) !important;
+      color: var(--isp-text-body) !important;
+      font-size: 12px !important;
+      line-height: 1.6;
+      border-top: 1px solid var(--isp-border);
+      padding: 14px 16px;
+    }
   </style>
 </head>
 
@@ -731,12 +829,12 @@
       </a>
 
       <div class="d-flex align-items-center gap-1 gap-sm-2">
-        <!-- PPOB BALANCE IF ENABLED (HANYA TAMPIL JIKA ADA SALDO) -->
-        <% if (showPPOB && Number(customerBalance || 0) > 0) { %>
+        <!-- PPOB BALANCE IF ENABLED (DINONAKTIFKAN SEMENTARA: POP-UP SEGERA HADIR) -->
+        <% /* if (showPPOB && Number(customerBalance || 0) > 0) { %>
         <a href="/customer/topup" class="isp-btn-tool text-decoration-none" title="Saldo Dompet Pelanggan" style="border-color:var(--isp-success-border); color:var(--isp-success); font-size:11px; padding:5px 9px;">
           <i class="bi bi-wallet2 text-success"></i> Rp <%= Number(customerBalance || 0).toLocaleString('id-ID') %>
         </a>
-        <% } %>
+        <% } */ %>
 
         <!-- THEME TOGGLE (DARK / LIGHT MODE) -->
         <button type="button" class="isp-btn-circle" id="themeToggleBtn" onclick="toggleTheme()" title="Ganti Mode Terang / Gelap">
@@ -796,35 +894,55 @@
 
     <!-- SECTION 1: SUBSCRIBER PROFILE (COMPACT & SLEEK) -->
     <% 
+      var profile = (typeof profile !== 'undefined' && profile) ? profile : null;
+      var customer = (typeof customer !== 'undefined' && customer) ? customer : {};
+      var invoices = (typeof invoices !== 'undefined' && invoices) ? invoices : [];
+      var tickets = (typeof tickets !== 'undefined' && tickets) ? tickets : [];
+      var connectedUsers = (typeof connectedUsers !== 'undefined' && connectedUsers) ? connectedUsers : [];
+      var settings = (typeof settings !== 'undefined' && settings) ? settings : {};
+      var showPPOB = false; // Dinonaktifkan di dashboard: semua trigger diarahkan ke pop-up modal
+      const prof = profile;
+      const cust = customer;
       let speedText = 'Up to 20 Mbps';
-      if (profile && profile.speed_down) {
-        const sDown = Number(profile.speed_down);
+      if (prof && prof.speed_down) {
+        const sDown = Number(prof.speed_down);
         if (sDown >= 1000) {
           speedText = Math.round(sDown / 1000) + ' Mbps';
         } else if (sDown > 0) {
           speedText = sDown + ' Kbps';
         }
-      } else if (profile && profile.package_name && profile.package_name.toLowerCase().includes('mbps')) {
-        speedText = profile.package_name;
+      } else if (prof && prof.package_name && prof.package_name.toLowerCase().includes('mbps')) {
+        speedText = prof.package_name;
       }
-      const packagePriceFormatted = profile && profile.package_price ? ('Rp ' + Number(profile.package_price).toLocaleString('id-ID')) : 'Rp 0';
-      const paidInvoices = (invoices || []).filter(i => i.status === 'paid');
-      const unpaidInvoices = (invoices || []).filter(i => i.status !== 'paid');
+      const packagePriceFormatted = prof && prof.package_price ? ('Rp ' + Number(prof.package_price).toLocaleString('id-ID')) : 'Rp 0';
+      const paidInvoices = (typeof invoices !== 'undefined' && invoices ? invoices : []).filter(i => i.status === 'paid');
+      const unpaidInvoices = (typeof invoices !== 'undefined' && invoices ? invoices : []).filter(i => i.status !== 'paid');
       const hasUnpaid = unpaidInvoices.length > 0;
       const latestUnpaid = hasUnpaid ? unpaidInvoices[0] : null;
       const totalUnpaidAmount = unpaidInvoices.reduce((sum, i) => sum + (Number(i.amount != null ? i.amount : (i.package_price != null ? i.package_price : 0)) || 0), 0);
       const unpaidPeriods = unpaidInvoices.map(i => `${i.period_month}/${i.period_year}`).join(', ');
       const unpaidCount = unpaidInvoices.length;
-      const initialLetter = (profile && profile.name ? profile.name.trim().charAt(0) : (customer.phone ? customer.phone.charAt(0) : 'P')).toUpperCase();
-      const isAccountActive = profile ? profile.status === 'active' : true;
-      const packageName = (profile && profile.package_name) ? profile.package_name : 'Internet Fiber';
-      const customerIdVal = profile ? (profile.customer_code || profile.pppoe_username || ('#CUST-' + profile.id)) : (customer.phone || '-');
+      const initialLetter = (prof && prof.name ? prof.name.trim().charAt(0) : (cust.phone ? cust.phone.charAt(0) : 'P')).toUpperCase();
+      const isAccountActive = prof ? prof.status === 'active' : true;
+      const packageName = (prof && prof.package_name) ? prof.package_name : 'Internet Fiber';
+      const customerIdVal = prof ? (prof.customer_code || prof.pppoe_username || ('#CUST-' + prof.id)) : (cust.phone || '-');
+      const currentWifiSsid = (cust && cust.ssid && cust.ssid !== '-' && cust.ssid !== 'N/A') 
+        ? cust.ssid 
+        : ((prof && prof.wifi_ssid) ? prof.wifi_ssid : 'BionFiber-WiFi');
+      const currentWifiPassword = (cust && cust.wifiPassword && cust.wifiPassword !== 'N/A')
+        ? cust.wifiPassword
+        : ((prof && prof.wifi_password) ? prof.wifi_password : '');
+      const rawConnectedUsers = (typeof connectedUsers !== 'undefined' && Array.isArray(connectedUsers)) 
+        ? connectedUsers 
+        : ((cust && Array.isArray(cust.connectedUsers)) ? cust.connectedUsers : []);
+      const totalConnectedDevices = (cust && cust.totalAssociations !== undefined && cust.totalAssociations !== 'N/A' && cust.totalAssociations !== '-')
+        ? Number(cust.totalAssociations)
+        : rawConnectedUsers.length;
     %>
-    <!-- SECTION 1: SUBSCRIBER PROFILE & ID PELANGGAN -->
+    <!-- SECTION 1: IDENTITAS PELANGGAN & STATUS (SLEEK & HIGH-STATUS) -->
     <section class="isp-hero-profile mb-3" id="home-section" style="padding: 16px 18px;">
-      <!-- BARIS 1: IDENTITAS PELANGGAN & STATUS KONEKSI -->
+      <!-- BARIS 1: NAMA, STATUS KONEKSI & SPEED -->
       <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
-        <!-- KIRI: AVATAR & NAMA & STATUS -->
         <div class="d-flex align-items-center gap-3 min-w-0">
           <div class="d-flex align-items-center justify-content-center flex-shrink-0 fw-bold shadow-sm" 
                style="width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; font-size: 20px; border: 1px solid rgba(255,255,255,0.18);">
@@ -835,33 +953,25 @@
               <%= profile ? profile.name : (customer.phone || 'Pelanggan') %>
             </h3>
             <div class="d-flex align-items-center gap-2 flex-wrap" style="font-size: 11px;">
-              <span class="status-indicator <%= isAccountActive ? 'online' : 'isolated' %>" style="font-size: 10px; padding: 2px 8px; font-weight: 600;">
+              <span class="status-indicator <%= isAccountActive ? 'online' : 'isolated' %>" style="font-size: 10px; padding: 2px 8px; font-weight: 700;">
                 <span class="status-dot <%= isAccountActive ? 'green' : 'red' %>"></span>
-                <%= isAccountActive ? 'Aktif' : 'Terisolir' %>
+                <%= isAccountActive ? 'Layanan Aktif' : 'Terisolir' %>
               </span>
-              <% if (customer && customer.phone) { %>
-                <span style="color: var(--isp-text-muted);">
-                  <i class="bi bi-telephone text-primary me-1"></i><%= customer.phone %>
-                </span>
-              <% } %>
+              <span class="badge" style="background:var(--isp-primary-subtle); color:var(--isp-primary-text); border:1px solid var(--isp-border); font-size:10px; font-weight:700;">
+                <i class="bi bi-speedometer2 me-1"></i><%= speedText %>
+              </span>
             </div>
           </div>
         </div>
 
-        <!-- KANAN: STATUS MODEM & REFRESH STATUS -->
         <div class="d-flex flex-column align-items-end flex-shrink-0">
           <button type="button" id="btnDeviceRefresh" class="isp-btn-tool" style="font-size: 11px; padding: 5px 11px; border-radius: 9px;" title="Cek sinkronisasi status perangkat ke OLT">
             <i class="bi bi-arrow-repeat me-1"></i> Cek Status
           </button>
-          <% if (customer && customer.status && customer.status === 'Online') { %>
-            <span class="small mt-1 text-success fw-medium d-none d-sm-inline-flex align-items-center gap-1" style="font-size: 10px;">
-              <i class="bi bi-wifi"></i> Modem Online
-            </span>
-          <% } %>
         </div>
       </div>
 
-      <!-- BARIS 2: DEDICATED ID PELANGGAN CONTAINER (PROMINENT, JELAS, ELEGAN & DAPAT DISALIN) -->
+      <!-- BARIS 2: DEDICATED ID PELANGGAN DENGAN SALIN CEPAT -->
       <div class="p-2 px-3 rounded-3 d-flex align-items-center justify-content-between gap-2" 
            style="background: var(--isp-card-surface); border: 1px solid var(--isp-border-strong); box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);">
         <div class="d-flex align-items-center gap-2 min-w-0">
@@ -871,13 +981,12 @@
           </div>
           <div class="min-w-0">
             <div class="text-uppercase fw-bold" style="font-size: 9px; letter-spacing: 0.8px; color: var(--isp-text-muted);">ID PELANGGAN</div>
-            <div class="fw-bold font-monospace text-truncate" style="font-size: 16px; color: var(--isp-primary-text); letter-spacing: 0.5px;">
+            <div class="fw-bold font-monospace text-truncate" style="font-size: 15px; color: var(--isp-primary-text); letter-spacing: 0.5px;">
               <%= customerIdVal %>
             </div>
           </div>
         </div>
 
-        <!-- TOMBOL SALIN ID DENGAN FEEDBACK CEPAT -->
         <button type="button" class="btn btn-sm d-flex align-items-center gap-1 flex-shrink-0" 
                 onclick="copyCustomerId('<%= customerIdVal %>', this)"
                 style="background: var(--isp-primary-subtle); border: 1px solid var(--isp-border-strong); color: var(--isp-primary-text); font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 8px; transition: all 0.2s ease;">
@@ -888,7 +997,7 @@
       <div id="deviceSyncNotice" class="small mt-1 px-1" style="font-size: 10px; color: var(--isp-text-muted);"></div>
     </section>
 
-    <!-- SECTION 2: BILLING ALERT CARD (HANYA MUNCUL JIKA ADA TAGIHAN BELUM LUNAS) -->
+    <!-- SECTION 2: SMART HERO CARD (KONTEKSTUAL & BEBAS REDUNDANSI) -->
     <% if (hasUnpaid) { %>
     <section class="isp-bill-card unpaid mb-3" id="billing-hero-section">
       <div class="d-flex align-items-center gap-3">
@@ -903,7 +1012,7 @@
             Rp <%= parseInt(totalUnpaidAmount || 0).toLocaleString('id-ID') %>
           </h4>
           <div class="small" style="color:var(--isp-text-muted); margin-top:4px; font-size:12px;">
-            Periode <%= unpaidPeriods %> <%= unpaidCount > 1 ? '• Akumulasi Tagihan' : '• Harap bayar sebelum tanggal jatuh tempo' %>
+            Periode <%= unpaidPeriods %> • Jatuh tempo tanggal <%= (profile && profile.due_date) ? profile.due_date : 20 %>
           </div>
         </div>
       </div>
@@ -914,274 +1023,373 @@
         </button>
       </div>
     </section>
-    <% } %>
-
-    <!-- SECTION 3: QUICK ACTIONS DOCK (4 FITUR UTAMA) -->
-    <section class="isp-actions-grid">
-      <% const navPayAmt = hasUnpaid ? totalUnpaidAmount : 0; %>
-      <!-- 1. BAYAR TAGIHAN -->
-      <div class="isp-action-tile" onclick="<%= hasUnpaid ? `openPaymentModal('${latestUnpaid.id}', '${navPayAmt}', '${unpaidPeriods}')` : `location.href='#billing-section'` %>" title="Bayar Tagihan Internet">
-        <div class="isp-action-icon icon-pay"><i class="bi bi-wallet2"></i></div>
-        <div class="isp-action-label">Bayar Tagihan</div>
+    <% } else { %>
+    <section class="isp-bill-card paid mb-3" id="billing-hero-section">
+      <div class="d-flex align-items-center gap-3">
+        <div class="isp-bill-icon">
+          <i class="bi bi-shield-check"></i>
+        </div>
+        <div>
+          <div class="badge bg-success text-white fw-bold mb-1" style="font-size:10px; letter-spacing:0.5px;">
+            SEMUA TAGIHAN LUNAS
+          </div>
+          <h4 class="fw-bold mb-0" style="font-size:18px; color:var(--isp-text-heading); letter-spacing:-0.02em;">
+            Layanan Aktif & Lancar
+          </h4>
+          <div class="small" style="color:var(--isp-text-muted); margin-top:4px; font-size:12px;">
+            Tidak ada tunggakan. Tagihan berikutnya jatuh tempo tanggal <%= (profile && profile.due_date) ? profile.due_date : 20 %> bulan depan.
+          </div>
+        </div>
       </div>
 
-      <!-- 2. RESTART MODEM (SATU-SATUNYA TOMBOL RESTART) -->
+      <div>
+        <a href="#billing-section" class="isp-btn-tool text-decoration-none" style="border-color:var(--isp-success-border); color:var(--isp-success); font-size:12px; padding:9px 16px; border-radius:10px;">
+          <i class="bi bi-clock-history me-1"></i> Riwayat Pembayaran
+        </a>
+      </div>
+    </section>
+    <% } %>
+
+    <!-- SECTION 3: KONTROL WI-FI & PERANGKAT (FITUR ANDALAN UTAMA) -->
+    <section class="isp-card mb-3" id="wifi-control-section" style="box-shadow: var(--isp-shadow-card);">
+      <div class="isp-card-header d-flex align-items-center justify-content-between">
+        <h5 class="isp-card-title mb-0 d-flex align-items-center gap-2" style="font-size:15px; font-weight:800;">
+          <i class="bi bi-wifi text-primary fs-5"></i> Kontrol Wi-Fi & Perangkat
+        </h5>
+        <div class="d-flex align-items-center gap-2">
+          <% if (customer && customer.model && customer.model !== 'N/A' && customer.model !== '-') { %>
+            <span class="badge d-none d-sm-inline-block" style="background:var(--isp-card-surface); color:var(--isp-text-muted); border:1px solid var(--isp-border); font-size:10px;">
+              <i class="bi bi-hdd me-1"></i> <%= customer.model %>
+            </span>
+          <% } %>
+          <span class="badge" style="background:var(--isp-success-subtle); color:var(--isp-success); border:1px solid var(--isp-success-border); font-size:10px; font-weight:700;">
+            <i class="bi bi-broadcast me-1"></i> Wi-Fi Aktif
+          </span>
+        </div>
+      </div>
+      <div class="isp-card-body p-3">
+        <div class="row g-2 g-md-3">
+          <!-- 1. GANTI NAMA WIFI (SSID) -->
+          <div class="col-12 col-md-4">
+            <div class="p-3 rounded-3 h-100 d-flex flex-column justify-content-between" 
+                 style="background:var(--isp-card-surface); border:1px solid var(--isp-border); transition:all 0.2s ease;">
+              <div>
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="small fw-bold text-uppercase" style="font-size:10px; color:var(--isp-text-muted); letter-spacing:0.5px;">
+                    <i class="bi bi-router text-primary me-1"></i> NAMA WIFI (SSID)
+                  </span>
+                  <span class="badge" style="background:var(--isp-primary-subtle); color:var(--isp-primary-text); font-size:9px; font-weight:700;">SSID 1</span>
+                </div>
+                <div class="fw-bold font-monospace text-truncate my-1" id="homeWifiSsidText" style="font-size:16px; color:var(--isp-text-heading); letter-spacing:0.2px;" title="<%= currentWifiSsid %>">
+                  <%= currentWifiSsid %>
+                </div>
+                <div class="small" style="font-size:11px; color:var(--isp-text-muted);">
+                  Nama pemancar jaringan WiFi rumah Anda.
+                </div>
+              </div>
+              <button type="button" class="btn btn-sm w-100 mt-3 fw-bold d-flex align-items-center justify-content-center gap-2" 
+                      onclick="openEditSsidModal()" 
+                      style="background:var(--isp-primary-subtle); color:var(--isp-primary-text); border:1px solid var(--isp-border-strong); border-radius:10px; font-size:12px; padding:8px 12px; transition:all 0.2s ease;">
+                <i class="bi bi-pencil-square"></i> Ganti Nama WiFi
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. GANTI SANDI WIFI -->
+          <div class="col-12 col-md-4">
+            <div class="p-3 rounded-3 h-100 d-flex flex-column justify-content-between" 
+                 style="background:var(--isp-card-surface); border:1px solid var(--isp-border); transition:all 0.2s ease;">
+              <div>
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="small fw-bold text-uppercase" style="font-size:10px; color:var(--isp-text-muted); letter-spacing:0.5px;">
+                    <i class="bi bi-shield-lock-fill text-warning me-1"></i> SANDI WIFI
+                  </span>
+                  <button type="button" class="btn btn-link p-0 text-decoration-none d-flex align-items-center gap-1" 
+                          onclick="togglePeekPassword(this)" 
+                          style="font-size:11px; color:var(--isp-primary-text); font-weight:700;" 
+                          title="Lihat/Sembunyikan Kata Sandi">
+                    <i class="bi bi-eye" id="iconPeekPass"></i> <span id="labelPeekPass">Lihat</span>
+                  </button>
+                </div>
+                <div class="d-flex align-items-center justify-content-between my-1">
+                  <div class="fw-bold font-monospace text-truncate" id="homeWifiPassText" data-real-pass="<%= currentWifiPassword %>" style="font-size:16px; color:var(--isp-text-heading); letter-spacing:1px;">
+                    <%= currentWifiPassword ? '••••••••' : '(Belum Disetel)' %>
+                  </div>
+                </div>
+                <div class="small" style="font-size:11px; color:var(--isp-text-muted);">
+                  Keamanan WPA2-PSK Enkripsi modem.
+                </div>
+              </div>
+              <button type="button" class="btn btn-sm w-100 mt-3 fw-bold d-flex align-items-center justify-content-center gap-2" 
+                      onclick="openEditPasswordModal()" 
+                      style="background:var(--isp-warning-subtle); color:var(--isp-warning); border:1px solid var(--isp-warning-border); border-radius:10px; font-size:12px; padding:8px 12px; transition:all 0.2s ease;">
+                <i class="bi bi-key-fill"></i> Ganti Sandi WiFi
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. CEK JUMLAH TERHUBUNG -->
+          <div class="col-12 col-md-4">
+            <div class="p-3 rounded-3 h-100 d-flex flex-column justify-content-between" 
+                 style="background:var(--isp-card-surface); border:1px solid var(--isp-border); transition:all 0.2s ease;">
+              <div>
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="small fw-bold text-uppercase" style="font-size:10px; color:var(--isp-text-muted); letter-spacing:0.5px;">
+                    <i class="bi bi-laptop text-success me-1"></i> STATUS KONEKSI
+                  </span>
+                  <span class="badge" style="background:var(--isp-success-subtle); color:var(--isp-success); font-size:9px; font-weight:700;">
+                    <span class="status-pulse-dot me-1"></span> Live Host
+                  </span>
+                </div>
+                <div class="d-flex align-items-baseline gap-2 my-1">
+                  <span class="fw-bold fs-3" id="homeConnectedDeviceCount" style="color:var(--isp-success); line-height:1;"><%= totalConnectedDevices %></span>
+                  <span class="small fw-bold" style="color:var(--isp-text-muted); font-size:12px;">Perangkat Terhubung</span>
+                </div>
+                <div class="small" style="font-size:11px; color:var(--isp-text-muted);">
+                  HP, Laptop, & TV yang sedang aktif di modem.
+                </div>
+              </div>
+              <button type="button" class="btn btn-sm w-100 mt-3 fw-bold d-flex align-items-center justify-content-center gap-2" 
+                      onclick="openConnectedDevicesModal()" 
+                      style="background:var(--isp-success-subtle); color:var(--isp-success); border:1px solid var(--isp-success-border); border-radius:10px; font-size:12px; padding:8px 12px; transition:all 0.2s ease;">
+                <i class="bi bi-people-fill"></i> Cek Jumlah Terhubung
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3 pt-2 d-flex align-items-center justify-content-between flex-wrap gap-2" style="border-top:1px dashed var(--isp-border); font-size:11px; color:var(--isp-text-muted);">
+          <div><i class="bi bi-shield-check text-success me-1"></i> Pengaturan tersinkronisasi otomatis ke modem tanpa perlu login router.</div>
+          <div><i class="bi bi-info-circle text-primary me-1"></i> Sambungkan ulang perangkat setelah nama/sandi diubah.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: AKSI CEPAT & DIAGNOSTIK MANDIRI -->
+    <section class="isp-actions-grid">
+      <!-- 1. PULSA & PPOB -->
+      <div class="isp-action-tile" onclick="openPpobComingSoonModal()" title="Beli Pulsa, Paket Data, & Token Listrik">
+        <div class="isp-action-icon" style="background:rgba(99, 102, 241, 0.12); color:#6366f1; border:1px solid rgba(99, 102, 241, 0.28);">
+          <i class="bi bi-phone"></i>
+        </div>
+        <div class="isp-action-label">Pulsa & PPOB</div>
+      </div>
+
+      <!-- 2. RESTART MODEM -->
       <div class="isp-action-tile" onclick="rebootDevice('<%= (customer.tags && customer.tags[0]) || customer.id %>')" title="Nyalakan Ulang Modem">
         <div class="isp-action-icon icon-reboot"><i class="bi bi-arrow-clockwise"></i></div>
         <div class="isp-action-label">Restart Modem</div>
       </div>
 
-      <!-- 3. PULSA & PPOB (MODAL SEGERA HADIR) -->
-      <div class="isp-action-tile" onclick="openPpobComingSoonModal()" title="Beli Pulsa, Paket Data, & Token Listrik">
-        <div class="isp-action-icon icon-ppob"><i class="bi bi-phone"></i></div>
-        <div class="isp-action-label">Pulsa & PPOB</div>
-      </div>
+      <!-- 3. REFRESH SESI JARINGAN -->
+      <form method="POST" action="/customer/reconnect" class="d-contents" onsubmit="return confirm('Segarkan sesi rute koneksi internet Anda?')">
+        <button type="submit" class="isp-action-tile w-100 border-0" style="background:var(--isp-card-bg);" title="Segarkan rute koneksi ke server">
+          <div class="isp-action-icon" style="background:var(--isp-warning-subtle); color:var(--isp-warning); border:1px solid var(--isp-warning-border);">
+            <i class="bi bi-lightning-charge-fill"></i>
+          </div>
+          <div class="isp-action-label">Refresh Sesi</div>
+        </button>
+      </form>
 
-      <!-- 4. BANTUAN CS -->
-      <div class="isp-action-tile" onclick="const m = new bootstrap.Modal(document.getElementById('ticketModal')); m.show();" title="Lapor Gangguan & Bantuan">
-        <div class="isp-action-icon icon-ticket"><i class="bi bi-headset"></i></div>
+      <!-- 4. CHAT CS WHATSAPP -->
+      <% 
+        const adminPhoneRaw = (settings && (settings.company_phone || (settings.whatsapp_admin_numbers && settings.whatsapp_admin_numbers[0]))) || '6287826565090';
+        const cleanWaPhone = adminPhoneRaw.replace(/\D/g, '');
+        const subscriberName = (profile && profile.name) || (customer && customer.phone) || 'Pelanggan';
+        const subscriberId = (profile && profile.customer_code) || '';
+        const waMessage = `Halo CS, saya pelanggan ${subscriberName} (ID: ${subscriberId}). Mohon bantuan terkait layanan internet.`;
+        const waLink = `https://wa.me/${cleanWaPhone}?text=${encodeURIComponent(waMessage)}`;
+      %>
+      <a href="<%= waLink %>" target="_blank" class="isp-action-tile text-decoration-none" title="Chat CS WhatsApp Resmi">
+        <div class="isp-action-icon" style="background:var(--isp-success-subtle); color:var(--isp-success); border:1px solid var(--isp-success-border);">
+          <i class="bi bi-whatsapp"></i>
+        </div>
         <div class="isp-action-label">Bantuan CS</div>
+      </a>
+    </section>
+
+    <!-- SECTION 5: PAKET LANGGANAN & SPESIFIKASI (KOMPAK) -->
+    <section class="isp-card mb-3">
+      <div class="isp-card-body p-3">
+        <div class="row g-2 align-items-center">
+          <div class="col-6 col-md-3">
+            <div class="p-2 rounded" style="background:var(--isp-card-surface); border:1px solid var(--isp-border);">
+              <div class="fw-bold" style="font-size:10px; color:var(--isp-text-muted); letter-spacing:0.5px;">PAKET INTERNET</div>
+              <div class="fw-bold text-truncate mt-1" style="font-size:13px; color:var(--isp-text-heading);" title="<%= packageName %>">
+                <%= packageName %>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="p-2 rounded" style="background:var(--isp-card-surface); border:1px solid var(--isp-border);">
+              <div class="fw-bold" style="font-size:10px; color:var(--isp-text-muted); letter-spacing:0.5px;">KECEPATAN</div>
+              <div class="fw-bold text-truncate mt-1" style="font-size:13px; color:var(--isp-primary-text);">
+                <i class="bi bi-speedometer2 me-1"></i><%= speedText %>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="p-2 rounded" style="background:var(--isp-card-surface); border:1px solid var(--isp-border);">
+              <div class="fw-bold" style="font-size:10px; color:var(--isp-text-muted); letter-spacing:0.5px;">BIAYA / BULAN</div>
+              <div class="fw-bold text-truncate mt-1" style="font-size:13px; color:var(--isp-warning);">
+                <%= packagePriceFormatted %>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="p-2 rounded" style="background:var(--isp-card-surface); border:1px solid var(--isp-border);">
+              <div class="fw-bold" style="font-size:10px; color:var(--isp-text-muted); letter-spacing:0.5px;">JATUH TEMPO</div>
+              <div class="fw-bold text-truncate mt-1" style="font-size:13px; color:var(--isp-text-heading);">
+                Tgl <%= (profile && profile.due_date) ? profile.due_date : 20 %> tiap bulan
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- SECTION 4: INFORMASI PAKET & PUSAT BANTUAN -->
-    <div class="row g-3 g-lg-4 mb-4">
-      
-      <!-- KOLOM KIRI: PAKET & LAYANAN INTERNET -->
-      <div class="col-lg-6">
-        <div class="isp-card h-100 mb-0">
-          <div class="isp-card-header">
-            <h5 class="isp-card-title">
-              <i class="bi bi-hdd-network text-primary"></i> Paket & Layanan Internet
-            </h5>
-            <span class="badge" style="background:var(--isp-primary-subtle); color:var(--isp-primary-text); border:1px solid rgba(37,99,235,0.3); font-size:10px; font-weight:700;">
-              FIBER BROADBAND
-            </span>
+    <!-- SECTION 5.5: LAYANAN PULSA & PEMBAYARAN DIGITAL (PROMINENT & PROFESSIONAL) -->
+    <section class="isp-card mb-3" id="ppob-section">
+      <div class="isp-card-header d-flex align-items-center justify-content-between">
+        <h5 class="isp-card-title mb-0 d-flex align-items-center gap-2" style="font-size:14px; font-weight:700;">
+          <i class="bi bi-phone text-primary"></i> Layanan Pulsa, Paket Data & Token Listrik
+        </h5>
+        <div>
+          <span class="badge" style="background:var(--isp-primary-subtle); color:var(--isp-primary-text); border:1px solid var(--isp-border); font-size:10px; font-weight:700;">
+            Segera Hadir
+          </span>
+        </div>
+      </div>
+      <div class="isp-card-body p-3">
+        <!-- 4 KARTU PRODUK REALISTIS & TAMPILAN RESMI TELCO -->
+        <div class="row g-2 mb-3">
+          <!-- 1. PULSA REGULER -->
+          <div class="col-6 col-md-3">
+            <div class="p-3 rounded-3 h-100 d-flex flex-column justify-content-between" 
+                 onclick="openPpobComingSoonModal()"
+                 style="background:var(--isp-card-surface); border:1px solid var(--isp-border); cursor:pointer; transition:all 0.2s ease;">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="small fw-bold text-uppercase" style="font-size:10px; color:var(--isp-text-muted); letter-spacing:0.5px;">PULSA</span>
+                <div class="d-flex align-items-center justify-content-center" style="width:28px; height:28px; border-radius:8px; background:rgba(37,99,235,0.12); color:#2563eb;">
+                  <i class="bi bi-phone"></i>
+                </div>
+              </div>
+              <div>
+                <div class="fw-bold" style="font-size:13px; color:var(--isp-text-heading);">Pulsa Seluler</div>
+                <div class="small" style="font-size:11px; color:var(--isp-text-muted); margin-top:2px;">Semua Operator</div>
+              </div>
+            </div>
           </div>
-          <div class="isp-card-body d-flex flex-column justify-content-between gap-3">
-            
-            <!-- DETAIL PAKET BERLANGGANAN (SPEED & HARGA) -->
-            <div class="p-3 rounded" style="background:var(--isp-card-surface); border:1px solid var(--isp-border);">
-              <div class="small fw-bold text-uppercase mb-2" style="font-size:11px; color:var(--isp-text-muted);">
-                <i class="bi bi-box-seam text-primary me-1"></i> Paket Berlangganan
+
+          <!-- 2. PAKET DATA -->
+          <div class="col-6 col-md-3">
+            <div class="p-3 rounded-3 h-100 d-flex flex-column justify-content-between" 
+                 onclick="openPpobComingSoonModal()"
+                 style="background:var(--isp-card-surface); border:1px solid var(--isp-border); cursor:pointer; transition:all 0.2s ease;">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="small fw-bold text-uppercase" style="font-size:10px; color:var(--isp-text-muted); letter-spacing:0.5px;">INTERNET</span>
+                <div class="d-flex align-items-center justify-content-center" style="width:28px; height:28px; border-radius:8px; background:rgba(2,132,199,0.12); color:#0284c7;">
+                  <i class="bi bi-globe2"></i>
+                </div>
               </div>
-              <div class="row g-2">
-                <!-- NAMA PAKET -->
-                <div class="col-4">
-                  <div class="p-2 rounded h-100" style="background:var(--isp-card-bg); border:1px solid var(--isp-border);">
-                    <div class="fw-bold" style="font-size:10px; color:var(--isp-text-muted); letter-spacing:0.5px;">NAMA PAKET</div>
-                    <div class="fw-bold text-truncate mt-1" style="font-size:14px; color:var(--isp-text-heading);" title="<%= profile && profile.package_name ? profile.package_name : 'Internet Fiber' %>">
-                      <%= profile && profile.package_name ? profile.package_name : 'Internet Fiber' %>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- KECEPATAN / SPEED -->
-                <div class="col-4">
-                  <div class="p-2 rounded h-100" style="background:var(--isp-card-bg); border:1px solid var(--isp-border);">
-                    <div class="fw-bold" style="font-size:10px; color:var(--isp-text-muted); letter-spacing:0.5px;">KECEPATAN</div>
-                    <div class="fw-bold text-truncate mt-1" style="font-size:14px; color:var(--isp-primary-text);">
-                      <i class="bi bi-speedometer2 me-1"></i> <%= speedText %>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- HARGA PAKET -->
-                <div class="col-4">
-                  <div class="p-2 rounded h-100" style="background:var(--isp-card-bg); border:1px solid var(--isp-border);">
-                    <div class="fw-bold" style="font-size:10px; color:var(--isp-text-muted); letter-spacing:0.5px;">BIAYA / BLN</div>
-                    <div class="fw-bold text-truncate mt-1" style="font-size:14px; color:var(--isp-warning);">
-                      <%= packagePriceFormatted %>
-                    </div>
-                  </div>
-                </div>
+              <div>
+                <div class="fw-bold" style="font-size:13px; color:var(--isp-text-heading);">Paket Data</div>
+                <div class="small" style="font-size:11px; color:var(--isp-text-muted); margin-top:2px;">Kuota 24 Jam</div>
               </div>
             </div>
+          </div>
 
-            <!-- DETAIL SIKLUS & SPESIFIKASI LAYANAN -->
-            <div class="p-3 rounded" style="background:var(--isp-card-surface); border:1px solid var(--isp-border);">
-              <div class="small fw-bold text-uppercase mb-2" style="font-size:11px; color:var(--isp-text-muted);">
-                <i class="bi bi-calendar2-check text-success me-1"></i> Siklus & Spesifikasi Layanan
+          <!-- 3. TOKEN LISTRIK PLN -->
+          <div class="col-6 col-md-3">
+            <div class="p-3 rounded-3 h-100 d-flex flex-column justify-content-between" 
+                 onclick="openPpobComingSoonModal()"
+                 style="background:var(--isp-card-surface); border:1px solid var(--isp-border); cursor:pointer; transition:all 0.2s ease;">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="small fw-bold text-uppercase" style="font-size:10px; color:var(--isp-text-muted); letter-spacing:0.5px;">LISTRIK</span>
+                <div class="d-flex align-items-center justify-content-center" style="width:28px; height:28px; border-radius:8px; background:rgba(245,158,11,0.12); color:#f59e0b;">
+                  <i class="bi bi-lightning-charge-fill"></i>
+                </div>
               </div>
-              <div class="row g-2">
-                <div class="col-12 col-sm-6">
-                  <div class="p-2 rounded" style="background:var(--isp-card-bg); border:1px solid var(--isp-border);">
-                    <div class="fw-bold" style="font-size:10px; color:var(--isp-text-muted); letter-spacing:0.5px;">JATUH TEMPO TAGIHAN</div>
-                    <div class="fw-bold mt-1" style="color:var(--isp-text-heading); font-size:13px;">
-                      Tanggal <%= (profile && profile.due_date) ? profile.due_date : 20 %> setiap bulan
-                    </div>
-                  </div>
-                </div>
-                <div class="col-12 col-sm-6">
-                  <div class="p-2 rounded" style="background:var(--isp-card-bg); border:1px solid var(--isp-border);">
-                    <div class="fw-bold" style="font-size:10px; color:var(--isp-text-muted); letter-spacing:0.5px;">TIPE KONEKSI</div>
-                    <div class="fw-bold mt-1" style="color:var(--isp-primary-text); font-size:13px;">
-                      Fiber to the Home (Unlimited)
-                    </div>
-                  </div>
-                </div>
+              <div>
+                <div class="fw-bold" style="font-size:13px; color:var(--isp-text-heading);">Token PLN</div>
+                <div class="small" style="font-size:11px; color:var(--isp-text-muted); margin-top:2px;">Prabayar & Tagihan</div>
               </div>
             </div>
+          </div>
 
-            <!-- PEMULIHAN SESI JARINGAN MANDIRI -->
-            <div class="p-3 rounded" style="background:var(--isp-card-surface); border:1px solid var(--isp-border);">
-              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <div class="flex-grow-1">
-                  <div class="fw-bold" style="font-size:13px; color:var(--isp-text-heading);">
-                    <i class="bi bi-lightning-charge-fill text-warning me-1"></i> Perbaikan Sesi Koneksi
-                  </div>
-                  <div class="small" style="font-size:12px; color:var(--isp-text-body); margin-top:2px;">
-                    Jika koneksi terasa lambat atau rute macet, perbarui sesi rute jaringan Anda.
-                  </div>
-                </div>
-                <div class="w-100 w-sm-auto text-end">
-                  <form method="POST" action="/customer/reconnect" class="d-inline" onsubmit="return confirm('Segarkan sesi rute koneksi internet Anda?')">
-                    <button type="submit" class="btn btn-sm btn-outline-primary fw-bold px-3 py-2 w-100 w-sm-auto mt-2 mt-sm-0" style="border-radius:9px; font-size:12px;" title="Segarkan rute koneksi ke server">
-                      <i class="bi bi-arrow-repeat me-1"></i> Refresh Sesi
-                    </button>
-                  </form>
+          <!-- 4. TOP UP & VOUCHER -->
+          <div class="col-6 col-md-3">
+            <div class="p-3 rounded-3 h-100 d-flex flex-column justify-content-between" 
+                 onclick="openPpobComingSoonModal()"
+                 style="background:var(--isp-card-surface); border:1px solid var(--isp-border); cursor:pointer; transition:all 0.2s ease;">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="small fw-bold text-uppercase" style="font-size:10px; color:var(--isp-text-muted); letter-spacing:0.5px;">E-MONEY</span>
+                <div class="d-flex align-items-center justify-content-center" style="width:28px; height:28px; border-radius:8px; background:rgba(16,185,129,0.12); color:#10b981;">
+                  <i class="bi bi-wallet2"></i>
                 </div>
               </div>
+              <div>
+                <div class="fw-bold" style="font-size:13px; color:var(--isp-text-heading);">E-Wallet & Game</div>
+                <div class="small" style="font-size:11px; color:var(--isp-text-muted); margin-top:2px;">Top Up Saldo Instan</div>
+              </div>
             </div>
+          </div>
+        </div>
 
+        <div class="p-2 px-3 rounded-2 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background:var(--isp-card-surface); border:1px solid var(--isp-border);">
+          <div class="small" style="font-size:11px; color:var(--isp-text-muted);">
+            <i class="bi bi-shield-check text-success me-1"></i> Transaksi terverifikasi otomatis dengan nomor seri (SN) resmi dari provider.
+          </div>
+          <div>
+            <button type="button" class="btn btn-sm fw-bold px-3 py-1" onclick="openPpobComingSoonModal()" style="background:var(--isp-card-bg); border:1px solid var(--isp-border-strong); color:var(--isp-text-heading); border-radius:8px; font-size:11px;">
+              Informasi Layanan <i class="bi bi-arrow-right ms-1"></i>
+            </button>
           </div>
         </div>
       </div>
+    </section>
 
-      <!-- KOLOM KANAN: PUSAT BANTUAN & LAYANAN CS -->
-      <div class="col-lg-6">
-        <div class="isp-card h-100 mb-0">
-          <div class="isp-card-header">
-            <h5 class="isp-card-title">
-              <i class="bi bi-headset text-success"></i> Layanan Bantuan & Pengaduan
-            </h5>
-            <span class="badge" style="background:var(--isp-success-subtle); color:var(--isp-success); border:1px solid var(--isp-success-border); font-size:10px;">
-              Respon Cepat
-            </span>
-          </div>
-          <div class="isp-card-body d-flex flex-column justify-content-between gap-3">
-            <div>
-              <% 
-                const adminPhoneRaw = (settings && (settings.company_phone || (settings.whatsapp_admin_numbers && settings.whatsapp_admin_numbers[0]))) || '6287826565090';
-                const cleanWaPhone = adminPhoneRaw.replace(/\D/g, '');
-                const subscriberName = (profile && profile.name) || (customer && customer.phone) || 'Pelanggan';
-                const subscriberId = (profile && profile.customer_code) || '';
-                const waMessage = `Halo Admin, saya pelanggan atas nama ${subscriberName} (ID: ${subscriberId}). Saya butuh bantuan mengenai koneksi internet.`;
-                const waLink = `https://wa.me/${cleanWaPhone}?text=${encodeURIComponent(waMessage)}`;
-              %>
-              <!-- WHATSAPP CS HOTLINE -->
-              <a href="<%= waLink %>" target="_blank" class="btn w-100 py-2 fw-bold d-flex align-items-center justify-content-center gap-2 mb-2 text-white shadow-sm" style="background:#22c55e; border:none; border-radius:12px; font-size:13px; min-height:44px;">
-                <i class="bi bi-whatsapp fs-5"></i> Chat CS WhatsApp
-              </a>
-
-              <!-- BUAT TIKET GANGGUAN -->
-              <button type="button" class="btn btn-outline-primary w-100 py-2 fw-bold d-flex align-items-center justify-content-center gap-2 mb-3" onclick="const m = new bootstrap.Modal(document.getElementById('ticketModal')); m.show();" style="border-radius:12px; font-size:13px; min-height:44px;">
-                <i class="bi bi-ticket-detailed me-1"></i> Buat Tiket Gangguan Baru
-              </button>
-
-              <!-- STATUS TIKET TERAKHIR (IF ANY) -->
-              <% const activeTickets = (tickets || []).filter(t => t.status !== 'closed'); %>
-              <div class="p-3 rounded mb-2" style="background:var(--isp-card-surface); border:1px solid var(--isp-border);">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                  <span class="small fw-bold" style="font-size:11px; text-transform:uppercase; color:var(--isp-text-muted);">
-                    <i class="bi bi-ticket-perforated me-1"></i> Status Pengaduan:
-                  </span>
-                  <span class="badge" style="background:var(--isp-card-bg); border:1px solid var(--isp-border); font-size:10px; color:var(--isp-text-muted);">
-                    <%= activeTickets.length %> Berjalan
-                  </span>
-                </div>
-                <% if (activeTickets.length > 0) { %>
-                  <div class="d-flex flex-column gap-2" style="max-height:120px; overflow-y:auto;">
-                    <% activeTickets.forEach(t => { %>
-                      <div class="p-2 rounded" style="background:var(--isp-card-bg); border:1px solid var(--isp-border); font-size:11px;">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                          <strong style="color:var(--isp-text-heading);"><%= t.subject || 'Kendala Koneksi' %></strong>
-                          <span class="badge" style="background:<%= t.status === 'open' ? 'var(--isp-warning-subtle)' : 'var(--isp-info-subtle)' %>; color:<%= t.status === 'open' ? 'var(--isp-warning)' : 'var(--isp-info)' %>; font-size:9px;">
-                            <%= t.status === 'open' ? 'Menunggu Teknisi' : 'Diproses' %>
-                          </span>
-                        </div>
-                        <div class="text-truncate" style="color:var(--isp-text-body);"><%= t.message %></div>
-                      </div>
-                    <% }) %>
-                  </div>
-                <% } else { %>
-                  <div class="small" style="color:var(--isp-text-muted); font-size:12px;">
-                    <i class="bi bi-check-circle-fill text-success me-1"></i> Tidak ada laporan gangguan yang aktif saat ini.
-                  </div>
-                <% } %>
-              </div>
-            </div>
-
-            <!-- PANDUAN INDIKATOR MODEM & KENDALA (INFORMATIF) -->
-            <div class="p-3 rounded" style="background:var(--isp-card-surface); border:1px solid var(--isp-border); font-size:12px; line-height:1.5;">
-              <div class="fw-bold mb-2 d-flex align-items-center gap-2" style="color:var(--isp-text-heading); font-size:13px;">
-                <i class="bi bi-info-circle-fill text-primary"></i> Panduan Indikator Modem:
-              </div>
-              
-              <div class="d-flex flex-column gap-2">
-                <div class="p-2 rounded" style="background:var(--isp-card-bg); border-left:3px solid var(--isp-danger); border-top:1px solid var(--isp-border); border-right:1px solid var(--isp-border); border-bottom:1px solid var(--isp-border);">
-                  <div class="fw-bold" style="color:var(--isp-danger); font-size:12px;">
-                    <i class="bi bi-circle-fill me-1" style="font-size:7px;"></i> Lampu LOS Berkedip / Menyala Merah:
-                  </div>
-                  <div class="small" style="color:var(--isp-text-body); font-size:12px; line-height:1.6; margin-top:3px;">
-                    Kabel fiber optik putus, tertekuk, atau redaman drop. <strong style="color:var(--isp-text-heading);">Harap tidak menarik kabel</strong>. Silakan segera buat tiket atau hubungi CS agar teknisi datang memeriksa sambungan kabel di rumah Anda.
-                  </div>
-                </div>
-
-                <div class="p-2 rounded" style="background:var(--isp-card-bg); border-left:3px solid var(--isp-warning); border-top:1px solid var(--isp-border); border-right:1px solid var(--isp-border); border-bottom:1px solid var(--isp-border);">
-                  <div class="fw-bold" style="color:var(--isp-warning); font-size:12px;">
-                    <i class="bi bi-circle-fill me-1" style="font-size:7px;"></i> Lampu PON Berkedip:
-                  </div>
-                  <div class="small" style="color:var(--isp-text-body); font-size:12px; line-height:1.6; margin-top:3px;">
-                    Modem sedang proses registrasi ke server pusat (OLT). Tunggu 2-5 menit atau lakukan restart modem 1x.
-                  </div>
-                </div>
-
-                <div class="p-2 rounded" style="background:var(--isp-card-bg); border-left:3px solid var(--isp-success); border-top:1px solid var(--isp-border); border-right:1px solid var(--isp-border); border-bottom:1px solid var(--isp-border);">
-                  <div class="fw-bold" style="color:var(--isp-success); font-size:12px;">
-                    <i class="bi bi-check-circle-fill me-1" style="font-size:10px;"></i> Lampu Normal Tapi Tidak Ada Akses:
-                  </div>
-                  <div class="small" style="color:var(--isp-text-body); font-size:12px; line-height:1.6; margin-top:3px;">
-                    Klik tombol <strong style="color:var(--isp-text-heading);">Refresh Sesi</strong> atau <strong style="color:var(--isp-text-heading);">Restart Modem</strong> di menu atas. Pastikan juga status tagihan bulan ini sudah lunas.
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- SECTION 5: INVOICES & BILLING HISTORY -->
-    <section class="isp-card" id="billing-section">
-      <div class="isp-card-header">
-        <h5 class="isp-card-title">
+    <!-- SECTION 6: STATUS TAGIHAN & RIWAYAT FAKTUR (#billing-section) -->
+    <section class="isp-card mb-3" id="billing-section">
+      <div class="isp-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <h5 class="isp-card-title mb-0">
           <i class="bi bi-receipt text-warning"></i> Status Tagihan & Riwayat Pembayaran
         </h5>
-        <span class="badge" style="background:var(--isp-card-bg); border:1px solid var(--isp-border); color:var(--isp-text-muted); font-size:11px;">
-          <%= invoices ? invoices.length : 0 %> Catatan
-        </span>
+        
+        <!-- SEGMENTED TABS -->
+        <div class="d-flex align-items-center gap-1">
+          <button type="button" class="isp-filter-btn active" onclick="filterInvoices('all', this)">
+            Semua (<%= invoices ? invoices.length : 0 %>)
+          </button>
+          <% if (hasUnpaid) { %>
+            <button type="button" class="isp-filter-btn" onclick="filterInvoices('unpaid', this)">
+              <i class="bi bi-exclamation-circle-fill text-warning"></i> Belum Bayar (<%= unpaidCount %>)
+            </button>
+          <% } %>
+          <button type="button" class="isp-filter-btn" onclick="filterInvoices('paid', this)">
+            <i class="bi bi-check2 text-success"></i> Lunas (<%= paidInvoices.length %>)
+          </button>
+        </div>
       </div>
+
       <div class="isp-card-body p-0">
         <!-- DESKTOP TABLE VIEW -->
         <div class="table-responsive d-none d-md-block">
           <table class="isp-table">
             <thead>
               <tr>
-                <th style="width:180px;">Aksi</th>
+                <th style="width:190px;">Aksi</th>
                 <th>Periode</th>
                 <th>Paket Layanan</th>
                 <th>Jumlah Tagihan</th>
                 <th>Status</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="invoiceTableBody">
               <% if (invoices && invoices.length > 0) { %>
                 <% invoices.forEach(inv => { %>
                   <% const itemAmt = inv.amount != null ? inv.amount : (inv.package_price != null ? inv.package_price : 0); %>
-                  <tr>
+                  <tr class="invoice-row-item" data-status="<%= inv.status %>">
                     <td>
                       <% if (inv.status !== 'paid') { %>
                         <div class="d-inline-flex gap-1">
@@ -1194,23 +1402,23 @@
                         </div>
                       <% } else { %>
                         <div class="d-inline-flex gap-1">
-                          <a href="/customer/invoice/<%= inv.id %>/pdf" class="isp-btn-tool" style="border-radius:8px; padding:6px 10px; font-size:12px;" target="_blank" title="Unduh Invoice PDF">
+                          <a href="/customer/invoice/<%= inv.id %>/pdf" class="isp-btn-tool" style="border-radius:8px; padding:6px 10px; font-size:12px;" target="_blank" title="Unduh Faktur PDF">
                             <i class="bi bi-file-earmark-pdf text-info me-1"></i> PDF
                           </a>
-                          <a href="/customer/invoice/<%= inv.id %>/print-thermal" class="isp-btn-tool" style="border-radius:8px; padding:6px 10px; font-size:12px;" target="_blank" title="Cetak Struk Thermal 58mm">
+                          <a href="/customer/invoice/<%= inv.id %>/print-thermal" class="isp-btn-tool" style="border-radius:8px; padding:6px 10px; font-size:12px;" target="_blank" title="Cetak Struk">
                             <i class="bi bi-receipt me-1"></i> Struk
                           </a>
                         </div>
                       <% } %>
                     </td>
-                    <td class="fw-bold" style="color:var(--isp-text-heading);"><%= inv.period_month %>/<%= inv.period_year %></td>
-                    <td><%= inv.package_name || (profile ? profile.package_name : 'Internet Fiber') %></td>
+                    <td class="fw-bold font-monospace" style="color:var(--isp-text-heading);"><%= inv.period_month %>/<%= inv.period_year %></td>
+                    <td><%= inv.package_name || packageName %></td>
                     <td class="fw-bold" style="color:var(--isp-info);">Rp <%= parseInt(itemAmt || 0).toLocaleString('id-ID') %></td>
                     <td>
                       <% if (inv.status === 'paid') { %>
-                        <span class="badge" style="background:var(--isp-success-subtle); color:var(--isp-success); border:1px solid var(--isp-success-border); font-size:11px; padding:5px 10px;">LUNAS</span>
+                        <span class="badge" style="background:var(--isp-success-subtle); color:var(--isp-success); border:1px solid var(--isp-success-border); font-size:11px; padding:5px 10px; font-weight:700;">LUNAS</span>
                       <% } else { %>
-                        <span class="badge" style="background:var(--isp-danger-subtle); color:var(--isp-danger); border:1px solid rgba(239,68,68,0.3); font-size:11px; padding:5px 10px;">BELUM BAYAR</span>
+                        <span class="badge" style="background:var(--isp-danger-subtle); color:var(--isp-danger); border:1px solid rgba(239,68,68,0.3); font-size:11px; padding:5px 10px; font-weight:700;">BELUM BAYAR</span>
                       <% } %>
                     </td>
                   </tr>
@@ -1222,42 +1430,42 @@
           </table>
         </div>
 
-        <!-- MOBILE CARD VIEW -->
-        <div class="d-block d-md-none p-3">
+        <!-- MOBILE RECEIPT CARDS VIEW -->
+        <div class="d-block d-md-none p-3" id="invoiceCardsMobileContainer">
           <% if (invoices && invoices.length > 0) { %>
-            <div class="d-flex flex-column gap-3">
+            <div class="d-flex flex-column gap-2">
               <% invoices.forEach(inv => { %>
                 <% const itemAmt = inv.amount != null ? inv.amount : (inv.package_price != null ? inv.package_price : 0); %>
-                <div class="p-3 rounded" style="background:var(--isp-card-surface); border:1px solid var(--isp-border);">
+                <div class="invoice-card-item isp-receipt-card <%= inv.status === 'paid' ? 'is-paid' : 'is-unpaid' %>" data-status="<%= inv.status %>">
                   <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="small fw-bold text-muted font-monospace"><i class="bi bi-calendar3 me-1"></i> Periode <%= inv.period_month %>/<%= inv.period_year %></span>
                     <% if (inv.status === 'paid') { %>
-                      <span class="badge" style="background:var(--isp-success-subtle); color:var(--isp-success); border:1px solid var(--isp-success-border); font-size:10px;">LUNAS</span>
+                      <span class="badge" style="background:var(--isp-success-subtle); color:var(--isp-success); border:1px solid var(--isp-success-border); font-size:10px; font-weight:700;">LUNAS</span>
                     <% } else { %>
-                      <span class="badge" style="background:var(--isp-danger-subtle); color:var(--isp-danger); border:1px solid rgba(239,68,68,0.3); font-size:10px;">BELUM BAYAR</span>
+                      <span class="badge" style="background:var(--isp-danger-subtle); color:var(--isp-danger); border:1px solid rgba(239,68,68,0.3); font-size:10px; font-weight:700;">BELUM BAYAR</span>
                     <% } %>
-                    <span class="small text-muted fw-bold"><i class="bi bi-calendar3 me-1"></i> Periode <%= inv.period_month %>/<%= inv.period_year %></span>
                   </div>
 
-                  <div class="mb-3">
-                    <div class="fw-bold" style="color:var(--isp-text-heading);"><%= inv.package_name || 'Internet Fiber' %></div>
-                    <div class="fw-bold" style="font-size:18px; color:var(--isp-info);">Rp <%= parseInt(itemAmt || 0).toLocaleString('id-ID') %></div>
+                  <div class="d-flex align-items-baseline justify-content-between mb-3">
+                    <div class="fw-semibold text-truncate me-2" style="font-size:13px; color:var(--isp-text-heading);"><%= inv.package_name || packageName %></div>
+                    <div class="fw-bold" style="font-size:17px; color:var(--isp-text-heading); white-space:nowrap;">Rp <%= parseInt(itemAmt || 0).toLocaleString('id-ID') %></div>
                   </div>
 
                   <div>
                     <% if (inv.status !== 'paid') { %>
-                      <button class="btn btn-warning text-dark fw-bold w-100 py-2 mb-2 shadow-sm" onclick="openPaymentModal('<%= inv.id %>', '<%= itemAmt %>', '<%= inv.period_month %>/<%= inv.period_year %>')" style="border-radius:10px; font-size:13px;">
-                        <i class="bi bi-qr-code-scan me-1"></i> BAYAR SEKARANG
+                      <button class="btn btn-warning text-dark fw-bold w-100 py-2 mb-2 shadow-sm d-flex align-items-center justify-content-center gap-2" onclick="openPaymentModal('<%= inv.id %>', '<%= itemAmt %>', '<%= inv.period_month %>/<%= inv.period_year %>')" style="border-radius:10px; font-size:13px;">
+                        <i class="bi bi-qr-code-scan"></i> BAYAR SEKARANG
                       </button>
                       <a href="/customer/invoice/<%= inv.id %>/pdf" class="isp-btn-tool w-100 py-2 text-decoration-none justify-content-center" style="border-radius:10px; font-size:12px;" target="_blank">
-                        <i class="bi bi-file-earmark-pdf text-info me-1"></i> Unduh Invoice PDF
+                        <i class="bi bi-file-earmark-pdf text-info me-1"></i> Unduh Faktur PDF
                       </a>
                     <% } else { %>
                       <div class="d-flex gap-2">
                         <a href="/customer/invoice/<%= inv.id %>/pdf" class="isp-btn-tool flex-fill py-2 text-decoration-none justify-content-center" style="border-radius:10px; font-size:12px;" target="_blank">
-                          <i class="bi bi-file-earmark-pdf text-info me-1"></i> PDF
+                          <i class="bi bi-file-earmark-pdf text-info me-1"></i> Unduh PDF
                         </a>
                         <a href="/customer/invoice/<%= inv.id %>/print-thermal" class="isp-btn-tool flex-fill py-2 text-decoration-none justify-content-center" style="border-radius:10px; font-size:12px;" target="_blank">
-                          <i class="bi bi-receipt me-1"></i> Struk
+                          <i class="bi bi-receipt me-1"></i> Cetak Struk
                         </a>
                       </div>
                     <% } %>
@@ -1272,51 +1480,90 @@
       </div>
     </section>
 
-    <!-- SECTION 6: HELP & SUPPORT TICKETS -->
-    <section class="isp-card mb-4" id="ticket-section">
-      <div class="isp-card-header">
-        <h5 class="isp-card-title">
-          <i class="bi bi-headset text-primary"></i> Layanan Bantuan & Laporan Gangguan
+    <!-- SECTION 7: PANDUAN KENDALA & STATUS PENGADUAN (ACCORDION BERSIH) -->
+    <section class="isp-card mb-4" id="help-section">
+      <div class="isp-card-header d-flex align-items-center justify-content-between">
+        <h5 class="isp-card-title mb-0">
+          <i class="bi bi-shield-check text-primary"></i> Panduan Kendala & Status Pengaduan
         </h5>
-        <button class="btn btn-primary btn-sm fw-bold px-3 py-1" onclick="const m = new bootstrap.Modal(document.getElementById('ticketModal')); m.show();" style="border-radius:8px; font-size:12px; background:var(--isp-primary); border:none;">
-          <i class="bi bi-plus-lg me-1"></i> Buat Laporan Baru
+        <button type="button" class="btn btn-sm btn-outline-primary fw-bold" onclick="const m = new bootstrap.Modal(document.getElementById('ticketModal')); m.show();" style="border-radius:8px; font-size:11px;">
+          <i class="bi bi-plus-lg me-1"></i> Buat Tiket
         </button>
       </div>
-      <div class="isp-card-body">
-        <% if (tickets && tickets.length > 0) { %>
-          <div class="table-responsive">
-            <table class="isp-table">
-              <thead>
-                <tr>
-                  <th>No. Tiket</th>
-                  <th>Subjek Kendala</th>
-                  <th>Waktu Pengajuan</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% tickets.forEach(t => { %>
-                  <tr>
-                    <td class="fw-bold text-info">#TK-<%= t.id %></td>
-                    <td style="color:var(--isp-text-heading);"><%= t.subject %></td>
-                    <td class="text-muted"><%= t.created_at %></td>
-                    <td>
-                      <span class="badge" style="border-radius:6px; padding:5px 10px; font-size:11px; <%= t.status === 'open' ? 'background:var(--isp-warning-subtle); color:var(--isp-warning); border:1px solid var(--isp-warning-border);' : t.status === 'in_progress' ? 'background:var(--isp-info-subtle); color:var(--isp-info); border:1px solid rgba(2,132,199,0.3);' : 'background:var(--isp-success-subtle); color:var(--isp-success); border:1px solid var(--isp-success-border);' %>">
-                        <%= t.status === 'open' ? 'MENUNGGU TEKNISI' : t.status === 'in_progress' ? 'SEDANG DITANGANI' : 'SELESAI' %>
-                      </span>
-                    </td>
-                  </tr>
-                <% }) %>
-              </tbody>
-            </table>
-          </div>
-        <% } else { %>
-          <div class="text-center py-4 text-muted">
-            <i class="bi bi-patch-check fs-2 d-block mb-2 text-success"></i>
-            <div style="color:var(--isp-text-heading); font-weight:600;">Tidak ada laporan gangguan aktif.</div>
-            <div class="small mt-1" style="color:var(--isp-text-muted);">Jika mengalami kendala internet, klik tombol <strong>"Buat Laporan Baru"</strong> di atas.</div>
+
+      <div class="isp-card-body p-3">
+        <!-- STATUS TIKET BERJALAN (JIKA ADA) -->
+        <% const activeTickets = (tickets || []).filter(t => t.status !== 'closed'); %>
+        <% if (activeTickets.length > 0) { %>
+          <div class="p-3 rounded mb-3" style="background:var(--isp-card-surface); border:1px solid var(--isp-border);">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="small fw-bold text-uppercase" style="font-size:11px; color:var(--isp-text-muted);">
+                <i class="bi bi-ticket-perforated me-1"></i> Laporan Gangguan Aktif:
+              </span>
+              <span class="badge" style="background:var(--isp-card-bg); border:1px solid var(--isp-border); font-size:10px; color:var(--isp-text-muted);">
+                <%= activeTickets.length %> Berjalan
+              </span>
+            </div>
+            <div class="d-flex flex-column gap-2">
+              <% activeTickets.forEach(t => { %>
+                <div class="p-2 rounded" style="background:var(--isp-card-bg); border:1px solid var(--isp-border); font-size:12px;">
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <strong style="color:var(--isp-text-heading); font-size:12px;"><%= t.subject || 'Kendala Koneksi' %></strong>
+                    <span class="badge" style="background:<%= t.status === 'open' ? 'var(--isp-warning-subtle)' : 'var(--isp-info-subtle)' %>; color:<%= t.status === 'open' ? 'var(--isp-warning)' : 'var(--isp-info)' %>; font-size:9px;">
+                      <%= t.status === 'open' ? 'Menunggu Teknisi' : 'Diproses' %>
+                    </span>
+                  </div>
+                  <div class="text-truncate" style="color:var(--isp-text-body); font-size:11px;"><%= t.message %></div>
+                </div>
+              <% }) %>
+            </div>
           </div>
         <% } %>
+
+        <!-- PANDUAN LAMPU MODEM INTERAKTIF (ACCORDION) -->
+        <div class="accordion isp-accordion" id="modemAccordion">
+          <!-- 1. LOS MERAH -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingLos">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLos" aria-expanded="false" aria-controls="collapseLos">
+                <i class="bi bi-exclamation-circle-fill text-danger me-2"></i> Lampu LOS Berkedip / Berwarna Merah
+              </button>
+            </h2>
+            <div id="collapseLos" class="accordion-collapse collapse" aria-labelledby="headingLos" data-bs-parent="#modemAccordion">
+              <div class="accordion-body">
+                Sinyal optik dari kabel fiber terputus, tertekuk, atau redaman drop. <strong style="color:var(--isp-text-heading);">Harap tidak mencabut atau menarik kabel hitam kecil</strong> di belakang modem. Silakan hubungi CS WhatsApp atau buat tiket pengaduan agar teknisi lapangan segera datang memeriksa sambungan kabel luar ke rumah Anda.
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. PON BERKEDIP -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingPon">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePon" aria-expanded="false" aria-controls="collapsePon">
+                <i class="bi bi-arrow-repeat text-warning me-2"></i> Lampu PON Berkedip-kedip
+              </button>
+            </h2>
+            <div id="collapsePon" class="accordion-collapse collapse" aria-labelledby="headingPon" data-bs-parent="#modemAccordion">
+              <div class="accordion-body">
+                Modem sedang berusaha melakukan registrasi ulang ke server OLT pusat. Tunggu sekitar 2 hingga 5 menit. Jika tetap berkedip, lakukan <strong>Restart Modem 1x</strong> melalui tombol di atas atau cabut adaptor power selama 30 detik lalu pasang kembali.
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. LAMPU NORMAL TAPI TIDAK BISA BROWSING -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingNormalNoNet">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNormalNoNet" aria-expanded="false" aria-controls="collapseNormalNoNet">
+                <i class="bi bi-question-circle-fill text-info me-2"></i> Lampu Indikator Hijau Normal Tapi Internet Lambat / Macet
+              </button>
+            </h2>
+            <div id="collapseNormalNoNet" class="accordion-collapse collapse" aria-labelledby="headingNormalNoNet" data-bs-parent="#modemAccordion">
+              <div class="accordion-body">
+                Klik tombol <strong>Refresh Sesi</strong> di menu atas untuk memperbarui rute jaringan MikroTik secara instan. Pastikan juga seluruh tagihan bulan ini sudah berstatus LUNAS dan tidak ada isolir otomatis oleh sistem.
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -1479,25 +1726,56 @@
     </div>
   </div>
 
-  <!-- MODAL: PULSA & PPOB SEGERA HADIR -->
+  <!-- MODAL: PULSA & PPOB SEGERA HADIR (PROFESIONAL & CORPORATE) -->
   <div class="modal fade" id="ppobComingSoonModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content" style="border-radius:18px; border:1px solid var(--isp-border); background:var(--isp-card-bg);">
+      <div class="modal-content" style="border-radius:18px; border:1px solid var(--isp-border-strong); background:var(--isp-card-bg);">
+        <div class="modal-header d-flex align-items-center justify-content-between p-3 px-4">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-shield-check text-primary fs-5"></i>
+            <h6 class="modal-title fw-bold mb-0" style="color:var(--isp-text-heading); font-size:15px;">Informasi Pembaruan Layanan</h6>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+        </div>
         <div class="modal-body p-4 text-center">
-          <div class="mb-3 d-inline-flex align-items-center justify-content-center" style="width:68px; height:68px; border-radius:20px; background:rgba(168, 85, 247, 0.15); color:#a855f7; border:1px solid rgba(168, 85, 247, 0.3); font-size:32px;">
-            <i class="bi bi-phone"></i>
+          <div class="mb-3 d-inline-flex align-items-center justify-content-center" style="width:58px; height:58px; border-radius:16px; background:var(--isp-primary-subtle); color:var(--isp-primary-text); border:1px solid var(--isp-border); font-size:24px;">
+            <i class="bi bi-lightning-charge-fill"></i>
           </div>
-          <h5 class="fw-bold mb-2" style="color:var(--isp-text-heading); font-size:18px;">
-            Fitur Pulsa & PPOB Segera Hadir!
+
+          <div class="mb-2">
+            <span class="badge" style="background:var(--isp-primary-subtle); color:var(--isp-primary-text); border:1px solid var(--isp-border); font-size:10px; font-weight:700; letter-spacing:0.5px; padding:4px 10px;">
+              TAHAP INTEGRASI SISTEM
+            </span>
+          </div>
+
+          <h5 class="fw-bold mb-2" style="color:var(--isp-text-heading); font-size:17px;">
+            Pengisian Pulsa, Data & Token PLN
           </h5>
-          <p class="small text-muted mb-4" style="line-height:1.6; font-size:13px;">
-            Layanan pembelian Pulsa, Paket Data, Token Listrik PLN, dan Pembayaran Tagihan lainnya sedang kami persiapkan untuk kenyamanan Anda. Nantikan pembaruan selanjutnya!
+          <p class="small text-muted mb-3" style="line-height:1.6; font-size:12px;">
+            Layanan transaksi digital mandiri saat ini sedang dalam proses integrasi akhir bersama mitra penyedia resmi (switching nasional) untuk menjamin setiap transaksi terproses secara instan, aman, dan nomor seri (SN) terbit secara otomatis.
           </p>
-          <div class="d-flex justify-content-center">
-            <button type="button" class="btn btn-primary px-4 py-2 fw-bold" data-bs-dismiss="modal" style="border-radius:10px; font-size:13px; background:var(--isp-primary); border:none;">
-              Mengerti
-            </button>
+
+          <div class="p-3 rounded-3 text-start mb-3" style="background:var(--isp-card-surface); border:1px solid var(--isp-border); font-size:12px;">
+            <div class="fw-bold mb-2 text-uppercase" style="font-size:10px; color:var(--isp-text-muted); letter-spacing:0.5px;">Cakupan Layanan Mendatang:</div>
+            <div class="d-flex flex-column gap-2" style="color:var(--isp-text-heading); font-size:12px;">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-check2-circle text-success fs-6"></i>
+                <span><strong>Pulsa & Kuota Data:</strong> Telkomsel, Indosat, XL, Tri, Smartfren</span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-check2-circle text-success fs-6"></i>
+                <span><strong>Listrik PLN:</strong> Pembelian Token 24 Jam & Pembayaran Tagihan</span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-check2-circle text-success fs-6"></i>
+                <span><strong>E-Wallet:</strong> Top Up Saldo GoPay, OVO, DANA, ShopeePay</span>
+              </div>
+            </div>
           </div>
+
+          <button type="button" class="btn btn-primary w-100 py-2 fw-bold" data-bs-dismiss="modal" style="border-radius:10px; font-size:13px; background:var(--isp-primary); border:none;">
+            Saya Mengerti
+          </button>
         </div>
       </div>
     </div>
@@ -1561,6 +1839,160 @@
     </div>
   </div>
 
+  <!-- MODAL: GANTI NAMA WIFI (SSID) -->
+  <div class="modal fade" id="editSsidModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold fs-6" style="color:var(--isp-text-heading);">
+            <i class="bi bi-router text-primary me-2"></i> Ganti Nama WiFi (SSID)
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="formEditSsid" onsubmit="handleSsidSubmit(event)">
+          <div class="modal-body p-4">
+            <div id="ssidAlertBox" class="alert d-none mb-3 py-2 small" role="alert"></div>
+            
+            <div class="p-3 mb-3 rounded-3" style="background:var(--isp-card-surface); border:1px solid var(--isp-border);">
+              <div class="small text-muted mb-1" style="font-size:11px;">Nama WiFi Saat Ini:</div>
+              <div class="fw-bold font-monospace" id="modalCurrentSsidDisplay" style="color:var(--isp-primary-text); font-size:14px;"><%= currentWifiSsid %></div>
+            </div>
+
+            <div class="mb-3">
+              <label for="inputSsidName" class="form-label">Nama WiFi Baru (SSID) <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text" style="background:var(--isp-card-surface); border-color:var(--isp-border-strong); color:var(--isp-text-muted);"><i class="bi bi-wifi"></i></span>
+                <input type="text" id="inputSsidName" name="ssid" class="form-control" placeholder="Contoh: MyWifi_Rumah" maxlength="32" required value="<%= currentWifiSsid %>">
+              </div>
+              <div class="form-text">Maksimal 32 karakter. Gunakan kombinasi huruf dan angka tanpa spasi berlebih.</div>
+            </div>
+
+            <div class="p-2 px-3 rounded-2 small" style="background:var(--isp-warning-subtle); color:var(--isp-warning); border:1px solid var(--isp-warning-border); font-size:11px; line-height:1.5;">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i> Setelah nama WiFi diubah, seluruh perangkat HP & laptop akan terputus dari WiFi lama dan perlu disambungkan ulang ke nama WiFi baru.
+            </div>
+          </div>
+          <div class="modal-footer d-flex gap-2">
+            <button type="button" class="isp-btn-tool" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" id="btnSubmitSsid" class="btn btn-primary btn-sm px-4 fw-bold flex-grow-1" style="background:var(--isp-primary); border:none; border-radius:9px; min-height:38px;">
+              Simpan & Sinkronkan
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GANTI SANDI WIFI -->
+  <div class="modal fade" id="editPasswordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold fs-6" style="color:var(--isp-text-heading);">
+            <i class="bi bi-shield-lock-fill text-warning me-2"></i> Ganti Sandi WiFi
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="formEditPassword" onsubmit="handlePasswordSubmit(event)">
+          <div class="modal-body p-4">
+            <div id="passwordAlertBox" class="alert d-none mb-3 py-2 small" role="alert"></div>
+
+            <div class="mb-3">
+              <label for="inputNewPassword" class="form-label">Kata Sandi Baru <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text" style="background:var(--isp-card-surface); border-color:var(--isp-border-strong); color:var(--isp-text-muted);"><i class="bi bi-key"></i></span>
+                <input type="password" id="inputNewPassword" name="password" class="form-control" placeholder="Minimal 8 karakter" minlength="8" required>
+                <button type="button" class="btn btn-outline-secondary" onclick="toggleInputType('inputNewPassword', this)" style="border-color:var(--isp-border-strong); color:var(--isp-text-muted);" title="Lihat/Sembunyikan">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+              <div class="form-text">Gunakan minimal 8 karakter. Disarankan perpaduan huruf dan angka.</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="inputConfirmPassword" class="form-label">Ulangi Kata Sandi Baru <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text" style="background:var(--isp-card-surface); border-color:var(--isp-border-strong); color:var(--isp-text-muted);"><i class="bi bi-check2-circle"></i></span>
+                <input type="password" id="inputConfirmPassword" class="form-control" placeholder="Ketik ulang kata sandi baru" minlength="8" required>
+                <button type="button" class="btn btn-outline-secondary" onclick="toggleInputType('inputConfirmPassword', this)" style="border-color:var(--isp-border-strong); color:var(--isp-text-muted);" title="Lihat/Sembunyikan">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="p-2 px-3 rounded-2 small" style="background:var(--isp-warning-subtle); color:var(--isp-warning); border:1px solid var(--isp-warning-border); font-size:11px; line-height:1.5;">
+              <i class="bi bi-info-circle-fill me-1"></i> Modem akan menerapkan kata sandi baru. Perangkat Anda akan meminta memasukkan kata sandi baru saat terhubung kembali.
+            </div>
+          </div>
+          <div class="modal-footer d-flex gap-2">
+            <button type="button" class="isp-btn-tool" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" id="btnSubmitPassword" class="btn btn-warning text-dark btn-sm px-4 fw-bold flex-grow-1" style="border-radius:9px; min-height:38px;">
+              Simpan Sandi Baru
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CEK JUMLAH TERHUBUNG -->
+  <div class="modal fade" id="connectedDevicesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header d-flex align-items-center justify-content-between">
+          <div>
+            <h5 class="modal-title fw-bold fs-6 mb-1" style="color:var(--isp-text-heading);">
+              <i class="bi bi-people-fill text-success me-2"></i> Perangkat Terhubung ke Modem
+            </h5>
+            <div class="small" style="font-size:11px; color:var(--isp-text-muted);">
+              Daftar perangkat (WiFi & LAN) yang sedang aktif di modem rumah Anda.
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        
+        <div class="p-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2" style="background:var(--isp-card-surface); border-color:var(--isp-border) !important;">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge" id="modalConnectedBadge" style="background:var(--isp-success-subtle); color:var(--isp-success); border:1px solid var(--isp-success-border); font-size:12px; font-weight:700; padding:6px 12px;">
+              <i class="bi bi-broadcast me-1"></i> <span id="modalConnectedCountText"><%= totalConnectedDevices %></span> Perangkat Aktif
+            </span>
+            <span class="small d-none d-sm-inline" style="color:var(--isp-text-muted); font-size:12px;">
+              SSID: <strong id="modalConnectedSsidText" style="color:var(--isp-text-heading);"><%= currentWifiSsid %></strong>
+            </span>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-primary fw-bold d-flex align-items-center gap-1" id="btnRefreshModalDevices" onclick="fetchConnectedDevices(true)" style="border-radius:8px; font-size:12px;">
+            <i class="bi bi-arrow-clockwise" id="iconRefreshDevices"></i> <span>Segarkan Pindai</span>
+          </button>
+        </div>
+
+        <div class="modal-body p-3" id="connectedDevicesBody">
+          <div id="connectedDevicesList" class="d-flex flex-column gap-2">
+            <!-- RENDERED BY JAVASCRIPT -->
+          </div>
+        </div>
+
+        <div class="modal-footer d-flex justify-content-between">
+          <div class="small text-muted" style="font-size:11px;">
+            <i class="bi bi-shield-check text-success me-1"></i> Terdeteksi via TR-069 & DHCP Lease
+          </div>
+          <button type="button" class="isp-btn-tool" data-bs-dismiss="modal">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING TOAST NOTIFICATION -->
+  <div id="customerToastContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1090;">
+    <div id="customerLiveToast" class="toast align-items-center border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true" style="background:var(--isp-card-bg); border:1px solid var(--isp-border-strong) !important; border-radius:12px; min-width:300px;">
+      <div class="d-flex p-2">
+        <div class="toast-body d-flex align-items-center gap-2" id="customerToastBody" style="color:var(--isp-text-heading); font-size:13px; font-weight:600;">
+          <i class="bi bi-check-circle-fill text-success fs-5" id="customerToastIcon"></i>
+          <span id="customerToastMessage">Operasi berhasil</span>
+        </div>
+        <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
   <!-- BOTTOM MOBILE NAV -->
   <%- include('partials/customer_bottom_nav', { activeNav: 'home' }) %>
 
@@ -1568,6 +2000,411 @@
   <script>
     let currentInvId = null;
     let pModal = null;
+
+    // ── WI-FI & CONNECTED DEVICES CONTROLLER ──
+    let gCurrentWifiSsid = <%- JSON.stringify(currentWifiSsid) %>;
+    let gCurrentWifiPassword = <%- JSON.stringify(currentWifiPassword) %>;
+    let gIsPasswordRevealed = false;
+    let gCachedConnectedDevices = <%- JSON.stringify(rawConnectedUsers) %>;
+
+    function showCustomerToast(message, type = 'success') {
+      const toastEl = document.getElementById('customerLiveToast');
+      const msgEl = document.getElementById('customerToastMessage');
+      const iconEl = document.getElementById('customerToastIcon');
+      if (!toastEl || !msgEl) return;
+
+      msgEl.innerText = message;
+      if (iconEl) {
+        if (type === 'danger' || type === 'error') {
+          iconEl.className = 'bi bi-x-circle-fill text-danger fs-5';
+        } else if (type === 'warning') {
+          iconEl.className = 'bi bi-exclamation-triangle-fill text-warning fs-5';
+        } else {
+          iconEl.className = 'bi bi-check-circle-fill text-success fs-5';
+        }
+      }
+
+      const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+      toast.show();
+    }
+
+    function togglePeekPassword(btn) {
+      gIsPasswordRevealed = !gIsPasswordRevealed;
+      const textEl = document.getElementById('homeWifiPassText');
+      const iconEl = document.getElementById('iconPeekPass');
+      const labelEl = document.getElementById('labelPeekPass');
+
+      if (!textEl) return;
+      if (gIsPasswordRevealed) {
+        textEl.innerText = gCurrentWifiPassword || '(Belum Disetel)';
+        if (iconEl) iconEl.className = 'bi bi-eye-slash';
+        if (labelEl) labelEl.innerText = 'Tutup';
+      } else {
+        textEl.innerText = gCurrentWifiPassword ? '••••••••' : '(Belum Disetel)';
+        if (iconEl) iconEl.className = 'bi bi-eye';
+        if (labelEl) labelEl.innerText = 'Lihat';
+      }
+    }
+
+    function toggleInputType(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      const icon = btn ? btn.querySelector('i') : null;
+      if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) icon.className = 'bi bi-eye-slash';
+      } else {
+        input.type = 'password';
+        if (icon) icon.className = 'bi bi-eye';
+      }
+    }
+
+    function openEditSsidModal() {
+      const input = document.getElementById('inputSsidName');
+      const alertBox = document.getElementById('ssidAlertBox');
+      const currDisplay = document.getElementById('modalCurrentSsidDisplay');
+      if (alertBox) {
+        alertBox.className = 'alert d-none mb-3 py-2 small';
+        alertBox.innerHTML = '';
+      }
+      if (input) input.value = gCurrentWifiSsid || '';
+      if (currDisplay) currDisplay.innerText = gCurrentWifiSsid || '-';
+      const m = new bootstrap.Modal(document.getElementById('editSsidModal'));
+      m.show();
+    }
+
+    async function handleSsidSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById('inputSsidName');
+      const btn = document.getElementById('btnSubmitSsid');
+      const alertBox = document.getElementById('ssidAlertBox');
+      const newSsid = (input ? input.value : '').trim();
+
+      if (!newSsid) {
+        if (alertBox) {
+          alertBox.className = 'alert alert-danger mb-3 py-2 small';
+          alertBox.innerHTML = '<i class="bi bi-x-circle me-1"></i> Nama WiFi tidak boleh kosong.';
+        }
+        return;
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+      }
+
+      try {
+        const res = await fetch('/customer/change-ssid', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ ssid: newSsid })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok && data.ok) {
+          gCurrentWifiSsid = newSsid;
+          const homeSsidText = document.getElementById('homeWifiSsidText');
+          if (homeSsidText) homeSsidText.innerText = newSsid;
+          const modalSsidText = document.getElementById('modalConnectedSsidText');
+          if (modalSsidText) modalSsidText.innerText = newSsid;
+
+          showCustomerToast(data.message || 'Nama WiFi berhasil diubah dan disinkronkan ke modem!', 'success');
+
+          const modalEl = document.getElementById('editSsidModal');
+          const modalInstance = bootstrap.Modal.getInstance(modalEl);
+          if (modalInstance) modalInstance.hide();
+        } else {
+          if (alertBox) {
+            alertBox.className = 'alert alert-danger mb-3 py-2 small';
+            alertBox.innerHTML = `<i class="bi bi-exclamation-circle me-1"></i> ${data.message || 'Gagal mengubah nama WiFi.'}`;
+          }
+        }
+      } catch (err) {
+        if (alertBox) {
+          alertBox.className = 'alert alert-danger mb-3 py-2 small';
+          alertBox.innerHTML = `<i class="bi bi-wifi-off me-1"></i> Terjadi kesalahan jaringan: ${err.message}`;
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = 'Simpan & Sinkronkan';
+        }
+      }
+    }
+
+    function openEditPasswordModal() {
+      const p1 = document.getElementById('inputNewPassword');
+      const p2 = document.getElementById('inputConfirmPassword');
+      const alertBox = document.getElementById('passwordAlertBox');
+      if (p1) { p1.value = ''; p1.type = 'password'; }
+      if (p2) { p2.value = ''; p2.type = 'password'; }
+      if (alertBox) {
+        alertBox.className = 'alert d-none mb-3 py-2 small';
+        alertBox.innerHTML = '';
+      }
+      const m = new bootstrap.Modal(document.getElementById('editPasswordModal'));
+      m.show();
+    }
+
+    async function handlePasswordSubmit(e) {
+      e.preventDefault();
+      const p1 = document.getElementById('inputNewPassword');
+      const p2 = document.getElementById('inputConfirmPassword');
+      const btn = document.getElementById('btnSubmitPassword');
+      const alertBox = document.getElementById('passwordAlertBox');
+
+      const pass = (p1 ? p1.value : '').trim();
+      const conf = (p2 ? p2.value : '').trim();
+
+      if (pass.length < 8) {
+        if (alertBox) {
+          alertBox.className = 'alert alert-danger mb-3 py-2 small';
+          alertBox.innerHTML = '<i class="bi bi-x-circle me-1"></i> Password WiFi minimal 8 karakter.';
+        }
+        return;
+      }
+
+      if (pass !== conf) {
+        if (alertBox) {
+          alertBox.className = 'alert alert-danger mb-3 py-2 small';
+          alertBox.innerHTML = '<i class="bi bi-x-circle me-1"></i> Konfirmasi kata sandi tidak cocok. Harap periksa kembali.';
+        }
+        return;
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+      }
+
+      try {
+        const res = await fetch('/customer/change-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ password: pass })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok && data.ok) {
+          gCurrentWifiPassword = pass;
+          const passEl = document.getElementById('homeWifiPassText');
+          if (passEl) {
+            passEl.setAttribute('data-real-pass', pass);
+            if (gIsPasswordRevealed) {
+              passEl.innerText = pass;
+            } else {
+              passEl.innerText = '••••••••';
+            }
+          }
+
+          showCustomerToast(data.message || 'Sandi WiFi berhasil diperbarui dan disinkronkan ke modem!', 'success');
+
+          const modalEl = document.getElementById('editPasswordModal');
+          const modalInstance = bootstrap.Modal.getInstance(modalEl);
+          if (modalInstance) modalInstance.hide();
+        } else {
+          if (alertBox) {
+            alertBox.className = 'alert alert-danger mb-3 py-2 small';
+            alertBox.innerHTML = `<i class="bi bi-exclamation-circle me-1"></i> ${data.message || 'Gagal mengubah kata sandi WiFi.'}`;
+          }
+        }
+      } catch (err) {
+        if (alertBox) {
+          alertBox.className = 'alert alert-danger mb-3 py-2 small';
+          alertBox.innerHTML = `<i class="bi bi-shield-x me-1"></i> Terjadi kesalahan jaringan: ${err.message}`;
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = 'Simpan Sandi Baru';
+        }
+      }
+    }
+
+    function openConnectedDevicesModal() {
+      const m = new bootstrap.Modal(document.getElementById('connectedDevicesModal'));
+      m.show();
+
+      // Render cached devices immediately for fast UX
+      if (Array.isArray(gCachedConnectedDevices) && gCachedConnectedDevices.length > 0) {
+        renderDevicesList(gCachedConnectedDevices);
+      } else {
+        renderDevicesLoadingState();
+      }
+
+      // Fetch live update
+      fetchConnectedDevices(false);
+    }
+
+    function renderDevicesLoadingState() {
+      const listEl = document.getElementById('connectedDevicesList');
+      if (!listEl) return;
+      listEl.innerHTML = `
+        <div class="text-center py-4" style="color:var(--isp-text-muted);">
+          <div class="spinner-border text-primary spinner-border-sm mb-2" role="status"></div>
+          <div class="small fw-semibold">Memindai daftar perangkat yang terhubung ke modem...</div>
+        </div>
+      `;
+    }
+
+    function getDeviceMeta(hostname, iface) {
+      const h = String(hostname || '').toLowerCase();
+      const f = String(iface || '').toLowerCase();
+      if (h.includes('android') || h.includes('phone') || h.includes('iphone') || h.includes('galaxy') || 
+          h.includes('xiaomi') || h.includes('oppo') || h.includes('vivo') || h.includes('redmi') || 
+          h.includes('realme') || h.includes('huawei') || h.includes('poco') || h.includes('infinix')) {
+        return { icon: 'bi-phone', bg: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', label: 'Smartphone' };
+      }
+      if (h.includes('laptop') || h.includes('desktop') || h.includes('pc') || h.includes('macbook') || 
+          h.includes('windows') || h.includes('thinkpad') || h.includes('dell') || h.includes('lenovo')) {
+        return { icon: 'bi-laptop', bg: 'rgba(168, 85, 247, 0.15)', color: '#a855f7', label: 'Komputer / Laptop' };
+      }
+      if (h.includes('tv') || h.includes('smarttv') || h.includes('mitv') || h.includes('appletv') || 
+          h.includes('cast') || h.includes('box')) {
+        return { icon: 'bi-tv', bg: 'rgba(234, 179, 8, 0.15)', color: '#eab308', label: 'Smart TV / Box' };
+      }
+      if (f.includes('lan') || f.includes('eth')) {
+        return { icon: 'bi-hdd-network', bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981', label: 'Koneksi Kabel (LAN)' };
+      }
+      return { icon: 'bi-wifi', bg: 'rgba(37, 99, 235, 0.15)', color: '#2563eb', label: 'Perangkat WiFi' };
+    }
+
+    function escapeHtmlClient(str) {
+      return String(str || '').replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+      }[tag] || tag));
+    }
+
+    function renderDevicesList(devices) {
+      const listEl = document.getElementById('connectedDevicesList');
+      if (!listEl) return;
+
+      if (!Array.isArray(devices) || devices.length === 0) {
+        listEl.innerHTML = `
+          <div class="text-center py-4 px-3 rounded-3" style="background:var(--isp-card-surface); border:1px dashed var(--isp-border);">
+            <div class="d-inline-flex align-items-center justify-content-center mb-2" style="width:48px; height:48px; border-radius:12px; background:var(--isp-card-bg); color:var(--isp-text-muted); font-size:22px;">
+              <i class="bi bi-wifi-off"></i>
+            </div>
+            <h6 class="fw-bold mb-1" style="font-size:14px; color:var(--isp-text-heading);">Tidak Ada Perangkat Terdeteksi</h6>
+            <p class="small text-muted mb-3" style="font-size:12px;">Modem belum mendeteksi perangkat aktif di tabel DHCP saat ini.</p>
+            <button type="button" class="btn btn-sm btn-outline-primary fw-bold px-3 py-1" onclick="fetchConnectedDevices(true)" style="border-radius:8px; font-size:12px;">
+              <i class="bi bi-arrow-clockwise me-1"></i> Segarkan Pindai Sekarang
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = devices.map((d, idx) => {
+        const meta = getDeviceMeta(d.hostname, d.iface);
+        const name = (d.hostname && d.hostname !== '-') ? d.hostname : `${meta.label} #${idx + 1}`;
+        const ip = (d.ip && d.ip !== '-') ? d.ip : 'DHCP IP';
+        const mac = (d.mac && d.mac !== '-') ? d.mac : 'N/A';
+        const iface = (d.iface && d.iface !== '-') ? d.iface : 'WiFi';
+        const isOnline = (d.status === 'Online' || !d.status);
+
+        return `
+          <div class="p-3 rounded-3 d-flex align-items-center justify-content-between gap-3" 
+               style="background:var(--isp-card-surface); border:1px solid var(--isp-border); transition:all 0.2s ease;">
+            <div class="d-flex align-items-center gap-3 min-w-0">
+              <div class="d-flex align-items-center justify-content-center flex-shrink-0" 
+                   style="width:42px; height:42px; border-radius:12px; background:${meta.bg}; color:${meta.color}; font-size:20px; border:1px solid rgba(255,255,255,0.06);">
+                <i class="bi ${meta.icon}"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="fw-bold text-truncate" style="color:var(--isp-text-heading); font-size:14px;" title="${escapeHtmlClient(name)}">
+                  ${escapeHtmlClient(name)}
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap font-monospace" style="font-size:11px; color:var(--isp-text-muted); margin-top:3px;">
+                  <span><i class="bi bi-hdd-network me-1"></i>${escapeHtmlClient(ip)}</span>
+                  <span>•</span>
+                  <span><i class="bi bi-fingerprint me-1"></i>${escapeHtmlClient(mac)}</span>
+                  <span>•</span>
+                  <span class="badge" style="background:var(--isp-card-bg); border:1px solid var(--isp-border); color:var(--isp-text-muted); font-size:9px; font-weight:600;">
+                    ${escapeHtmlClient(iface)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="flex-shrink-0">
+              <span class="status-indicator ${isOnline ? 'online' : 'offline'}" style="font-size:10px; padding:3px 8px;">
+                <span class="status-dot ${isOnline ? 'green' : 'gray'}"></span> ${isOnline ? 'Aktif' : 'Offline'}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function fetchConnectedDevices(isRescan = false) {
+      const btn = document.getElementById('btnRefreshModalDevices');
+      const icon = document.getElementById('iconRefreshDevices');
+      if (btn) {
+        btn.disabled = true;
+        if (icon) icon.className = 'bi bi-arrow-clockwise spinner-border-sm';
+      }
+
+      if (isRescan) {
+        renderDevicesLoadingState();
+      }
+
+      try {
+        const url = '/customer/api/connected-devices' + (isRescan ? '?rescan=1' : '');
+        const res = await fetch(url);
+        const data = await res.json().catch(() => ({}));
+
+        if (data.ok) {
+          const list = data.devices || [];
+          gCachedConnectedDevices = list;
+          const count = (data.totalAssociations !== undefined) ? Number(data.totalAssociations) : list.length;
+
+          // Update home count display
+          const homeCountEl = document.getElementById('homeConnectedDeviceCount');
+          if (homeCountEl) homeCountEl.innerText = count;
+
+          // Update modal count text
+          const modalCountEl = document.getElementById('modalConnectedCountText');
+          if (modalCountEl) modalCountEl.innerText = count;
+
+          // Update SSID if returned
+          if (data.ssid && data.ssid !== '-' && data.ssid !== 'N/A') {
+            gCurrentWifiSsid = data.ssid;
+            const homeSsidEl = document.getElementById('homeWifiSsidText');
+            if (homeSsidEl) homeSsidEl.innerText = data.ssid;
+            const modalSsidEl = document.getElementById('modalConnectedSsidText');
+            if (modalSsidEl) modalSsidEl.innerText = data.ssid;
+          }
+
+          renderDevicesList(list);
+          if (isRescan) {
+            showCustomerToast(`Pemindaian selesai: ${count} perangkat terhubung.`, 'success');
+          }
+        } else {
+          if (isRescan) {
+            showCustomerToast(data.message || 'Gagal memindai perangkat.', 'danger');
+          }
+        }
+      } catch (e) {
+        if (isRescan) {
+          showCustomerToast('Gagal terhubung ke modem: ' + e.message, 'danger');
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          if (icon) icon.className = 'bi bi-arrow-clockwise';
+        }
+      }
+    }
 
     // THEME CONTROLLER
     function applyTheme(theme) {
@@ -1619,6 +2456,31 @@
       pModal.show();
     }
 
+    function filterInvoices(status, btnEl) {
+      document.querySelectorAll('.isp-filter-btn').forEach(b => b.classList.remove('active'));
+      if (btnEl) btnEl.classList.add('active');
+
+      const rows = document.querySelectorAll('.invoice-row-item');
+      rows.forEach(r => {
+        const rowStatus = r.getAttribute('data-status');
+        if (status === 'all' || rowStatus === status) {
+          r.style.display = '';
+        } else {
+          r.style.display = 'none';
+        }
+      });
+
+      const cards = document.querySelectorAll('.invoice-card-item');
+      cards.forEach(c => {
+        const cardStatus = c.getAttribute('data-status');
+        if (status === 'all' || cardStatus === status) {
+          c.style.display = '';
+        } else {
+          c.style.display = 'none';
+        }
+      });
+    }
+
     function copyCustomerId(text, btnEl) {
       if (!text) return;
       const originalHtml = btnEl ? btnEl.innerHTML : '';
@@ -1663,8 +2525,12 @@
     }
 
     function openPpobComingSoonModal() {
-      const m = new bootstrap.Modal(document.getElementById('ppobComingSoonModal'));
-      m.show();
+      const el = document.getElementById('ppobComingSoonModal');
+      if (!el) return;
+      if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        const m = bootstrap.Modal.getOrCreateInstance(el);
+        m.show();
+      }
     }
 
     function openNotifDrawer() {

@@ -737,6 +737,9 @@ try {
   db.exec("ALTER TABLE customers ADD COLUMN wifi_ssid TEXT DEFAULT ''");
 } catch (e) { /* ignore if already exists */ }
 try {
+  db.exec("ALTER TABLE customers ADD COLUMN wifi_password TEXT DEFAULT ''");
+} catch (e) { /* ignore if already exists */ }
+try {
   db.exec("ALTER TABLE customers ADD COLUMN nik TEXT DEFAULT ''");
 } catch (e) { /* ignore if already exists */ }
 try {

@@ -1,298 +1,755 @@
 <!DOCTYPE html>
-<html lang="<%= lang || 'id' %>">
+<html lang="<%= lang || 'id' %>" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QRIS | <%= settings.company_header || 'Portal ISP' %></title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pembayaran QRIS | <%= settings.company_header || 'Portal ISP' %></title>
+  
+  <!-- Early Theme Init to avoid FOUC -->
+  <script>
+    (function() {
+      try {
+        var saved = localStorage.getItem('customer-theme') || localStorage.getItem('app-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', saved);
+      } catch (e) {}
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/css/style.css">
   <link rel="icon" href="/img/logo.png">
+
   <style>
-    body{
-      background: radial-gradient(1200px 600px at 10% 0%, rgba(99, 102, 241, 0.22) 0%, rgba(15, 23, 42, 0) 60%),
-        radial-gradient(900px 450px at 100% 0%, rgba(59, 130, 246, 0.18) 0%, rgba(15, 23, 42, 0) 55%),
-        #0f172a;
-      color:#e2e8f0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    :root, [data-theme="dark"] {
+      --bg-page: #090d16;
+      --card-bg: #111827;
+      --card-surface: #172133;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-border-strong: rgba(255, 255, 255, 0.16);
+      --text-heading: #ffffff;
+      --text-body: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #60a5fa;
+      --primary-subtle: rgba(37, 99, 235, 0.15);
+
+      --warning: #f59e0b;
+      --warning-subtle: rgba(245, 158, 11, 0.12);
+      --warning-border: rgba(245, 158, 11, 0.35);
+
+      --danger: #ef4444;
+      --danger-subtle: rgba(239, 68, 68, 0.12);
+
+      --success: #10b981;
+      --success-subtle: rgba(16, 185, 129, 0.12);
+      --success-border: rgba(16, 185, 129, 0.35);
+
+      --input-bg: #162032;
+      --shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+    }
+
+    [data-theme="light"] {
+      --bg-page: #f1f5f9;
+      --card-bg: #ffffff;
+      --card-surface: #f8fafc;
+      --card-border: #e2e8f0;
+      --card-border-strong: #cbd5e1;
+      --text-heading: #0f172a;
+      --text-body: #1e293b;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #1d4ed8;
+      --primary-subtle: #eff6ff;
+
+      --warning: #d97706;
+      --warning-subtle: #fffbeb;
+      --warning-border: #fde68a;
+
+      --danger: #dc2626;
+      --danger-subtle: #fef2f2;
+
+      --success: #059669;
+      --success-subtle: #ecfdf5;
+      --success-border: #a7f3d0;
+
+      --input-bg: #f8fafc;
+      --shadow: 0 20px 35px -10px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-page);
+      color: var(--text-body);
+      min-height: 100vh;
+      padding: 16px 14px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      transition: background .2s ease, color .2s ease;
       -webkit-tap-highlight-color: transparent;
     }
-    .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}
-    .cardx{background: rgba(30, 41, 59, 0.92);backdrop-filter: blur(10px);border: 1px solid #334155;border-radius: 20px;box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);overflow:hidden;max-width: 720px;width:100%}
-    .head{background: linear-gradient(135deg, rgba(99, 102, 241, 0.28) 0%, rgba(59, 130, 246, 0.2) 100%);padding:22px 20px;border-bottom:1px solid rgba(148,163,184,.18)}
-    .body{padding:22px 20px}
-    .muted{color: rgba(148, 163, 184, 0.9)}
-    .btnx{border-radius:12px;font-weight:700}
-    .btn-primary{background: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);border:none}
-    .qris-box{background: rgba(15, 23, 42, 0.55);border: 1px solid rgba(148, 163, 184, 0.16);border-radius: 18px;padding:16px}
-    .qrimg{width:100%;max-width:320px;border-radius:16px;background:#fff;padding:10px;box-shadow:0 12px 30px rgba(0,0,0,.45)}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace}
-    .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:800;border:1px solid rgba(148,163,184,.18)}
-    .pill-u{background: rgba(99,102,241,.12);color:#c7d2fe;border-color: rgba(99,102,241,.28)}
+
+    .wrap {
+      width: 100%;
+      max-width: 440px;
+      margin: 0 auto;
+    }
+
+    /* Top Nav Bar */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding: 0 4px;
+    }
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-heading);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all .2s ease;
+    }
+    .btn-back:hover {
+      border-color: var(--card-border-strong);
+      color: var(--primary-light);
+    }
+    .theme-toggle-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 15px;
+      transition: all .2s ease;
+    }
+    .theme-toggle-btn:hover {
+      color: var(--primary-light);
+      border-color: var(--card-border-strong);
+    }
+
+    /* Main Card */
+    .card-payment {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: background .2s ease, border-color .2s ease;
+    }
+
+    /* Card Header */
+    .payment-head {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--card-border);
+      text-align: center;
+    }
+    .payment-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 700;
+      background: var(--primary-subtle);
+      color: var(--primary-light);
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .payment-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-heading);
+      letter-spacing: -0.3px;
+    }
+    .payment-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .payment-body {
+      padding: 20px;
+    }
+
+    /* Alert Banner */
+    .alert-box {
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .alert-box.danger {
+      background: var(--danger-subtle);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: var(--danger);
+    }
+    .alert-box.success {
+      background: var(--success-subtle);
+      border: 1px solid var(--success-border);
+      color: var(--success);
+    }
+
+    /* Amount Section */
+    .amount-card {
+      background: var(--card-surface);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 18px;
+    }
+    .amount-label {
+      font-size: 11.5px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-dim);
+      letter-spacing: .5px;
+    }
+    .amount-display {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--primary-light);
+      letter-spacing: -0.5px;
+      margin: 4px 0 6px;
+    }
+    .unique-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--warning-subtle);
+      color: var(--warning);
+      border: 1px solid var(--warning-border);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 11.5px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .amount-actions {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-action-small {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border-strong);
+      color: var(--text-heading);
+      padding: 7px 14px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s ease;
+      font-family: inherit;
+    }
+    .btn-action-small:hover {
+      border-color: var(--primary);
+      color: var(--primary-light);
+    }
+
+    /* QRIS Box */
+    .qris-wrapper {
+      background: var(--card-surface);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 18px;
+      text-align: center;
+      margin-bottom: 18px;
+    }
+    .qris-img-container {
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 12px;
+      width: 220px;
+      height: 220px;
+      margin: 0 auto 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+    .qris-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .e-wallets-badge {
+      font-size: 11.5px;
+      color: var(--text-dim);
+      line-height: 1.5;
+      margin-top: 10px;
+    }
+    .wallet-icons {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .wallet-pill {
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 2px 8px;
+      border-radius: 6px;
+      color: var(--text-muted);
+    }
+
+    /* Live Polling Status Indicator */
+    .polling-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 12.5px;
+      color: var(--primary-light);
+      font-weight: 600;
+      margin: 14px 0 6px;
+    }
+    .spinner-pulse {
+      width: 8px;
+      height: 8px;
+      background-color: var(--primary-light);
+      border-radius: 50%;
+      animation: pulse 1.2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(0.6); opacity: 0.4; }
+      50% { transform: scale(1.3); opacity: 1; }
+    }
+
+    /* Collapsible Manual Confirmation */
+    .manual-details {
+      margin-top: 18px;
+      background: var(--card-surface);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .manual-details summary {
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      transition: color .15s ease;
+    }
+    .manual-details summary:hover {
+      color: var(--text-heading);
+    }
+    .manual-content {
+      padding: 16px;
+      border-top: 1px solid var(--card-border);
+    }
+    .manual-content p {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+    .file-input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border-strong);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 12.5px;
+      color: var(--text-heading);
+      margin-bottom: 10px;
+      font-family: inherit;
+    }
+    .btn-submit {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      background: var(--primary);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 13px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-family: inherit;
+      transition: background .2s ease;
+    }
+    .btn-submit:hover {
+      background: var(--primary-hover);
+    }
+    .btn-wa-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      background: transparent;
+      border: 1px solid var(--success-border);
+      color: var(--success);
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      margin-top: 10px;
+      box-sizing: border-box;
+      transition: all .2s ease;
+    }
+    .btn-wa-link:hover {
+      background: var(--success-subtle);
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 20px;
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
+
   <div class="wrap">
-    <div class="cardx">
-      <div class="head">
-        <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
-          <div>
-            <div class="fw-bold" style="font-size:18px">QRIS Statis</div>
-            <div class="muted small"><%= settings.company_header || 'Portal ISP' %></div>
-          </div>
-          <% if (backUrl) { %>
-            <a class="btn btn-outline-light btn-sm btnx" href="<%= backUrl %>">
-              <i class="bi bi-arrow-left me-1"></i> Kembali
-            </a>
-          <% } %>
+
+    <!-- TOP NAVIGATION & THEME TOGGLE -->
+    <div class="top-bar">
+      <% if (backUrl) { %>
+        <a href="<%= backUrl %>" class="btn-back">
+          <i class="bi bi-arrow-left"></i> Kembali
+        </a>
+      <% } else { %>
+        <div></div>
+      <% } %>
+      <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" title="Ubah Tema">
+        <i class="bi bi-sun-fill" id="themeIcon"></i>
+      </button>
+    </div>
+
+    <!-- MAIN PAYMENT CARD -->
+    <div class="card-payment">
+      
+      <%
+        const kindSafe = String(kind || 'invoice').toLowerCase();
+        const isVoucher = kindSafe === 'voucher';
+        const refPrefix = isVoucher ? 'VOUCHER' : 'INV';
+      %>
+
+      <!-- Header Info -->
+      <div class="payment-head">
+        <div class="payment-badge">
+          <i class="bi bi-qr-code"></i> Pembayaran QRIS
+        </div>
+        <div class="payment-title">
+          <%= isVoucher ? 'Pembelian Voucher WiFi' : 'Tagihan Internet Pelanggan' %>
+        </div>
+        <div class="payment-subtitle">
+          <%= customerName || (isVoucher ? 'Pembeli Voucher' : 'Pelanggan') %> • <%= refPrefix %>-<%= invoiceId %><% if (periodText) { %> (<%= periodText %>)<% } %>
         </div>
       </div>
-      <div class="body">
+
+      <div class="payment-body">
+        
         <% if (error) { %>
-          <div class="alert alert-danger">
-            <i class="bi bi-exclamation-triangle me-2"></i><%= error %>
+          <div class="alert-box danger">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div><%= error %></div>
           </div>
-        <% } else { %>
-          <% if (info) { %>
-            <div class="alert alert-success">
-              <i class="bi bi-check-circle me-2"></i><%= info %>
-            </div>
-          <% } %>
-          <%
-            const kindSafe = String(kind || 'invoice').toLowerCase();
-            const isVoucher = kindSafe === 'voucher';
-            const refPrefix = isVoucher ? 'VOUCHER' : 'INV';
-          %>
-          <div class="mb-3">
-            <div class="fw-bold"><%= customerName || (isVoucher ? 'Pembeli Voucher' : 'Pelanggan') %></div>
-            <div class="muted small">
-              <%= refPrefix %>-<%= invoiceId %>
-              <% if (periodText) { %> • <%= periodText %><% } %>
-            </div>
-          </div>
-
-          <div class="qris-box">
-            <div class="d-flex flex-column align-items-center text-center gap-3">
-              <% if (qrisQrUrl) { %>
-                <img class="qrimg" src="<%= qrisQrUrl %>" alt="QRIS">
-              <% } else { %>
-                <div class="alert alert-warning mb-0 w-100">
-                  QRIS belum diatur oleh admin.
-                </div>
-              <% } %>
-
-              <div class="w-100">
-                <div class="muted small mb-1">Nominal yang harus dibayar (WAJIB tepat)</div>
-                <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap">
-                  <span class="fw-bold" style="font-size:22px">Rp <%= Number(amountUnique || 0).toLocaleString('id-ID') %></span>
-                  <% if (uniqueCode) { %>
-                    <span class="pill pill-u">Kode <span class="mono"><%= String(uniqueCode).padStart(3, '0') %></span></span>
-                  <% } %>
-                </div>
-                <div class="mt-2 d-flex justify-content-center gap-2 flex-wrap">
-                  <button class="btn btn-outline-light btn-sm btnx" type="button" id="copyAmountBtn">
-                    <i class="bi bi-clipboard me-1"></i> Salin Nominal
-                  </button>
-                  <% if (qrisQrUrl) { %>
-                    <button class="btn btn-outline-light btn-sm btnx" type="button" id="downloadQrBtn">
-                      <i class="bi bi-download me-1"></i> Download QRIS
-                    </button>
-                  <% } %>
-                </div>
-              </div>
-
-              <div class="muted small">
-                Scan QRIS di atas (DANA/OVO/ShopeePay/LinkAja/GoPay, dll), lalu masukkan nominal sesuai yang tertera.
-                Status lunas akan terverifikasi setelah pembayaran terdeteksi.
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-3 qris-box">
-            <div class="d-flex flex-column gap-2">
-              <div class="fw-bold">Konfirmasi Pembayaran</div>
-              <div class="muted small">Jika pembayaran belum otomatis terdeteksi, kirim bukti transfer ke admin.</div>
-
-              <% const proofAction = String(proofActionUrl || `/customer/payment/proof/${invoiceId}`); %>
-              <form method="POST" action="<%= proofAction %>" enctype="multipart/form-data" class="d-flex flex-column gap-2">
-                <% if (publicToken) { %>
-                  <input type="hidden" name="token" value="<%= publicToken %>">
-                <% } %>
-                <input class="form-control" type="file" name="proof" accept="image/png,image/jpeg,image/jpg,image/webp" required>
-                <button class="btn btn-primary btnx" type="submit">
-                  <i class="bi bi-cloud-upload me-1"></i> Upload Bukti
-                </button>
-              </form>
-
-              <% if (proofUrl) { %>
-                <div class="muted small">
-                  Bukti tersimpan: <a href="<%= proofUrl %>" target="_blank" rel="noopener"><%= proofUrl %></a>
-                </div>
-              <% } %>
-
-              <%
-                const adminWa = String(adminWaDigits || '').trim();
-                const msgLines = [
-                  isVoucher ? 'Konfirmasi pembayaran Voucher (QRIS Statis)' : 'Konfirmasi pembayaran QRIS Statis',
-                  `${refPrefix}-${invoiceId}${periodText ? ' • ' + periodText : ''}`,
-                  `Nama: ${customerName || (isVoucher ? 'Pembeli Voucher' : 'Pelanggan')}`,
-                  `Nominal: Rp ${Number(amountUnique || 0).toLocaleString('id-ID')} (kode ${String(uniqueCode || 0).padStart(3, '0')})`,
-                  proofUrl ? `Bukti: ${proofUrl}` : 'Bukti: (sudah diupload / akan dikirim)',
-                ];
-                const waText = msgLines.join('\n');
-                const waLink = adminWa ? `https://wa.me/${adminWa}?text=${encodeURIComponent(waText)}` : '';
-              %>
-
-              <% if (waLink) { %>
-                <a class="btn btn-outline-light btnx" href="<%= waLink %>" target="_blank" rel="noopener">
-                  <i class="bi bi-whatsapp me-1"></i> Kirim WhatsApp ke Admin
-                </a>
-              <% } else { %>
-                <div class="alert alert-warning mb-0">
-                  Nomor admin WhatsApp belum diatur.
-                </div>
-              <% } %>
-            </div>
-          </div>
-
-          <% if (helpText) { %>
-            <div class="alert alert-info mt-3 mb-0">
-              <i class="bi bi-info-circle me-2"></i><%= helpText %>
-            </div>
-          <% } %>
         <% } %>
+
+        <% if (info) { %>
+          <div class="alert-box success">
+            <i class="bi bi-check-circle-fill"></i>
+            <div><%= info %></div>
+          </div>
+        <% } %>
+
+        <!-- SECTION 1: NOMINAL TRANSFER (HIGHLIGHT UTAMA) -->
+        <div class="amount-card">
+          <div class="amount-label">Total yang Harus Dibayar</div>
+          <div class="amount-display">
+            Rp <%= Number(amountUnique || 0).toLocaleString('id-ID') %>
+          </div>
+          
+          <% if (uniqueCode) { %>
+            <div class="unique-badge">
+              <i class="bi bi-shield-check"></i> Termasuk Kode Verifikasi: +<%= uniqueCode %>
+            </div>
+          <% } %>
+
+          <div class="amount-actions">
+            <button type="button" class="btn-action-small" id="copyAmountBtn" onclick="copyAmount()">
+              <i class="bi bi-clipboard-check"></i> Salin Nominal
+            </button>
+            <% if (qrisQrUrl) { %>
+              <button type="button" class="btn-action-small" id="downloadQrBtn" onclick="downloadQr()">
+                <i class="bi bi-download"></i> Simpan Gambar QR
+              </button>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- SECTION 2: QRIS CODE CARD -->
+        <div class="qris-wrapper">
+          <% if (qrisQrUrl) { %>
+            <div class="qris-img-container">
+              <img src="<%= qrisQrUrl %>" class="qris-img" id="qrisImgElement" alt="QRIS Code">
+            </div>
+          <% } else { %>
+            <div class="alert-box danger">
+              QRIS belum dikonfigurasi oleh administrator.
+            </div>
+          <% } %>
+
+          <!-- Live Realtime Checker -->
+          <div class="polling-indicator">
+            <div class="spinner-pulse"></div>
+            <span>Menunggu Pembayaran... (Auto-Check)</span>
+          </div>
+
+          <div class="e-wallets-badge">
+            Dapat dipindai dari semua aplikasi m-Banking & E-Wallet:
+            <div class="wallet-icons">
+              <span class="wallet-pill">BCA</span>
+              <span class="wallet-pill">Mandiri</span>
+              <span class="wallet-pill">BRI</span>
+              <span class="wallet-pill">DANA</span>
+              <span class="wallet-pill">GoPay</span>
+              <span class="wallet-pill">OVO</span>
+              <span class="wallet-pill">ShopeePay</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: BANTUAN & KONFIRMASI MANUAL (COLLAPSIBLE / ACCORDION) -->
+        <details class="manual-details">
+          <summary>
+            <span><i class="bi bi-question-circle me-1"></i> Sudah transfer tapi belum terverifikasi?</span>
+            <i class="bi bi-chevron-down"></i>
+          </summary>
+          <div class="manual-content">
+            <p>
+              Sistem mengecek mutasi otomatis secara berkala. Jika dalam 5 menit status belum berubah, silakan unggah bukti transfer di bawah atau konfirmasi langsung ke CS via WhatsApp:
+            </p>
+
+            <% const proofAction = String(proofActionUrl || `/customer/payment/proof/${invoiceId}`); %>
+            <form method="POST" action="<%= proofAction %>" enctype="multipart/form-data">
+              <% if (publicToken) { %>
+                <input type="hidden" name="token" value="<%= publicToken %>">
+              <% } %>
+              <input type="file" name="proof" class="file-input" accept="image/png,image/jpeg,image/jpg,image/webp" required>
+              <button type="submit" class="btn-submit">
+                <i class="bi bi-cloud-arrow-up"></i> Upload Bukti Pembayaran
+              </button>
+            </form>
+
+            <% if (proofUrl) { %>
+              <div style="font-size: 11.5px; color: var(--success); margin-top: 8px;">
+                <i class="bi bi-check2"></i> Bukti tersimpan: <a href="<%= proofUrl %>" target="_blank" style="color: var(--primary-light);"><%= proofUrl %></a>
+              </div>
+            <% } %>
+
+            <%
+              const adminWa = String(adminWaDigits || '').trim();
+              const msgLines = [
+                isVoucher ? 'Konfirmasi pembayaran Voucher (QRIS)' : 'Konfirmasi pembayaran QRIS Tagihan Internet',
+                `${refPrefix}-${invoiceId}${periodText ? ' (' + periodText + ')' : ''}`,
+                `Nama: ${customerName || (isVoucher ? 'Pembeli Voucher' : 'Pelanggan')}`,
+                `Nominal: Rp ${Number(amountUnique || 0).toLocaleString('id-ID')} (Kode ${String(uniqueCode || 0).padStart(3, '0')})`,
+                proofUrl ? `Bukti: ${proofUrl}` : 'Bukti: (sudah diupload / terlampir)'
+              ];
+              const waText = msgLines.join('\n');
+              const waLink = adminWa ? `https://wa.me/${adminWa}?text=${encodeURIComponent(waText)}` : '';
+            %>
+
+            <% if (waLink) { %>
+              <a href="<%= waLink %>" target="_blank" rel="noopener" class="btn-wa-link">
+                <i class="bi bi-whatsapp"></i> Chat WhatsApp Customer Service
+              </a>
+            <% } %>
+          </div>
+        </details>
+
       </div>
     </div>
+
+    <div class="footer-note">
+      <%= settings.company_header || 'Portal ISP' %> • Pembayaran Otomatis & Terenkripsi
+    </div>
+
   </div>
 
   <script>
-    /* eslint-disable */
-    (function () {
-      var amount = <%= Number(amountUnique || 0) || 0 %>;
-      var qrSrc = <%- JSON.stringify(String(qrisQrUrl || '')) %>;
-      var kindSafe = <%- JSON.stringify(String(kind || 'invoice').toLowerCase()) %>;
-      var refPrefix = kindSafe === 'voucher' ? 'VOUCHER' : 'INV';
-      var refId = <%= Number(invoiceId || 0) || 0 %>;
-      var copy = async function (text) {
-        try {
-          if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(String(text));
-            return true;
-          }
-        } catch (e) {
-          // Clipboard API not available
-        }
-        try {
-          const ta = document.createElement('textarea');
-          ta.value = String(text);
-          ta.style.position = 'fixed';
-          ta.style.opacity = '0';
-          document.body.appendChild(ta);
-          ta.focus();
-          ta.select();
-          const ok = document.execCommand('copy');
-          document.body.removeChild(ta);
-          return ok;
-        } catch (e) {
-          return false;
+    // Theme Switcher Logic
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      try {
+        localStorage.setItem('customer-theme', next);
+        localStorage.setItem('app-theme', next);
+      } catch (e) {}
+      updateThemeIcon(next);
+    }
+
+    function updateThemeIcon(theme) {
+      const icon = document.getElementById('themeIcon');
+      if (icon) {
+        icon.className = theme === 'light' ? 'bi bi-moon-stars-fill' : 'bi bi-sun-fill';
+        icon.style.color = theme === 'light' ? '#6366f1' : '#f59e0b';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+      updateThemeIcon(cur);
+    });
+
+    const amount = <%= Number(amountUnique || 0) || 0 %>;
+    const qrSrc = <%- JSON.stringify(String(qrisQrUrl || '')) %>;
+    const kindSafe = <%- JSON.stringify(String(kind || 'invoice').toLowerCase()) %>;
+    const refPrefix = kindSafe === 'voucher' ? 'VOUCHER' : 'INV';
+    const refId = <%= Number(invoiceId || 0) || 0 %>;
+
+    // Salin Nominal
+    function copyAmount() {
+      if (!amount) return;
+      const btn = document.getElementById('copyAmountBtn');
+      const origHtml = btn ? btn.innerHTML : '';
+      
+      const copyFn = () => {
+        if (btn) {
+          btn.innerHTML = '<i class="bi bi-check2"></i> Tersalin!';
+          setTimeout(() => { btn.innerHTML = origHtml; }, 2000);
         }
       };
 
-      var aBtn = document.getElementById('copyAmountBtn');
-      if (aBtn) aBtn.addEventListener('click', async function () {
-        if (!amount) return;
-        await copy(amount);
-      });
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(String(amount)).then(copyFn).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = String(amount);
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        copyFn();
+      }
+    }
 
-      var dBtn = document.getElementById('downloadQrBtn');
-      if (dBtn) dBtn.addEventListener('click', async function () {
-        if (!qrSrc) return;
-        var fileName = 'QRIS-' + refPrefix + '-' + (refId || 'ref') + '.png';
-        try {
-          if (qrSrc.startsWith('data:image/')) {
-            var a = document.createElement('a');
-            a.href = qrSrc;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            return;
-          }
-          var res = await fetch(qrSrc, { credentials: 'same-origin' });
-          if (!res.ok) throw new Error('Fetch failed');
-          var blob = await res.blob();
-          var url = URL.createObjectURL(blob);
-          var a = document.createElement('a');
+    // Download QR Code Image
+    function downloadQr() {
+      if (!qrSrc) return;
+      const fileName = `QRIS-${refPrefix}-${refId || 'ref'}.png`;
+      if (qrSrc.startsWith('data:image/')) {
+        const a = document.createElement('a');
+        a.href = qrSrc;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return;
+      }
+      fetch(qrSrc, { credentials: 'same-origin' })
+        .then(res => res.blob())
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
           a.href = url;
           a.download = fileName;
           document.body.appendChild(a);
           a.click();
           a.remove();
-          setTimeout(() => {
-            try { URL.revokeObjectURL(url); } catch (e) { /* ignore */ }
-          }, 1200);
-        } catch (e) {
-          try { window.open(qrSrc, '_blank', 'noopener'); } catch (e2) { /* ignore */ }
-        }
-      });
+          setTimeout(() => { try { URL.revokeObjectURL(url); } catch(e){} }, 1200);
+        })
+        .catch(() => {
+          window.open(qrSrc, '_blank', 'noopener');
+        });
+    }
 
-      // Auto-polling untuk cek status pembayaran
-      var pollInterval = 5000; // 5 detik
-      var maxPolls = 120; // Max 10 menit (120 x 5 detik)
-      var pollCount = 0;
+    // Real-time Payment Status Polling
+    (function startPolling() {
+      const pollInterval = 4000;
+      const maxPolls = 150;
+      let pollCount = 0;
 
-      var checkPaymentStatus = async function () {
-        if (pollCount >= maxPolls) {
-          console.log('Polling stopped: max attempts reached');
-          return;
-        }
+      const checkPaymentStatus = async function () {
+        if (pollCount >= maxPolls) return;
         pollCount++;
 
         try {
-          var token = <%- JSON.stringify(String(publicToken || '')) %>;
-          var url = kindSafe === 'voucher'
-            ? '/customer/voucher/status/' + refId + '?t=' + encodeURIComponent(token)
-            : '/customer/payment/status/' + refId + '?t=' + encodeURIComponent(token);
+          const token = <%- JSON.stringify(String(publicToken || '')) %>;
+          const url = kindSafe === 'voucher'
+            ? `/customer/voucher/status/${refId}?t=${encodeURIComponent(token)}`
+            : `/customer/payment/status/${refId}?t=${encodeURIComponent(token)}`;
 
-          var res = await fetch(url, {
+          const res = await fetch(url, {
             method: 'GET',
             credentials: 'same-origin',
             headers: { 'Accept': 'application/json' }
           });
           
-          if (!res.ok) {
-            throw new Error('Status check failed');
-          }
-
-          var data = await res.json();
-
-          // Jika status sudah fulfilled/paid, redirect ke halaman status
-          if (data.status === 'fulfilled' || data.status === 'paid') {
-            var backUrl = <%- JSON.stringify(String(backUrl || '')) %>;
-            if (backUrl) {
-              window.location.href = backUrl;
-            } else {
-              var redirectUrl = kindSafe === 'voucher'
-                ? '/customer/voucher?order=' + refId + '&t=' + encodeURIComponent(token)
-                : '/customer/billing?invoice=' + refId;
-              window.location.href = redirectUrl;
+          if (res.ok) {
+            const data = await res.json();
+            if (data.status === 'fulfilled' || data.status === 'paid' || data.paid_at) {
+              const backUrl = <%- JSON.stringify(String(backUrl || '')) %>;
+              if (backUrl) {
+                window.location.href = backUrl;
+              } else {
+                const redirectUrl = kindSafe === 'voucher'
+                  ? `/customer/voucher?order=${refId}&t=${encodeURIComponent(token)}`
+                  : `/customer/billing?invoice=${refId}`;
+                window.location.href = redirectUrl;
+              }
+              return;
             }
-            return;
           }
+        } catch (e) {}
 
-          // Lanjutkan polling jika masih pending
-          setTimeout(checkPaymentStatus, pollInterval);
-        } catch (err) {
-          console.error('Payment status check error:', err);
-          // Retry meskipun error
-          setTimeout(checkPaymentStatus, pollInterval);
-        }
+        setTimeout(checkPaymentStatus, pollInterval);
       };
 
-      // Mulai polling setelah 3 detik (beri waktu user lihat QR dulu)
-      setTimeout(checkPaymentStatus, 3000);
+      setTimeout(checkPaymentStatus, 2500);
     })();
-    /* eslint-enable */
   </script>
 </body>
 </html>
+

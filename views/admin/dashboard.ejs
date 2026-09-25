@@ -10,6 +10,7 @@
     .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
     .dot-on{background:var(--success);box-shadow:0 0 6px var(--success)}
     .dot-off{background:var(--danger)}
+    .dot-warn{background:var(--warning)}
 
     /* ── PULSE ANIMATION (online) ── */
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
@@ -28,10 +29,65 @@
     .realtime-bar{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
 
     /* ── CHART WRAPPER ── */
-    #donut-wrap{position:relative;width:160px;height:160px;margin:0 auto}
+    #donut-wrap{position:relative;width:140px;height:140px;margin:0 auto}
     .donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-    .donut-num{font-size:28px;font-weight:700;line-height:1}
-    .donut-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+    .donut-num{font-size:26px;font-weight:800;line-height:1}
+    .donut-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
+
+    /* ── EXECUTIVE DASHBOARD STYLING (MODERN & NON-AI) ── */
+    .dash-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:20px}
+    .dash-title{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-0.02em;margin:0;display:flex;align-items:center;gap:10px}
+    .dash-meta{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+
+    /* KPI STAT GRID (4 Cards) */
+    .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+    @media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:640px){.kpi-grid{grid-template-columns:1fr}}
+
+    .kpi-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;position:relative;overflow:hidden;transition:all .2s ease;display:flex;flex-direction:column;justify-content:space-between;text-decoration:none;color:inherit}
+    .kpi-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,0.18);box-shadow:0 6px 20px rgba(0,0,0,0.3)}
+    .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+    .kpi-card.c-finance::before{background:linear-gradient(90deg,#10b981,#34d399)}
+    .kpi-card.c-warning::before{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .kpi-card.c-primary::before{background:linear-gradient(90deg,#0052cc,#38bdf8)}
+    .kpi-card.c-network::before{background:linear-gradient(90deg,#6366f1,#a855f7)}
+    
+    .kpi-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .kpi-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+    .kpi-icon{font-size:20px;opacity:.25;color:var(--text)}
+    .kpi-val{font-size:24px;font-weight:800;line-height:1.1;color:var(--text);font-variant-numeric:tabular-nums}
+    .kpi-footer{margin-top:12px;padding-top:10px;border-top:1px dashed var(--border);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted)}
+
+    /* DUAL 2-COLUMN SECTION */
+    .dual-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:16px;margin-bottom:20px}
+    .equal-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+    @media(max-width:992px){.dual-grid, .equal-grid{grid-template-columns:1fr}}
+
+    /* PROGRESS BARS */
+    .custom-progress{background:var(--bg3);height:7px;border-radius:999px;overflow:hidden;display:flex;position:relative}
+    .custom-progress-bar{height:100%;border-radius:999px;transition:width .4s ease}
+    .bg-emerald{background:#10b981}
+    .bg-amber{background:#f59e0b}
+    .bg-rose{background:#ef4444}
+    .bg-blue{background:#0052cc}
+
+    /* STREAM LIST ITEMS */
+    .stream-list{display:flex;flex-direction:column}
+    .stream-item{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;transition:background .15s ease}
+    .stream-item:last-child{border-bottom:none}
+    .stream-item:hover{background:rgba(255,255,255,0.02)}
+    .stream-icon-box{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+
+    /* PILL BADGES */
+    .pill-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.3px}
+    .pb-emerald{background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.25)}
+    .pb-amber{background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.25)}
+    .pb-rose{background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.25)}
+    .pb-blue{background:rgba(0,82,204,0.12);color:#38bdf8;border:1px solid rgba(56,189,248,0.25)}
+
+    /* UTILITY QUICK LAUNCH BAR */
+    .utility-bar{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+    .utility-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -71,144 +127,425 @@
     <!-- DASHBOARD SECTION                                       -->
     <!-- ═══════════════════════════════════════════════════════ -->
     <div id="dashboard-section">
-
-      <!-- ONU Stats -->
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">
-        <i class="bi bi-router"></i> <%= t('admin.dashboard.onu_status_title', 'Status ONU') %>
-      </div>
-      <div class="stat-grid">
-        <div class="sc p">
-          <i class="bi bi-router sc-icon"></i>
-          <div class="sc-label"><%= t('admin.dashboard.total_onu', 'Total ONU') %></div>
-          <div class="sc-val" id="stat-total"><span class="text-muted" style="font-size:16px">...</span></div>
-          <div class="sc-sub"><%= t('admin.dashboard.onu_registered', 'Perangkat terdaftar') %></div>
-        </div>
-        <div class="sc s">
-          <i class="bi bi-wifi sc-icon"></i>
-          <div class="sc-label"><%= t('admin.dashboard.online', 'Online') %></div>
-          <div class="sc-val" id="stat-online"><span class="text-muted" style="font-size:16px">...</span></div>
-          <div class="sc-sub"><%= t('admin.dashboard.active_now', 'Aktif saat ini') %></div>
-        </div>
-        <div class="sc d">
-          <i class="bi bi-wifi-off sc-icon"></i>
-          <div class="sc-label"><%= t('admin.dashboard.offline', 'Offline') %></div>
-          <div class="sc-val" id="stat-offline"><span class="text-muted" style="font-size:16px">...</span></div>
-          <div class="sc-sub"><%= t('admin.dashboard.no_response', 'Tidak merespons') %></div>
-        </div>
-        <div class="sc w">
-          <i class="bi bi-exclamation-triangle sc-icon"></i>
-          <div class="sc-label"><%= t('admin.dashboard.warning', 'Warning') %></div>
-          <div class="sc-val" id="stat-warning"><span class="text-muted" style="font-size:16px">...</span></div>
-          <div class="sc-sub"><%= t('admin.dashboard.needs_attention', 'Perlu perhatian') %></div>
-        </div>
-      </div>
-
-      <!-- Billing Stats -->
-      <% if (typeof billing !== 'undefined' && billing) { %>
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px">
-        <i class="bi bi-receipt"></i> <%= t('admin.dashboard.billing_summary_month', 'Ringkasan Billing Bulan Ini') %>
-      </div>
-      <div class="stat-grid">
-        <div class="sc s" style="cursor:pointer" onclick="location.href='/admin/billing'">
-          <i class="bi bi-cash-stack sc-icon"></i>
-          <div class="sc-label"><%= t('admin.dashboard.revenue_month', 'Pendapatan Bulan Ini') %></div>
-          <div class="sc-val" style="font-size:20px">Rp&nbsp;<%= billing.thisMonth.toLocaleString('id-ID') %></div>
-          <div class="sc-sub"><%= t('admin.dashboard.collected', 'Sudah terkumpul') %></div>
-        </div>
-        <div class="sc p" style="cursor:pointer" onclick="location.href='/admin/customers'">
-          <i class="bi bi-people sc-icon"></i>
-          <div class="sc-label"><%= t('admin.dashboard.active_customers', 'Pelanggan Aktif') %></div>
-          <div class="sc-val"><%= custStats ? custStats.active : 0 %></div>
-          <div class="sc-sub"><%= t('admin.dashboard.from', 'Dari') %> <%= custStats ? custStats.total : 0 %> <%= t('admin.dashboard.total_customers_suffix', 'total pelanggan') %></div>
-        </div>
-        <div class="sc d" style="cursor:pointer" onclick="location.href='/admin/billing?status=unpaid'">
-          <i class="bi bi-hourglass sc-icon"></i>
-          <div class="sc-label"><%= t('admin.dashboard.unpaid_invoices', 'Tagihan Belum Bayar') %></div>
-          <div class="sc-val"><%= billing.unpaidCount %></div>
-          <div class="sc-sub"><%= t('admin.dashboard.awaiting_payment', 'Menunggu pembayaran') %></div>
-        </div>
-        <div class="sc w" style="cursor:pointer" onclick="location.href='/admin/reports'">
-          <i class="bi bi-bar-chart-line sc-icon"></i>
-          <div class="sc-label"><%= t('admin.dashboard.total_receivable', 'Total Piutang') %></div>
-          <div class="sc-val" style="font-size:20px">Rp&nbsp;<%= billing.pendingAmount.toLocaleString('id-ID') %></div>
-          <div class="sc-sub"><%= t('admin.dashboard.not_collected', 'Belum tertagih') %></div>
-        </div>
-      </div>
-      <% } %>
-
-      <!-- Row: Donut + Recent Devices -->
-      <div class="dash-main-grid">
-
-        <!-- Donut Chart -->
-        <div class="card">
-          <div class="card-hd"><h6><i class="bi bi-pie-chart"></i> <%= t('admin.dashboard.onu_status_title', 'Status ONU') %></h6></div>
-          <div class="card-bd" style="display:flex;flex-direction:column;align-items:center;gap:16px">
-            <div id="donut-wrap">
-              <canvas id="donutChart"></canvas>
-              <div class="donut-center">
-                <div class="donut-num" id="donut-pct">-</div>
-                <div class="donut-lbl"><%= t('admin.dashboard.online', 'Online') %></div>
-              </div>
+      <!-- ── DASHBOARD OPERATIONAL HEADER ── -->
+      <div class="dash-header">
+        <div>
+          <h4 class="dash-title">
+            <i class="bi bi-speedometer2" style="color:var(--primary);"></i>
+            Ringkasan Operasional Jaringan &amp; Billing
+          </h4>
+          <div class="dash-meta" style="margin-top:6px;">
+            <div class="dash-meta-item">
+              <i class="bi bi-clock"></i> Server: <strong style="color:var(--text);"><%= (new Date()).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: (typeof settings !== 'undefined' && settings.timezone) ? settings.timezone : 'Asia/Jakarta' }) %></strong>
             </div>
-            <div style="width:100%;display:flex;flex-direction:column;gap:8px">
-              <div style="display:flex;justify-content:space-between;font-size:12px">
-                <span><span class="dot dot-on"></span><%= t('admin.dashboard.online', 'Online') %></span>
-                <span id="leg-online" class="fw6" style="color:var(--success)">-</span>
-              </div>
-              <div style="display:flex;justify-content:space-between;font-size:12px">
-                <span><span class="dot dot-off"></span><%= t('admin.dashboard.offline', 'Offline') %></span>
-                <span id="leg-offline" class="fw6" style="color:var(--danger)">-</span>
-              </div>
+            <span>•</span>
+            <div class="dash-meta-item">
+              <i class="bi bi-hdd-network" style="color:var(--info);"></i> Gateway: 
+              <% if (typeof routers !== 'undefined' && routers && routers.length > 0) { %>
+                <strong style="color:var(--success);"><%= routers[0].name || 'Mikrotik Gateway' %></strong> (<%= routers[0].host || 'Aktif' %>)
+              <% } else { %>
+                <strong style="color:var(--success);">Mikrotik Gateway</strong>
+              <% } %>
             </div>
-            <div style="font-size:11px;color:var(--muted);text-align:center" id="last-update-time">—</div>
+            <span>•</span>
+            <div class="dash-meta-item">
+              <span class="live-dot"></span> TR-069 Sync: <strong id="header-sync-time" style="color:var(--text);">-</strong>
+            </div>
           </div>
         </div>
 
-        <!-- Quick Actions & ONU Summary -->
-        <div style="display:flex;flex-direction:column;gap:14px">
-          <!-- Quick Actions -->
-          <div class="card">
-            <div class="card-hd"><h6><i class="bi bi-lightning-charge"></i> <%= t('admin.dashboard.quick_actions', 'Aksi Cepat') %></h6></div>
-            <div class="card-bd quick-actions-grid">
-              <a href="/admin/customers" class="btn btn-g" style="flex-direction:column;gap:4px;padding:14px 10px;text-align:center">
-                <i class="bi bi-person-plus" style="font-size:20px;color:var(--primary)"></i>
-                <span style="font-size:12px"><%= t('admin.dashboard.qa_add_customer', 'Tambah Pelanggan') %></span>
-              </a>
-              <a href="/admin/packages" class="btn btn-g" style="flex-direction:column;gap:4px;padding:14px 10px;text-align:center">
-                <i class="bi bi-box-seam" style="font-size:20px;color:var(--success)"></i>
-                <span style="font-size:12px"><%= t('admin.dashboard.qa_manage_packages', 'Kelola Paket') %></span>
-              </a>
-              <a href="/admin/billing" class="btn btn-g" style="flex-direction:column;gap:4px;padding:14px 10px;text-align:center">
-                <i class="bi bi-receipt" style="font-size:20px;color:var(--warning)"></i>
-                <span style="font-size:12px"><%= t('admin.dashboard.qa_create_invoice', 'Buat Tagihan') %></span>
-              </a>
-              <a href="/admin/reports" class="btn btn-g" style="flex-direction:column;gap:4px;padding:14px 10px;text-align:center">
-                <i class="bi bi-bar-chart-line" style="font-size:20px;color:var(--info)"></i>
-                <span style="font-size:12px"><%= t('admin.dashboard.qa_reports', 'Laporan') %></span>
-              </a>
-              <button class="btn btn-g" onclick="showTab('monitoring')" style="flex-direction:column;gap:4px;padding:14px 10px;text-align:center">
-                <i class="bi bi-router" style="font-size:20px;color:var(--danger)"></i>
-                <span style="font-size:12px"><%= t('admin.dashboard.qa_monitor_onu', 'Monitor ONU') %></span>
+        <div class="d-flex align-items-center gap-2" style="display:flex; align-items:center; gap:8px;">
+          <a href="/admin/customers" class="btn btn-p btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+            <i class="bi bi-person-plus-fill"></i> Tambah Pelanggan
+          </a>
+          <a href="/admin/billing" class="btn btn-g btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+            <i class="bi bi-receipt"></i> Buat Tagihan
+          </a>
+          <button type="button" class="btn btn-g btn-sm" onclick="refreshAll()" title="Perbarui data realtime" style="display:inline-flex; align-items:center; gap:6px;">
+            <i class="bi bi-arrow-clockwise" id="dash-refresh-icon"></i> Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- ── TIER 1: EXECUTIVE KPI PULSE RIBBON (4 HIGH-CONTRAST TELEMETRY CARDS) ── -->
+      <div class="kpi-grid">
+        <!-- 1. PENDAPATAN BULAN INI -->
+        <a href="/admin/billing" class="kpi-card c-finance">
+          <div>
+            <div class="kpi-header">
+              <span class="kpi-label">Pendapatan Bulan Ini</span>
+              <i class="bi bi-cash-stack kpi-icon" style="color:var(--success); opacity:0.8;"></i>
+            </div>
+            <div class="kpi-val" style="color:var(--success);">
+              Rp&nbsp;<%= Number((billing && billing.thisMonth) || 0).toLocaleString('id-ID') %>
+            </div>
+          </div>
+          <div class="kpi-footer">
+            <span>Hari ini: <strong style="color:var(--text);">Rp <%= Number((typeof todayRev !== 'undefined' && todayRev && todayRev.total) || 0).toLocaleString('id-ID') %></strong> (<%= Number((typeof todayRev !== 'undefined' && todayRev && todayRev.count) || 0) %> trs)</span>
+            <% 
+              const mThis = Number((billing && billing.thisMonth) || 0);
+              const mPend = Number((billing && billing.pendingAmount) || 0);
+              const mTotTarget = mThis + mPend;
+              const colPct = mTotTarget > 0 ? Math.round((mThis / mTotTarget) * 100) : 100;
+            %>
+            <span class="pill-badge pb-emerald"><%= colPct %>% Terkumpul</span>
+          </div>
+        </a>
+
+        <!-- 2. TOTAL PIUTANG (UNPAID) -->
+        <a href="/admin/billing?status=unpaid" class="kpi-card c-warning">
+          <div>
+            <div class="kpi-header">
+              <span class="kpi-label">Tagihan Tertunda / Piutang</span>
+              <i class="bi bi-hourglass-split kpi-icon" style="color:var(--warning); opacity:0.8;"></i>
+            </div>
+            <div class="kpi-val" style="color:var(--warning);">
+              Rp&nbsp;<%= Number((billing && billing.pendingAmount) || 0).toLocaleString('id-ID') %>
+            </div>
+          </div>
+          <div class="kpi-footer">
+            <span><strong style="color:var(--text);"><%= (billing && billing.unpaidCount) || 0 %></strong> invoice menunggu</span>
+            <span style="color:var(--warning); font-weight:700;">Lihat Piutang →</span>
+          </div>
+        </a>
+
+        <!-- 3. PELANGGAN & AKUN -->
+        <a href="/admin/customers" class="kpi-card c-primary">
+          <div>
+            <div class="kpi-header">
+              <span class="kpi-label">Pelanggan Aktif</span>
+              <i class="bi bi-people-fill kpi-icon" style="color:var(--primary); opacity:0.8;"></i>
+            </div>
+            <div class="kpi-val">
+              <%= (custStats && custStats.active) || 0 %> <span style="font-size:13px; font-weight:normal; color:var(--muted);">/ <%= (custStats && custStats.total) || 0 %> total</span>
+            </div>
+          </div>
+          <div class="kpi-footer">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <% if (custStats && custStats.suspended > 0) { %>
+                <span class="pill-badge pb-rose"><%= custStats.suspended %> Isolir</span>
+              <% } else { %>
+                <span class="pill-badge pb-emerald">Kolektif Sehat</span>
+              <% } %>
+              <% if (custStats && custStats.ditangguhkan > 0) { %>
+                <span class="pill-badge pb-amber"><%= custStats.ditangguhkan %> Tunda</span>
+              <% } %>
+            </div>
+            <span style="color:var(--primary); font-weight:700;">Kelola →</span>
+          </div>
+        </a>
+
+        <!-- 4. KESEHATAN FTTH & ONU -->
+        <div class="kpi-card c-network" style="cursor:pointer;" onclick="showTab('monitoring')">
+          <div>
+            <div class="kpi-header">
+              <span class="kpi-label">Infrastruktur FTTH / ONU</span>
+              <i class="bi bi-router-fill kpi-icon" style="color:#818cf8; opacity:0.8;"></i>
+            </div>
+            <div class="kpi-val">
+              <span id="kpi-onu-online">-</span> <span style="font-size:13px; font-weight:normal; color:var(--muted);">Online</span>
+            </div>
+          </div>
+          <div class="kpi-footer">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="pill-badge pb-rose"><span id="kpi-onu-offline">-</span> Offline</span>
+              <span class="pill-badge pb-amber"><span id="kpi-onu-warning">-</span> Waspada</span>
+            </div>
+            <span style="color:#818cf8; font-weight:700;">Monitoring →</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TIER 2: DUAL ANALYTICS & INFRASTRUCTURE TELEMETRY ── -->
+      <div class="dual-grid">
+        <!-- LEFT: KONDISI JARINGAN & SPEKTRUM REDAMAN OPTIK -->
+        <div class="card" style="margin-bottom:0;">
+          <div class="card-hd">
+            <h6><i class="bi bi-broadcast-pin text-primary"></i> Kondisi Fisik Jaringan &amp; Spektrum Optik</h6>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button type="button" class="btn btn-g btn-sm" onclick="openGenieACSSettings()" style="padding:4px 10px; font-size:11px;">
+                <i class="bi bi-gear"></i> Konfigurasi ACS
               </button>
-              <a href="/admin/bulk" class="btn btn-g" style="flex-direction:column;gap:4px;padding:14px 10px;text-align:center">
-                <i class="bi bi-layers" style="font-size:20px;color:var(--muted)"></i>
-                <span style="font-size:12px"><%= t('admin.dashboard.qa_bulk', 'Bulk Config') %></span>
-              </a>
+              <button type="button" class="btn btn-g btn-sm" onclick="showTab('monitoring')" style="padding:4px 10px; font-size:11px;">
+                <i class="bi bi-arrow-right"></i> Daftar ONU
+              </button>
             </div>
           </div>
+          <div class="card-bd" style="padding:20px;">
+            <div style="display:grid; grid-template-columns: 140px 1fr; gap:22px; align-items:center;">
+              <!-- Donut Gauge Mini -->
+              <div style="text-align:center;">
+                <div id="donut-wrap">
+                  <canvas id="donutChart"></canvas>
+                  <div class="donut-center">
+                    <div class="donut-num" id="donut-pct" style="color:var(--text);">-</div>
+                    <div class="donut-lbl">Uptime ONU</div>
+                  </div>
+                </div>
+                <div style="display:flex; justify-content:center; gap:12px; margin-top:8px; font-size:11px;">
+                  <span><span class="dot dot-on"></span><strong id="leg-online" style="color:var(--success);">-</strong> On</span>
+                  <span><span class="dot dot-off"></span><strong id="leg-offline" style="color:var(--danger);">-</strong> Off</span>
+                </div>
+              </div>
 
-          <!-- Top Offline Devices -->
-          <div class="card" style="flex:1">
-            <div class="card-hd">
-              <h6><i class="bi bi-exclamation-circle"></i> <%= t('admin.dashboard.latest_offline', 'ONU Offline Terbaru') %></h6>
-              <button class="btn btn-g btn-sm" onclick="showTab('monitoring')"><i class="bi bi-arrow-right"></i> <%= t('common.view_all', 'Lihat Semua') %></button>
+              <!-- Spektrum Redaman Optik (RX Power dBm) -->
+              <div>
+                <div style="font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">
+                  Distribusi Kualitas Sinyal Optik (RX Power dBm):
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+                  <!-- Ideal -->
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+                      <span><span class="dot dot-on"></span>Sinyal Ideal (-15 s/d -22 dBm)</span>
+                      <strong id="rx-ideal-count" style="color:var(--success); font-variant-numeric:tabular-nums;">-</strong>
+                    </div>
+                    <div class="custom-progress">
+                      <div class="custom-progress-bar bg-emerald" id="rx-ideal-bar" style="width:0%;"></div>
+                    </div>
+                  </div>
+
+                  <!-- Waspada -->
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+                      <span><span class="dot dot-warn"></span>Sinyal Waspada (-23 s/d -26 dBm)</span>
+                      <strong id="rx-warn-count" style="color:var(--warning); font-variant-numeric:tabular-nums;">-</strong>
+                    </div>
+                    <div class="custom-progress">
+                      <div class="custom-progress-bar bg-amber" id="rx-warn-bar" style="width:0%;"></div>
+                    </div>
+                  </div>
+
+                  <!-- Kritis -->
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+                      <span><span class="dot dot-off"></span>Sinyal Kritis / Redaman Tinggi (&lt; -27 dBm)</span>
+                      <strong id="rx-crit-count" style="color:var(--danger); font-variant-numeric:tabular-nums;">-</strong>
+                    </div>
+                    <div class="custom-progress">
+                      <div class="custom-progress-bar bg-rose" id="rx-crit-bar" style="width:0%;"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Router Gateway Status Strip -->
+                <div style="background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; font-size:11px;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="bi bi-hdd-network text-primary" style="font-size:15px;"></i>
+                    <div>
+                      <div style="font-weight:600; color:var(--text);">Router Gateway Core</div>
+                      <div style="font-size:10px; color:var(--muted);"><%= (typeof routers !== 'undefined' && routers && routers.length > 0) ? (routers[0].host + ' • ' + (routers[0].name || 'Mikrotik')) : 'Koneksi API Mikrotik Siap' %></div>
+                    </div>
+                  </div>
+                  <span class="pill-badge pb-emerald">Terhubung</span>
+                </div>
+              </div>
             </div>
-            <div id="offline-list" style="padding:0">
-              <div class="text-center text-muted" style="padding:24px;font-size:13px"><%= t('common.loading', 'Memuat data...') %></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: PROGRES REALISASI PENAGIHAN & ARPU TARGET -->
+        <div class="card" style="margin-bottom:0;">
+          <div class="card-hd">
+            <h6><i class="bi bi-pie-chart-fill text-success"></i> Realisasi Kolektibilitas Billing</h6>
+            <a href="/admin/billing" class="btn btn-g btn-sm" style="padding:4px 10px; font-size:11px;">
+              <i class="bi bi-receipt"></i> Rincian Tagihan
+            </a>
+          </div>
+          <div class="card-bd" style="padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
+                <span style="font-size:11px; color:var(--muted);">Pencapaian Penagihan Periode Ini</span>
+                <span style="font-size:14px; font-weight:800; color:var(--text);"><%= colPct %>% Terkumpul</span>
+              </div>
+              
+              <!-- Progress Realization Multi-bar -->
+              <div class="custom-progress" style="height:10px; margin-bottom:14px;">
+                <div class="custom-progress-bar bg-emerald" style="width:<%= colPct %>%;"></div>
+                <div class="custom-progress-bar bg-amber" style="width:<%= 100 - colPct %>%;"></div>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+                <div style="background:var(--bg3); padding:8px 12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+                  <span style="display:flex; align-items:center; gap:6px;">
+                    <span class="dot dot-on"></span> Sudah Terkumpul (Lunas)
+                  </span>
+                  <strong style="color:var(--success); font-variant-numeric:tabular-nums;">Rp <%= Number((billing && billing.thisMonth) || 0).toLocaleString('id-ID') %></strong>
+                </div>
+
+                <div style="background:var(--bg3); padding:8px 12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+                  <span style="display:flex; align-items:center; gap:6px;">
+                    <span class="dot dot-warn"></span> Piutang (Belum Bayar)
+                  </span>
+                  <strong style="color:var(--warning); font-variant-numeric:tabular-nums;">Rp <%= Number((billing && billing.pendingAmount) || 0).toLocaleString('id-ID') %></strong>
+                </div>
+
+                <div style="background:var(--bg3); padding:8px 12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+                  <span style="color:var(--muted);">Total Potensi Omzet:</span>
+                  <strong style="color:var(--text); font-variant-numeric:tabular-nums;">Rp <%= mTotTarget.toLocaleString('id-ID') %></strong>
+                </div>
+              </div>
+            </div>
+
+            <div style="padding-top:10px; border-top:1px dashed var(--border); display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--muted);">
+              <span>ARPU Rata-rata: <strong style="color:var(--text);">Rp <%= (custStats && custStats.active > 0) ? Math.round(mThis / custStats.active).toLocaleString('id-ID') : '0' %></strong> /cust</span>
+              <a href="/admin/reports" style="color:var(--primary); text-decoration:none; font-weight:700;">Laporan Keuangan →</a>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- ── TIER 3: REALTIME OPERATIONAL WORKSTREAM (DUAL FEEDS) ── -->
+      <div class="equal-grid">
+        <!-- FEED 1: TRANSAKSI PEMBAYARAN TERBARU -->
+        <div class="card" style="margin-bottom:0;">
+          <div class="card-hd">
+            <h6><i class="bi bi-wallet2 text-success"></i> Transaksi Masuk Terkini</h6>
+            <a href="/admin/billing" class="btn btn-g btn-sm" style="padding:4px 10px; font-size:11px;">
+              Semua Tagihan <i class="bi bi-chevron-right"></i>
+            </a>
+          </div>
+          <div class="card-bd" style="padding:0;">
+            <% if (typeof recentPayments !== 'undefined' && recentPayments && recentPayments.length > 0) { %>
+              <div class="stream-list">
+                <% recentPayments.forEach(p => { %>
+                  <div class="stream-item">
+                    <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+                      <div class="stream-icon-box" style="background:var(--sdim); color:var(--success);">
+                        <i class="bi bi-check2-circle"></i>
+                      </div>
+                      <div style="min-width:0;">
+                        <div style="font-size:13px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                          <%= p.customer_name || 'Pelanggan #' + p.customer_id %>
+                        </div>
+                        <div style="font-size:11px; color:var(--muted); margin-top:2px;">
+                          Periode: <%= p.period_month %>/<%= p.period_year %> • 
+                          <% if (p.payment_gateway) { %>
+                            <span class="pill-badge pb-blue"><%= p.payment_gateway.toUpperCase() %></span>
+                          <% } else { %>
+                            <span class="pill-badge pb-emerald">TUNAI / KASIR</span>
+                          <% } %>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="text-align:right; flex-shrink:0;">
+                      <div style="font-size:13px; font-weight:800; color:var(--success); font-variant-numeric:tabular-nums;">
+                        +Rp <%= Number(p.amount || 0).toLocaleString('id-ID') %>
+                      </div>
+                      <div style="font-size:10px; color:var(--muted); margin-top:3px;">
+                        <%= p.paid_at ? p.paid_at.substring(11, 16) + ' WIB' : 'Hari Ini' %>
+                      </div>
+                    </div>
+                  </div>
+                <% }); %>
+              </div>
+            <% } else { %>
+              <div style="padding:32px 20px; text-align:center; color:var(--muted); font-size:12px;">
+                <i class="bi bi-inbox" style="font-size:28px; opacity:0.4; display:block; margin-bottom:8px;"></i>
+                Belum ada transaksi pembayaran baru tercatat pada periode ini.
+              </div>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- FEED 2: PUSAT PERHATIAN GANGGUAN & TIKET OPERASIONAL -->
+        <div class="card" style="margin-bottom:0;">
+          <div class="card-hd">
+            <h6><i class="bi bi-exclamation-triangle text-warning"></i> Pusat Perhatian &amp; Gangguan</h6>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button type="button" class="btn btn-g btn-sm active" id="btn-attn-onu" onclick="toggleAttentionTab('onu')" style="padding:4px 10px; font-size:11px;">
+                ONU Offline (<span id="attn-offline-count">0</span>)
+              </button>
+              <button type="button" class="btn btn-g btn-sm" id="btn-attn-ticket" onclick="toggleAttentionTab('ticket')" style="padding:4px 10px; font-size:11px;">
+                Tiket Aduan (<%= (typeof ticketStats !== 'undefined' && ticketStats && ticketStats.open) || 0 %>)
+              </button>
+            </div>
+          </div>
+          <div class="card-bd" style="padding:0;">
+            <!-- SUB-TAB 1: DAFTAR ONU OFFLINE -->
+            <div id="attn-onu-panel">
+              <div id="offline-list">
+                <div style="padding:32px 20px; text-align:center; color:var(--muted); font-size:12px;">
+                  <div style="display:inline-block; width:22px; height:22px; border:2px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin .8s linear infinite; margin-bottom:8px;"></div>
+                  <div>Memuat data perangkat offline...</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SUB-TAB 2: DAFTAR TIKET GANGGUAN TERBUKA -->
+            <div id="attn-ticket-panel" style="display:none;">
+              <% if (typeof recentTickets !== 'undefined' && recentTickets && recentTickets.length > 0) { %>
+                <div class="stream-list">
+                  <% recentTickets.forEach(t => { %>
+                    <div class="stream-item">
+                      <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+                        <div class="stream-icon-box" style="background:var(--wdim); color:var(--warning);">
+                          <i class="bi bi-ticket-detailed"></i>
+                        </div>
+                        <div style="min-width:0;">
+                          <div style="font-size:13px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            <%= t.title || 'Laporan Gangguan' %>
+                          </div>
+                          <div style="font-size:11px; color:var(--muted); margin-top:2px;">
+                            <%= t.customer_name %> • <%= t.customer_phone || '-' %>
+                          </div>
+                        </div>
+                      </div>
+                      <div style="text-align:right; flex-shrink:0;">
+                        <span class="pill-badge <%= t.status === 'open' ? 'pb-rose' : 'pb-amber' %>">
+                          <%= t.status === 'open' ? 'TERBUKA' : 'DIPROSES' %>
+                        </span>
+                        <a href="/admin/tickets" style="display:block; margin-top:4px; font-size:11px; color:var(--primary); text-decoration:none; font-weight:600;">Tangani →</a>
+                      </div>
+                    </div>
+                  <% }); %>
+                </div>
+              <% } else { %>
+                <div style="padding:32px 20px; text-align:center; color:var(--success); font-size:12px;">
+                  <i class="bi bi-shield-check" style="font-size:28px; display:block; margin-bottom:8px;"></i>
+                  Tidak ada tiket aduan gangguan aktif saat ini. Layanan pelanggan beroperasi normal!
+                </div>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TIER 4: QUICK LAUNCH UTILITY DOCK ── -->
+      <div class="utility-bar" style="margin-top:20px;">
+        <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted);">
+          <i class="bi bi-lightning-charge text-primary"></i>
+          <span style="font-weight:700; color:var(--text);">Aksi Cepat Rutin:</span>
+        </div>
+        <div class="utility-actions">
+          <a href="/admin/customers" class="btn btn-g btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+            <i class="bi bi-person-plus text-primary"></i> Pelanggan Baru
+          </a>
+          <a href="/admin/billing" class="btn btn-g btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+            <i class="bi bi-receipt text-warning"></i> Terbitkan Tagihan
+          </a>
+          <a href="/admin/onu-stickers" class="btn btn-g btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+            <i class="bi bi-qr-code text-info"></i> Cetak Stiker ONU
+          </a>
+          <a href="/admin/packages" class="btn btn-g btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+            <i class="bi bi-box-seam text-success"></i> Paket Layanan
+          </a>
+          <a href="/admin/bulk" class="btn btn-g btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+            <i class="bi bi-layers text-danger"></i> Konfigurasi Massal
+          </a>
+          <button type="button" class="btn btn-g btn-sm" onclick="showTab('monitoring')" style="display:inline-flex; align-items:center; gap:6px;">
+            <i class="bi bi-router text-primary"></i> Monitoring ONU
+          </button>
+        </div>
+      </div>
+
+      <!-- Hidden elements for backward-compatibility with legacy selectors -->
+      <div style="display:none;" id="stat-total"></div>
+      <div style="display:none;" id="stat-online"></div>
+      <div style="display:none;" id="stat-offline"></div>
+      <div style="display:none;" id="stat-warning"></div>
+      <div style="display:none;" id="last-update-time"></div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════ -->
@@ -507,25 +844,51 @@ async function loadStats() {
     const total   = d.total   || 0;
     const online  = d.online  || 0;
     const offline = d.offline || 0;
-    const pct     = total > 0 ? Math.round(online / total * 100) : 0;
+    const warning = d.warning || 0;
+    const pct     = total > 0 ? Math.round(online / total * 100) : (offline === 0 ? 100 : 0);
 
-    // Dashboard stats
-    document.getElementById('stat-total').textContent   = total;
-    document.getElementById('stat-online').textContent  = online;
-    document.getElementById('stat-offline').textContent = offline;
-    document.getElementById('stat-warning').textContent = d.warning || 0;
+    // Dashboard Executive KPIs
+    const elKpiOnline = document.getElementById('kpi-onu-online');
+    const elKpiOffline = document.getElementById('kpi-onu-offline');
+    const elKpiWarning = document.getElementById('kpi-onu-warning');
+    const elAttnOff = document.getElementById('attn-offline-count');
+    const elSyncTime = document.getElementById('header-sync-time');
+
+    if (elKpiOnline) elKpiOnline.textContent = online;
+    if (elKpiOffline) elKpiOffline.textContent = offline;
+    if (elKpiWarning) elKpiWarning.textContent = warning;
+    if (elAttnOff) elAttnOff.textContent = offline;
+    if (elSyncTime) elSyncTime.textContent = new Date().toLocaleTimeString('id-ID', { timeZone: '<%= (typeof settings !== "undefined" && settings.timezone) ? settings.timezone : "Asia/Jakarta" %>' });
+
+    // Dashboard legacy IDs
+    const stTot = document.getElementById('stat-total');
+    const stOn = document.getElementById('stat-online');
+    const stOff = document.getElementById('stat-offline');
+    const stWarn = document.getElementById('stat-warning');
+    if (stTot) stTot.textContent = total;
+    if (stOn) stOn.textContent = online;
+    if (stOff) stOff.textContent = offline;
+    if (stWarn) stWarn.textContent = warning;
 
     // Monitoring mini stats
-    document.getElementById('m-total').textContent  = total;
-    document.getElementById('m-online').textContent = online;
-    document.getElementById('m-offline').textContent= offline;
-    document.getElementById('m-pct').textContent    = pct + '%';
+    const mTot = document.getElementById('m-total');
+    const mOn = document.getElementById('m-online');
+    const mOff = document.getElementById('m-offline');
+    const mPct = document.getElementById('m-pct');
+    if (mTot) mTot.textContent = total;
+    if (mOn) mOn.textContent = online;
+    if (mOff) mOff.textContent = offline;
+    if (mPct) mPct.textContent = pct + '%';
 
     // Donut
-    document.getElementById('donut-pct').textContent  = pct + '%';
-    document.getElementById('leg-online').textContent  = online;
-    document.getElementById('leg-offline').textContent = offline;
-    document.getElementById('last-update-time').textContent = I18N.updatePrefix + ' ' + new Date().toLocaleTimeString('id-ID', { timeZone: '<%= settings.timezone %>' });
+    const donutPct = document.getElementById('donut-pct');
+    const legOn = document.getElementById('leg-online');
+    const legOff = document.getElementById('leg-offline');
+    const lastUpdate = document.getElementById('last-update-time');
+    if (donutPct) donutPct.textContent = pct + '%';
+    if (legOn) legOn.textContent = online;
+    if (legOff) legOff.textContent = offline;
+    if (lastUpdate) lastUpdate.textContent = I18N.updatePrefix + ' ' + new Date().toLocaleTimeString('id-ID', { timeZone: '<%= (typeof settings !== "undefined" && settings.timezone) ? settings.timezone : "Asia/Jakarta" %>' });
 
     updateDonut(online, offline);
   } catch(e) { console.error('Stats error:', e); }
@@ -702,6 +1065,38 @@ async function loadDevices() {
       });
     }
 
+    // Calculate Optical RX Power Distribution
+    let rxIdeal = 0, rxWarn = 0, rxCrit = 0;
+    devicesData.forEach(d => {
+      const rx = parseFloat(d.rxPower);
+      if (!isNaN(rx)) {
+        if (rx >= -22) rxIdeal++;
+        else if (rx >= -26) rxWarn++;
+        else rxCrit++;
+      }
+    });
+    const totalRx = rxIdeal + rxWarn + rxCrit;
+    const elRxIdeal = document.getElementById('rx-ideal-count');
+    const elRxWarn = document.getElementById('rx-warn-count');
+    const elRxCrit = document.getElementById('rx-crit-count');
+    const elRxIdealBar = document.getElementById('rx-ideal-bar');
+    const elRxWarnBar = document.getElementById('rx-warn-bar');
+    const elRxCritBar = document.getElementById('rx-crit-bar');
+
+    if (totalRx > 0) {
+      if (elRxIdeal) elRxIdeal.textContent = rxIdeal + ' ONU';
+      if (elRxWarn) elRxWarn.textContent = rxWarn + ' ONU';
+      if (elRxCrit) elRxCrit.textContent = rxCrit + ' ONU';
+      if (elRxIdealBar) elRxIdealBar.style.width = Math.round((rxIdeal / totalRx) * 100) + '%';
+      if (elRxWarnBar) elRxWarnBar.style.width = Math.round((rxWarn / totalRx) * 100) + '%';
+      if (elRxCritBar) elRxCritBar.style.width = Math.round((rxCrit / totalRx) * 100) + '%';
+    } else {
+      if (elRxIdeal) elRxIdeal.textContent = 'Normal';
+      if (elRxWarn) elRxWarn.textContent = '0 ONU';
+      if (elRxCrit) elRxCrit.textContent = '0 ONU';
+      if (elRxIdealBar) elRxIdealBar.style.width = '100%';
+    }
+
     // Update offline list on dashboard
     renderOfflineList(devicesData.filter(d => d.status === 'offline').slice(0, 5));
     // AUTO-REFRESH DISABLED: scheduleFastRefreshIfNeeded() is intentionally removed
@@ -718,23 +1113,51 @@ async function loadDevices() {
 function renderOfflineList(offlineDevices) {
   const el = document.getElementById('offline-list');
   if (!el) return;
-  if (offlineDevices.length === 0) {
-    el.innerHTML = '<div class="text-center" style="padding:24px;font-size:13px;color:var(--success)"><i class="bi bi-check-circle-fill"></i> ' + I18N.allOnuOnline + '</div>';
+  if (!offlineDevices || offlineDevices.length === 0) {
+    el.innerHTML = '<div style="padding:28px 16px; text-align:center; color:var(--success); font-size:12px;"><i class="bi bi-shield-check" style="font-size:24px; display:block; margin-bottom:6px;"></i> Semua ONU saat ini dalam kondisi Online &amp; Terhubung!</div>';
     return;
   }
-  el.innerHTML = offlineDevices.map(d => {
+  el.innerHTML = '<div class="stream-list">' + offlineDevices.slice(0, 5).map(d => {
     const ago = d.lastInform ? timeSince(new Date(d.lastInform)) : I18N.never;
-    return `<div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-      <div>
-        <div style="font-size:13px;font-weight:600">${d.tags.join(', ') || '-'}</div>
-        <div style="font-size:11px;color:var(--muted)">${d.serialNumber}</div>
+    const tagDisplay = (d.tags && d.tags.length > 0) ? d.tags.join(', ') : (d.pppoeUsername || d.serialNumber || 'Perangkat #' + d.id);
+    return `<div class="stream-item">
+      <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+        <div class="stream-icon-box" style="background:var(--ddim); color:var(--danger);">
+          <i class="bi bi-router"></i>
+        </div>
+        <div style="min-width:0;">
+          <div style="font-size:13px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${escHtml(tagDisplay)}
+          </div>
+          <div style="font-size:11px; color:var(--muted); margin-top:2px;">
+            SN: <code style="color:var(--info); font-size:10px;">${escHtml(d.serialNumber || '-')}</code> • Model: ${escHtml(d.model || 'ONU')}
+          </div>
+        </div>
       </div>
-      <div style="text-align:right">
-        <span class="badge bd">${I18N.offlineBadge}</span>
-        <div style="font-size:11px;color:var(--muted);margin-top:3px">${ago}</div>
+      <div style="text-align:right; flex-shrink:0;">
+        <span class="pill-badge pb-rose">${I18N.offlineBadge}</span>
+        <div style="font-size:10px; color:var(--muted); margin-top:3px;">${ago}</div>
       </div>
     </div>`;
-  }).join('');
+  }).join('') + '</div>';
+}
+
+function toggleAttentionTab(tab) {
+  const isOnu = tab === 'onu';
+  const onuPanel = document.getElementById('attn-onu-panel');
+  const ticketPanel = document.getElementById('attn-ticket-panel');
+  const btnOnu = document.getElementById('btn-attn-onu');
+  const btnTicket = document.getElementById('btn-attn-ticket');
+  if (onuPanel) onuPanel.style.display = isOnu ? 'block' : 'none';
+  if (ticketPanel) ticketPanel.style.display = isOnu ? 'none' : 'block';
+  if (btnOnu) {
+    btnOnu.style.background = isOnu ? 'var(--bg3)' : 'transparent';
+    btnOnu.style.color = isOnu ? 'var(--text)' : 'var(--muted)';
+  }
+  if (btnTicket) {
+    btnTicket.style.background = !isOnu ? 'var(--bg3)' : 'transparent';
+    btnTicket.style.color = !isOnu ? 'var(--text)' : 'var(--muted)';
+  }
 }
 
 function timeSince(date) {

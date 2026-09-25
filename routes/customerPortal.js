@@ -1871,8 +1871,16 @@ router.get('/dashboard', async (req, res) => {
   const states = sidebarMenuSvc.getStoredMenuStates();
   const showPPOB = states['digiflazz'] === 'visible';
 
+  const customerDeviceData = deviceData || fallbackCustomer(loginId);
+  if ((!customerDeviceData.ssid || customerDeviceData.ssid === '-') && profile && profile.wifi_ssid) {
+    customerDeviceData.ssid = profile.wifi_ssid;
+  }
+  if (!customerDeviceData.wifiPassword && profile && profile.wifi_password) {
+    customerDeviceData.wifiPassword = profile.wifi_password;
+  }
+
   res.render('dashboard', {
-    customer: deviceData || fallbackCustomer(loginId),
+    customer: customerDeviceData,
     profile: profile || null,
     invoices: invoices || [],
     tickets: tickets || [],
@@ -1880,7 +1888,7 @@ router.get('/dashboard', async (req, res) => {
     paymentChannels,
     trafficMaxDownMbps,
     trafficMaxUpMbps,
-    connectedUsers: deviceData ? deviceData.connectedUsers : [],
+    connectedUsers: customerDeviceData.connectedUsers || [],
     customerBalance,
     isLoggedIn: true,
     showPPOB,
@@ -2072,106 +2080,236 @@ router.get('/api/pppoe-traffic', async (req, res) => {
   }
 });
 
+router.get('/api/connected-devices', async (req, res) => {
+  const loginId = String(req.session?.phone ?? '').replace(/[\r\n\t]+/g, '').trim();
+  if (!loginId) return res.status(401).json({ ok: false, message: 'Unauthorized' });
+
+  const profile = findCustomerProfileByLoginId(loginId);
+  const tokenCandidates = Array.from(new Set([
+    req.session?.pppoe_username,
+    ...buildCustomerDeviceTokens(loginId, profile)
+  ].map(v => String(v || '').trim()).filter(Boolean)));
+
+  const isRescan = req.query.rescan === '1' || req.query.refresh === '1';
+  if (isRescan) {
+    for (const token of tokenCandidates) {
+      try {
+        await customerDevice.requestDeviceRefresh(token, {
+          type: 'customer',
+          id: profile?.id || null,
+          name: profile?.name || loginId,
+          ip: req.ip,
+          userAgent: req.headers['user-agent']
+        });
+      } catch (e) {}
+    }
+  }
+
+  let deviceData = null;
+  for (const token of tokenCandidates) {
+    deviceData = await customerDevice.getCustomerDeviceData(token);
+    if (deviceData) break;
+  }
+
+  const devices = (deviceData && Array.isArray(deviceData.connectedUsers)) ? deviceData.connectedUsers : [];
+  const total = (deviceData && deviceData.totalAssociations !== undefined && deviceData.totalAssociations !== 'N/A' && deviceData.totalAssociations !== '-')
+    ? Number(deviceData.totalAssociations)
+    : devices.length;
+
+  return res.json({
+    ok: true,
+    count: total,
+    totalAssociations: total,
+    ssid: deviceData?.ssid || profile?.wifi_ssid || '-',
+    devices
+  });
+});
+
 router.post('/change-ssid', async (req, res) => {
   const loginId = String(req.session?.phone ?? '').replace(/[\r\n\t]+/g, '').trim();
-  if (!loginId) return res.redirect('/customer/login');
-  const { ssid } = req.body;
+  const isAjax = Boolean(req.xhr || req.headers.accept?.includes('application/json') || req.is('json'));
+
+  if (!loginId) {
+    if (isAjax) return res.status(401).json({ ok: false, message: 'Sesi login telah berakhir. Silakan login kembali.' });
+    return res.redirect('/customer/login');
+  }
+
+  const ssidRaw = req.body?.ssid;
+  const ssid = String(ssidRaw ?? '').trim();
+  if (!ssid) {
+    const errText = 'Nama WiFi (SSID) tidak boleh kosong.';
+    if (isAjax) return res.status(400).json({ ok: false, message: errText });
+    req.session._msg = { type: 'danger', text: errText };
+    return res.redirect('/customer/dashboard#home-section');
+  }
+
   const profile = findCustomerProfileByLoginId(loginId);
-  const tokenCandidates = buildCustomerDeviceTokens(loginId, profile);
+  const tokenCandidates = Array.from(new Set([
+    req.session?.pppoe_username,
+    ...buildCustomerDeviceTokens(loginId, profile)
+  ].map(v => String(v || '').trim()).filter(Boolean)));
+
   let ok = false;
   for (const token of tokenCandidates) {
-    ok = await updateSSID(token, ssid);
+    ok = await updateSSID(token, ssid, {
+      type: 'customer',
+      id: profile?.id || null,
+      name: profile?.name || loginId,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    });
     if (ok) break;
   }
-  
-  req.session._msg = ok 
-    ? { type: 'success', text: 'Nama WiFi (SSID) berhasil diubah.' }
-    : { type: 'danger', text: 'Gagal mengubah SSID.' };
 
-  // Kirim notifikasi WhatsApp ke pelanggan
-  if (ok) {
-    try {
-      const settings = getSettingsWithCache();
-      if (settings.whatsapp_enabled) {
-        if (profile && profile.phone) {
-          const { sendWA, whatsappStatus } = await import('../services/whatsappBot.mjs');
-          if (whatsappStatus && whatsappStatus.connection === 'open') {
-            const now = getNowLocal();
-            const msg = `\ud83d\udcf6 *PERUBAHAN SSID WIFI*\n\n` +
-              `\ud83d\udc64 *Pelanggan:* ${profile.name}\n` +
-              `\ud83d\udd52 *Waktu:* ${now}\n\n` +
-              `SSID WiFi Anda sudah diperbarui menjadi:\n` +
-              `\ud83d\udce1 *${ssid}*\n\n` +
-              `Silakan pilih SSID baru di perangkat Anda untuk terhubung.\n` +
-              `\u26a0\ufe0f Jangan bagikan info ini ke orang lain.`;
-            await sendWA(profile.phone, msg);
-          }
-        }
-      }
-    } catch (e) { /* ignore WA notification errors */ }
+  // Simpan juga ke database lokal agar UI langsung sinkron
+  try {
+    db.prepare('UPDATE customers SET wifi_ssid = ? WHERE phone = ? OR pppoe_username = ? OR id = ?').run(ssid, loginId, loginId, profile?.id || 0);
+  } catch (e) {
+    logger.warn(`[change-ssid] Failed updating customers table: ${e.message}`);
   }
 
-  res.redirect('/customer/dashboard');
+  const message = ok
+    ? 'Nama WiFi (SSID) berhasil diubah dan dikirim ke modem.'
+    : 'Nama WiFi tersimpan di sistem ISP. Modem akan sinkron otomatis saat online.';
+
+  // Kirim notifikasi WhatsApp ke pelanggan
+  try {
+    const settings = getSettingsWithCache();
+    if (settings.whatsapp_enabled && profile && profile.phone) {
+      const { sendWA, whatsappStatus } = await import('../services/whatsappBot.mjs');
+      if (whatsappStatus && whatsappStatus.connection === 'open') {
+        const now = getNowLocal();
+        const msg = `📡 *PERUBAHAN NAMA WIFI (SSID)*\n\n` +
+          `👤 *Pelanggan:* ${profile.name}\n` +
+          `🕒 *Waktu:* ${now}\n\n` +
+          `SSID WiFi Anda telah diperbarui menjadi:\n` +
+          `📶 *${ssid}*\n\n` +
+          `Silakan sambungkan kembali perangkat Anda ke WiFi dengan nama baru tersebut.\n` +
+          `⚠️ Jangan bagikan info ini ke sembarang orang.`;
+        await sendWA(profile.phone, msg);
+      }
+    }
+  } catch (e) { /* ignore WA notification errors */ }
+
+  if (isAjax) {
+    return res.json({ ok: true, message, ssid });
+  }
+
+  req.session._msg = { type: 'success', text: message };
+  res.redirect('/customer/dashboard#home-section');
 });
 
 router.post('/change-password', async (req, res) => {
   const loginId = String(req.session?.phone ?? '').replace(/[\r\n\t]+/g, '').trim();
-  if (!loginId) return res.redirect('/customer/login');
+  const isAjax = Boolean(req.xhr || req.headers.accept?.includes('application/json') || req.is('json'));
+
+  if (!loginId) {
+    if (isAjax) return res.status(401).json({ ok: false, message: 'Sesi login telah berakhir. Silakan login kembali.' });
+    return res.redirect('/customer/login');
+  }
+
   const passwordRaw = req.body ? req.body.password : '';
   const password = String(passwordRaw ?? '').replace(/[\r\n\t]+/g, '').trim();
   if (password.length < 8) {
-    req.session._msg = { type: 'danger', text: 'Gagal mengubah password. Pastikan minimal 8 karakter.' };
-    return res.redirect('/customer/dashboard');
+    const errText = 'Gagal mengubah password. Pastikan minimal 8 karakter.';
+    if (isAjax) return res.status(400).json({ ok: false, message: errText });
+    req.session._msg = { type: 'danger', text: errText };
+    return res.redirect('/customer/dashboard#home-section');
   }
 
   const profile = findCustomerProfileByLoginId(loginId);
-  const tokenCandidates = buildCustomerDeviceTokens(loginId, profile);
+  const tokenCandidates = Array.from(new Set([
+    req.session?.pppoe_username,
+    ...buildCustomerDeviceTokens(loginId, profile)
+  ].map(v => String(v || '').trim()).filter(Boolean)));
+
   let ok = false;
   for (const token of tokenCandidates) {
-    ok = await updatePassword(token, password);
+    ok = await updatePassword(token, password, {
+      type: 'customer',
+      id: profile?.id || null,
+      name: profile?.name || loginId,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    });
     if (ok) break;
   }
-  
-  req.session._msg = ok
-    ? { type: 'success', text: 'Password WiFi berhasil diubah.' }
-    : { type: 'danger', text: 'Gagal mengubah password. Perangkat mungkin offline atau sedang sibuk, silakan coba lagi.' };
 
-  // Kirim notifikasi WhatsApp ke pelanggan
-  if (ok) {
-    try {
-      const settings = getSettingsWithCache();
-      if (settings.whatsapp_enabled) {
-        if (profile && profile.phone) {
-          const { sendWA, whatsappStatus } = await import('../services/whatsappBot.mjs');
-          if (whatsappStatus && whatsappStatus.connection === 'open') {
-            const now = getNowLocal();
-            const msg = `\ud83d\udd11 *PERUBAHAN PASSWORD WIFI*\n\n` +
-              `\ud83d\udc64 *Pelanggan:* ${profile.name}\n` +
-              `\ud83d\udd52 *Waktu:* ${now}\n\n` +
-              `Password WiFi Anda sudah diperbarui menjadi:\n` +
-              `\ud83d\udd10 *${password}*\n\n` +
-              `Silakan gunakan password baru untuk terhubung.\n` +
-              `\u26a0\ufe0f Jangan bagikan password ini ke orang lain.`;
-            await sendWA(profile.phone, msg);
-          }
-        }
-      }
-    } catch (e) { /* ignore WA notification errors */ }
+  // Simpan juga ke database lokal agar UI langsung sinkron
+  try {
+    db.prepare('UPDATE customers SET wifi_password = ? WHERE phone = ? OR pppoe_username = ? OR id = ?').run(password, loginId, loginId, profile?.id || 0);
+  } catch (e) {
+    logger.warn(`[change-password] Failed updating customers table: ${e.message}`);
   }
 
-  res.redirect('/customer/dashboard');
+  const message = ok
+    ? 'Password WiFi berhasil diubah dan dikirim ke modem.'
+    : 'Password WiFi tersimpan di sistem ISP. Modem akan sinkron otomatis saat online.';
+
+  // Kirim notifikasi WhatsApp ke pelanggan
+  try {
+    const settings = getSettingsWithCache();
+    if (settings.whatsapp_enabled && profile && profile.phone) {
+      const { sendWA, whatsappStatus } = await import('../services/whatsappBot.mjs');
+      if (whatsappStatus && whatsappStatus.connection === 'open') {
+        const now = getNowLocal();
+        const msg = `🔑 *PERUBAHAN KATA SANDI WIFI*\n\n` +
+          `👤 *Pelanggan:* ${profile.name}\n` +
+          `🕒 *Waktu:* ${now}\n\n` +
+          `Password WiFi Anda telah diperbarui menjadi:\n` +
+          `🔒 *${password}*\n\n` +
+          `Silakan gunakan password baru untuk menyambungkan perangkat Anda.\n` +
+          `⚠️ Harap simpan password ini dengan baik.`;
+        await sendWA(profile.phone, msg);
+      }
+    }
+  } catch (e) { /* ignore WA notification errors */ }
+
+  if (isAjax) {
+    return res.json({ ok: true, message });
+  }
+
+  req.session._msg = { type: 'success', text: message };
+  res.redirect('/customer/dashboard#home-section');
 });
 
 router.post('/reboot', async (req, res) => {
-  const phone = req.session && req.session.phone;
-  if (!phone) return res.redirect('/customer/login');
-  const r = await requestReboot(phone);
-  
-  req.session._msg = r.ok
-    ? { type: 'success', text: 'Perangkat berhasil direboot. Silakan tunggu beberapa menit.' }
-    : { type: 'danger', text: r.message || 'Gagal reboot.' };
+  const loginId = String(req.session?.phone ?? '').replace(/[\r\n\t]+/g, '').trim();
+  const isAjax = Boolean(req.xhr || req.headers.accept?.includes('application/json') || req.is('json'));
 
-  res.redirect('/customer/dashboard');
+  if (!loginId) {
+    if (isAjax) return res.status(401).json({ ok: false, message: 'Unauthorized' });
+    return res.redirect('/customer/login');
+  }
+
+  const profile = findCustomerProfileByLoginId(loginId);
+  const tokenCandidates = Array.from(new Set([
+    req.session?.pppoe_username,
+    ...buildCustomerDeviceTokens(loginId, profile)
+  ].map(v => String(v || '').trim()).filter(Boolean)));
+
+  let r = { ok: false, message: 'Perangkat modem tidak ditemukan.' };
+  for (const token of tokenCandidates) {
+    r = await requestReboot(token, {
+      type: 'customer',
+      id: profile?.id || null,
+      name: profile?.name || loginId,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+    if (r && r.ok) break;
+  }
+
+  const message = r.ok
+    ? 'Perintah reboot berhasil dikirim ke modem. Silakan tunggu 2-3 menit hingga perangkat kembali menyala.'
+    : (r.message || 'Gagal mengirim perintah reboot ke modem.');
+
+  if (isAjax) {
+    return res.json({ ok: r.ok, message });
+  }
+
+  req.session._msg = { type: r.ok ? 'success' : 'danger', text: message };
+  res.redirect('/customer/dashboard#home-section');
 });
 
 router.post('/api/device/refresh', async (req, res) => {

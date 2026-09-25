@@ -154,6 +154,7 @@ function getCustomerById(id) {
            p.billing_type as package_billing_type, p.duration_days as package_duration_days,
            p.promo_cycles as package_promo_cycles,
            p.prorate_first_invoice as package_prorate_first_invoice,
+           p.use_ppn, p.ppn_percentage, p.use_uso, p.uso_percentage,
            r.name as router_name, o.name as olt_name, odp.name as odp_name
     FROM customers c 
     LEFT JOIN packages p ON c.package_id = p.id 

@@ -280,6 +280,139 @@
       100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
 
+    /* ── KPI STAT GRID (Modern Enterprise Cards) ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+    @media(max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media(max-width: 580px) { .kpi-grid { grid-template-columns: 1fr; } }
+
+    .kpi-card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+      padding: 16px 18px; position: relative; overflow: hidden;
+      transition: all 0.2s ease; cursor: pointer; user-select: none;
+      display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .kpi-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.2); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+    .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .kpi-card.c-primary::before { background: linear-gradient(90deg, #0052cc, #38bdf8); }
+    .kpi-card.c-success::before { background: linear-gradient(90deg, #10b981, #34d399); }
+    .kpi-card.c-warning::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .kpi-card.c-purple::before { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+
+    .kpi-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .kpi-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; background: var(--bg3); }
+    .kpi-card.c-primary .kpi-icon { color: #38bdf8; background: rgba(0,82,204,0.12); }
+    .kpi-card.c-success .kpi-icon { color: #10b981; background: rgba(16,185,129,0.12); }
+    .kpi-card.c-warning .kpi-icon { color: #f59e0b; background: rgba(245,158,11,0.12); }
+    .kpi-card.c-purple .kpi-icon { color: #a78bfa; background: rgba(124,58,237,0.12); }
+
+    .kpi-val { font-size: 24px; font-weight: 800; line-height: 1.1; color: var(--text); font-variant-numeric: tabular-nums; margin-bottom: 8px; display: flex; align-items: baseline; gap: 6px; }
+    .kpi-bottom { font-size: 11.5px; color: var(--muted); border-top: 1px dashed var(--border); padding-top: 8px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* ── SEGMENTED NAVIGATION TABS ── */
+    .segmented-control {
+      display: inline-flex; background: var(--bg3); padding: 4px; border-radius: 12px;
+      border: 1px solid var(--border); margin-bottom: 18px; max-width: 100%; overflow-x: auto;
+    }
+    .seg-btn {
+      background: transparent; border: none; outline: none; padding: 8px 16px;
+      border-radius: 9px; font-size: 13px; font-weight: 600; color: var(--muted);
+      cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+    }
+    .seg-btn:hover { color: var(--text); }
+    .seg-btn.active { background: var(--bg2); color: var(--text); font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,0.25); border: 1px solid var(--border); }
+    .seg-count {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 1px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 700;
+      background: rgba(255,255,255,0.08); color: var(--muted);
+    }
+    .seg-btn.active .seg-count {
+      background: var(--pdim); color: var(--primary);
+    }
+
+    /* ── MODERN CARD & TOOLBAR ── */
+    .card-modern {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+      overflow: hidden; box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+    }
+    .card-modern-hd {
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px; background: rgba(255,255,255,0.015);
+    }
+    .card-modern-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; margin: 0; }
+    
+    /* Search & Action Bar */
+    .table-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 10px; padding: 12px 18px; border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.08);
+    }
+    .search-filter-wrap {
+      display: flex; align-items: center; gap: 10px; flex: 1; min-width: 260px; flex-wrap: wrap;
+    }
+    .search-input-box {
+      position: relative; flex: 1; min-width: 220px; max-width: 340px;
+    }
+    .search-input-box i.search-icon {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--muted); font-size: 13px; pointer-events: none;
+    }
+    .search-input-box input {
+      width: 100%; padding: 7px 30px 7px 34px; border-radius: 8px;
+      background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+      font-size: 12.5px; outline: none; transition: border-color 0.2s; box-sizing: border-box;
+    }
+    .search-input-box input:focus {
+      border-color: var(--primary); box-shadow: 0 0 0 2px var(--pdim);
+    }
+    .btn-clear-search {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--muted); cursor: pointer; padding: 2px;
+      display: none; font-size: 14px; line-height: 1;
+    }
+    .btn-clear-search:hover { color: var(--text); }
+
+    /* Auto-refresh Switch */
+    .auto-refresh-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: 8px; background: var(--bg3);
+      border: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--text);
+      cursor: pointer; user-select: none;
+    }
+    .auto-refresh-badge input { margin: 0; cursor: pointer; accent-color: var(--primary); }
+    .refresh-timer-count { font-size: 10.5px; color: var(--primary); font-family: monospace; font-weight: 700; }
+
+    .btn-copy-sm {
+      background: none; border: none; padding: 2px 4px; font-size: 11px;
+      color: var(--muted); cursor: pointer; border-radius: 4px; transition: color 0.15s, background 0.15s;
+    }
+    .btn-copy-sm:hover { color: var(--primary); background: var(--pdim); }
+
+    /* Empty state */
+    .empty-state-box {
+      padding: 44px 20px; text-align: center; color: var(--muted);
+    }
+    .empty-state-box i { font-size: 40px; opacity: 0.4; margin-bottom: 10px; display: block; }
+    .empty-state-box h4 { font-size: 15px; color: var(--text); margin: 0 0 6px 0; }
+    .empty-state-box p { font-size: 12px; margin: 0; }
+
+    /* Toast Notification */
+    #toast-container {
+      position: fixed; bottom: 24px; right: 24px; z-index: 99999;
+      display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+    }
+    .toast-msg {
+      pointer-events: auto; padding: 12px 18px; border-radius: 10px;
+      font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35); animation: toastIn 0.3s ease;
+      max-width: 380px; color: #fff;
+    }
+    .toast-msg.s { background: #065f46; border: 1px solid #10b981; }
+    .toast-msg.d { background: #991b1b; border: 1px solid #ef4444; }
+    .toast-msg.i { background: #1e3a8a; border: 1px solid #3b82f6; }
+    @keyframes toastIn { from { transform: translateY(15px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
     @media (max-width: 992px) {
       .radius-settings-layout {
         grid-template-columns: 1fr;
@@ -401,56 +534,85 @@
     </div>
     <% } %>
 
-    <!-- SUMMARY STAT CARDS -->
-    <div class="stat-grid mb16">
-      <div class="sc p">
-        <i class="bi bi-broadcast sc-icon"></i>
-        <div class="sc-label">Status RADIUS Server</div>
-        <div class="sc-val">
-          <% if (radiusStatus.running) { %>
-            <span class="badge bs"><i class="bi bi-play-circle-fill"></i> Running</span>
-          <% } else { %>
-            <span class="badge bd"><i class="bi bi-stop-circle-fill"></i> Stopped</span>
-          <% } %>
+    <!-- SUMMARY STAT CARDS (4 Modern Enterprise KPI Cards) -->
+    <div class="kpi-grid">
+      <div class="kpi-card <%= radiusStatus.running ? 'c-primary' : 'c-warning' %>" onclick="switchTab('settings')" title="Klik untuk membuka pengaturan server">
+        <div class="kpi-top">
+          <span class="kpi-label">Status Server RADIUS</span>
+          <div class="kpi-icon"><i class="bi bi-broadcast"></i></div>
         </div>
-        <div class="sc-sub">UDP Auth: <%= radiusStatus.authPort %> | Acct: <%= radiusStatus.acctPort %></div>
+        <div class="kpi-val" style="<%= radiusStatus.running ? 'color:#38bdf8;' : 'color:#f59e0b;' %>">
+          <span><%= radiusStatus.running ? 'ONLINE' : 'STOPPED' %></span>
+          <span class="live-dot" style="<%= radiusStatus.running ? 'background:#10b981;' : 'background:#ef4444;' %>"></span>
+        </div>
+        <div class="kpi-bottom">
+          <span>UDP Auth: <strong><%= radiusStatus.authPort %></strong></span>
+          <span>Acct: <strong><%= radiusStatus.acctPort %></strong></span>
+        </div>
       </div>
 
-      <div class="sc s">
-        <i class="bi bi-wifi sc-icon"></i>
-        <div class="sc-label">User RADIUS Online</div>
-        <div class="sc-val"><%= onlineSessions.length %></div>
-        <div class="sc-sub">Sesi Aktif Terhubung Saat Ini</div>
+      <div class="kpi-card c-success" onclick="switchTab('online')" title="Klik untuk melihat sesi online">
+        <div class="kpi-top">
+          <span class="kpi-label">Sesi RADIUS Online</span>
+          <div class="kpi-icon"><i class="bi bi-wifi"></i></div>
+        </div>
+        <div class="kpi-val" style="color:#10b981;">
+          <span id="kpi-online-count"><%= onlineSessions.length %></span>
+          <span style="font-size:12px;color:var(--muted);font-weight:600;">Sesi Aktif</span>
+        </div>
+        <div class="kpi-bottom">
+          <span>Koneksi PPPoE / IPoE Terhubung</span>
+          <i class="bi bi-chevron-right" style="font-size:11px;"></i>
+        </div>
       </div>
 
-      <div class="sc i">
-        <i class="bi bi-router sc-icon"></i>
-        <div class="sc-label">NAS Router Client</div>
-        <div class="sc-val"><%= nasList.length %></div>
-        <div class="sc-sub">Router NAS Terdaftar di Server</div>
+      <div class="kpi-card c-purple" onclick="switchTab('nas')" title="Klik untuk mengelola router NAS">
+        <div class="kpi-top">
+          <span class="kpi-label">Router NAS Terdaftar</span>
+          <div class="kpi-icon"><i class="bi bi-router"></i></div>
+        </div>
+        <div class="kpi-val" style="color:#a78bfa;">
+          <span><%= nasList.length %></span>
+          <span style="font-size:12px;color:var(--muted);font-weight:600;">Router Client</span>
+        </div>
+        <div class="kpi-bottom">
+          <span>Network Access Server Aktif</span>
+          <i class="bi bi-chevron-right" style="font-size:11px;"></i>
+        </div>
       </div>
 
-      <div class="sc w">
-        <i class="bi bi-activity sc-icon"></i>
-        <div class="sc-label">Trafik RADIUS Hari Ini</div>
-        <div class="sc-val"><%= typeof todayTrafficMB !== 'undefined' ? todayTrafficMB : '0.0' %><span style="font-size:14px;"> MB</span></div>
-        <div class="sc-sub"><%= typeof todayEvents !== 'undefined' ? todayEvents : 0 %> Log Accounting Hari Ini</div>
+      <div class="kpi-card c-warning" onclick="switchTab('accounting')" title="Klik untuk membuka log accounting">
+        <div class="kpi-top">
+          <span class="kpi-label">Trafik RADIUS Hari Ini</span>
+          <div class="kpi-icon"><i class="bi bi-activity"></i></div>
+        </div>
+        <div class="kpi-val" style="color:#fbbf24;">
+          <span><%= typeof todayTrafficMB !== 'undefined' ? todayTrafficMB : '0.0' %></span>
+          <span style="font-size:13px;font-weight:700;">MB</span>
+        </div>
+        <div class="kpi-bottom">
+          <span><strong><%= typeof todayEvents !== 'undefined' ? todayEvents : 0 %></strong> Log Accounting Dicatat</span>
+          <i class="bi bi-chevron-right" style="font-size:11px;"></i>
+        </div>
       </div>
     </div>
 
-    <!-- TABS NAVIGATION -->
-    <div class="mtabs mb16">
-      <button type="button" class="mtab active" id="tab-btn-online" onclick="switchTab('online')">
-        <i class="bi bi-wifi"></i> Sesi Active RADIUS (<%= onlineSessions.length %>)
+    <!-- SEGMENTED NAVIGATION TABS -->
+    <div class="segmented-control">
+      <button type="button" class="seg-btn active" id="tab-btn-online" onclick="switchTab('online')">
+        <i class="bi bi-wifi"></i> Sesi Aktif RADIUS
+        <span class="seg-count" id="badge-online-count"><%= onlineSessions.length %></span>
       </button>
-      <button type="button" class="mtab" id="tab-btn-settings" onclick="switchTab('settings')">
+      <button type="button" class="seg-btn" id="tab-btn-settings" onclick="switchTab('settings')">
         <i class="bi bi-sliders"></i> Pengaturan RADIUS
       </button>
-      <button type="button" class="mtab" id="tab-btn-nas" onclick="switchTab('nas')">
-        <i class="bi bi-router"></i> Daftar NAS Router (<%= nasList.length %>)
+      <button type="button" class="seg-btn" id="tab-btn-nas" onclick="switchTab('nas')">
+        <i class="bi bi-router"></i> Daftar NAS Router
+        <span class="seg-count"><%= nasList.length %></span>
       </button>
-      <button type="button" class="mtab" id="tab-btn-accounting" onclick="switchTab('accounting')">
+      <button type="button" class="seg-btn" id="tab-btn-accounting" onclick="switchTab('accounting')">
         <i class="bi bi-journal-text"></i> Log Accounting
+        <span class="seg-count"><%= acctLogs ? acctLogs.length : 0 %></span>
       </button>
     </div>
 
@@ -832,10 +994,15 @@
 
     <!-- TAB 2: DAFTAR NAS CLIENTS -->
     <div id="tab-content-nas" class="tab-pane" style="display:none;">
-      <div class="card mb16">
-        <div class="card-hd" style="display:flex;justify-content:space-between;align-items:center;">
-          <h6 style="margin:0;"><i class="bi bi-router"></i> Daftar Router NAS (Network Access Server)</h6>
-          <button type="button" class="btn btn-p btn-sm" onclick="showModal('addNasModal')"><i class="bi bi-plus-lg"></i> Tambah NAS Client</button>
+      <div class="card-modern mb16">
+        <div class="card-modern-hd">
+          <div class="card-modern-title">
+            <i class="bi bi-router text-primary"></i> Daftar Router NAS (Network Access Server)
+            <span class="badge" style="background:rgba(99,102,241,0.12);color:var(--primary);font-size:11px;"><%= nasList.length %> Router Terdaftar</span>
+          </div>
+          <button type="button" class="btn btn-p btn-sm" onclick="showModal('addNasModal')">
+            <i class="bi bi-plus-lg"></i> Tambah NAS Client
+          </button>
         </div>
         <div class="card-bd" style="padding:0;">
           <div class="tbl-wrap">
@@ -854,15 +1021,15 @@
                 <% if (nasList && nasList.length > 0) { %>
                   <% nasList.forEach(nas => { %>
                     <tr>
-                      <td><strong><%= nas.nasname %></strong></td>
-                      <td><%= nas.shortname || '-' %></td>
+                      <td><strong style="color:var(--text);font-family:monospace;"><%= nas.nasname %></strong></td>
+                      <td><%= nas.shortname || '<span class="text-muted">-</span>' %></td>
                       <td><code><%= nas.secret %></code></td>
-                      <td><%= nas.description || '-' %></td>
+                      <td><%= nas.description || '<span class="text-muted">-</span>' %></td>
                       <td>
                         <% if (nas.is_active) { %>
-                          <span class="badge bs">Aktif</span>
+                          <span class="badge bs"><i class="bi bi-check-circle-fill"></i> Aktif</span>
                         <% } else { %>
-                          <span class="badge bd">Non-Aktif</span>
+                          <span class="badge bd"><i class="bi bi-x-circle-fill"></i> Non-Aktif</span>
                         <% } %>
                       </td>
                       <td style="text-align:right;white-space:nowrap;">
@@ -887,8 +1054,9 @@
                   <% }); %>
                 <% } else { %>
                   <tr>
-                    <td colspan="6" class="text-center text-muted" style="padding:24px;">
-                      Belum ada NAS khusus terdaftar. Server akan menggunakan <strong>Global Shared Secret</strong> untuk semua request router.
+                    <td colspan="6" class="text-center text-muted" style="padding:32px;">
+                      <i class="bi bi-router" style="font-size:32px;opacity:0.4;display:block;margin-bottom:8px;"></i>
+                      Belum ada NAS khusus terdaftar. Server akan menggunakan <strong>Global Shared Secret</strong> untuk semua router MikroTik.
                     </td>
                   </tr>
                 <% } %>
@@ -901,29 +1069,74 @@
 
     <!-- TAB 3: SESI ONLINE RADIUS -->
     <div id="tab-content-online" class="tab-pane">
-      <div class="card mb16">
-        <div class="card-hd">
-          <h6><i class="bi bi-wifi"></i> Sesi Aktif RADIUS (Active Connections)</h6>
+      <div class="card-modern mb16">
+        <div class="card-modern-hd">
+          <div class="card-modern-title">
+            <i class="bi bi-wifi text-success"></i> Sesi Aktif RADIUS (Active Connections)
+            <span class="badge bs" style="font-size:11px;" id="online-badge-indicator">
+              <span class="live-dot" style="width:6px;height:6px;background:#fff;display:inline-block;border-radius:50%;margin-right:4px;"></span>
+              <span id="online-counter-label"><%= onlineSessions.length %> Sesi Terhubung</span>
+            </span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <label class="auto-refresh-badge" title="Perbarui data otomatis secara real-time">
+              <input type="checkbox" id="autoRefreshOnline" checked onchange="toggleAutoRefreshOnline(this)">
+              <span>Live Auto-Sync</span>
+              <span class="refresh-timer-count" id="onlineTimerCountdown">10s</span>
+            </label>
+            <button type="button" class="btn btn-g btn-sm" id="btnManualRefreshOnline" onclick="refreshOnlineSessions(false)" title="Refresh Sesi Sekarang">
+              <i class="bi bi-arrow-clockwise" id="iconRefreshOnline"></i> Refresh
+            </button>
+            <button type="button" class="btn btn-p btn-sm" onclick="exportRadiusOnlineCsv()" title="Export CSV Sesi Aktif">
+              <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
+            </button>
+          </div>
         </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="table-toolbar">
+          <div class="search-filter-wrap">
+            <div class="search-input-box">
+              <i class="bi bi-search search-icon"></i>
+              <input type="text" id="radiusSearchInput" placeholder="Cari username, IP, pelanggan..." oninput="filterRadiusOnlineTable()" autocomplete="off">
+              <button type="button" class="btn-clear-search" id="radiusClearSearch" onclick="clearRadiusSearch()">&times;</button>
+            </div>
+            
+            <div style="min-width:180px;">
+              <select id="radiusNasFilter" class="fs" style="padding:6px 12px;font-size:12px;height:auto;background:var(--bg3);border-color:var(--border);" onchange="filterRadiusOnlineTable()">
+                <option value="">Semua Router NAS</option>
+                <% if (nasList && nasList.length > 0) { %>
+                  <% nasList.forEach(nas => { %>
+                    <option value="<%= nas.nasname %>"><%= nas.shortname ? `${nas.shortname} (${nas.nasname})` : nas.nasname %></option>
+                  <% }); %>
+                <% } %>
+              </select>
+            </div>
+          </div>
+
+          <div style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;">
+            <span>Menampilkan:</span>
+            <strong id="filteredSessionCount" style="color:var(--text);"><%= onlineSessions.length %></strong> sesi
+          </div>
+        </div>
+
         <div class="card-bd" style="padding:0;">
           <div class="tbl-wrap">
-            <table class="dtbl">
+            <table class="dtbl" id="radiusOnlineTable">
               <thead>
                 <tr>
-                  <th>Username</th>
-                  <th>Nama Pelanggan</th>
-                  <th>Framed IP</th>
-                  <th>NAS IP</th>
-                  <th>Upload (In)</th>
-                  <th>Download (Out)</th>
+                  <th style="width:45px;">#</th>
+                  <th>Username &amp; Pelanggan</th>
+                  <th>IP Address &amp; Router NAS</th>
+                  <th>Trafik Data (In / Out)</th>
                   <th>Durasi Sesi</th>
                   <th>Waktu Update</th>
                   <th style="width:110px;text-align:right;">Aksi</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="radiusOnlineTableBody">
                 <% if (onlineSessions && onlineSessions.length > 0) { %>
-                  <% onlineSessions.forEach(s => { %>
+                  <% onlineSessions.forEach((s, idx) => { %>
                     <%
                       const totalIn = ((s.input_gigawords || 0) * 4294967296) + (s.input_octets || 0);
                       const totalOut = ((s.output_gigawords || 0) * 4294967296) + (s.output_octets || 0);
@@ -934,35 +1147,82 @@
                       const m = Math.floor((st % 3600) / 60);
                       const sec = st % 60;
                       const stStr = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+                      const rowKey = s.session_id ? `sess-${String(s.session_id).replace(/[^a-zA-Z0-9_-]/g, '')}` : `user-${s.username}`;
                     %>
-                    <tr>
-                      <td><strong><%= s.username %></strong></td>
-                      <td><%= s.customer_name || '<span class="text-muted">-</span>' %></td>
-                      <td><%= s.framed_ip || '-' %></td>
-                      <td><%= s.nas_ip || '-' %></td>
-                      <td><%= inMB %></td>
-                      <td><%= outMB %></td>
-                      <td><code><%= stStr %></code></td>
-                      <td><%= s.updated_at %></td>
-                      <td style="text-align:right;white-space:nowrap;">
-                        <form action="/admin/radius/disconnect" method="POST" onsubmit="return confirm('Putuskan sesi aktif RADIUS untuk user \'<%= s.username %>\'?')" style="display:inline;">
-                          <input type="hidden" name="username" value="<%= s.username %>">
-                          <input type="hidden" name="session_id" value="<%= s.session_id %>">
-                          <input type="hidden" name="nas_ip" value="<%= s.nas_ip %>">
-                          <button type="submit" class="btn btn-d btn-sm" title="Putuskan Sesi Active RADIUS">
-                            <i class="bi bi-power"></i> Putuskan
+                    <tr id="radius-row-<%= rowKey %>" class="radius-session-row" 
+                        data-username="<%= (s.username || '').toLowerCase() %>" 
+                        data-customer="<%= (s.customer_name || '').toLowerCase() %>" 
+                        data-ip="<%= s.framed_ip || '' %>" 
+                        data-nas="<%= s.nas_ip || '' %>">
+                      <td style="color:var(--muted);font-size:11px;font-family:monospace;"><%= idx + 1 %></td>
+                      <td>
+                        <div style="font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;">
+                          <span><%= s.username %></span>
+                          <button type="button" class="btn-copy-sm" onclick="copyText('<%= s.username %>', this)" title="Salin Username">
+                            <i class="bi bi-copy"></i>
                           </button>
-                        </form>
+                        </div>
+                        <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">
+                          <%= s.customer_name || 'Pelanggan Mandiri' %>
+                        </div>
+                      </td>
+                      <td>
+                        <div style="display:flex;flex-direction:column;gap:3px;">
+                          <span style="font-family:monospace;font-size:12px;color:#10b981;font-weight:700;">
+                            <i class="bi bi-hdd-network"></i> <%= s.framed_ip || '-' %>
+                          </span>
+                          <span style="font-size:10.5px;color:var(--muted);font-family:monospace;">
+                            NAS: <%= s.nas_ip || '-' %>
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <div style="display:flex;flex-direction:column;gap:2px;font-size:11px;font-family:monospace;">
+                          <span style="color:#38bdf8;"><i class="bi bi-arrow-up"></i> <%= inMB %></span>
+                          <span style="color:#34d399;"><i class="bi bi-arrow-down"></i> <%= outMB %></span>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge" style="background:rgba(99,102,241,0.12);color:var(--primary);font-family:monospace;font-weight:700;font-size:11.5px;">
+                          <i class="bi bi-clock-history"></i> <%= stStr %>
+                        </span>
+                      </td>
+                      <td>
+                        <span style="font-size:11px;color:var(--muted);"><%= s.updated_at %></span>
+                      </td>
+                      <td style="text-align:right;white-space:nowrap;">
+                        <button type="button" class="btn btn-d btn-sm" onclick="disconnectRadiusSession('<%= s.username %>', '<%= s.session_id %>', '<%= s.nas_ip %>', this)" title="Putuskan Sesi Active RADIUS">
+                          <i class="bi bi-power"></i> Putuskan
+                        </button>
                       </td>
                     </tr>
                   <% }); %>
-                <% } else { %>
-                  <tr>
-                    <td colspan="9" class="text-center text-muted" style="padding:24px;">Belum ada sesi online RADIUS yang terhubung.</td>
-                  </tr>
                 <% } %>
               </tbody>
             </table>
+
+            <div id="radiusOnlineEmptyState" class="empty-state-box" style="display:<%= (!onlineSessions || onlineSessions.length === 0) ? 'block' : 'none' %>;">
+              <i class="bi bi-wifi-off"></i>
+              <h4>Belum Ada Sesi Aktif Terhubung</h4>
+              <p>Saat pelanggan melakukan dial PPPoE atau hotspot melalui RADIUS, sesi koneksi langsung terpantau di sini secara real-time.</p>
+              <div style="margin-top:14px;">
+                <button type="button" class="btn btn-g btn-sm" onclick="refreshOnlineSessions(false)">
+                  <i class="bi bi-arrow-clockwise"></i> Periksa Ulang
+                </button>
+              </div>
+            </div>
+
+            <div id="radiusOnlineSearchEmpty" class="empty-state-box" style="display:none;">
+              <i class="bi bi-search"></i>
+              <h4>Tidak Ditemukan Hasil Pencarian</h4>
+              <p>Tidak ada sesi online yang cocok dengan kata kunci atau filter yang Anda masukkan.</p>
+              <div style="margin-top:14px;">
+                <button type="button" class="btn btn-g btn-sm" onclick="clearRadiusSearch()">
+                  <i class="bi bi-x-circle"></i> Reset Filter
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -970,27 +1230,41 @@
 
     <!-- TAB 4: LOG ACCOUNTING -->
     <div id="tab-content-accounting" class="tab-pane" style="display:none;">
-      <div class="card mb16">
-        <div class="card-hd">
-          <h6><i class="bi bi-journal-text"></i> Log Accounting RADIUS (100 Terakhir)</h6>
+      <div class="card-modern mb16">
+        <div class="card-modern-hd">
+          <div class="card-modern-title">
+            <i class="bi bi-journal-text text-warning"></i> Log Accounting RADIUS (100 Terakhir)
+            <span class="badge" style="background:rgba(245,158,11,0.12);color:#f59e0b;font-size:11px;">
+              <%= acctLogs ? acctLogs.length : 0 %> Log Terbaru
+            </span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div class="search-input-box" style="max-width:240px;">
+              <i class="bi bi-search search-icon"></i>
+              <input type="text" id="accountingSearchInput" placeholder="Cari log..." oninput="filterAccountingTable()" autocomplete="off">
+            </div>
+            <button type="button" class="btn btn-g btn-sm" onclick="exportAccountingCsv()">
+              <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
+            </button>
+          </div>
         </div>
         <div class="card-bd" style="padding:0;">
           <div class="tbl-wrap">
-            <table class="dtbl">
+            <table class="dtbl" id="accountingTable">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th style="width:50px;">ID</th>
                   <th>Username</th>
                   <th>Session ID</th>
                   <th>NAS IP</th>
                   <th>Status Type</th>
-                  <th>Upload</th>
-                  <th>Download</th>
-                  <th>Uptime</th>
+                  <th>Upload (In)</th>
+                  <th>Download (Out)</th>
+                  <th>Durasi Sesi</th>
                   <th>Timestamp</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="accountingTableBody">
                 <% if (acctLogs && acctLogs.length > 0) { %>
                   <% acctLogs.forEach(log => { %>
                     <%
@@ -1004,29 +1278,32 @@
                       const ls = lst % 60;
                       const lstStr = `${String(lh).padStart(2,'0')}:${String(lm).padStart(2,'0')}:${String(ls).padStart(2,'0')}`;
                     %>
-                    <tr>
-                      <td>#<%= log.id %></td>
-                      <td><strong><%= log.username %></strong></td>
-                      <td><code><%= log.session_id %></code></td>
-                      <td><%= log.nas_ip %></td>
+                    <tr class="accounting-row" data-username="<%= (log.username || '').toLowerCase() %>" data-nas="<%= log.nas_ip || '' %>" data-session="<%= (log.session_id || '').toLowerCase() %>">
+                      <td style="color:var(--muted);font-family:monospace;font-size:11px;">#<%= log.id %></td>
+                      <td><strong style="color:var(--text);"><%= log.username %></strong></td>
+                      <td><code style="font-size:11px;"><%= log.session_id %></code></td>
+                      <td style="font-family:monospace;font-size:11.5px;"><%= log.nas_ip %></td>
                       <td>
                         <% if (log.status_type === 1) { %>
-                          <span class="badge bs">Start</span>
+                          <span class="badge bs"><i class="bi bi-play-circle-fill"></i> Start</span>
                         <% } else if (log.status_type === 2) { %>
-                          <span class="badge bd">Stop</span>
+                          <span class="badge bd"><i class="bi bi-stop-circle-fill"></i> Stop</span>
                         <% } else { %>
-                          <span class="badge bp">Interim</span>
+                          <span class="badge bp"><i class="bi bi-arrow-repeat"></i> Interim</span>
                         <% } %>
                       </td>
-                      <td><%= logInStr %></td>
-                      <td><%= logOutStr %></td>
+                      <td style="font-family:monospace;font-size:11.5px;color:#38bdf8;"><%= logInStr %></td>
+                      <td style="font-family:monospace;font-size:11.5px;color:#34d399;"><%= logOutStr %></td>
                       <td><code><%= lstStr %></code></td>
-                      <td><%= log.created_at %></td>
+                      <td style="font-size:11.5px;color:var(--muted);"><%= log.created_at %></td>
                     </tr>
                   <% }); %>
                 <% } else { %>
                   <tr>
-                    <td colspan="9" class="text-center text-muted" style="padding:24px;">Belum ada data log accounting RADIUS.</td>
+                    <td colspan="9" class="text-center text-muted" style="padding:28px;">
+                      <i class="bi bi-journal-x" style="font-size:32px;opacity:0.4;display:block;margin-bottom:8px;"></i>
+                      Belum ada data log accounting RADIUS yang tercatat.
+                    </td>
                   </tr>
                 <% } %>
               </tbody>
@@ -1035,6 +1312,9 @@
         </div>
       </div>
     </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
 
   </div>
 </div>
@@ -1117,7 +1397,7 @@
 
 <script>
   function switchTab(tabId) {
-    document.querySelectorAll('.mtab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.mtab, .seg-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-pane').forEach(c => c.style.display = 'none');
     
     const targetBtn = document.getElementById('tab-btn-' + tabId);
@@ -1145,8 +1425,18 @@
       }
     }
     switchTab(initialTab);
+
+    // Initial table filter check
+    filterRadiusOnlineTable();
+
+    // Start auto-refresh by default if checked
+    const autoBox = document.getElementById('autoRefreshOnline');
+    if (autoBox && autoBox.checked) {
+      startOnlineAutoRefresh();
+    }
   });
 
+  // ─── RADIUS SERVICE TOGGLE ───
   async function toggleRadiusAction(action, btn) {
     let originalHtml = '';
     if (btn) {
@@ -1166,7 +1456,7 @@
       });
 
       if (res.status === 401) {
-        alert('Sesi login telah berakhir. Halaman akan dialihkan ke login.');
+        showToast('d', 'Sesi login telah berakhir. Halaman dialihkan ke login.');
         window.location.href = '/admin/login';
         return;
       }
@@ -1174,20 +1464,446 @@
       const data = await res.json().catch(() => null);
 
       if (res.ok && data && data.success) {
-        // Simpan tab aktif sekarang agar setelah reload tetap di tab ini
-        window.location.reload();
+        showToast('s', data.message || 'Layanan RADIUS berhasil diperbarui.');
+        setTimeout(() => window.location.reload(), 600);
       } else {
         const errorMsg = (data && (data.error || data.message)) || ('Gagal memproses aksi RADIUS (Status: ' + res.status + ')');
-        alert(errorMsg);
+        showToast('d', errorMsg);
       }
     } catch (e) {
-      alert('Koneksi aksi RADIUS terputus: ' + e.message);
+      showToast('d', 'Koneksi aksi RADIUS terputus: ' + e.message);
     } finally {
       if (btn) {
         btn.disabled = false;
         if (originalHtml) btn.innerHTML = originalHtml;
       }
     }
+  }
+
+  // ─── SEARCH & FILTER ONLINE SESSIONS ───
+  function filterRadiusOnlineTable() {
+    const q = (document.getElementById('radiusSearchInput')?.value || '').toLowerCase().trim();
+    const nasFilter = (document.getElementById('radiusNasFilter')?.value || '').trim();
+    const clearBtn = document.getElementById('radiusClearSearch');
+    if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
+    const rows = document.querySelectorAll('.radius-session-row');
+    let visibleCount = 0;
+
+    rows.forEach(r => {
+      const username = r.getAttribute('data-username') || '';
+      const customer = r.getAttribute('data-customer') || '';
+      const ip = r.getAttribute('data-ip') || '';
+      const nas = r.getAttribute('data-nas') || '';
+
+      const matchQ = !q || username.includes(q) || customer.includes(q) || ip.includes(q) || nas.includes(q);
+      const matchNas = !nasFilter || nas === nasFilter;
+
+      if (matchQ && matchNas) {
+        r.style.display = '';
+        visibleCount++;
+      } else {
+        r.style.display = 'none';
+      }
+    });
+
+    const countEl = document.getElementById('filteredSessionCount');
+    if (countEl) countEl.textContent = visibleCount;
+
+    const searchEmpty = document.getElementById('radiusOnlineSearchEmpty');
+    const tableEl = document.getElementById('radiusOnlineTable');
+    if (rows.length > 0) {
+      if (searchEmpty) searchEmpty.style.display = visibleCount === 0 ? 'block' : 'none';
+      if (tableEl) tableEl.style.display = visibleCount === 0 ? 'none' : '';
+    }
+  }
+
+  function clearRadiusSearch() {
+    const searchInput = document.getElementById('radiusSearchInput');
+    const nasFilter = document.getElementById('radiusNasFilter');
+    if (searchInput) searchInput.value = '';
+    if (nasFilter) nasFilter.value = '';
+    filterRadiusOnlineTable();
+    if (searchInput) searchInput.focus();
+  }
+
+  // ─── AJAX DISCONNECT RADIUS SESSION ───
+  async function disconnectRadiusSession(username, sessionId, nasIp, btn) {
+    if (!confirm(`Putuskan sesi aktif RADIUS untuk user "${username}"?`)) return;
+
+    let originalHtml = '';
+    if (btn) {
+      originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i>';
+    }
+
+    try {
+      const res = await fetch('/admin/radius/disconnect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+          username: username,
+          session_id: sessionId,
+          nas_ip: nasIp
+        })
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (res.ok && data && data.success) {
+        showToast('s', data.message || `Sesi user "${username}" berhasil diputus.`);
+
+        // Animate row removal
+        const row = btn ? btn.closest('tr') : null;
+        if (row) {
+          row.style.transition = 'all 0.35s ease';
+          row.style.opacity = '0';
+          row.style.transform = 'translateX(20px)';
+          setTimeout(() => {
+            row.remove();
+            recalcSessionCounts();
+          }, 350);
+        }
+      } else {
+        const errorMsg = (data && (data.error || data.message)) || ('Gagal memutus sesi RADIUS (Status: ' + res.status + ')');
+        showToast('d', errorMsg);
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+        }
+      }
+    } catch (e) {
+      showToast('d', 'Koneksi error: ' + e.message);
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
+    }
+  }
+
+  function recalcSessionCounts() {
+    const rows = document.querySelectorAll('.radius-session-row');
+    const total = rows.length;
+    
+    const kpiCount = document.getElementById('kpi-online-count');
+    if (kpiCount) kpiCount.textContent = total;
+
+    const badgeCount = document.getElementById('badge-online-count');
+    if (badgeCount) badgeCount.textContent = total;
+
+    const indicatorLabel = document.getElementById('online-counter-label');
+    if (indicatorLabel) indicatorLabel.textContent = `${total} Sesi Terhubung`;
+
+    const emptyBox = document.getElementById('radiusOnlineEmptyState');
+    const tableEl = document.getElementById('radiusOnlineTable');
+    if (total === 0) {
+      if (emptyBox) emptyBox.style.display = 'block';
+      if (tableEl) tableEl.style.display = 'none';
+    }
+
+    filterRadiusOnlineTable();
+  }
+
+  // ─── LIVE AUTO-SYNC & REFRESH ───
+  let onlineCountdownSec = 10;
+  let onlineCountdownInterval = null;
+
+  function toggleAutoRefreshOnline(checkbox) {
+    if (checkbox.checked) {
+      startOnlineAutoRefresh();
+      showToast('i', 'Live auto-sync sesi RADIUS aktif (interval 10 detik).');
+    } else {
+      stopOnlineAutoRefresh();
+      showToast('i', 'Live auto-sync dinonaktifkan.');
+    }
+  }
+
+  function startOnlineAutoRefresh() {
+    stopOnlineAutoRefresh();
+    onlineCountdownSec = 10;
+    updateOnlineTimerBadge();
+
+    onlineCountdownInterval = setInterval(() => {
+      onlineCountdownSec--;
+      if (onlineCountdownSec <= 0) {
+        onlineCountdownSec = 10;
+        refreshOnlineSessions(true);
+      }
+      updateOnlineTimerBadge();
+    }, 1000);
+  }
+
+  function stopOnlineAutoRefresh() {
+    if (onlineCountdownInterval) clearInterval(onlineCountdownInterval);
+    onlineCountdownInterval = null;
+    const badge = document.getElementById('onlineTimerCountdown');
+    if (badge) badge.textContent = 'Pause';
+  }
+
+  function updateOnlineTimerBadge() {
+    const badge = document.getElementById('onlineTimerCountdown');
+    if (badge) badge.textContent = `${onlineCountdownSec}s`;
+  }
+
+  async function refreshOnlineSessions(silent) {
+    const btn = document.getElementById('btnManualRefreshOnline');
+    const icon = document.getElementById('iconRefreshOnline');
+    if (!silent && icon) icon.classList.add('spin');
+    if (!silent && btn) btn.disabled = true;
+
+    try {
+      const res = await fetch('/admin/api/radius/online-sessions', {
+        headers: { 'Accept': 'application/json' }
+      });
+      const data = await res.json().catch(() => null);
+
+      if (res.ok && data && data.success) {
+        renderOnlineSessionsTable(data.sessions || []);
+        if (!silent) showToast('s', `Data sesi online diperbarui (${(data.sessions || []).length} sesi aktif).`);
+      }
+    } catch (e) {
+      if (!silent) showToast('d', 'Gagal memuat sesi online: ' + e.message);
+    } finally {
+      if (!silent && icon) icon.classList.remove('spin');
+      if (!silent && btn) btn.disabled = false;
+    }
+  }
+
+  function formatBytes(bytes) {
+    if (!bytes || isNaN(bytes)) return '0.00 MB';
+    if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(2) + ' GB';
+    return (bytes / 1048576).toFixed(2) + ' MB';
+  }
+
+  function formatDuration(sec) {
+    sec = parseInt(sec, 10) || 0;
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  function renderOnlineSessionsTable(sessions) {
+    const tbody = document.getElementById('radiusOnlineTableBody');
+    const emptyBox = document.getElementById('radiusOnlineEmptyState');
+    const tableEl = document.getElementById('radiusOnlineTable');
+
+    const total = sessions.length;
+    const kpiCount = document.getElementById('kpi-online-count');
+    if (kpiCount) kpiCount.textContent = total;
+    const badgeCount = document.getElementById('badge-online-count');
+    if (badgeCount) badgeCount.textContent = total;
+    const indicatorLabel = document.getElementById('online-counter-label');
+    if (indicatorLabel) indicatorLabel.textContent = `${total} Sesi Terhubung`;
+
+    if (!sessions || sessions.length === 0) {
+      if (tbody) tbody.innerHTML = '';
+      if (emptyBox) emptyBox.style.display = 'block';
+      if (tableEl) tableEl.style.display = 'none';
+      filterRadiusOnlineTable();
+      return;
+    }
+
+    if (emptyBox) emptyBox.style.display = 'none';
+    if (tableEl) tableEl.style.display = '';
+
+    let html = '';
+    sessions.forEach((s, idx) => {
+      const totalIn = ((s.input_gigawords || 0) * 4294967296) + (s.input_octets || 0);
+      const totalOut = ((s.output_gigawords || 0) * 4294967296) + (s.output_octets || 0);
+      const inMB = formatBytes(totalIn);
+      const outMB = formatBytes(totalOut);
+      const stStr = formatDuration(s.session_time || 0);
+      const rowKey = s.session_id ? `sess-${String(s.session_id).replace(/[^a-zA-Z0-9_-]/g, '')}` : `user-${s.username}`;
+
+      html += `
+        <tr id="radius-row-${rowKey}" class="radius-session-row" 
+            data-username="${(s.username || '').toLowerCase()}" 
+            data-customer="${(s.customer_name || '').toLowerCase()}" 
+            data-ip="${s.framed_ip || ''}" 
+            data-nas="${s.nas_ip || ''}">
+          <td style="color:var(--muted);font-size:11px;font-family:monospace;">${idx + 1}</td>
+          <td>
+            <div style="font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;">
+              <span>${s.username}</span>
+              <button type="button" class="btn-copy-sm" onclick="copyText('${s.username}', this)" title="Salin Username">
+                <i class="bi bi-copy"></i>
+              </button>
+            </div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">
+              ${s.customer_name || 'Pelanggan Mandiri'}
+            </div>
+          </td>
+          <td>
+            <div style="display:flex;flex-direction:column;gap:3px;">
+              <span style="font-family:monospace;font-size:12px;color:#10b981;font-weight:700;">
+                <i class="bi bi-hdd-network"></i> ${s.framed_ip || '-'}
+              </span>
+              <span style="font-size:10.5px;color:var(--muted);font-family:monospace;">
+                NAS: ${s.nas_ip || '-'}
+              </span>
+            </div>
+          </td>
+          <td>
+            <div style="display:flex;flex-direction:column;gap:2px;font-size:11px;font-family:monospace;">
+              <span style="color:#38bdf8;"><i class="bi bi-arrow-up"></i> ${inMB}</span>
+              <span style="color:#34d399;"><i class="bi bi-arrow-down"></i> ${outMB}</span>
+            </div>
+          </td>
+          <td>
+            <span class="badge" style="background:rgba(99,102,241,0.12);color:var(--primary);font-family:monospace;font-weight:700;font-size:11.5px;">
+              <i class="bi bi-clock-history"></i> ${stStr}
+            </span>
+          </td>
+          <td>
+            <span style="font-size:11px;color:var(--muted);">${s.updated_at || '-'}</span>
+          </td>
+          <td style="text-align:right;white-space:nowrap;">
+            <button type="button" class="btn btn-d btn-sm" onclick="disconnectRadiusSession('${s.username}', '${s.session_id || ''}', '${s.nas_ip || ''}', this)" title="Putuskan Sesi Active RADIUS">
+              <i class="bi bi-power"></i> Putuskan
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+
+    if (tbody) tbody.innerHTML = html;
+    filterRadiusOnlineTable();
+  }
+
+  // ─── CSV EXPORTS ───
+  function exportRadiusOnlineCsv() {
+    const rows = Array.from(document.querySelectorAll('.radius-session-row')).filter(r => r.style.display !== 'none');
+    if (rows.length === 0) {
+      alert('Tidak ada data sesi online untuk di-export.');
+      return;
+    }
+
+    const headers = ['No', 'Username', 'Nama Pelanggan', 'Framed IP', 'NAS IP', 'Upload', 'Download', 'Durasi', 'Waktu Update'];
+    const csvRows = [headers.join(',')];
+
+    rows.forEach((r, idx) => {
+      const cols = r.querySelectorAll('td');
+      if (cols.length >= 7) {
+        const username = r.getAttribute('data-username') || '';
+        const customer = (cols[1].querySelector('div:last-child')?.textContent || '').trim();
+        const framedIp = r.getAttribute('data-ip') || '';
+        const nasIp = r.getAttribute('data-nas') || '';
+        const upload = (cols[3].querySelector('span:first-child')?.textContent || '').replace(/[^\d.MGK B]/g, '').trim();
+        const download = (cols[3].querySelector('span:last-child')?.textContent || '').replace(/[^\d.MGK B]/g, '').trim();
+        const duration = (cols[4]?.textContent || '').trim();
+        const updatedAt = (cols[5]?.textContent || '').trim();
+
+        csvRows.push([
+          idx + 1,
+          `"${username}"`,
+          `"${customer}"`,
+          `"${framedIp}"`,
+          `"${nasIp}"`,
+          `"${upload}"`,
+          `"${download}"`,
+          `"${duration}"`,
+          `"${updatedAt}"`
+        ].join(','));
+      }
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csvRows.join('\n'));
+    const link = document.createElement('a');
+    const dateStr = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', csvContent);
+    link.setAttribute('download', `radius_online_sessions_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('s', 'File CSV sesi online berhasil diunduh.');
+  }
+
+  function filterAccountingTable() {
+    const q = (document.getElementById('accountingSearchInput')?.value || '').toLowerCase().trim();
+    const rows = document.querySelectorAll('.accounting-row');
+    rows.forEach(r => {
+      const username = r.getAttribute('data-username') || '';
+      const nas = r.getAttribute('data-nas') || '';
+      const sess = r.getAttribute('data-session') || '';
+      if (!q || username.includes(q) || nas.includes(q) || sess.includes(q)) {
+        r.style.display = '';
+      } else {
+        r.style.display = 'none';
+      }
+    });
+  }
+
+  function exportAccountingCsv() {
+    const rows = Array.from(document.querySelectorAll('.accounting-row')).filter(r => r.style.display !== 'none');
+    if (rows.length === 0) {
+      alert('Tidak ada data log accounting untuk di-export.');
+      return;
+    }
+    const headers = ['ID', 'Username', 'Session ID', 'NAS IP', 'Status Type', 'Upload', 'Download', 'Durasi', 'Timestamp'];
+    const csvRows = [headers.join(',')];
+
+    rows.forEach(r => {
+      const cols = r.querySelectorAll('td');
+      if (cols.length >= 9) {
+        const id = (cols[0]?.textContent || '').trim();
+        const username = (cols[1]?.textContent || '').trim();
+        const session = (cols[2]?.textContent || '').trim();
+        const nas = (cols[3]?.textContent || '').trim();
+        const status = (cols[4]?.textContent || '').trim();
+        const up = (cols[5]?.textContent || '').trim();
+        const down = (cols[6]?.textContent || '').trim();
+        const dur = (cols[7]?.textContent || '').trim();
+        const time = (cols[8]?.textContent || '').trim();
+        csvRows.push([`"${id}"`, `"${username}"`, `"${session}"`, `"${nas}"`, `"${status}"`, `"${up}"`, `"${down}"`, `"${dur}"`, `"${time}"`].join(','));
+      }
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csvRows.join('\n'));
+    const link = document.createElement('a');
+    const dateStr = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', csvContent);
+    link.setAttribute('download', `radius_accounting_logs_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('s', 'File CSV log accounting berhasil diunduh.');
+  }
+
+  // ─── UTILITIES & MODALS ───
+  function copyText(text, btn) {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      if (btn) {
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check2 text-success"></i>';
+        setTimeout(() => { btn.innerHTML = oldHtml; }, 1800);
+      }
+      showToast('s', `Tersalin ke clipboard: ${text}`);
+    }).catch(() => {
+      prompt('Salin:', text);
+    });
+  }
+
+  function showToast(type, msg) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const t = document.createElement('div');
+    t.className = `toast-msg ${type}`;
+    const icon = type === 's' ? 'check-circle-fill' : (type === 'd' ? 'exclamation-circle-fill' : 'info-circle-fill');
+    t.innerHTML = `<i class="bi bi-${icon}"></i> <span>${msg}</span>`;
+    container.appendChild(t);
+    setTimeout(() => {
+      t.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+      t.style.opacity = '0';
+      t.style.transform = 'translateY(10px)';
+      setTimeout(() => t.remove(), 400);
+    }, 3800);
   }
 
   function showModal(id) {
@@ -1228,7 +1944,6 @@
     if (!input) return;
     input.value = value;
     input.focus();
-    // Visual flash feedback
     input.style.transition = 'background-color 0.25s ease';
     const oldBg = input.style.backgroundColor;
     input.style.backgroundColor = 'rgba(99, 102, 241, 0.22)';
@@ -1252,12 +1967,12 @@
           btn.style.borderColor = '';
         }, 2000);
       } else {
-        alert('Script MikroTik berhasil disalin!');
+        showToast('s', 'Script MikroTik berhasil disalin!');
       }
     }).catch(() => {
       el.select();
       document.execCommand('copy');
-      alert('Script MikroTik berhasil disalin!');
+      showToast('s', 'Script MikroTik berhasil disalin!');
     });
   }
 
