@@ -55,11 +55,47 @@ const promoUpload = multer({
     }
   }
 });
+
+// Customer installation & KYC photos storage
+const customerPhotosStorage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    const uploadDir = path.resolve(__dirname, '..', 'public', 'uploads', 'customers');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function(req, file, cb) {
+    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+    const prefix = file.fieldname;
+    const name = prefix + '-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6) + ext;
+    cb(null, name);
+  }
+});
+
+const customerPhotosUpload = multer({
+  storage: customerPhotosStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB per file
+  fileFilter: function(req, file, cb) {
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+    if (allowedMimes.includes(file.mimetype) || (file.mimetype && file.mimetype.startsWith('image/'))) {
+      cb(null, true);
+    } else {
+      cb(new Error('Hanya file foto (JPG, PNG, WebP) yang diperbolehkan'), false);
+    }
+  }
+}).fields([
+  { name: 'photo_house', maxCount: 1 },
+  { name: 'photo_customer', maxCount: 1 },
+  { name: 'photo_optical_power', maxCount: 1 }
+]);
+
 const backupSvc = require('../services/backupService');
 const monitoringSvc = require('../services/monitoringService');
 const inventorySvc = require('../services/inventoryService');
 const auditSvc = require('../services/auditTrailService');
 const whatsappService = require('../services/whatsappService');
+const waSvc = whatsappService;
 const { parseMikhmonOnLogin } = require('../utils/mikhmonParser');
 const diagnosticsSvc = require('../services/diagnosticsService');
 const attendanceSvc = require('../services/attendanceService');
@@ -614,6 +650,15 @@ router.get('/olts/:id/stats', requireAdminSession, async (req, res) => {
     res.json(stats);
   } catch (e) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/olts/:id/test-snmp', requireAdminSession, async (req, res) => {
+  try {
+    const result = await oltSvc.testOltSnmp(req.params.id);
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 
@@ -1747,6 +1792,7 @@ router.get('/customers', requireAdminSession, requireSidebarMenuAccess('customer
   const packages = customerSvc.getAllPackages(selectedRouterId);
   const routers = mikrotikService.getAllRouters();
   const olts = oltSvc.getAllOlts();
+  const odcs = odcSvc.getAllOdcs();
   const odps = odpSvc.getAllOdps();
   const collectors = adminSvc.getAllCollectors();
   const areas = customerSvc.getAllCustomerAreas();
@@ -1761,13 +1807,38 @@ router.get('/customers', requireAdminSession, requireSidebarMenuAccess('customer
 
   res.render('admin/customers', {
     title: 'Data Pelanggan', company: company(), activePage: 'customers',
-    customers, stats, packages, routers, olts, odps, collectors, areas, masterAreas, activeSessionsMap, search, filterStatus, filterArea, selectedRouterId, msg: flashMsg(req),
+    customers, stats, packages, routers, olts, odcs, odps, collectors, areas, masterAreas, activeSessionsMap, search, filterStatus, filterArea, selectedRouterId, msg: flashMsg(req),
     settings: getSettings()
   });
 });
 
-router.post('/customers', requireAdminSession, express.urlencoded({ extended: true }), async (req, res) => {
+router.post('/customers', requireAdminSession, (req, res, next) => {
+  customerPhotosUpload(req, res, (err) => {
+    if (err) {
+      req.session._msg = { type: 'error', text: err.message };
+      return res.redirect('/admin/customers');
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
+    if (req.files) {
+      if (req.files.photo_house && req.files.photo_house[0]) {
+        req.body.photo_house = '/uploads/customers/' + req.files.photo_house[0].filename;
+      }
+      if (req.files.photo_customer && req.files.photo_customer[0]) {
+        req.body.photo_customer = '/uploads/customers/' + req.files.photo_customer[0].filename;
+      }
+      if (req.files.photo_optical_power && req.files.photo_optical_power[0]) {
+        req.body.photo_optical_power = '/uploads/customers/' + req.files.photo_optical_power[0].filename;
+      }
+    }
+    if (req.body.odc_id !== undefined) req.body.odc_id = req.body.odc_id ? Number(req.body.odc_id) : null;
+    if (req.body.odp_port !== undefined) req.body.odp_port = req.body.odp_port ? Number(req.body.odp_port) : null;
+    if (req.body.initial_rx_power !== undefined && req.body.initial_rx_power !== '') {
+      req.body.initial_rx_power = isNaN(parseFloat(req.body.initial_rx_power)) ? null : parseFloat(req.body.initial_rx_power);
+    }
+
     const connectionType = String(req.body.connection_type || 'pppoe').trim().toLowerCase() || 'pppoe';
     req.body.connection_type = connectionType;
 
@@ -1977,9 +2048,34 @@ router.post('/customers', requireAdminSession, express.urlencoded({ extended: tr
   res.redirect('/admin/customers');
 });
 
-router.post('/customers/:id/update', requireAdminSession, express.urlencoded({ extended: true }), async (req, res) => {
+router.post('/customers/:id/update', requireAdminSession, (req, res, next) => {
+  customerPhotosUpload(req, res, (err) => {
+    if (err) {
+      req.session._msg = { type: 'error', text: err.message };
+      return res.redirect('/admin/customers');
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     const customerId = Number(req.params.id);
+    if (req.files) {
+      if (req.files.photo_house && req.files.photo_house[0]) {
+        req.body.photo_house = '/uploads/customers/' + req.files.photo_house[0].filename;
+      }
+      if (req.files.photo_customer && req.files.photo_customer[0]) {
+        req.body.photo_customer = '/uploads/customers/' + req.files.photo_customer[0].filename;
+      }
+      if (req.files.photo_optical_power && req.files.photo_optical_power[0]) {
+        req.body.photo_optical_power = '/uploads/customers/' + req.files.photo_optical_power[0].filename;
+      }
+    }
+    if (req.body.odc_id !== undefined) req.body.odc_id = req.body.odc_id ? Number(req.body.odc_id) : null;
+    if (req.body.odp_port !== undefined) req.body.odp_port = req.body.odp_port ? Number(req.body.odp_port) : null;
+    if (req.body.initial_rx_power !== undefined && req.body.initial_rx_power !== '') {
+      req.body.initial_rx_power = isNaN(parseFloat(req.body.initial_rx_power)) ? null : parseFloat(req.body.initial_rx_power);
+    }
+
     const connectionType = String(req.body.connection_type || 'pppoe').trim().toLowerCase() || 'pppoe';
     req.body.connection_type = connectionType;
 
@@ -1994,9 +2090,16 @@ router.post('/customers/:id/update', requireAdminSession, express.urlencoded({ e
     const multiRouterMode = getSetting('multi_router_mode', 'disabled') === 'active';
     const defaultRouterId = multiRouterMode ? null : getSetting('default_router_id', null);
 
+    const radiusEnabled = getSetting('radius_enabled', '0') === '1';
+    // Ketika RADIUS offline, paksa is_radius = 0 (MikroTik mode) agar secret SELALU ada di MikroTik
+    const isRadius = radiusEnabled ? (req.body.is_radius !== undefined ? (Number(req.body.is_radius) === 1 ? 1 : 0) : 0) : 0;
+    req.body.is_radius = isRadius;
+    const shouldSyncToMikrotik = !radiusEnabled || !isRadius;
+
     if (connectionType === 'pppoe') {
       const routerId = req.body.router_id ? Number(req.body.router_id) : null;
       const username = String(req.body.pppoe_username || '').trim();
+      const password = String(req.body.pppoe_password || '').trim();
       req.body.pppoe_username = username;
       if (!username) throw new Error('PPPoE Username tidak boleh kosong');
       
@@ -2013,16 +2116,19 @@ router.post('/customers/:id/update', requireAdminSession, express.urlencoded({ e
       const existing = db.prepare('SELECT id, name FROM customers WHERE router_id IS ? AND pppoe_username = ? AND id != ? LIMIT 1').get(effectiveRouterId, username, customerId);
       if (existing) throw new Error(`PPPoE Username sudah dipakai pelanggan lain: ${existing.name}`);
 
-      let conn = null;
-      try {
-        conn = await mikrotikService.getConnection(effectiveRouterId);
-        const results = await conn.client.menu('/ppp/secret')
-          .where('service', 'pppoe')
-          .where('name', username)
-          .get();
-        if (!Array.isArray(results) || results.length === 0) throw new Error('PPPoE Username tidak ditemukan di MikroTik');
-      } finally {
-        if (conn && conn.api) conn.api.close();
+      // Hanya cek secret MikroTik jika password tidak diisi dan mode MikroTik aktif (artinya memilih username yang sudah ada di MikroTik)
+      if (!password && shouldSyncToMikrotik) {
+        let conn = null;
+        try {
+          conn = await mikrotikService.getConnection(effectiveRouterId);
+          const results = await conn.client.menu('/ppp/secret')
+            .where('service', 'pppoe')
+            .where('name', username)
+            .get();
+          if (!Array.isArray(results) || results.length === 0) throw new Error('PPPoE Username tidak ditemukan di MikroTik');
+        } finally {
+          if (conn && conn.api) conn.api.close();
+        }
       }
       
       // Set effective router ID
@@ -2090,11 +2196,6 @@ router.post('/customers/:id/update', requireAdminSession, express.urlencoded({ e
       req.body.router_id = effectiveRouterId;
     }
 
-    const radiusEnabled = getSetting('radius_enabled', '0') === '1';
-    // Ketika RADIUS offline, paksa is_radius = 0 (MikroTik mode) agar secret SELALU ada di MikroTik
-    const isRadius = radiusEnabled ? (req.body.is_radius !== undefined ? (Number(req.body.is_radius) === 1 ? 1 : 0) : 0) : 0;
-    req.body.is_radius = isRadius;
-
     // Get old customer data to detect username changes
     const oldCustomer = customerSvc.getCustomerById(customerId);
     
@@ -2115,7 +2216,6 @@ router.post('/customers/:id/update', requireAdminSession, express.urlencoded({ e
     // 
     // CATATAN: Kode ini TIDAK PERNAH menghapus secret dari MikroTik!
     // ========================================================================
-    const shouldSyncToMikrotik = !radiusEnabled || !isRadius;
     if (connectionType === 'pppoe' && req.body.pppoe_username && shouldSyncToMikrotik) {
       try {
         const newUsername = String(req.body.pppoe_username || '').trim();
@@ -2429,6 +2529,114 @@ router.post('/customers/:id/unisolate', requireAdminSession, async (req, res) =>
     req.session._msg = { type: 'error', text: 'Gagal aktivasi: ' + e.message };
   }
   res.redirect('back');
+});
+
+router.post('/customers/bulk-action', requireAdminSession, express.urlencoded({ extended: true }), async (req, res) => {
+  try {
+    const { action, customer_ids } = req.body;
+    let ids = [];
+    if (Array.isArray(customer_ids)) {
+      ids = customer_ids.map(Number).filter(n => Number.isFinite(n) && n > 0);
+    } else if (customer_ids) {
+      ids = String(customer_ids).split(',').map(n => Number(n.trim())).filter(n => Number.isFinite(n) && n > 0);
+    }
+
+    if (!ids || ids.length === 0) {
+      throw new Error('Pilih minimal 1 pelanggan untuk melakukan aksi massal.');
+    }
+
+    let successCount = 0;
+    if (action === 'isolate') {
+      for (const id of ids) {
+        try {
+          await customerSvc.suspendCustomer(id);
+          successCount++;
+        } catch (e) {
+          logger.warn(`[Bulk Action] Failed to isolate customer #${id}:`, e.message);
+        }
+      }
+      req.session._msg = { type: 'success', text: `Berhasil mengisolir ${successCount} dari ${ids.length} pelanggan terpilih.` };
+    } else if (action === 'unisolate') {
+      for (const id of ids) {
+        try {
+          const unpaid = db.prepare("SELECT COUNT(*) as cnt FROM invoices WHERE customer_id=? AND status='unpaid'").get(id)?.cnt || 0;
+          const targetStatus = unpaid > 0 ? 'ditangguhkan' : 'active';
+          await customerSvc.activateCustomer(id, targetStatus);
+          successCount++;
+        } catch (e) {
+          logger.warn(`[Bulk Action] Failed to activate customer #${id}:`, e.message);
+        }
+      }
+      req.session._msg = { type: 'success', text: `Berhasil mengaktifkan kembali ${successCount} dari ${ids.length} pelanggan terpilih.` };
+    } else if (action === 'delete') {
+      if (req.session?.isCashier) {
+        throw new Error('Kasir tidak memiliki wewenang untuk menghapus pelanggan.');
+      }
+      for (const id of ids) {
+        try {
+          await customerSvc.deleteCustomer(id);
+          successCount++;
+        } catch (e) {
+          logger.warn(`[Bulk Action] Failed to delete customer #${id}:`, e.message);
+        }
+      }
+      req.session._msg = { type: 'success', text: `Berhasil menghapus ${successCount} dari ${ids.length} pelanggan terpilih.` };
+    } else if (action === 'send_wa') {
+      const message = (req.body.message || '').trim();
+      if (!message) throw new Error('Pesan WhatsApp tidak boleh kosong.');
+      
+      const allCust = customerSvc.getAllCustomers();
+      const targetCusts = allCust.filter(c => ids.includes(c.id) && c.phone && String(c.phone).replace(/\D/g, '').length >= 8);
+      
+      if (targetCusts.length === 0) {
+        throw new Error('Tidak ada nomor WhatsApp yang valid pada pelanggan terpilih.');
+      }
+
+      // Send asynchronously in background with safety delay
+      (async () => {
+        for (let i = 0; i < targetCusts.length; i++) {
+          const cust = targetCusts[i];
+          try {
+            let formattedMsg = message.replace(/{{nama}}/gi, cust.name || 'Pelanggan');
+            try {
+              const { parseSpintax } = await import('../services/whatsappBot.mjs');
+              formattedMsg = parseSpintax(formattedMsg);
+            } catch (_) {}
+            await whatsappService.sendWhatsAppMessage(cust.phone, formattedMsg);
+            if (i < targetCusts.length - 1) {
+              await new Promise(r => setTimeout(r, 2000));
+            }
+          } catch (e) {
+            logger.warn(`[BulkWa] Gagal kirim pesan ke ${cust.phone}:`, e.message);
+          }
+        }
+      })();
+
+      req.session._msg = { type: 'success', text: `Pesan WhatsApp sedang diproses untuk dikirim ke ${targetCusts.length} pelanggan terpilih.` };
+    } else {
+      throw new Error('Aksi massal tidak dikenali.');
+    }
+  } catch (err) {
+    req.session._msg = { type: 'error', text: err.message || 'Gagal memproses aksi massal.' };
+  }
+  res.redirect('/admin/customers');
+});
+
+router.get('/api/customers/:id/invoices', requireAdminSession, (req, res) => {
+  try {
+    const custId = Number(req.params.id);
+    if (!custId || isNaN(custId)) return res.status(400).json({ error: 'ID tidak valid' });
+    const invoices = db.prepare(`
+      SELECT id, invoice_number, period_month, period_year, amount, status, paid_at, paid_by, created_at
+      FROM invoices
+      WHERE customer_id = ?
+      ORDER BY period_year DESC, period_month DESC
+      LIMIT 12
+    `).all(custId);
+    res.json({ ok: true, invoices: invoices || [] });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 router.post('/customers/:id/billing/generate', requireAdminSession, express.urlencoded({ extended: true }), (req, res) => {
@@ -5424,6 +5632,159 @@ router.get('/api/vouchers/batches/:id', requireAdmin, (req, res) => {
   res.json({ batch, vouchers });
 });
 
+router.get('/api/vouchers/search', requireAdmin, (req, res) => {
+  try {
+    const q = String(req.query.q || '').trim();
+    if (!q) return res.json({ vouchers: [] });
+    const rows = db.prepare(`
+      SELECT v.id, v.code, v.password, v.status, v.used_at, v.last_seen_comment, v.last_seen_uptime, v.last_seen_at, v.batch_id,
+             b.profile_name, b.price, b.validity, b.created_at, b.router_id,
+             r.name AS router_name
+      FROM vouchers v
+      JOIN voucher_batches b ON b.id = v.batch_id
+      LEFT JOIN routers r ON r.id = b.router_id
+      WHERE v.code LIKE ? OR v.comment LIKE ? OR v.password LIKE ? OR b.profile_name LIKE ?
+      ORDER BY v.id DESC
+      LIMIT 50
+    `).all(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
+    res.json({ vouchers: rows });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/api/vouchers/single', requireAdmin, express.json(), async (req, res) => {
+  try {
+    const routerId = req.body.routerId ? Number(req.body.routerId) : null;
+    const profileName = String(req.body.profile || '').trim();
+    let code = String(req.body.code || '').trim();
+    let password = String(req.body.password || '').trim();
+    const price = Number(req.body.price) || 0;
+    const validity = String(req.body.validity || '').trim();
+    const mode = String(req.body.mode || 'voucher');
+    const buyerPhone = String(req.body.buyerPhone || '').trim();
+    
+    if (!profileName) return res.status(400).json({ error: 'Profile hotspot wajib diisi' });
+    
+    const createdBy = req.session?.isAdmin ? (req.session.adminUser || 'admin') : (req.session.cashierName || 'kasir');
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yy = String(now.getFullYear()).slice(-2);
+    const defaultComment = `vc-${createdBy}-${dd}.${mm}.${yy}`;
+    const comment = String(req.body.comment || defaultComment).trim();
+
+    if (!code) {
+      const prefix = String(req.body.prefix || '').trim();
+      const len = Math.max(4, Math.min(12, Number(req.body.codeLength) || 6));
+      const charset = String(req.body.charset || 'numbers');
+      code = prefix + genCode(len - prefix.length, charset);
+      if (!password) password = (mode === 'member') ? genCode(len - prefix.length, charset) : code;
+    } else if (!password) {
+      password = (mode === 'member') ? genCode(6, 'numbers') : code;
+    }
+
+    const insertBatch = db.prepare(`
+      INSERT INTO voucher_batches (router_id, profile_name, qty_total, qty_created, qty_failed, price, validity, prefix, code_length, status, created_by, mode, charset, updated_at)
+      VALUES (?, ?, 1, 1, 0, ?, ?, '', ?, 'ready', ?, ?, 'numbers', (NOW_LOCAL()))
+    `);
+    const batchRes = insertBatch.run(routerId, profileName, price, validity, code.length, createdBy, mode);
+    const batchId = Number(batchRes.lastInsertRowid);
+
+    const insertVoucher = db.prepare(`
+      INSERT INTO vouchers (batch_id, router_id, code, password, profile_name, comment, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, 'created', (NOW_LOCAL()))
+    `);
+    const vRes = insertVoucher.run(batchId, routerId, code, password, profileName, comment);
+    const voucherId = Number(vRes.lastInsertRowid);
+
+    const userData = {
+      server: 'all',
+      name: code,
+      password: password,
+      profile: profileName,
+      comment: comment
+    };
+    if (validity) userData['limit-uptime'] = validity;
+
+    try {
+      await mikrotikService.addHotspotUser(userData, routerId);
+    } catch (mErr) {
+      db.prepare("UPDATE vouchers SET status = 'failed' WHERE id = ?").run(voucherId);
+      db.prepare("UPDATE voucher_batches SET qty_created = 0, qty_failed = 1, status = 'failed' WHERE id = ?").run(batchId);
+      return res.status(500).json({ error: 'Gagal menambahkan voucher ke MikroTik: ' + mErr.message });
+    }
+
+    const settings = getSettings();
+    const companyName = settings.company_header || company();
+    const companyPhone = settings.company_phone || '';
+    const waText = `*VOUCHER HOTSPOT ${companyName}*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `🎫 *Kode Voucher :* ${code}\n` +
+      (code !== password ? `🔑 *Password :* ${password}\n` : '') +
+      `📦 *Paket :* ${profileName}\n` +
+      (validity ? `⏳ *Durasi :* ${validity}\n` : '') +
+      `💰 *Harga :* Rp ${Number(price).toLocaleString('id-ID')}\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `*Cara Menggunakan:*\n` +
+      `1. Hubungkan Wi-Fi ke Hotspot ${companyName}\n` +
+      `2. Buka browser atau klik pop-up login yang muncul\n` +
+      `3. Masukkan Kode Voucher di atas\n` +
+      `4. Klik Login untuk mulai internetan\n\n` +
+      (companyPhone ? `Bantuan / CS: ${companyPhone}` : '');
+
+    res.json({
+      success: true,
+      voucher: { id: voucherId, batch_id: batchId, code, password, profile: profileName, price, validity, comment },
+      waText,
+      buyerPhone
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/api/vouchers/send-wa', requireAdmin, express.json(), async (req, res) => {
+  try {
+    const phone = String(req.body.phone || '').trim();
+    const text = String(req.body.text || '').trim();
+    if (!phone) return res.status(400).json({ error: 'Nomor WhatsApp tujuan wajib diisi' });
+    if (!text) return res.status(400).json({ error: 'Pesan voucher tidak boleh kosong' });
+
+    const cleanPhone = phone.replace(/[^\d+]/g, '');
+    let sent = false;
+    let errMessage = null;
+    try {
+      sent = await whatsappService.sendWhatsAppMessage(cleanPhone, text);
+    } catch (wErr) {
+      errMessage = wErr.message;
+    }
+
+    const waDirectNum = cleanPhone.replace(/^\+/, '').replace(/^0/, '62');
+    res.json({
+      success: !!sent,
+      sent: !!sent,
+      phone: cleanPhone,
+      waDirectUrl: `https://wa.me/${waDirectNum}?text=${encodeURIComponent(text)}`,
+      error: errMessage
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/api/mikrotik/hotspot-user-profiles/inject-mikhmon', requireAdmin, express.json(), async (req, res) => {
+  try {
+    const { profile, price, validity } = req.body;
+    const routerId = req.query.routerId ? Number(req.query.routerId) : null;
+    if (!profile) return res.status(400).json({ error: 'Nama profile wajib diisi' });
+    const result = await mikrotikService.setProfileMikhmonScript(profile, price, validity, routerId);
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 router.post('/api/vouchers/batches', requireAdmin, express.json(), async (req, res) => {
   try {
     const routerId = req.query.routerId ? Number(req.query.routerId) : null;
@@ -5444,10 +5805,10 @@ router.post('/api/vouchers/batches', requireAdmin, express.json(), async (req, r
     if (!profile) return res.status(400).json({ error: 'Profile Hotspot tidak ditemukan di MikroTik' });
 
     const meta = parseMikhmonOnLogin(profile.onLogin || profile['on-login']);
-    if (!meta || !meta.validity) return res.status(400).json({ error: 'Profile belum memiliki metadata harga/durasi (Format Mikhmon)' });
+    const validity = (meta && meta.validity) ? meta.validity : (String(req.body.validity || '').trim() || '1d');
 
     const createdBy = req.session?.isAdmin ? (req.session.adminUser || 'admin') : (req.session.cashierName || 'kasir');
-    let price = Number(meta.price || 0);
+    let price = (meta && meta.price) ? Number(meta.price) : 0;
     if (priceInput !== undefined && priceInput !== null && String(priceInput).trim() !== '') {
       const p = Number(priceInput);
       if (!Number.isFinite(p) || p < 0) return res.status(400).json({ error: 'Harga tidak valid' });
@@ -5465,7 +5826,7 @@ router.post('/api/vouchers/batches', requireAdmin, express.json(), async (req, r
       INSERT INTO voucher_batches (router_id, profile_name, qty_total, qty_created, qty_failed, price, validity, prefix, code_length, status, created_by, mode, charset)
       VALUES (?, ?, ?, 0, 0, ?, ?, ?, ?, 'creating', ?, ?, ?)
     `);
-    const batchRes = insertBatch.run(routerId, profileName, qty, price, meta.validity || '', prefix, codeLength, createdBy, mode, charset);
+    const batchRes = insertBatch.run(routerId, profileName, qty, price, validity, prefix, codeLength, createdBy, mode, charset);
     const batchId = Number(batchRes.lastInsertRowid);
 
     const insertVoucher = db.prepare(`
@@ -5632,6 +5993,28 @@ router.post('/api/mikrotik/kick-hotspot', requireAdmin, express.json(), async (r
     if (!username) return res.status(400).json({ success: false, error: 'Username wajib diisi' });
     const rId = routerId ? (routerId === 'null' ? null : Number(routerId)) : null;
     const kicked = await mikrotikService.kickHotspotUser(username.trim(), rId);
+    res.json({ success: true, kicked, message: `Sesi Hotspot "${username}" berhasil diputus!` });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+router.post('/api/routers/:id/kick-pppoe', requireAdmin, express.json(), async (req, res) => {
+  try {
+    const username = req.body.username;
+    if (!username) return res.status(400).json({ success: false, error: 'Username wajib diisi' });
+    const kicked = await mikrotikService.kickPppoeUser(username.trim(), req.params.id);
+    res.json({ success: true, kicked, message: `Sesi PPPoE "${username}" berhasil diputus!` });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+router.post('/api/routers/:id/kick-hotspot', requireAdmin, express.json(), async (req, res) => {
+  try {
+    const username = req.body.username;
+    if (!username) return res.status(400).json({ success: false, error: 'Username wajib diisi' });
+    const kicked = await mikrotikService.kickHotspotUser(username.trim(), req.params.id);
     res.json({ success: true, kicked, message: `Sesi Hotspot "${username}" berhasil diputus!` });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
@@ -5948,8 +6331,6 @@ function isTemporaryError(errorMessage) {
 
 // Global message history untuk duplicate detection
 global.broadcastMessageHistory = new Map();
-
-const waSvc = require('../services/whatsappService');
 
 router.get('/whatsapp', requireAdminSession, requireSidebarMenuAccess('whatsapp'), async (req, res) => {
   const waGatewayType = getSetting('wa_gateway_type', 'baileys');

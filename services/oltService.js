@@ -376,6 +376,13 @@ function updateOlt(id, data) {
   const enablePass = String(data.enable_password || '').trim().length > 0
     ? String(data.enable_password).trim()
     : (prev && prev.enable_password) || null;
+  const webUser = (data.web_user !== undefined && String(data.web_user).trim().length > 0)
+    ? String(data.web_user).trim()
+    : ((prev && prev.web_user) || 'admin');
+  const webPass = (data.web_password !== undefined && String(data.web_password).trim().length > 0)
+    ? String(data.web_password).trim()
+    : ((prev && prev.web_password) || '');
+
   const stmt = db.prepare(`
     UPDATE olts 
     SET name = ?, host = ?, snmp_community = ?, snmp_port = ?, brand = ?, description = ?, is_active = ?, web_user = ?, web_password = ?, api_base_url = ?, telnet_port = ?, enable_password = ?
@@ -384,13 +391,13 @@ function updateOlt(id, data) {
   return stmt.run(
     data.name,
     data.host,
-    data.snmp_community,
-    data.snmp_port,
-    data.brand,
-    data.description,
+    data.snmp_community || 'public',
+    data.snmp_port || 161,
+    data.brand || 'hioso',
+    data.description || '',
     data.is_active ? 1 : 0,
-    data.web_user || '',
-    data.web_password || '',
+    webUser,
+    webPass,
     apiBase || null,
     Number.isFinite(telnetPort) && telnetPort > 0 ? telnetPort : 23,
     enablePass,
@@ -400,6 +407,86 @@ function updateOlt(id, data) {
 
 function deleteOlt(id) {
   return db.prepare('DELETE FROM olts WHERE id = ?').run(id);
+}
+
+/**
+ * Tes koneksi SNMP ke perangkat OLT secara instan (sysDescr, sysUpTime, sysName)
+ */
+async function testOltSnmp(id) {
+  const olt = typeof id === 'object' ? id : getOltById(id);
+  if (!olt) throw new Error('Perangkat OLT tidak ditemukan');
+
+  const host = olt.host;
+  const port = parseInt(olt.snmp_port, 10) || 161;
+  const community = olt.snmp_community || 'public';
+
+  const startTime = Date.now();
+  const session = snmp.createSession(host, community, {
+    port,
+    timeout: 3500,
+    retries: 1,
+    version: snmp.Version2c
+  });
+
+  return new Promise((resolve) => {
+    let resolved = false;
+    const finish = (result) => {
+      if (resolved) return;
+      resolved = true;
+      try { session.close(); } catch (_) {}
+      resolve(result);
+    };
+
+    const timer = setTimeout(() => {
+      finish({
+        success: false,
+        error: `Timeout (3.5s): OLT di ${host}:${port} tidak merespons SNMP.`
+      });
+    }, 4000);
+
+    session.on('error', (err) => {
+      clearTimeout(timer);
+      finish({ success: false, error: err.message || 'SNMP Session error' });
+    });
+
+    // Query sysDescr (1.3.6.1.2.1.1.1.0), sysUpTime (1.3.6.1.2.1.1.3.0), sysName (1.3.6.1.2.1.1.5.0)
+    session.get(
+      ['1.3.6.1.2.1.1.1.0', '1.3.6.1.2.1.1.3.0', '1.3.6.1.2.1.1.5.0'],
+      (err, varbinds) => {
+        clearTimeout(timer);
+        const latencyMs = Date.now() - startTime;
+        if (err) {
+          return finish({
+            success: false,
+            latencyMs,
+            error: err.message || 'Gagal query OID sistem'
+          });
+        }
+        if (!varbinds || !varbinds.length) {
+          return finish({
+            success: false,
+            latencyMs,
+            error: 'Tidak ada respons varbind dari OLT'
+          });
+        }
+
+        const sysDescr = varbinds[0] && !snmp.isVarbindError(varbinds[0]) ? varbinds[0].value.toString() : 'N/A';
+        const sysUpTime = varbinds[1] && !snmp.isVarbindError(varbinds[1]) ? decodeUptime(varbinds[1].value) : 'N/A';
+        const sysName = varbinds[2] && !snmp.isVarbindError(varbinds[2]) ? varbinds[2].value.toString() : 'N/A';
+
+        finish({
+          success: true,
+          latencyMs,
+          sysDescr,
+          sysUpTime,
+          sysName,
+          host,
+          port,
+          brand: olt.brand
+        });
+      }
+    );
+  });
 }
 
 // ─── SNMP HELPERS ────────────────────────────────────────────────────────────
@@ -2423,7 +2510,7 @@ async function configureWanViaAcs(sn, data) {
    };
  }
 
- module.exports = {
+module.exports = {
   getAllOlts, getActiveOlts, getOltById, createOlt, updateOlt, deleteOlt, getOltStats, getAllOltsStats, rebootOnu, renameOnu, authorizeOnu,
-  configureOnuWan, configureZteWanViaGoApi, configureWanViaAcs
+  configureOnuWan, configureZteWanViaGoApi, configureWanViaAcs, testOltSnmp
 };

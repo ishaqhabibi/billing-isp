@@ -181,7 +181,7 @@ router.get('/', requireCollectorSession, (req, res) => {
   const collectorArea = String(collectorObj?.area || req.session.collectorArea || '').trim();
   req.session.collectorArea = collectorArea;
 
-  let collectorWhere = '(c.collector_id = ? OR c.collector_id IS NULL)';
+  let collectorWhere = '(c.collector_id = ? OR c.collector_id IS NULL OR c.collector_id = 0)';
   let collectorParams = [collectorId];
   if (collectorArea) {
     collectorWhere = '(c.collector_id = ? OR ((c.collector_id IS NULL OR c.collector_id = 0) AND LOWER(TRIM(c.area)) = LOWER(TRIM(?))))';
@@ -258,6 +258,8 @@ router.get('/', requireCollectorSession, (req, res) => {
       COUNT(DISTINCT c.id) as total_customer_count,
       SUM(CASE WHEN (i.status='unpaid' OR i.status IS NULL) THEN 1 ELSE 0 END) as unpaid_count,
       SUM(CASE WHEN (i.status='unpaid' OR i.status IS NULL) THEN COALESCE(i.amount, p.price, 0) ELSE 0 END) as unpaid_total,
+      SUM(CASE WHEN i.status='paid' THEN 1 ELSE 0 END) as paid_count,
+      SUM(CASE WHEN i.status='paid' THEN COALESCE(i.amount, p.price, 0) ELSE 0 END) as paid_total,
       SUM(CASE WHEN (i.status='unpaid' OR i.status IS NULL) AND c.isolate_day=? THEN 1 ELSE 0 END) as today_count,
       SUM(CASE WHEN (i.status='unpaid' OR i.status IS NULL) AND c.isolate_day=? THEN COALESCE(i.amount, p.price, 0) ELSE 0 END) as today_total,
       SUM(CASE WHEN c.status='suspended' THEN 1 ELSE 0 END) as isolir_count,
@@ -314,6 +316,18 @@ router.get('/', requireCollectorSession, (req, res) => {
     LIMIT 60
   `).all(collectorId);
 
+  const todayCollected = db.prepare(`
+    SELECT
+      COALESCE(SUM(amount), 0) as total,
+      COUNT(1) as count
+    FROM collector_payment_requests
+    WHERE collector_id = ?
+      AND status = 'approved'
+      AND DATE(created_at) = DATE('now', 'localtime')
+  `).get(collectorId) || { total: 0, count: 0 };
+
+  const todayAttendance = attendanceSvc.getTodayAttendance('collector', collectorId);
+
   res.render('collector/dashboard', {
     title: 'Dashboard Kolektor',
     company: company(),
@@ -324,6 +338,8 @@ router.get('/', requireCollectorSession, (req, res) => {
     scope,
     todayDay,
     summary,
+    todayCollected,
+    todayAttendance,
     invoices: list,
     pendingMap,
     myReqs,
@@ -503,7 +519,7 @@ router.post('/invoice/:id/send-pdf-wa', requireCollectorSession, async (req, res
     const filename = `Invoice_INV-${String(inv.id).padStart(4, '0')}.pdf`;
     const caption = `🧾 *FAKTUR / INVOICE LUNAS*\n\nYth. Bpk/Ibu *${customer.name}*,\nBerikut kami lampirkan dokumen Invoice LUNAS periode ${inv.period_month}/${inv.period_year}.\n\nTerima kasih atas pembayaran Anda.`;
 
-    const waBot = require('../services/whatsappBot.mjs');
+    const waBot = await import('../services/whatsappBot.mjs');
     const result = await waBot.sendWADocument(customer.phone, pdfBuffer, filename, caption);
     if (result && result.success) {
       return res.json({ success: true, message: 'Dokumen Invoice PDF berhasil dikirim via WhatsApp ke pelanggan!' });

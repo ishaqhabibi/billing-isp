@@ -80,6 +80,7 @@ function getAllCustomers(search = '', routerId = null, filterStatus = '', filter
            p.speed_down, p.speed_up, p.fup_limit_gb, p.use_fup,
            r.name as router_name,
            o.name as olt_name,
+           odc.name as odc_name,
            odp.name as odp_name,
            (SELECT COUNT(*) FROM invoices WHERE customer_id=c.id AND status='unpaid') as unpaid_count,
            u.bytes_in, u.bytes_out
@@ -87,6 +88,7 @@ function getAllCustomers(search = '', routerId = null, filterStatus = '', filter
     LEFT JOIN packages p ON c.package_id = p.id
     LEFT JOIN routers r ON c.router_id = r.id
     LEFT JOIN olts o ON c.olt_id = o.id
+    LEFT JOIN odcs odc ON c.odc_id = odc.id
     LEFT JOIN odps odp ON c.odp_id = odp.id
     LEFT JOIN customer_usage u ON u.customer_id = c.id AND u.period_month = ${month} AND u.period_year = ${year}
   `;
@@ -107,8 +109,12 @@ function getAllCustomers(search = '', routerId = null, filterStatus = '', filter
   }
 
   if (filterStatus) {
-    whereClauses.push(`c.status = ?`);
-    params.push(filterStatus);
+    if (filterStatus === 'unpaid') {
+      whereClauses.push(`(SELECT COUNT(*) FROM invoices WHERE customer_id=c.id AND status='unpaid') > 0`);
+    } else {
+      whereClauses.push(`c.status = ?`);
+      params.push(filterStatus);
+    }
   }
 
   if (filterArea) {
@@ -155,11 +161,12 @@ function getCustomerById(id) {
            p.promo_cycles as package_promo_cycles,
            p.prorate_first_invoice as package_prorate_first_invoice,
            p.use_ppn, p.ppn_percentage, p.use_uso, p.uso_percentage,
-           r.name as router_name, o.name as olt_name, odp.name as odp_name
+           r.name as router_name, o.name as olt_name, odc.name as odc_name, odp.name as odp_name
     FROM customers c 
     LEFT JOIN packages p ON c.package_id = p.id 
     LEFT JOIN routers r ON c.router_id = r.id
     LEFT JOIN olts o ON c.olt_id = o.id
+    LEFT JOIN odcs odc ON c.odc_id = odc.id
     LEFT JOIN odps odp ON c.odp_id = odp.id
     WHERE c.id = ?
   `).get(id);
@@ -178,8 +185,8 @@ function createCustomer(data) {
   const customerCode = data.customer_code ? String(data.customer_code).trim().toUpperCase() : null;
 
   return db.prepare(`
-    INSERT INTO customers (nik, name, phone, email, address, area, customer_code, package_id, router_id, olt_id, odp_id, pon_port, lat, lng, genieacs_tag, pppoe_username, pppoe_password, pppoe_remote_address, isolir_profile, status, install_date, expired_at, notes, auto_isolate, isolate_day, connection_type, static_ip, mac_address, hotspot_username, hotspot_password, hotspot_profile, collector_id, is_radius)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO customers (nik, name, phone, email, address, area, customer_code, package_id, router_id, olt_id, odc_id, odp_id, pon_port, odp_port, photo_house, photo_customer, photo_optical_power, initial_rx_power, lat, lng, genieacs_tag, pppoe_username, pppoe_password, pppoe_remote_address, isolir_profile, status, install_date, expired_at, notes, auto_isolate, isolate_day, connection_type, static_ip, mac_address, hotspot_username, hotspot_password, hotspot_profile, collector_id, is_radius)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     data.nik ? String(data.nik).trim() : '',
     data.name, data.phone || '', data.email || '', data.address || '',
@@ -188,8 +195,14 @@ function createCustomer(data) {
     data.package_id ? parseInt(data.package_id) : null,
     data.router_id ? parseInt(data.router_id) : null,
     data.olt_id ? parseInt(data.olt_id) : null,
+    data.odc_id ? parseInt(data.odc_id) : null,
     data.odp_id ? parseInt(data.odp_id) : null,
     data.pon_port || '',
+    data.odp_port ? parseInt(data.odp_port) : null,
+    data.photo_house || null,
+    data.photo_customer || null,
+    data.photo_optical_power || null,
+    data.initial_rx_power !== undefined && data.initial_rx_power !== '' && !isNaN(parseFloat(data.initial_rx_power)) ? parseFloat(data.initial_rx_power) : null,
     data.lat || '',
     data.lng || '',
     data.genieacs_tag || '', data.pppoe_username || '',
@@ -231,8 +244,15 @@ function updateCustomer(id, data) {
     ? (data.customer_code ? String(data.customer_code).trim().toUpperCase() : null)
     : (prev ? prev.customer_code : null);
 
+  const photoHouse = data.photo_house !== undefined ? data.photo_house : (prev ? prev.photo_house : null);
+  const photoCustomer = data.photo_customer !== undefined ? data.photo_customer : (prev ? prev.photo_customer : null);
+  const photoOptical = data.photo_optical_power !== undefined ? data.photo_optical_power : (prev ? prev.photo_optical_power : null);
+  const initialRx = data.initial_rx_power !== undefined && data.initial_rx_power !== ''
+    ? (isNaN(parseFloat(data.initial_rx_power)) ? null : parseFloat(data.initial_rx_power))
+    : (prev ? prev.initial_rx_power : null);
+
   const result = db.prepare(`
-    UPDATE customers SET nik=?, name=?, phone=?, email=?, address=?, area=?, customer_code=?, package_id=?, router_id=?, olt_id=?, odp_id=?, pon_port=?, lat=?, lng=?, genieacs_tag=?, pppoe_username=?, pppoe_password=?, pppoe_remote_address=?, isolir_profile=?, status=?, install_date=?, expired_at=?, notes=?, auto_isolate=?, isolate_day=?, cable_path=?, connection_type=?, static_ip=?, mac_address=?, hotspot_username=?, hotspot_password=?, hotspot_profile=?, collector_id=?, is_radius=?
+    UPDATE customers SET nik=?, name=?, phone=?, email=?, address=?, area=?, customer_code=?, package_id=?, router_id=?, olt_id=?, odc_id=?, odp_id=?, pon_port=?, odp_port=?, photo_house=?, photo_customer=?, photo_optical_power=?, initial_rx_power=?, lat=?, lng=?, genieacs_tag=?, pppoe_username=?, pppoe_password=?, pppoe_remote_address=?, isolir_profile=?, status=?, install_date=?, expired_at=?, notes=?, auto_isolate=?, isolate_day=?, cable_path=?, connection_type=?, static_ip=?, mac_address=?, hotspot_username=?, hotspot_password=?, hotspot_profile=?, collector_id=?, is_radius=?
     WHERE id=?
   `).run(
     data.nik !== undefined ? (data.nik ? String(data.nik).trim() : '') : (prev ? (prev.nik || '') : ''),
@@ -242,8 +262,14 @@ function updateCustomer(id, data) {
     data.package_id ? parseInt(data.package_id) : null,
     data.router_id ? parseInt(data.router_id) : null,
     data.olt_id ? parseInt(data.olt_id) : null,
+    data.odc_id ? parseInt(data.odc_id) : null,
     data.odp_id ? parseInt(data.odp_id) : null,
     data.pon_port || '',
+    data.odp_port ? parseInt(data.odp_port) : null,
+    photoHouse,
+    photoCustomer,
+    photoOptical,
+    initialRx,
     data.lat || '',
     data.lng || '',
     data.genieacs_tag || '', data.pppoe_username || '',
@@ -362,12 +388,14 @@ async function deleteCustomer(id) {
 }
 
 function getCustomerStats() {
+  const unpaidRow = db.prepare("SELECT COUNT(DISTINCT customer_id) as c FROM invoices WHERE status='unpaid'").get();
   return {
     total:        db.prepare('SELECT COUNT(*) as c FROM customers').get().c,
     active:       db.prepare("SELECT COUNT(*) as c FROM customers WHERE status IN ('active', 'ditangguhkan')").get().c,
     ditangguhkan: db.prepare("SELECT COUNT(*) as c FROM customers WHERE status='ditangguhkan'").get().c,
     suspended:    db.prepare("SELECT COUNT(*) as c FROM customers WHERE status='suspended'").get().c,
     inactive:     db.prepare("SELECT COUNT(*) as c FROM customers WHERE status='inactive'").get().c,
+    unpaid:       unpaidRow ? (unpaidRow.c || 0) : 0,
   };
 }
 

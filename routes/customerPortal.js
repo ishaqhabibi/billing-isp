@@ -1496,7 +1496,8 @@ router.post('/public/voucher/create-payment', async (req, res) => {
 router.get('/register', (req, res) => {
   const settings = getSettingsWithCache();
   const packages = customerSvc.getAllPackages().filter(p => p.is_active !== 0);
-  res.render('register', { error: null, success: null, settings, packages });
+  const selectedPackage = req.query.package || '';
+  res.render('register', { error: null, success: null, settings, packages, selectedPackage });
 });
 
 router.post('/register', async (req, res) => {
@@ -1577,18 +1578,28 @@ router.post('/register', async (req, res) => {
 
     res.render('register', { 
       error: null, 
-      success: 'Pendaftaran berhasil! Tim kami akan segera menghubungi Anda melalui WhatsApp.', 
-      settings, packages 
+      success: 'Pendaftaran berhasil! Tim teknisi kami akan segera menghubungi Anda melalui WhatsApp.', 
+      settings, packages, selectedPackage: '' 
     });
   } catch (err) {
-    res.render('register', { error: err.message, success: null, settings, packages });
+    res.render('register', { error: err.message, success: null, settings, packages, selectedPackage: package_id || '' });
   }
 });
 
 router.post('/login', loginRateLimiter, async (req, res) => {
-  const { phone } = req.body;
+  const phone = String(req.body.phone || req.body.identifier || '').trim();
+  const pin = String(req.body.pin || '').trim();
   const settings = getSettingsWithCache();
+  const packages = customerSvc.getAllPackages().filter(p => p.is_active !== 0);
   const startTime = Date.now();
+
+  if (!phone) {
+    return res.render('login', {
+      error: 'Harap masukkan ID Pelanggan atau Nomor WhatsApp Anda.',
+      settings,
+      packages
+    });
+  }
 
   let device = null;
   let pppoeUsername = null;
@@ -1597,49 +1608,77 @@ router.post('/login', loginRateLimiter, async (req, res) => {
   // 1. Tahap 1: Cari Data di Billing DB
   const customer = customerSvc.findCustomerByAny(phone);
   
-  if (customer) {
-    logger.info(`[Login] Pelanggan ditemukan di DB (customerId=${customer.id || '-'}, pppoe=${customer.pppoe_username || '-'}).`);
-    
-    // Use customer's actual phone number and PPPoE username
-    customerPhone = customer.phone || phone;
-    pppoeUsername = customer.pppoe_username || null;
-    
-    // Prioritas: PPPoE username > genieacs_tag > phone
-    const searchTokens = [
-      customer.pppoe_username,
-      customer.genieacs_tag,
-      customer.phone
-    ].filter(Boolean);
+  if (!customer) {
+    logger.warn(`[Login] Gagal: pelanggan "${phone}" tidak ditemukan di DB.`);
+    return res.render('login', {
+      error: 'Data pelanggan tidak ditemukan. Pastikan ID Pelanggan, Nomor WhatsApp, atau Username PPPoE sudah benar.',
+      settings,
+      packages
+    });
+  }
 
-    // Cari secara paralel dengan timeout 2.0s agar tidak menggantung jika GenieACS offline/lambat
-    const acsSearchPromise = (async () => {
-      const results = await Promise.allSettled(searchTokens.map(async (token) => {
-        let d = await customerDevice.findDeviceByPppoe(token); // Prioritas PPPoE
-        if (!d) d = await customerDevice.findDeviceByTag(token);
-        if (!d) {
-          const variants = await customerDevice.findDeviceWithTagVariants(token);
-          if (variants) d = variants.device;
-        }
-        return d;
-      }));
-      return results.find(r => r.status === 'fulfilled' && r.value !== null)?.value || null;
-    })();
-
-    device = await Promise.race([
-      acsSearchPromise,
-      new Promise(resolve => setTimeout(() => resolve(null), 2000))
-    ]);
-
-    if (device) {
-      logger.info('[Login] Perangkat terdeteksi di GenieACS (matched).');
-      if (!pppoeUsername && device.pppoeUsername) {
-        pppoeUsername = device.pppoeUsername;
-        logger.info(`[Login] PPPoE username dari device: ${pppoeUsername}`);
-      }
+  // 2. Tahap 2: Verifikasi PIN (5 Digit Terakhir Nomor HP Terdaftar)
+  const registeredPhoneDigits = String(customer.phone || '').replace(/\D/g, '');
+  if (registeredPhoneDigits.length >= 5) {
+    const expectedPin = registeredPhoneDigits.slice(-5);
+    if (!pin) {
+      return res.render('login', {
+        error: 'Harap masukkan PIN Keamanan (5 angka terakhir nomor WhatsApp terdaftar Anda).',
+        settings,
+        packages
+      });
+    }
+    if (pin !== expectedPin) {
+      logger.warn(`[Login] Gagal: PIN salah untuk customer ID ${customer.id}`);
+      return res.render('login', {
+        error: 'PIN Keamanan salah! Masukkan 5 angka paling belakang dari nomor WhatsApp Anda yang terdaftar.',
+        settings,
+        packages
+      });
     }
   }
 
-  // 2. Tahap 2: Fallback (Jika DB tidak ketemu atau perangkat belum link)
+  logger.info(`[Login] Pelanggan terverifikasi di DB (customerId=${customer.id || '-'}, nama=${customer.name || '-'}, pppoe=${customer.pppoe_username || '-'}).`);
+  
+  // Use customer's actual phone number and PPPoE username
+  customerPhone = customer.phone || phone;
+  pppoeUsername = customer.pppoe_username || null;
+  
+  // Prioritas: PPPoE username > genieacs_tag > phone
+  const searchTokens = [
+    customer.pppoe_username,
+    customer.genieacs_tag,
+    customer.phone
+  ].filter(Boolean);
+
+  // Cari secara paralel dengan timeout 2.0s agar tidak menggantung jika GenieACS offline/lambat
+  const acsSearchPromise = (async () => {
+    const results = await Promise.allSettled(searchTokens.map(async (token) => {
+      let d = await customerDevice.findDeviceByPppoe(token); // Prioritas PPPoE
+      if (!d) d = await customerDevice.findDeviceByTag(token);
+      if (!d) {
+        const variants = await customerDevice.findDeviceWithTagVariants(token);
+        if (variants) d = variants.device;
+      }
+      return d;
+    }));
+    return results.find(r => r.status === 'fulfilled' && r.value !== null)?.value || null;
+  })();
+
+  device = await Promise.race([
+    acsSearchPromise,
+    new Promise(resolve => setTimeout(() => resolve(null), 2000))
+  ]);
+
+  if (device) {
+    logger.info('[Login] Perangkat terdeteksi di GenieACS (matched).');
+    if (!pppoeUsername && device.pppoeUsername) {
+      pppoeUsername = device.pppoeUsername;
+      logger.info(`[Login] PPPoE username dari device: ${pppoeUsername}`);
+    }
+  }
+
+  // Fallback jika DB ada tapi perangkat belum ter-link di GenieACS
   if (!device) {
     try {
       const directPromise = customerDevice.findDeviceWithTagVariants(phone);

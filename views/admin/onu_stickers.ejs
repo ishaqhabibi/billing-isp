@@ -361,6 +361,14 @@
 
   <!-- Screen-only Controls -->
   <div class="screen-controls">
+    <!-- Sub-navigation links to Optical Access Network module suite -->
+    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid #334155;">
+      <a href="/admin/olts" class="btn btn-secondary" style="font-size:12px; padding:6px 14px;"><i class="bi bi-hdd-rack"></i> Manajemen OLT</a>
+      <a href="/admin/onu-provision" class="btn btn-secondary" style="font-size:12px; padding:6px 14px;"><i class="bi bi-hdd-network-fill"></i> Provisioning ONU</a>
+      <a href="/admin/acs" class="btn btn-secondary" style="font-size:12px; padding:6px 14px;"><i class="bi bi-broadcast"></i> GenieACS Pro</a>
+      <a href="/admin/onu-stickers" class="btn btn-primary" style="font-size:12px; padding:6px 14px;"><i class="bi bi-printer"></i> Stiker Modem ONU</a>
+    </div>
+
     <div class="ctrl-header">
       <div class="ctrl-title">
         <i class="bi bi-qr-code-scan"></i> Cetak Stiker Modem / ONU (Name Tag Size)
@@ -369,8 +377,8 @@
         <button type="button" class="btn btn-primary" onclick="window.print()">
           <i class="bi bi-printer-fill"></i> Cetak Stiker (A4 / PDF)
         </button>
-        <a href="/admin/customers" class="btn btn-secondary">
-          <i class="bi bi-arrow-left"></i> Kembali
+        <a href="/admin/olts" class="btn btn-secondary">
+          <i class="bi bi-arrow-left"></i> Kembali ke OLT
         </a>
       </div>
     </div>

@@ -41,17 +41,68 @@
       <div class="alert <%= msg.type === 'success' ? 's' : (msg.type === 'error' ? 'd' : 'w') %>"><%= msg.text %></div>
     <% } %>
 
-    <div class="mtabs">
-      <a href="/admin/mikrotik" class="mtab <%= mTab==='monitoring' ? 'active' : '' %>"><i class="bi bi-router"></i> Monitoring</a>
-      <a href="/admin/vouchers" class="mtab <%= mTab==='vouchers' ? 'active' : '' %>"><i class="bi bi-ticket-perforated"></i> Voucher Hotspot</a>
-      <a href="/admin/routers" class="mtab <%= mTab==='routers' ? 'active' : '' %>"><i class="bi bi-hdd-network"></i> Router</a>
+    <div class="mtabs" style="margin-bottom:20px;">
+      <a href="/admin/mikrotik" class="mtab"><i class="bi bi-router"></i> Monitoring &amp; Sesi</a>
+      <a href="/admin/routers" class="mtab"><i class="bi bi-hdd-network"></i> Manajemen Router</a>
+      <a href="/admin/vouchers" class="mtab active"><i class="bi bi-ticket-perforated"></i> Voucher Hotspot</a>
+      <a href="/admin/vouchers/packages" class="mtab"><i class="bi bi-wifi"></i> Paket Hotspot</a>
+    </div>
+
+    <!-- Quick Search & Actions Toolbar -->
+    <div class="card mb-3" style="background:var(--bg2); border:1px solid var(--border); padding:16px 20px; border-radius:14px; box-shadow:0 4px 16px rgba(0,0,0,0.04);">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:280px;max-width:550px;">
+          <div style="position:relative;width:100%;">
+            <i class="bi bi-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);"></i>
+            <input type="text" id="voucherGlobalSearch" class="fc" style="padding-left:36px;border-radius:8px;" placeholder="Cari Kode Voucher, User, atau Profil..." onkeydown="if(event.key==='Enter') searchGlobalVoucher()">
+          </div>
+          <button class="btn btn-p btn-sm" onclick="searchGlobalVoucher()"><i class="bi bi-search me-1"></i> Cari</button>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button class="btn btn-s btn-sm" onclick="openModal('singleVoucherModal')"><i class="bi bi-ticket-fill me-1"></i> Buat 1 Voucher Satuan</button>
+        </div>
+      </div>
+      <div id="searchResultsBox" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span class="small fw-bold text-primary" id="searchResultsTitle"><i class="bi bi-list-check me-1"></i> Hasil Pencarian</span>
+          <button class="btn btn-g btn-sm py-0 px-2" style="font-size:11px" onclick="document.getElementById('searchResultsBox').style.display='none'">Tutup Hasil</button>
+        </div>
+        <div class="tbl-wrap" style="max-height:280px;overflow-y:auto;">
+          <table class="dtbl">
+            <thead>
+              <tr><th>Kode</th><th>Password</th><th>Router</th><th>Profile</th><th>Harga</th><th>Status</th><th>Terpakai</th><th style="width:110px">Aksi</th></tr>
+            </thead>
+            <tbody id="searchResultsList"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
-      <div class="sc p"><i class="bi bi-collection sc-icon"></i><div class="sc-label"><%= t('admin.vouchers.stats.batches', 'Batch') %></div><div class="sc-val" id="stat-batches">0</div></div>
-      <div class="sc s"><i class="bi bi-ticket sc-icon"></i><div class="sc-label"><%= t('admin.vouchers.stats.vouchers', 'Voucher') %></div><div class="sc-val" id="stat-vouchers">0</div></div>
-      <div class="sc w"><i class="bi bi-check2-circle sc-icon"></i><div class="sc-label"><%= t('admin.vouchers.stats.used', 'Terpakai') %></div><div class="sc-val" id="stat-used">0</div></div>
-      <div class="sc d"><i class="bi bi-circle sc-icon"></i><div class="sc-label"><%= t('admin.vouchers.stats.unused', 'Belum') %></div><div class="sc-val" id="stat-unused">0</div></div>
+      <div class="sc p">
+        <i class="bi bi-collection sc-icon"></i>
+        <div class="sc-label"><%= t('admin.vouchers.stats.batches', 'Batch') %></div>
+        <div class="sc-val" id="stat-batches">0</div>
+        <div class="hint" style="font-size:11px;margin-top:2px;">Total Batch Dibuat</div>
+      </div>
+      <div class="sc s">
+        <i class="bi bi-ticket sc-icon"></i>
+        <div class="sc-label"><%= t('admin.vouchers.stats.vouchers', 'Voucher') %></div>
+        <div class="sc-val" id="stat-vouchers">0</div>
+        <div class="hint" style="font-size:11px;margin-top:2px;">Total Unit Voucher</div>
+      </div>
+      <div class="sc w">
+        <i class="bi bi-check2-circle sc-icon"></i>
+        <div class="sc-label"><%= t('admin.vouchers.stats.used', 'Terpakai') %></div>
+        <div class="sc-val" id="stat-used">0</div>
+        <div class="hint text-success fw-bold" style="font-size:11px;margin-top:2px;" id="stat-used-sub">Omset: Rp 0</div>
+      </div>
+      <div class="sc d">
+        <i class="bi bi-circle sc-icon"></i>
+        <div class="sc-label"><%= t('admin.vouchers.stats.unused', 'Belum') %></div>
+        <div class="sc-val" id="stat-unused">0</div>
+        <div class="hint text-info fw-bold" style="font-size:11px;margin-top:2px;" id="stat-unused-sub">Stok: Rp 0</div>
+      </div>
     </div>
 
     <div class="card" style="margin-bottom:20px">
@@ -66,7 +117,7 @@
             <select class="fc" id="profileName" onchange="onProfileChanged()">
               <option value=""><%= t('common.loading_short', 'Memuat...') %></option>
             </select>
-            <div class="hint" id="profileHint"></div>
+            <div class="hint" id="profileHint" style="margin-top:4px;"></div>
           </div>
           <div class="fg w160">
             <label class="fl"><%= t('admin.vouchers.create.qty', 'Jumlah') %></label>
@@ -75,6 +126,10 @@
           <div class="fg w160">
             <label class="fl"><%= t('admin.vouchers.create.price', 'Harga (Rp)') %></label>
             <input class="fc" id="price" type="number" min="0" step="1000" placeholder="Opsional">
+          </div>
+          <div class="fg w120">
+            <label class="fl">Durasi</label>
+            <input class="fc" id="validityCustom" placeholder="misal: 2h, 1d">
           </div>
           <div class="fg w160">
             <label class="fl"><%= t('admin.vouchers.create.mode', 'Mode') %></label>
@@ -157,20 +212,129 @@
       <button class="mc" onclick="closeModal('batchDetailModal')">&times;</button>
     </div>
     <div class="mbody">
-      <div id="batchDetailMeta" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px"></div>
-      <div class="tbl-wrap">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:12px">
+        <div id="batchDetailMeta" style="display:flex;gap:8px;flex-wrap:wrap;flex:1"></div>
+        <div style="width:220px">
+          <input type="text" class="fc" id="batchFilterInput" placeholder="Filter kode / status..." onkeyup="filterBatchDetail(this.value)">
+        </div>
+      </div>
+      <div class="tbl-wrap" style="max-height:450px;overflow-y:auto;">
         <table class="dtbl">
           <thead>
-            <tr><th><%= t('admin.vouchers.detail.code', 'Kode') %></th><th><%= t('admin.vouchers.detail.password', 'Password') %></th><th>Status</th><th><%= t('admin.vouchers.detail.used_at', 'Terpakai') %></th><th><%= t('admin.vouchers.detail.last_seen', 'Last Seen') %></th></tr>
+            <tr><th><%= t('admin.vouchers.detail.code', 'Kode') %></th><th><%= t('admin.vouchers.detail.password', 'Password') %></th><th>Status</th><th><%= t('admin.vouchers.detail.used_at', 'Terpakai') %></th><th><%= t('admin.vouchers.detail.last_seen', 'Last Seen') %></th><th style="width:110px">Aksi</th></tr>
           </thead>
           <tbody id="batchDetailList">
-            <tr><td colspan="5" class="text-center text-muted"><%= t('common.loading_short', 'Memuat...') %></td></tr>
+            <tr><td colspan="6" class="text-center text-muted"><%= t('common.loading_short', 'Memuat...') %></td></tr>
           </tbody>
         </table>
       </div>
     </div>
     <div class="mf">
       <button type="button" class="btn btn-g" onclick="closeModal('batchDetailModal')"><%= t('common.close', 'Tutup') %></button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Buat 1 Voucher Satuan (Quick Kasir) -->
+<div class="mo" id="singleVoucherModal">
+  <div class="mb" style="max-width:560px">
+    <div class="mh">
+      <span class="mt"><i class="bi bi-ticket-fill text-success me-2"></i> Buat 1 Voucher Satuan</span>
+      <button class="mc" onclick="closeModal('singleVoucherModal')">&times;</button>
+    </div>
+    <div class="mbody">
+      <div class="alert alert-info small mb-3" style="background:rgba(14,165,233,0.12);border:1px solid rgba(14,165,233,0.3);color:#e0f2fe;">
+        <i class="bi bi-info-circle me-1"></i> Cocok untuk melayani pelanggan/pembeli langsung di loket kasir atau via chat WA tanpa harus membuat 50 voucher sekaligus.
+      </div>
+      <div class="fg mb-3">
+        <label class="fl">Hotspot User Profile *</label>
+        <select class="fc" id="singleProfileName" onchange="onSingleProfileChanged()">
+          <option value="">Memuat profile...</option>
+        </select>
+        <div class="hint" id="singleProfileHint" style="margin-top:4px;"></div>
+      </div>
+      <div class="form-row mb-3" style="display:flex;gap:12px;">
+        <div class="fg" style="flex:1">
+          <label class="fl">Harga (Rp)</label>
+          <input class="fc" id="singlePrice" type="number" placeholder="Contoh: 3000">
+        </div>
+        <div class="fg" style="flex:1">
+          <label class="fl">Masa Aktif / Durasi</label>
+          <input class="fc" id="singleValidity" placeholder="Contoh: 3h, 1d, 7d">
+        </div>
+      </div>
+      <div class="form-row mb-3" style="display:flex;gap:12px;">
+        <div class="fg" style="flex:1">
+          <label class="fl">Mode Voucher</label>
+          <select class="fc" id="singleMode">
+            <option value="voucher">Voucher (User = Password)</option>
+            <option value="member">Member (Password Beda)</option>
+          </select>
+        </div>
+        <div class="fg" style="flex:1">
+          <label class="fl">No. WhatsApp Pembeli (Opsional)</label>
+          <input class="fc" id="singleBuyerPhone" placeholder="08123456789">
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      <button type="button" class="btn btn-g" onclick="closeModal('singleVoucherModal')">Batal</button>
+      <button type="button" class="btn btn-p" id="btnSubmitSingle" onclick="createSingleVoucher()"><i class="bi bi-check-circle me-1"></i> Buat Sekarang</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Hasil Voucher Satuan Selesai -->
+<div class="mo" id="singleVoucherResultModal">
+  <div class="mb" style="max-width:520px">
+    <div class="mh">
+      <span class="mt text-success"><i class="bi bi-check-circle-fill me-2"></i> Voucher Berhasil Dibuat!</span>
+      <button class="mc" onclick="closeModal('singleVoucherResultModal')">&times;</button>
+    </div>
+    <div class="mbody">
+      <div class="p-3 rounded-3 text-center mb-3" style="background:linear-gradient(135deg,rgba(30,41,59,0.85),rgba(15,23,42,0.95));border:1px solid rgba(16,185,129,0.4);">
+        <small class="text-muted d-block text-uppercase fw-bold mb-1" id="resProfileName">Paket Hotspot</small>
+        <div class="mono fw-extrabold text-white my-2" style="font-size:26px;letter-spacing:2px;" id="resVoucherCode">CODE</div>
+        <div class="small text-muted mb-2" id="resVoucherPass">Password: -</div>
+        <div class="d-flex justify-content-center gap-2 mt-2">
+          <span class="badge bs" id="resVoucherPrice">Rp 0</span>
+          <span class="badge bm" id="resVoucherValidity">Durasi: -</span>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Format Pesan WhatsApp / SMS</label>
+        <textarea class="fc mono" id="resWaText" rows="6" readonly style="font-size:12px;background:rgba(15,23,42,0.6);color:#7dd3fc;"></textarea>
+      </div>
+    </div>
+    <div class="mf">
+      <button type="button" class="btn btn-g" onclick="copyResultWaText()"><i class="bi bi-clipboard me-1"></i> Salin Pesan</button>
+      <button type="button" class="btn btn-s" id="btnSendWaSingle" onclick="sendResultToWa()"><i class="bi bi-whatsapp me-1"></i> Kirim ke WhatsApp</button>
+      <button type="button" class="btn btn-p" onclick="closeModal('singleVoucherResultModal')">Selesai</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Kirim WhatsApp Universal -->
+<div class="mo" id="sendWaModal">
+  <div class="mb" style="max-width:500px">
+    <div class="mh">
+      <span class="mt"><i class="bi bi-whatsapp text-success me-2"></i> Kirim Voucher via WhatsApp</span>
+      <button class="mc" onclick="closeModal('sendWaModal')">&times;</button>
+    </div>
+    <div class="mbody">
+      <div class="fg mb-3">
+        <label class="fl">Nomor WhatsApp Tujuan *</label>
+        <input class="fc" id="sendWaPhone" placeholder="08xxxxxxxxxx atau 62xxxxxxxxxx">
+      </div>
+      <div class="fg">
+        <label class="fl">Isi Pesan Voucher</label>
+        <textarea class="fc mono" id="sendWaText" rows="7" style="font-size:12px;"></textarea>
+      </div>
+    </div>
+    <div class="mf">
+      <button type="button" class="btn btn-g" onclick="closeModal('sendWaModal')">Batal</button>
+      <button type="button" class="btn btn-g" onclick="openWaDirectWeb()"><i class="bi bi-box-arrow-up-right me-1"></i> Buka wa.me</button>
+      <button type="button" class="btn btn-s" id="btnSendWaSubmit" onclick="submitSendWa()"><i class="bi bi-send-fill me-1"></i> Kirim via Bot WA</button>
     </div>
   </div>
 </div>
@@ -358,31 +522,66 @@
   }
 
   let profilesCache = [];
+  let currentBatchVouchers = [];
+  let currentWaTarget = { phone: '', text: '' };
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function copyText(text) {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Teks disalin ke clipboard!');
+    }).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      alert('Teks disalin ke clipboard!');
+    });
+  }
 
   async function loadProfiles() {
     const routerId = getRouterId();
     const url = routerId ? `/admin/api/mikrotik/hotspot-user-profiles?routerId=${routerId}` : `/admin/api/mikrotik/hotspot-user-profiles`;
-    const res = await fetch(url);
-    const data = await res.json();
-    profilesCache = Array.isArray(data) ? data : [];
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      profilesCache = Array.isArray(data) ? data : [];
 
-    const filtered = profilesCache
-      .map(p => ({ raw: p, meta: parseMikhmonOnLogin(p.onLogin || p['on-login']) }))
-      .filter(x => x.meta && x.meta.validity);
+      const sel = document.getElementById('profileName');
+      const singleSel = document.getElementById('singleProfileName');
+      sel.innerHTML = '';
+      if (singleSel) singleSel.innerHTML = '';
 
-    const sel = document.getElementById('profileName');
-    sel.innerHTML = '';
-    if (filtered.length === 0) {
-      sel.innerHTML = '<option value="">Tidak ada profile dengan harga/durasi (Mikhmon)</option>';
+      if (profilesCache.length === 0) {
+        sel.innerHTML = '<option value="">Tidak ada profile di router ini</option>';
+        if (singleSel) singleSel.innerHTML = '<option value="">Tidak ada profile</option>';
+        document.getElementById('profileHint').innerText = '';
+        return;
+      }
+
+      sel.insertAdjacentHTML('beforeend', '<option value="">-- Pilih Profile --</option>');
+      if (singleSel) singleSel.insertAdjacentHTML('beforeend', '<option value="">-- Pilih Profile --</option>');
+
+      for (const p of profilesCache) {
+        const meta = parseMikhmonOnLogin(p.onLogin || p['on-login']);
+        let label = p.name;
+        if (meta && meta.validity) {
+          label += ` (Rp ${Number(meta.price || 0).toLocaleString('id-ID')} • ${meta.validity})`;
+        } else {
+          label += ` (Manual / Tanpa Format Mikhmon)`;
+        }
+        sel.insertAdjacentHTML('beforeend', `<option value="${p.name}">${label}</option>`);
+        if (singleSel) singleSel.insertAdjacentHTML('beforeend', `<option value="${p.name}">${label}</option>`);
+      }
       document.getElementById('profileHint').innerText = '';
-      return;
+    } catch (e) {
+      console.error('Failed to load profiles:', e);
     }
-    sel.insertAdjacentHTML('beforeend', '<option value="">-- Pilih Profile --</option>');
-    for (const x of filtered) {
-      const label = `${x.raw.name} (Rp ${Number(x.meta.price || 0).toLocaleString('id-ID')} • ${x.meta.validity})`;
-      sel.insertAdjacentHTML('beforeend', `<option value="${x.raw.name}">${label}</option>`);
-    }
-    document.getElementById('profileHint').innerText = '';
   }
 
   (function initPrintStyle() {
@@ -395,12 +594,69 @@
   function onProfileChanged() {
     const name = document.getElementById('profileName')?.value;
     const raw = profilesCache.find(p => p.name === name);
-    const meta = raw ? parseMikhmonOnLogin(raw.onLogin || raw['on-login']) : null;
-    if (!meta) return document.getElementById('profileHint').innerText = '';
-    document.getElementById('profileHint').innerText = `${I18N.profilePricePrefix} Rp ${Number(meta.price||0).toLocaleString('id-ID')} • ${I18N.profileDurationPrefix} ${meta.validity}`;
+    const hintEl = document.getElementById('profileHint');
     const priceEl = document.getElementById('price');
-    if (priceEl && (priceEl.value === '' || Number(priceEl.value) === 0)) {
-      priceEl.value = Number(meta.price || 0) ? String(Number(meta.price || 0)) : '';
+    const valEl = document.getElementById('validityCustom');
+    if (!raw) {
+      hintEl.innerHTML = '';
+      return;
+    }
+    const meta = parseMikhmonOnLogin(raw.onLogin || raw['on-login']);
+    if (meta) {
+      hintEl.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i> ${I18N.profilePricePrefix} Rp ${Number(meta.price||0).toLocaleString('id-ID')} • ${I18N.profileDurationPrefix} ${meta.validity}</span>`;
+      if (priceEl && (priceEl.value === '' || Number(priceEl.value) === 0)) {
+        priceEl.value = Number(meta.price || 0) ? String(Number(meta.price || 0)) : '';
+      }
+      if (valEl && !valEl.value) valEl.value = meta.validity;
+    } else {
+      hintEl.innerHTML = `
+        <span class="text-warning small"><i class="bi bi-exclamation-circle me-1"></i> Belum ada format Mikhmon di profile ini.</span>
+        <button type="button" class="btn btn-g btn-sm py-0 px-2 ms-2" style="font-size:11px;" onclick="injectMikhmon('${name}')"><i class="bi bi-magic"></i> Pasang Format Mikhmon</button>
+      `;
+    }
+  }
+
+  function onSingleProfileChanged() {
+    const name = document.getElementById('singleProfileName')?.value;
+    const raw = profilesCache.find(p => p.name === name);
+    const hintEl = document.getElementById('singleProfileHint');
+    const priceEl = document.getElementById('singlePrice');
+    const valEl = document.getElementById('singleValidity');
+    if (!raw) {
+      hintEl.innerHTML = '';
+      return;
+    }
+    const meta = parseMikhmonOnLogin(raw.onLogin || raw['on-login']);
+    if (meta) {
+      hintEl.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i> Rp ${Number(meta.price||0).toLocaleString('id-ID')} • ${meta.validity}</span>`;
+      if (priceEl) priceEl.value = meta.price || '';
+      if (valEl) valEl.value = meta.validity || '';
+    } else {
+      hintEl.innerHTML = `<span class="text-warning small">Masukkan harga dan masa aktif manual</span>`;
+    }
+  }
+
+  async function injectMikhmon(profileName) {
+    const price = prompt('Masukkan harga voucher untuk profile ini (contoh: 3000):', '3000');
+    if (price === null) return;
+    const validity = prompt('Masukkan masa aktif (contoh: 3h, 1d, 7d):', '1d');
+    if (!validity) return;
+
+    const routerId = getRouterId();
+    try {
+      const res = await fetch('/admin/api/mikrotik/hotspot-user-profiles/inject-mikhmon?routerId=' + routerId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile: profileName, price, validity })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Gagal inject');
+      alert('✅ ' + data.message);
+      await loadProfiles();
+      document.getElementById('profileName').value = profileName;
+      onProfileChanged();
+    } catch (e) {
+      alert('❌ ' + e.message);
     }
   }
 
@@ -422,6 +678,7 @@
     const mode = document.getElementById('mode')?.value || 'voucher';
     const charset = document.getElementById('charset')?.value || 'numbers';
     const price = document.getElementById('price')?.value;
+    const validity = document.getElementById('validityCustom')?.value;
 
     if (!profile) return alert(I18N.chooseProfileFirst);
     if (!qty || qty < 1) return alert(I18N.invalidQty);
@@ -435,7 +692,7 @@
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile, qty, codeLength, prefix, mode, charset, price })
+        body: JSON.stringify({ profile, qty, codeLength, prefix, mode, charset, price, validity })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || I18N.createFailed);
@@ -449,6 +706,183 @@
     }
   }
 
+  async function createSingleVoucher() {
+    const profile = document.getElementById('singleProfileName')?.value;
+    const price = document.getElementById('singlePrice')?.value;
+    const validity = document.getElementById('singleValidity')?.value;
+    const mode = document.getElementById('singleMode')?.value || 'voucher';
+    const buyerPhone = document.getElementById('singleBuyerPhone')?.value;
+    const routerId = getRouterId();
+
+    if (!profile) return alert('Pilih profile hotspot terlebih dahulu.');
+
+    const btn = document.getElementById('btnSubmitSingle');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Membuat...';
+
+    try {
+      const res = await fetch('/admin/api/vouchers/single', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ routerId, profile, price, validity, mode, buyerPhone })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal membuat voucher');
+
+      closeModal('singleVoucherModal');
+      await reloadBatches();
+
+      // Setup result modal
+      document.getElementById('resProfileName').innerText = data.voucher.profile;
+      document.getElementById('resVoucherCode').innerText = data.voucher.code;
+      document.getElementById('resVoucherPass').innerText = (data.voucher.code !== data.voucher.password) 
+        ? ('Password: ' + data.voucher.password) 
+        : 'Password sama dengan kode voucher';
+      document.getElementById('resVoucherPrice').innerText = 'Rp ' + Number(data.voucher.price || 0).toLocaleString('id-ID');
+      document.getElementById('resVoucherValidity').innerText = 'Durasi: ' + (data.voucher.validity || '-');
+      document.getElementById('resWaText').value = data.waText || '';
+
+      currentWaTarget = {
+        phone: data.buyerPhone || '',
+        text: data.waText || ''
+      };
+
+      openModal('singleVoucherResultModal');
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Buat Sekarang';
+    }
+  }
+
+  function copyResultWaText() {
+    const t = document.getElementById('resWaText')?.value;
+    copyText(t);
+  }
+
+  function sendResultToWa() {
+    if (currentWaTarget.phone) {
+      openSendWaModalWithValues(currentWaTarget.phone, currentWaTarget.text);
+    } else {
+      const p = prompt('Masukkan nomor WhatsApp pembeli (contoh: 08123456789):');
+      if (!p) return;
+      openSendWaModalWithValues(p, currentWaTarget.text);
+    }
+  }
+
+  function openSendWaModalWithValues(phone, text) {
+    document.getElementById('sendWaPhone').value = phone || '';
+    document.getElementById('sendWaText').value = text || '';
+    openModal('sendWaModal');
+  }
+
+  function openSendWaModal(code, pass, profile, price, validity) {
+    const phone = prompt('Masukkan nomor WhatsApp tujuan (contoh: 08123456789):');
+    if (!phone) return;
+    const text = `*VOUCHER HOTSPOT*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `🎫 *Kode Voucher :* ${code}\n` +
+      (code !== pass ? `🔑 *Password :* ${pass}\n` : '') +
+      `📦 *Paket :* ${profile}\n` +
+      (validity ? `⏳ *Durasi :* ${validity}\n` : '') +
+      (price ? `💰 *Harga :* Rp ${Number(price).toLocaleString('id-ID')}\n` : '') +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `*Cara Menggunakan:*\n` +
+      `1. Hubungkan Wi-Fi ke hotspot\n` +
+      `2. Buka browser atau klik pop-up login\n` +
+      `3. Masukkan Kode Voucher di atas\n` +
+      `4. Selamat menikmati akses internet!`;
+
+    openSendWaModalWithValues(phone, text);
+  }
+
+  async function submitSendWa() {
+    const phone = document.getElementById('sendWaPhone')?.value.trim();
+    const text = document.getElementById('sendWaText')?.value.trim();
+    if (!phone) return alert('Nomor WhatsApp wajib diisi');
+    if (!text) return alert('Pesan tidak boleh kosong');
+
+    const btn = document.getElementById('btnSendWaSubmit');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Mengirim...';
+
+    try {
+      const res = await fetch('/admin/api/vouchers/send-wa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, text })
+      });
+      const data = await res.json();
+      if (data.sent) {
+        alert('✅ Pesan WhatsApp berhasil dikirim via bot!');
+        closeModal('sendWaModal');
+      } else {
+        const direct = confirm('⚠️ Bot WhatsApp tidak aktif / pesan gagal terkirim (' + (data.error || 'Offline') + ').\n\nApakah Anda ingin membuka link wa.me langsung di browser/aplikasi WA?');
+        if (direct && data.waDirectUrl) {
+          window.open(data.waDirectUrl, '_blank');
+          closeModal('sendWaModal');
+        }
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-send-fill me-1"></i> Kirim via Bot WA';
+    }
+  }
+
+  function openWaDirectWeb() {
+    const phone = document.getElementById('sendWaPhone')?.value.trim();
+    const text = document.getElementById('sendWaText')?.value.trim();
+    if (!phone) return alert('Nomor WhatsApp wajib diisi');
+    const clean = phone.replace(/^\+/, '').replace(/^0/, '62');
+    window.open(`https://wa.me/${clean}?text=${encodeURIComponent(text)}`, '_blank');
+  }
+
+  async function searchGlobalVoucher() {
+    const q = document.getElementById('voucherGlobalSearch')?.value.trim();
+    if (!q) return;
+    const box = document.getElementById('searchResultsBox');
+    const list = document.getElementById('searchResultsList');
+    box.style.display = 'block';
+    list.innerHTML = '<tr><td colspan="8" class="text-center text-muted"><i class="bi bi-arrow-repeat spin"></i> Mencari voucher...</td></tr>';
+    try {
+      const res = await fetch('/admin/api/vouchers/search?q=' + encodeURIComponent(q));
+      const data = await res.json();
+      const items = data.vouchers || [];
+      if (items.length === 0) {
+        list.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ditemukan voucher dengan kata kunci: <b>' + escapeHtml(q) + '</b></td></tr>';
+        return;
+      }
+      document.getElementById('searchResultsTitle').innerHTML = `<i class="bi bi-check-circle me-1 text-success"></i> Ditemukan ${items.length} Voucher untuk kata kunci: <b>${escapeHtml(q)}</b>`;
+      list.innerHTML = items.map(v => {
+        const st = String(v.status || '-');
+        const stClass = st === 'used' ? 's' : (st === 'created' ? 'w' : (st === 'missing' ? 'd' : 'w'));
+        const usedAt = v.used_at ? new Date(v.used_at).toLocaleString('id-ID') : '-';
+        const routerName = v.router_name || 'Default';
+        const price = v.price ? 'Rp ' + Number(v.price).toLocaleString('id-ID') : '-';
+        return `
+          <tr>
+            <td class="mono fw-bold text-white">${v.code}</td>
+            <td class="mono">${v.password}</td>
+            <td>${routerName}</td>
+            <td>${v.profile_name}</td>
+            <td>${price}</td>
+            <td><span class="badge ${stClass}">${st}</span></td>
+            <td>${usedAt}</td>
+            <td>
+              <button class="btn btn-g btn-sm py-0 px-2" style="font-size:11px;" onclick="copyText('Kode: ${v.code} Pass: ${v.password}')" title="Copy"><i class="bi bi-copy"></i></button>
+              <button class="btn btn-s btn-sm py-0 px-2" style="font-size:11px;" onclick="openSendWaModal('${v.code}', '${v.password}', '${v.profile_name}', '${v.price}', '${v.validity}')" title="Kirim WA"><i class="bi bi-whatsapp"></i></button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    } catch (e) {
+      list.innerHTML = `<tr><td colspan="8" class="text-danger text-center py-4">Gagal mencari: ${e.message}</td></tr>`;
+    }
+  }
+
   async function reloadBatches() {
     const routerId = getRouterId();
     const url = routerId ? `/admin/api/vouchers/batches?routerId=${routerId}` : `/admin/api/vouchers/batches`;
@@ -456,7 +890,7 @@
     const batches = await res.json();
     const list = document.getElementById('batches-list');
     if (!Array.isArray(batches) || batches.length === 0) {
-      list.innerHTML = '<tr><td colspan="8" class="text-center text-muted">' + I18N.noBatches + '</td></tr>';
+      list.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">' + I18N.noBatches + '</td></tr>';
       updateStats([]);
       return;
     }
@@ -473,19 +907,21 @@
         : `/admin/vouchers/batches/${b.id}/print?style=${encodeURIComponent(selectedStyle)}`;
       return `
         <tr>
-          <td class="mono">#${b.id}</td>
-          <td>${routerName}</td>
-          <td>${b.profile_name || '-'}</td>
+          <td class="mono fw-bold">#${b.id}</td>
+          <td><span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);">${routerName}</span></td>
+          <td class="fw-bold">${b.profile_name || '-'}</td>
           <td>${qty}</td>
-          <td>${used}</td>
+          <td><span class="text-success fw-bold">${used}</span></td>
           <td><span class="badge ${stClass}">${status}</span></td>
-          <td>${created}</td>
-          <td style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="btn btn-g btn-sm" onclick="openDetail(${b.id})"><i class="bi bi-eye"></i> ${I18N.actionDetail}</button>
-            <button class="btn btn-g btn-sm" onclick="syncBatch(${b.id})"><i class="bi bi-arrow-repeat"></i> ${I18N.actionSync}</button>
-            <a class="btn btn-g btn-sm" target="_blank" href="${printHref}"><i class="bi bi-printer"></i> ${I18N.actionPrint}</a>
-            <a class="btn btn-g btn-sm" href="/admin/vouchers/batches/${b.id}/export.csv"><i class="bi bi-filetype-csv"></i> ${I18N.actionCsv}</a>
-            <button class="btn btn-g btn-sm" onclick="deleteBatch(${b.id}, '${status}')"><i class="bi bi-trash"></i> ${I18N.actionDelete}</button>
+          <td class="small text-muted">${created}</td>
+          <td>
+            <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+              <button class="btn btn-g btn-sm py-1 px-2" onclick="openDetail(${b.id})" title="Lihat Detail & Daftar Kode"><i class="bi bi-eye"></i> Detail</button>
+              <a class="btn btn-p btn-sm py-1 px-2" target="_blank" href="${printHref}" title="Cetak Voucher"><i class="bi bi-printer"></i> Print</a>
+              <button class="btn btn-g btn-sm py-1 px-2" onclick="syncBatch(${b.id})" title="Sinkron Status MikroTik"><i class="bi bi-arrow-repeat"></i></button>
+              <a class="btn btn-g btn-sm py-1 px-2" href="/admin/vouchers/batches/${b.id}/export.csv" title="Download File CSV"><i class="bi bi-filetype-csv"></i></a>
+              <button class="btn btn-d btn-sm py-1 px-2" onclick="deleteBatch(${b.id}, '${status}')" title="Hapus Batch"><i class="bi bi-trash"></i></button>
+            </div>
           </td>
         </tr>
       `;
@@ -526,10 +962,22 @@
     const totalV = batches.reduce((a, b) => a + (Number(b.vouchers_count || 0)), 0);
     const used = batches.reduce((a, b) => a + (Number(b.used_count || 0)), 0);
     const unused = Math.max(0, totalV - used);
+
+    const revenue = batches.reduce((sum, b) => sum + ((Number(b.used_count || 0)) * (Number(b.price || 0))), 0);
+    const stockVal = batches.reduce((sum, b) => {
+      const unusedCount = Math.max(0, (Number(b.vouchers_count || 0)) - (Number(b.used_count || 0)));
+      return sum + (unusedCount * (Number(b.price || 0)));
+    }, 0);
+
     document.getElementById('stat-batches').innerText = totalBatches;
     document.getElementById('stat-vouchers').innerText = totalV;
     document.getElementById('stat-used').innerText = used;
+    const usedSub = document.getElementById('stat-used-sub');
+    if (usedSub) usedSub.innerText = 'Omset: Rp ' + revenue.toLocaleString('id-ID');
+
     document.getElementById('stat-unused').innerText = unused;
+    const unusedSub = document.getElementById('stat-unused-sub');
+    if (unusedSub) unusedSub.innerText = 'Stok: Rp ' + stockVal.toLocaleString('id-ID');
   }
 
   async function openDetail(id) {
@@ -547,11 +995,32 @@
     meta.insertAdjacentHTML('beforeend', `<span class="pill"><i class="bi bi-cash-coin"></i> <b>Rp ${Number(data.batch.price||0).toLocaleString('id-ID')}</b></span>`);
     meta.insertAdjacentHTML('beforeend', `<span class="pill"><i class="bi bi-collection"></i> <b>${data.batch.qty_created || 0}/${data.batch.qty_total || 0}</b></span>`);
 
+    currentBatchVouchers = Array.isArray(data.vouchers) ? data.vouchers.map(v => ({
+      ...v,
+      profile_name: data.batch.profile_name,
+      price: data.batch.price,
+      validity: data.batch.validity
+    })) : [];
+
+    const filterInput = document.getElementById('batchFilterInput');
+    if (filterInput) filterInput.value = '';
+
+    renderBatchVouchersList(currentBatchVouchers);
+    openModal('batchDetailModal');
+  }
+
+  function filterBatchDetail(q) {
+    const term = String(q || '').toLowerCase().trim();
+    const filtered = term 
+      ? currentBatchVouchers.filter(v => String(v.code).toLowerCase().includes(term) || String(v.password).toLowerCase().includes(term) || String(v.status).toLowerCase().includes(term))
+      : currentBatchVouchers;
+    renderBatchVouchersList(filtered);
+  }
+
+  function renderBatchVouchersList(items) {
     const list = document.getElementById('batchDetailList');
-    const items = Array.isArray(data.vouchers) ? data.vouchers : [];
-    if (items.length === 0) {
-      list.innerHTML = '<tr><td colspan="5" class="text-center text-muted">' + I18N.noVouchers + '</td></tr>';
-      openModal('batchDetailModal');
+    if (!items || items.length === 0) {
+      list.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">' + I18N.noVouchers + '</td></tr>';
       return;
     }
     list.innerHTML = items.map(v => {
@@ -562,15 +1031,20 @@
       const stClass = st === 'used' ? 's' : (st === 'created' ? 'w' : (st === 'missing' ? 'd' : 'w'));
       return `
         <tr>
-          <td class="mono">${v.code}</td>
+          <td class="mono fw-bold text-white">${v.code}</td>
           <td class="mono">${v.password}</td>
           <td><span class="badge ${stClass}">${st}</span></td>
           <td>${usedAt}</td>
           <td><div class="hint">${seenAt}</div><div class="hint">${seen}</div></td>
+          <td>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-g btn-sm py-0 px-2" style="font-size:11px;" onclick="copyText('Kode: ${v.code} Pass: ${v.password}')" title="Copy"><i class="bi bi-copy"></i></button>
+              <button class="btn btn-s btn-sm py-0 px-2" style="font-size:11px;" onclick="openSendWaModal('${v.code}', '${v.password}', '${v.profile_name}', '${v.price}', '${v.validity}')" title="Kirim WA"><i class="bi bi-whatsapp"></i></button>
+            </div>
+          </td>
         </tr>
       `;
     }).join('');
-    openModal('batchDetailModal');
   }
 
   async function syncBatch(id) {

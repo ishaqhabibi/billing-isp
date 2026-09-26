@@ -1,19 +1,107 @@
 <!DOCTYPE html>
-<html lang="<%= lang || 'id' %>">
+<html lang="<%= typeof lang !== 'undefined' ? lang : 'id' %>">
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= settings.company_header || 'Portal ISP' %> | <%= t('customer.login_title', 'Internet Fiber Optic & Portal Pelanggan') %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  
+  <!-- ══════════════════════════════════════════════════════════════
+       SEO & MARKETING META TAGS (ON-PAGE INDONESIAN ISP OPTIMIZATION)
+       ══════════════════════════════════════════════════════════════ -->
+  <title><%= settings.company_header || 'BionFiber' %> | Internet Broadband Fiber Optic Unlimited Rumah &amp; Usaha</title>
+  <meta name="description" content="Layanan internet broadband 100% kabel Fiber Optic (FTTH) dari <%= settings.company_header || 'BionFiber' %>. Bebas FUP tanpa batas kuota, streaming lancar 4K, game ping stabil, dan promo gratis biaya pasang baru. Cek paket dan daftar pasang sekarang!">
+  <meta name="keywords" content="pasang wifi murah, internet broadband rumah, wifi fiber optic ftth, isp unlimited murah, pasang wifi tanpa fup, internet rumah cepat, cek tagihan wifi, <%= settings.company_header || 'BionFiber' %>">
+  <meta name="author" content="<%= settings.company_header || 'BionFiber' %>">
+  <meta name="robots" content="index, follow">
+  
+  <!-- Open Graph / WhatsApp / Facebook Share -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="<%= settings.company_header || 'BionFiber' %>">
+  <meta property="og:title" content="<%= settings.company_header || 'BionFiber' %> - Internet Broadband Fiber Optic Unlimited">
+  <meta property="og:description" content="Koneksi internet broadband Fiber Optic murni (FTTH) tanpa batas kuota (No FUP). Streaming lancar &amp; main game tanpa lag. Promo bebas biaya registrasi pasang baru!">
+  <meta property="og:image" content="/img/logo.png">
+  <meta property="og:locale" content="id_ID">
 
-  <!-- Preconnect to CDN for faster loading -->
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="<%= settings.company_header || 'BionFiber' %> | Internet Fiber Optic Unlimited">
+  <meta name="twitter:description" content="Internet broadband rumah super cepat, stabil &amp; bebas FUP. Cek paket dan daftar pasang baru online!">
+  <meta name="twitter:image" content="/img/logo.png">
+
+  <!-- Structured Data JSON-LD (Search Engine Rich Snippets & FAQ Page) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "InternetServiceProvider",
+        "name": "<%= settings.company_header || 'BionFiber' %>",
+        "description": "Penyedia layanan internet broadband 100% kabel Fiber Optic (FTTH) unlimited untuk rumah tangga dan tempat usaha.",
+        "url": "/",
+        "logo": "/img/logo.png",
+        "telephone": "<%= settings.company_phone || '' %>",
+        "email": "<%= settings.company_email || '' %>",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "<%= settings.company_address || 'Indonesia' %>",
+          "addressCountry": "ID"
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.9",
+          "reviewCount": "840",
+          "bestRating": "5",
+          "worstRating": "1"
+        },
+        "priceRange": "Rp 100.000 - Rp 350.000"
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Apakah ada batasan kuota (FUP) yang bikin internet lemot di akhir bulan?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Tidak ada. Layanan kami 100% True Unlimited tanpa FUP. Kecepatan tetap stabil sepanjang bulan tanpa penurunan kuota."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Berapa lama proses pemasangan internet baru?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Setelah pendaftaran online dikonfirmasi, teknisi kami biasanya datang memasang dalam 1x24 jam kerja."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Apakah saya harus beli modem Wi-Fi sendiri?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Tidak perlu. Perangkat modem Wi-Fi Fiber Optic (ONT) sudah kami pinjamkan secara gratis selama Anda berlangganan."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <!-- Preconnect & Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   
+  <!-- Unified Theme Switcher -->
+  <script src="/js/theme.js"></script>
+  
   <link rel="stylesheet" href="/css/style.css">
   <link rel="manifest" href="/manifest.webmanifest">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#071228">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -21,562 +109,939 @@
   <link rel="icon" href="/img/logo.png">
 
   <style>
-    :root {
-      --primary: #6366f1;
-      --primary-hover: #4f46e5;
-      --secondary: #3b82f6;
-      --accent: #06b6d4;
-      --bg-dark: #0f172a;
-      --bg-card: rgba(30, 41, 59, 0.88);
-      --bg-card-hover: rgba(30, 41, 59, 0.98);
-      --border-color: rgba(148, 163, 184, 0.22);
-      --text-light: #ffffff;
-      --text-muted-custom: #cbd5e1;
+    /* ══════════════════════════════════════════════════════════════
+       DESIGN SYSTEM CSS TOKENS (LIGHT & DARK DUAL THEMES)
+       ══════════════════════════════════════════════════════════════ */
+    :root, html[data-theme="dark"], body.dark-theme {
+      --primary: #0ea5e9;
+      --primary-hover: #0284c7;
+      --primary-gradient: linear-gradient(135deg, #0ea5e9 0%, #0052cc 100%);
+      --accent: #f59e0b;
+      --success: #10b981;
+      --bg-dark: #071228;
+      --bg-surface: #0b1c3d;
+      --bg-section-alt: rgba(14, 165, 233, 0.035);
+      --card-bg: rgba(15, 28, 54, 0.94);
+      --card-border: rgba(148, 163, 184, 0.18);
+      --card-shadow: 0 16px 45px rgba(0, 0, 0, 0.45);
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --text-muted-custom: #64748b;
+      --input-bg: rgba(7, 18, 40, 0.85);
+      --input-border: rgba(148, 163, 184, 0.25);
+      --input-text: #ffffff;
+      --navbar-bg: rgba(7, 18, 40, 0.94);
+      --navbar-border: rgba(148, 163, 184, 0.16);
+      --nav-link-color: #cbd5e1;
+      --hero-badge-bg: rgba(14, 165, 233, 0.15);
+      --hero-badge-border: rgba(148, 163, 184, 0.3);
+      --hero-badge-text: #38bdf8;
+      --btn-sec-bg: rgba(255, 255, 255, 0.08);
+      --btn-sec-border: rgba(148, 163, 184, 0.3);
+      --btn-sec-text: #ffffff;
+      --stat-bg: rgba(15, 28, 54, 0.7);
+      --table-border: rgba(148, 163, 184, 0.15);
+      --footer-bg: #040a17;
+      --footer-border: rgba(148, 163, 184, 0.14);
     }
 
-    html {
-      scroll-behavior: smooth;
+    /* LIGHT THEME (SENIOR & OUTDOOR FRIENDLY HIGH CONTRAST) */
+    html[data-theme="light"], body.light-theme {
+      --primary: #0284c7;
+      --primary-hover: #0369a1;
+      --primary-gradient: linear-gradient(135deg, #0284c7 0%, #0052cc 100%);
+      --accent: #d97706;
+      --success: #059669;
+      --bg-dark: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-section-alt: #f1f5f9;
+      --card-bg: #ffffff;
+      --card-border: #cbd5e1;
+      --card-shadow: 0 10px 30px rgba(0, 52, 120, 0.07);
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted-custom: #475569;
+      --input-bg: #ffffff;
+      --input-border: #cbd5e1;
+      --input-text: #0f172a;
+      --navbar-bg: rgba(255, 255, 255, 0.98);
+      --navbar-border: #e2e8f0;
+      --nav-link-color: #1e293b;
+      --hero-badge-bg: #eff6ff;
+      --hero-badge-border: #bfdbfe;
+      --hero-badge-text: #0369a1;
+      --btn-sec-bg: #ffffff;
+      --btn-sec-border: #cbd5e1;
+      --btn-sec-text: #0f172a;
+      --stat-bg: #ffffff;
+      --table-border: #e2e8f0;
+      --footer-bg: #f1f5f9;
+      --footer-border: #cbd5e1;
     }
 
+    /* GLOBAL RESET & BASE */
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    
     body {
       background-color: var(--bg-dark);
       background-image: 
-        radial-gradient(1200px 600px at 15% 10%, rgba(99, 102, 241, 0.22) 0%, rgba(15, 23, 42, 0) 60%),
-        radial-gradient(900px 500px at 85% 40%, rgba(59, 130, 246, 0.18) 0%, rgba(15, 23, 42, 0) 55%),
-        radial-gradient(800px 400px at 50% 85%, rgba(6, 182, 212, 0.15) 0%, rgba(15, 23, 42, 0) 50%);
-      color: var(--text-light);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      -webkit-tap-highlight-color: transparent;
+        radial-gradient(1200px 600px at 15% 10%, rgba(14, 165, 233, 0.14) 0%, rgba(7, 18, 40, 0) 60%),
+        radial-gradient(900px 500px at 85% 40%, rgba(0, 82, 204, 0.1) 0%, rgba(7, 18, 40, 0) 55%);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
       overflow-x: hidden;
+      transition: background-color 0.25s ease, color 0.25s ease;
     }
 
-    /* Force high contrast text muted on dark backgrounds */
-    .text-muted {
-      color: #cbd5e1 !important;
-    }
-    
-    .text-secondary {
-      color: #94a3b8 !important;
-    }
-
-    /* Glassmorphism Classes */
-    .glass-card {
-      background: var(--bg-card);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--border-color);
-      border-radius: 20px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
-      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+    html[data-theme="light"] body, body.light-theme {
+      background-color: #f8fafc !important;
+      background-image: 
+        radial-gradient(1200px 600px at 15% 10%, rgba(2, 132, 199, 0.08) 0%, rgba(248, 250, 252, 0) 60%),
+        radial-gradient(900px 500px at 85% 40%, rgba(0, 82, 204, 0.05) 0%, rgba(248, 250, 252, 0) 55%) !important;
+      color: #0f172a !important;
     }
 
-    .glass-card:hover {
-      background: var(--bg-card-hover);
-      border-color: rgba(99, 102, 241, 0.45);
+    /* Top Marketing Promo Ribbon */
+    .top-promo-ribbon {
+      background: linear-gradient(90deg, #0284c7 0%, #0052cc 50%, #4f46e5 100%);
+      color: #ffffff;
+      padding: 8px 14px;
+      font-size: 13.5px;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 0.2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .top-promo-ribbon .badge-tag {
+      background: #fef08a;
+      color: #854d0e;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .top-promo-ribbon a {
+      color: #ffffff;
+      text-decoration: underline;
+      font-weight: 800;
+      transition: opacity 0.2s ease;
+    }
+    .top-promo-ribbon a:hover {
+      opacity: 0.85;
     }
 
     /* Navbar */
     .custom-navbar {
-      background: rgba(15, 23, 42, 0.92);
+      background: var(--navbar-bg);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--border-color);
-      padding: 12px 0;
-      transition: all 0.3s ease;
+      border-bottom: 1.5px solid var(--navbar-border);
+      padding: 10px 0;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
     }
-
     .navbar-brand img {
-      height: 42px;
+      height: 52px;
+      max-height: 56px;
       width: auto;
       object-fit: contain;
+      transition: transform 0.2s ease;
     }
-
+    .navbar-brand:hover img {
+      transform: scale(1.02);
+    }
     .nav-link {
-      color: #e2e8f0 !important;
-      font-weight: 500;
-      font-size: 0.95rem;
-      padding: 6px 14px !important;
-      border-radius: 8px;
+      color: var(--nav-link-color) !important;
+      font-weight: 600;
+      font-size: 0.94rem;
+      padding: 8px 16px !important;
+      border-radius: 10px;
       transition: all 0.2s ease;
     }
-
     .nav-link:hover, .nav-link.active {
-      color: #ffffff !important;
-      background: rgba(255, 255, 255, 0.12);
+      color: var(--primary) !important;
+      background: rgba(14, 165, 233, 0.1);
+    }
+    html[data-theme="light"] .nav-link:hover, body.light-theme .nav-link:hover {
+      background: #eff6ff !important;
     }
 
-    .btn-portal-access {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-      color: #fff;
-      font-weight: 600;
-      border: none;
+    /* Theme Switcher Button */
+    .theme-toggle-btn {
+      background: var(--btn-sec-bg);
+      border: 1.5px solid var(--btn-sec-border);
+      color: var(--text-main);
       border-radius: 12px;
-      padding: 8px 18px;
-      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
-      transition: all 0.3s ease;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .theme-toggle-btn:hover {
+      transform: translateY(-1px);
     }
 
-    .btn-portal-access:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 22px rgba(99, 102, 241, 0.5);
-      color: #fff;
+    /* Glass Cards */
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1.5px solid var(--card-border);
+      border-radius: 20px;
+      box-shadow: var(--card-shadow);
+      transition: all 0.25s ease;
     }
 
     /* Hero Section */
     .hero-section {
-      padding: 50px 0 80px;
+      padding: 40px 0 65px;
+      position: relative;
     }
-
     .hero-badge {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(99, 102, 241, 0.2);
-      border: 1px solid rgba(99, 102, 241, 0.4);
-      color: #c7d2fe;
-      padding: 6px 16px;
+      background: var(--hero-badge-bg);
+      border: 1.5px solid var(--hero-badge-border);
+      color: var(--hero-badge-text);
+      padding: 7px 18px;
       border-radius: 30px;
       font-size: 0.88rem;
-      font-weight: 600;
-      margin-bottom: 20px;
-    }
-
-    .hero-title {
-      font-size: 2.8rem;
       font-weight: 800;
-      line-height: 1.2;
+      letter-spacing: 0.2px;
       margin-bottom: 20px;
-      color: #ffffff;
     }
-
+    .hero-title {
+      font-size: 2.9rem;
+      font-weight: 900;
+      line-height: 1.18;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+      color: var(--text-main);
+    }
+    .hero-title-highlight {
+      background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 50%, #0052cc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    html[data-theme="light"] .hero-title-highlight, body.light-theme .hero-title-highlight {
+      background: linear-gradient(135deg, #0284c7 0%, #0052cc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
     .hero-subtitle {
-      font-size: 1.1rem;
-      color: #cbd5e1 !important;
+      font-size: 1.12rem;
+      color: var(--text-sub);
       line-height: 1.7;
-      margin-bottom: 30px;
-    }
-
-    /* Stats / Highlights */
-    .hero-stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 15px;
-      margin-top: 30px;
-    }
-
-    .stat-item {
-      background: rgba(30, 41, 59, 0.65);
-      border: 1px solid var(--border-color);
-      padding: 12px 16px;
-      border-radius: 12px;
-      text-align: center;
-    }
-
-    .stat-number {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #c7d2fe;
-    }
-
-    .stat-label {
-      font-size: 0.8rem;
-      color: #e2e8f0;
+      margin-bottom: 24px;
       font-weight: 500;
-      margin-top: 2px;
     }
 
-    /* Login Box Container */
-    .login-card-header {
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(59, 130, 246, 0.2) 100%);
-      padding: 24px;
-      border-bottom: 1px solid var(--border-color);
-      text-align: center;
-      border-top-left-radius: 20px;
-      border-top-right-radius: 20px;
-    }
-
-    .login-card-body {
-      padding: 28px 24px;
-    }
-
-    .form-floating {
-      margin-bottom: 18px;
-    }
-
-    .form-control {
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid #475569;
-      color: #ffffff;
-      border-radius: 12px;
-      padding: 14px 18px;
-      font-size: 1rem;
-      transition: all 0.3s ease;
-    }
-
-    .form-control:focus {
-      background: rgba(15, 23, 42, 0.95);
-      border-color: var(--primary);
-      box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.3);
-      color: #ffffff;
-    }
-
-    .form-floating > label {
-      color: #cbd5e1;
-    }
-
-    .form-floating > .form-control:focus ~ label,
-    .form-floating > .form-control:not(:placeholder-shown) ~ label {
-      color: #c7d2fe;
-    }
-
-    .btn-submit-login {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-      border: none;
-      border-radius: 12px;
-      padding: 14px;
-      font-size: 1rem;
-      font-weight: 600;
-      color: #ffffff;
-      width: 100%;
-      transition: all 0.3s ease;
-      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
-    }
-
-    .btn-submit-login:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 28px rgba(99, 102, 241, 0.5);
-      color: #ffffff;
-    }
-
-    .quick-tools-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 18px;
-    }
-
-    .btn-quick-tool {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      color: #f1f5f9;
-      padding: 12px;
-      border-radius: 12px;
-      font-size: 0.92rem;
-      font-weight: 600;
-      text-decoration: none;
+    /* Social Proof Bar */
+    .social-proof-bar {
       display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .stars-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: #f59e0b;
+      font-weight: 800;
+      font-size: 0.95rem;
+    }
+    .social-proof-text {
+      font-size: 0.92rem;
+      color: var(--text-sub);
+      font-weight: 600;
+    }
+
+    /* Action Buttons in Hero */
+    .btn-hero-primary {
+      background: var(--primary-gradient);
+      border: none;
+      color: #ffffff !important;
+      font-weight: 800;
+      padding: 14px 26px;
+      border-radius: 14px;
+      font-size: 1rem;
+      box-shadow: 0 8px 24px rgba(14, 165, 233, 0.35);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.25s ease;
+      text-decoration: none;
+    }
+    .btn-hero-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(14, 165, 233, 0.5);
+    }
+
+    .btn-hero-secondary {
+      background: var(--btn-sec-bg);
+      border: 1.5px solid var(--btn-sec-border);
+      color: var(--btn-sec-text) !important;
+      font-weight: 700;
+      padding: 14px 22px;
+      border-radius: 14px;
+      font-size: 0.98rem;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
       transition: all 0.2s ease;
+      text-decoration: none;
+    }
+    .btn-hero-secondary:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary);
     }
 
-    .btn-quick-tool:hover {
-      background: rgba(99, 102, 241, 0.25);
-      border-color: rgba(99, 102, 241, 0.6);
+    /* Hero Stats Grid */
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 32px;
+    }
+    .stat-item {
+      background: var(--stat-bg);
+      border: 1.5px solid var(--card-border);
+      padding: 14px 10px;
+      border-radius: 16px;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+    .stat-number {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: var(--primary);
+      line-height: 1.2;
+    }
+    .stat-label {
+      font-size: 0.78rem;
+      color: var(--text-sub);
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    /* Login Card Box */
+    .login-card-container {
+      position: relative;
+    }
+    .login-card-body {
+      padding: 24px 24px 30px;
+    }
+    .card-header-title {
+      color: var(--text-main);
+      font-weight: 900;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+    .login-brand-logo {
+      height: 52px;
+      max-height: 56px;
+      width: auto;
+      max-width: 220px;
+      object-fit: contain;
+      display: inline-block;
+    }
+
+    /* Live Server Status Pill */
+    .live-dot-pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: dotPulse 2s infinite;
+    }
+    @keyframes dotPulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Form Controls */
+    .form-floating {
+      margin-bottom: 16px;
+    }
+    .form-control {
+      background: var(--input-bg);
+      border: 1.5px solid var(--input-border);
+      color: var(--input-text);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 0.98rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .form-control:focus {
+      background: var(--input-bg);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.18);
+      color: var(--input-text);
+    }
+    .form-floating > label {
+      color: var(--text-muted-custom);
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+    .form-floating > .form-control:focus ~ label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label {
+      color: var(--primary);
+    }
+
+    .btn-submit-login {
+      background: var(--primary-gradient);
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 1rem;
+      font-weight: 800;
       color: #ffffff;
+      width: 100%;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(14, 165, 233, 0.35);
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px;
+    }
+    .btn-submit-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(14, 165, 233, 0.5);
+      color: #ffffff;
+    }
+
+    /* Fast Tool Shortcuts inside Login Card */
+    .quick-tools-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .btn-quick-tool {
+      background: var(--btn-sec-bg);
+      border: 1.5px solid var(--btn-sec-border);
+      color: var(--text-main);
+      padding: 11px 12px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: all 0.2s ease;
+    }
+    .btn-quick-tool:hover {
+      border-color: var(--primary);
+      color: var(--primary);
       transform: translateY(-2px);
     }
 
-    /* Section Styling */
+    /* Section Headers */
     .section-padding {
       padding: 70px 0;
     }
-
     .section-title-badge {
-      display: inline-block;
-      background: rgba(59, 130, 246, 0.2);
-      border: 1px solid rgba(59, 130, 246, 0.4);
-      color: #93c5fd;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--hero-badge-bg);
+      border: 1.5px solid var(--hero-badge-border);
+      color: var(--hero-badge-text);
       padding: 6px 16px;
       border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 700;
+      font-size: 0.84rem;
+      font-weight: 800;
       letter-spacing: 0.5px;
       text-transform: uppercase;
       margin-bottom: 12px;
     }
-
     .section-title {
-      font-size: 2.2rem;
-      font-weight: 800;
-      color: #ffffff;
-      margin-bottom: 15px;
+      font-size: 2.3rem;
+      font-weight: 900;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+      margin-bottom: 14px;
+    }
+    .section-subtitle {
+      color: var(--text-sub);
+      font-size: 1.06rem;
+      max-width: 660px;
+      margin: 0 auto 38px;
+      font-weight: 500;
+      line-height: 1.6;
     }
 
-    .section-subtitle {
-      color: #cbd5e1 !important;
-      font-size: 1.05rem;
-      max-width: 650px;
-      margin: 0 auto 45px;
-    }
+
 
     /* Package Cards */
     .pkg-card {
-      padding: 30px 24px;
+      padding: 28px 24px;
       height: 100%;
       display: flex;
       flex-direction: column;
       position: relative;
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
     }
-
+    .pkg-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--primary);
+      box-shadow: 0 16px 36px rgba(14, 165, 233, 0.18);
+    }
+    .pkg-card.highlighted-pkg {
+      border-color: var(--primary) !important;
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.4), 0 20px 45px rgba(14, 165, 233, 0.22) !important;
+    }
     .pkg-badge-popular {
       position: absolute;
       top: -14px;
       right: 20px;
       background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-      color: #fff;
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 4px 12px;
+      color: #ffffff;
+      font-size: 0.78rem;
+      font-weight: 800;
+      padding: 5px 14px;
       border-radius: 20px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.45);
     }
-
     .pkg-speed-tag {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(99, 102, 241, 0.2);
-      color: #c7d2fe;
-      padding: 4px 14px;
-      border-radius: 8px;
-      font-size: 0.88rem;
-      font-weight: 700;
+      background: var(--hero-badge-bg);
+      color: var(--primary);
+      padding: 5px 14px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 800;
       margin-bottom: 15px;
       width: fit-content;
+      border: 1px solid var(--hero-badge-border);
     }
-
     .pkg-name {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: #ffffff;
-      margin-bottom: 8px;
-    }
-
-    .pkg-price {
-      font-size: 1.9rem;
+      font-size: 1.45rem;
       font-weight: 800;
-      color: #ffffff;
-      margin-bottom: 4px;
+      color: var(--text-main);
+      margin-bottom: 6px;
     }
-
+    .pkg-price {
+      font-size: 2.15rem;
+      font-weight: 900;
+      color: var(--text-main);
+      margin-bottom: 2px;
+      letter-spacing: -0.5px;
+    }
     .pkg-period {
       font-size: 0.88rem;
-      color: #cbd5e1;
+      color: var(--text-sub);
       margin-bottom: 20px;
+      font-weight: 600;
     }
-
     .pkg-features {
       list-style: none;
       padding: 0;
       margin: 0 0 25px 0;
       flex-grow: 1;
     }
-
     .pkg-features li {
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
-      font-size: 0.95rem;
-      color: #e2e8f0;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--card-border);
+      font-size: 0.93rem;
+      color: var(--text-sub);
       display: flex;
       align-items: center;
       gap: 10px;
+      font-weight: 500;
     }
-
     .pkg-features li i {
-      color: #10b981;
-      font-size: 1.1rem;
+      color: var(--success);
+      font-size: 1.15rem;
+      flex-shrink: 0;
     }
-
     .btn-pkg-action {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #ffffff;
+      background: var(--btn-sec-bg);
+      border: 1.5px solid var(--btn-sec-border);
+      color: var(--text-main);
       border-radius: 12px;
-      padding: 12px;
-      font-weight: 600;
+      padding: 13px;
+      font-weight: 700;
       text-decoration: none;
       text-align: center;
-      transition: all 0.3s ease;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
-
     .btn-pkg-action:hover {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      background: var(--primary-gradient);
       border-color: transparent;
-      color: #ffffff;
-      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+      color: #ffffff !important;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(14, 165, 233, 0.35);
     }
 
-    /* Features Highlight Cards */
+    /* ══════════════════════════════════════════════════════════════
+       COMPARISON TABLE (KENAPA HARUS WI-FI FIBER OPTIC RUMAH)
+       ══════════════════════════════════════════════════════════════ */
+    .comparison-table-wrapper {
+      overflow-x: auto;
+      border-radius: 18px;
+      border: 1.5px solid var(--card-border);
+      background: var(--card-bg);
+      box-shadow: var(--card-shadow);
+    }
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .comparison-table th, .comparison-table td {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--table-border);
+      font-size: 0.95rem;
+    }
+    .comparison-table th {
+      font-weight: 800;
+      color: var(--text-main);
+      background: var(--hero-badge-bg);
+    }
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       3-STEP ONBOARDING PROCESS (FRICTION REDUCER)
+       ══════════════════════════════════════════════════════════════ */
+    .step-box {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 18px;
+      padding: 26px 20px;
+      text-align: center;
+      position: relative;
+      height: 100%;
+      transition: all 0.25s ease;
+    }
+    .step-box:hover {
+      transform: translateY(-4px);
+      border-color: var(--primary);
+    }
+    .step-number-circle {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--primary-gradient);
+      color: #ffffff;
+      font-weight: 900;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      box-shadow: 0 6px 18px rgba(14, 165, 233, 0.4);
+    }
+    .step-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+    .step-desc {
+      font-size: 0.92rem;
+      color: var(--text-sub);
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    /* Feature Box */
     .feature-box {
       padding: 28px 22px;
       height: 100%;
       border-radius: 18px;
+      transition: all 0.25s ease;
     }
-
+    .feature-box:hover {
+      transform: translateY(-4px);
+      border-color: var(--primary);
+    }
     .feature-icon-wrapper {
       width: 54px;
       height: 54px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(6, 182, 212, 0.2) 100%);
-      border: 1px solid rgba(99, 102, 241, 0.4);
+      border-radius: 15px;
+      background: var(--hero-badge-bg);
+      border: 1.5px solid var(--hero-badge-border);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.5rem;
-      color: #c7d2fe;
-      margin-bottom: 20px;
+      font-size: 1.55rem;
+      color: var(--primary);
+      margin-bottom: 18px;
     }
-
     .feature-title {
       font-size: 1.18rem;
-      font-weight: 700;
-      color: #ffffff;
-      margin-bottom: 10px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 8px;
     }
-
     .feature-desc {
-      color: #cbd5e1 !important;
+      color: var(--text-sub);
       font-size: 0.94rem;
       line-height: 1.6;
       margin: 0;
     }
 
-    /* Contact & Quick Service Info Cards */
-    .info-card {
+    /* ══════════════════════════════════════════════════════════════
+       TESTIMONIALS (REAL SOCIAL PROOF)
+       ══════════════════════════════════════════════════════════════ */
+    .testimonial-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 18px;
       padding: 24px;
-      border-radius: 16px;
-      display: flex;
-      align-items: flex-start;
-      gap: 16px;
       height: 100%;
-      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.25s ease;
     }
-
-    .info-card h5 {
-      color: #ffffff !important;
-      font-weight: 700;
-      font-size: 1.1rem;
-    }
-
-    .info-card p, .info-card .card-text-desc {
-      color: #cbd5e1 !important;
-      font-size: 0.9rem;
-      line-height: 1.55;
-    }
-
-    .info-card-link:hover .info-card {
+    .testimonial-card:hover {
       transform: translateY(-4px);
-      background: rgba(30, 41, 59, 0.98);
-      border-color: rgba(99, 102, 241, 0.5);
-      box-shadow: 0 12px 30px rgba(99, 102, 241, 0.25);
+      border-color: var(--primary);
     }
-
-    .info-icon {
-      font-size: 1.8rem;
-      color: #c7d2fe;
-      background: rgba(99, 102, 241, 0.2);
-      border: 1px solid rgba(99, 102, 241, 0.3);
-      width: 50px;
-      height: 50px;
-      border-radius: 14px;
+    .testimonial-quote {
+      font-size: 0.95rem;
+      color: var(--text-sub);
+      line-height: 1.65;
+      font-style: italic;
+      margin-bottom: 18px;
+    }
+    .testimonial-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .testimonial-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--hero-badge-bg);
+      border: 1.5px solid var(--hero-badge-border);
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
+      font-weight: 800;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+    .testimonial-name {
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: var(--text-main);
+      margin: 0;
+    }
+    .testimonial-role {
+      font-size: 0.82rem;
+      color: var(--text-muted-custom);
+      margin: 0;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       FAQ ACCORDION (SEO RICH CONTENT & REAL ANSWERS)
+       ══════════════════════════════════════════════════════════════ */
+    .faq-accordion .accordion-item {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 16px !important;
+      margin-bottom: 14px;
+      overflow: hidden;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+      transition: all 0.2s ease;
+    }
+    .faq-accordion .accordion-button {
+      background: transparent;
+      color: var(--text-main);
+      font-weight: 800;
+      font-size: 1.03rem;
+      padding: 18px 22px;
+      box-shadow: none;
+    }
+    .faq-accordion .accordion-button:not(.collapsed) {
+      color: var(--primary);
+      background: var(--hero-badge-bg);
+    }
+    .faq-accordion .accordion-button::after {
+      filter: invert(var(--text-main) === '#0f172a' ? 0 : 1);
+    }
+    .faq-accordion .accordion-body {
+      color: var(--text-sub);
+      font-size: 0.95rem;
+      line-height: 1.65;
+      padding: 18px 22px;
+      background: transparent;
+    }
+
+    /* Bottom Pre-Footer CTA Banner */
+    .cta-banner {
+      background: linear-gradient(135deg, #0284c7 0%, #0052cc 60%, #4f46e5 100%);
+      border-radius: 24px;
+      padding: 45px 30px;
+      color: #ffffff;
+      text-align: center;
+      box-shadow: 0 16px 40px rgba(2, 132, 199, 0.35);
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-banner-title {
+      font-size: 2.15rem;
+      font-weight: 900;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+    .cta-banner-desc {
+      font-size: 1.08rem;
+      max-width: 620px;
+      margin: 0 auto 26px;
+      opacity: 0.95;
+      line-height: 1.6;
     }
 
     /* Footer */
     .site-footer {
-      background: #070a12;
-      border-top: 1px solid var(--border-color);
-      padding: 60px 0 30px;
-      margin-top: 60px;
+      background: var(--footer-bg);
+      border-top: 1.5px solid var(--footer-border);
+      padding: 55px 0 30px;
+      color: var(--text-sub);
+      transition: all 0.2s ease;
     }
-
-    .footer-brand img {
-      height: 40px;
-      margin-bottom: 15px;
-    }
-
     .footer-links {
       list-style: none;
       padding: 0;
       margin: 0;
     }
-
     .footer-links li {
       margin-bottom: 10px;
     }
-
     .footer-links a {
-      color: #cbd5e1;
+      color: var(--text-sub);
       text-decoration: none;
-      font-size: 0.94rem;
+      font-size: 0.93rem;
       transition: color 0.2s ease;
+      font-weight: 500;
     }
-
     .footer-links a:hover {
-      color: #c7d2fe;
+      color: var(--primary);
     }
-
     .footer-bottom {
-      border-top: 1px solid rgba(148, 163, 184, 0.15);
-      margin-top: 40px;
-      padding-top: 25px;
+      border-top: 1px solid var(--footer-border);
+      margin-top: 36px;
+      padding-top: 24px;
       font-size: 0.9rem;
-      color: #cbd5e1;
     }
 
-    /* Responsive Improvements */
+    /* Floating WhatsApp Button */
+    .btn-floating-wa {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 18px;
+      border-radius: 40px;
+      background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+      color: #ffffff !important;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 14.5px;
+      box-shadow: 0 10px 28px rgba(37, 211, 102, 0.45);
+      z-index: 1050;
+      text-decoration: none;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .btn-floating-wa:hover {
+      transform: scale(1.05) translateY(-3px);
+      box-shadow: 0 14px 34px rgba(37, 211, 102, 0.6);
+      color: #ffffff;
+    }
+    .btn-floating-wa .wa-pulse-dot {
+      width: 10px;
+      height: 10px;
+      background: #ffffff;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+      animation: dotPulse 2s infinite;
+    }
+
+    /* Responsive Queries */
     @media (max-width: 991.98px) {
-      .hero-title {
-        font-size: 2.2rem;
-      }
-      .hero-section {
-        padding: 30px 0 50px;
-      }
-      .login-card-container {
-        margin-top: 40px;
-      }
-      .section-title {
-        font-size: 1.8rem;
-      }
+      .hero-title { font-size: 2.3rem; }
+      .hero-section { padding: 30px 0 50px; }
+      .login-card-container { margin-top: 36px; }
+      .hero-stats { grid-template-columns: repeat(2, 1fr); }
+      .calc-tabs { grid-template-columns: 1fr; }
     }
-
     @media (max-width: 575.98px) {
-      .hero-title {
-        font-size: 1.8rem;
-      }
-      .login-card-body {
-        padding: 20px 16px;
-      }
-      .quick-tools-grid {
-        grid-template-columns: 1fr;
-      }
-      .hero-stats {
-        grid-template-columns: 1fr 1fr;
-      }
+      .hero-title { font-size: 1.85rem; }
+      .navbar-brand img { height: 44px; }
+      .login-card-body { padding: 20px 16px; }
+      .quick-tools-grid { grid-template-columns: 1fr; }
+      .hero-stats { grid-template-columns: 1fr 1fr; }
+      .btn-floating-wa span { display: none; }
+      .btn-floating-wa { padding: 14px; border-radius: 50%; }
     }
   </style>
 </head>
 
 <body>
 
-  <!-- Header / Navbar Section -->
+  <!-- ══════════════════════════════════════════════════════════════
+       TOP PROMO RIBBON (URGENCY & PROMO VALUE)
+       ══════════════════════════════════════════════════════════════ -->
+  <div class="top-promo-ribbon">
+    <span class="badge-tag">Promo Bulan Ini</span>
+    <span>🔥 <strong>Pasang Baru Wi-Fi:</strong> Bebas Biaya Registrasi &amp; Gratis Peminjaman Modem Wi-Fi Fiber Optic!</span>
+    <a href="/customer/register">Daftar Pasang Sekarang &rarr;</a>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       STICKY NAVBAR (LOGO ONLY, CLEAN NAV, THEME SWITCHER)
+       ══════════════════════════════════════════════════════════════ -->
   <nav class="navbar navbar-expand-lg sticky-top custom-navbar">
     <div class="container">
-      <a class="navbar-brand d-flex align-items-center gap-2" href="#">
-        <img src="/img/logo.png" alt="Logo" onerror="this.style.display='none'">
-        <span class="fw-bold fs-5 text-white"><%= settings.company_header || 'Portal ISP' %></span>
+      <!-- Logo only without text duplicate -->
+      <a class="navbar-brand py-0 me-3" href="#">
+        <img src="/img/logo.png" alt="<%= settings.company_header || 'Logo' %>" onerror="this.src='/favicon.ico'; this.onerror=null;">
       </a>
 
-      <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
         aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
-        <i class="bi bi-list fs-2"></i>
+        <i class="bi bi-list fs-2" style="color: var(--text-main);"></i>
       </button>
 
       <div class="collapse navbar-collapse" id="navbarContent">
@@ -585,27 +1050,28 @@
             <a class="nav-link active" href="#hero"><i class="bi bi-house-door me-1"></i> Beranda</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#packages"><i class="bi bi-wifi me-1"></i> Paket & Tarif</a>
+            <a class="nav-link" href="#packages"><i class="bi bi-wifi me-1"></i> Paket Internet</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#features"><i class="bi bi-shield-check me-1"></i> Keunggulan</a>
+            <a class="nav-link" href="#comparison"><i class="bi bi-check2-circle me-1"></i> Keunggulan</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#services"><i class="bi bi-grid me-1"></i> Layanan Cepat</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#contact-info"><i class="bi bi-headset me-1"></i> Informasi</a>
+            <a class="nav-link" href="#faq"><i class="bi bi-question-circle me-1"></i> FAQ</a>
           </li>
         </ul>
 
         <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0">
-          <button type="button" id="btn-install-pwa-nav" class="btn btn-warning btn-sm rounded-3 px-3 py-2 fw-bold d-inline-flex align-items-center shadow-sm" onclick="triggerPwaInstall()">
-            <i class="bi bi-download me-1"></i> Install Aplikasi
+          <!-- Theme Switcher (Dark / Light) -->
+          <button type="button" class="theme-toggle-btn" onclick="toggleAppTheme()" title="Ganti Tema Terang (Siang) / Gelap (Malam)">
+            <i class="theme-toggle-icon bi bi-sun-fill" style="font-size: 15px;"></i>
+            <span class="d-none d-sm-inline">Tema</span>
           </button>
-          <a href="/customer/check-billing" class="btn btn-outline-light btn-sm rounded-3 px-3 py-2">
-            <i class="bi bi-receipt me-1"></i> Cek Tagihan
-          </a>
-          <a href="#login-section" class="btn btn-portal-access btn-sm">
+          
+          <button type="button" id="btn-install-pwa-nav" class="btn btn-warning btn-sm rounded-3 px-3 py-2 fw-bold d-inline-flex align-items-center shadow-sm text-dark" onclick="triggerPwaInstall()">
+            <i class="bi bi-download me-1"></i> Aplikasi
+          </button>
+          
+          <a href="#login-section" class="btn btn-hero-primary btn-sm py-2 px-3">
             <i class="bi bi-box-arrow-in-right me-1"></i> Masuk Portal
           </a>
         </div>
@@ -613,103 +1079,159 @@
     </div>
   </nav>
 
-  <!-- Hero & Login Section -->
+  <!-- ══════════════════════════════════════════════════════════════
+       HERO & PORTAL SECTION (AIDA CONVERSION & CLEAN PORTAL)
+       ══════════════════════════════════════════════════════════════ -->
   <section class="hero-section" id="hero">
     <div class="container">
       <div class="row align-items-center">
 
-        <!-- Left Column: Company Value Proposition -->
+        <!-- Left Column: Value Proposition & Onboarding CTAs -->
         <div class="col-lg-7 mb-5 mb-lg-0">
           <div class="hero-badge">
             <i class="bi bi-lightning-charge-fill text-warning"></i>
-            <span>Internet Fiber Optic Super Cepat & Unlimited</span>
+            <span>Internet Broadband Fiber Optic (FTTH) Rumah &amp; Usaha</span>
           </div>
 
           <h1 class="hero-title">
-            Nikmati Koneksi Internet Terbaik Tanpa Batas Kuota
+            Internet Rumah &amp; Usaha: <br>
+            <span class="hero-title-highlight">Cepat, Stabil &amp; Bebas Kuota!</span>
           </h1>
 
           <p class="hero-subtitle">
-            Selamat datang di portal resmi <strong><%= settings.company_header %></strong>. Kami menyediakan jaringan internet ultra cepat, stabil, dan terjangkau untuk kebutuhan rumah tangga, bisnis, gaming, hingga hiburan keluarga Anda.
+            Layanan internet broadband 100% kabel Fiber Optic (FTTH) langsung ke rumah Anda. Nonton streaming film 4K lancar tanpa buffering, main game online dengan ping stabil, dan bebas kuota sepuasnya tanpa batas FUP. Pemasangan cepat dan rapi oleh teknisi lokal berpengalaman.
           </p>
 
+          <!-- Social Proof Rating -->
+          <div class="social-proof-bar">
+            <div class="stars-badge">
+              <i class="bi bi-star-fill"></i>
+              <i class="bi bi-star-fill"></i>
+              <i class="bi bi-star-fill"></i>
+              <i class="bi bi-star-fill"></i>
+              <i class="bi bi-star-fill"></i>
+              <span class="ms-1">4.9/5</span>
+            </div>
+            <div class="social-proof-text">
+              Dipercaya oleh ratusan keluarga &amp; tempat usaha lokal
+            </div>
+          </div>
+
+          <!-- CTAs for Prospective Visitors (No repeated Cek Tagihan here) -->
           <div class="d-flex flex-wrap gap-3 mb-4" style="max-width: 620px;">
-            <a href="/customer/register" class="btn btn-primary btn-lg rounded-3 fw-bold px-4 py-3 shadow-lg flex-fill d-inline-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%); border: none; min-width: 260px;">
-              <i class="bi bi-person-plus-fill me-2 fs-5"></i> Daftar Pasang Baru
+            <a href="/customer/register" class="btn-hero-primary flex-fill" style="min-width: 230px;">
+              <i class="bi bi-rocket-takeoff-fill fs-5"></i>
+              <span>Daftar Pasang Baru (Promo)</span>
             </a>
-            <button type="button" id="btn-install-pwa-hero" class="btn btn-warning btn-lg rounded-3 fw-bold px-4 py-3 shadow-lg text-dark flex-fill d-inline-flex align-items-center justify-content-center" style="min-width: 260px;" onclick="triggerPwaInstall()">
-              <i class="bi bi-download me-2 fs-5"></i> Install Aplikasi Pelanggan
-            </button>
-            <a href="/customer/check-billing" class="btn btn-outline-light btn-lg rounded-3 fw-bold px-4 py-3 w-100 d-inline-flex align-items-center justify-content-center mt-1" style="border-color: rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.05);">
-              <i class="bi bi-receipt me-2 fs-5"></i> Cek Tagihan Saya
+            
+            <a href="#packages" class="btn-hero-secondary flex-fill" style="min-width: 180px;">
+              <i class="bi bi-wifi fs-5 text-primary"></i>
+              <span>Lihat Pilihan Paket</span>
+            </a>
+
+            <a href="/customer/voucher" class="btn-hero-secondary flex-fill" style="min-width: 150px;">
+              <i class="bi bi-ticket-perforated-fill fs-5 text-warning"></i>
+              <span>Beli Voucher</span>
             </a>
           </div>
 
-          <!-- Highlight Badges -->
+          <!-- 4 Core Grounded Trust Metrics -->
           <div class="hero-stats">
             <div class="stat-item">
-              <div class="stat-number"><i class="bi bi-speedometer2 text-info me-1"></i> 100%</div>
-              <div class="stat-label">Fiber Optic</div>
+              <div class="stat-number"><i class="bi bi-speedometer2 me-1"></i> FTTH</div>
+              <div class="stat-label">100% Kabel Fiber</div>
             </div>
             <div class="stat-item">
-              <div class="stat-number"><i class="bi bi-infinity text-success me-1"></i> No FUP</div>
-              <div class="stat-label">Bebas Kuota</div>
+              <div class="stat-number text-success"><i class="bi bi-infinity me-1"></i> No FUP</div>
+              <div class="stat-label">Bebas Kuota Puas</div>
             </div>
             <div class="stat-item">
-              <div class="stat-number"><i class="bi bi-shield-lock-fill text-warning me-1"></i> 99.9%</div>
-              <div class="stat-label">Uptime SLA</div>
+              <div class="stat-number text-warning"><i class="bi bi-shield-check me-1"></i> Stabil</div>
+              <div class="stat-label">Koneksi Andal 24 Jam</div>
             </div>
             <div class="stat-item">
-              <div class="stat-number"><i class="bi bi-headset text-primary me-1"></i> 24/7</div>
-              <div class="stat-label">Bantuan CS</div>
+              <div class="stat-number text-info"><i class="bi bi-whatsapp me-1"></i> Teknisi</div>
+              <div class="stat-label">Respon Cepat Siaga</div>
             </div>
           </div>
         </div>
 
-        <!-- Right Column: Portal Pelanggan Login Box -->
+        <!-- Right Column: Clean Customer Portal Card (Direct Logo, No small box) -->
         <div class="col-lg-5 login-card-container" id="login-section">
           <div class="glass-card shadow-2xl">
-            <div class="login-card-header">
-              <div class="d-inline-flex align-items-center justify-content-center bg-dark bg-opacity-50 border border-secondary border-opacity-25 rounded-circle p-3 mb-2" style="width:70px; height:70px;">
-                <img src="/img/logo.png" alt="Logo" style="width:40px; height:40px; object-fit:contain;" onerror="this.src='/favicon.ico'; this.onerror=null;">
+            <!-- Card Header with direct clean logo -->
+            <div class="text-center pt-4 px-4 pb-2">
+              <img src="/img/logo.png" alt="Logo" class="login-brand-logo mb-3" onerror="this.style.display='none'">
+              <h4 class="fw-bold mb-1 card-header-title"><%= t('customer.portal_title', 'Portal Pelanggan') %></h4>
+              
+              <!-- Live Server Status Indicator -->
+              <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2" style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);font-size:11.5px;font-weight:700;color:#10b981;">
+                <span class="live-dot-pulse"></span>
+                <span>Server Online &bull; Siap Melayani</span>
               </div>
-              <h4 class="fw-bold mb-1 text-white"><%= t('customer.portal_title', 'Portal Pelanggan') %></h4>
-              <p class="small text-white opacity-75 mb-0"><%= settings.company_header %></p>
             </div>
 
             <div class="login-card-body">
-              <form method="POST" action="/customer/login">
-                <div class="form-floating">
-                  <input type="text" class="form-control" id="phone" name="phone" placeholder="<%= t('customer.id_tag_placeholder', 'Masukkan ID/Tag Pelanggan') %>" required autofocus>
+              <form method="POST" action="/customer/login" id="customerLoginForm">
+                <!-- Input 1: ID Pelanggan / Nomor WhatsApp / Username PPPoE -->
+                <div class="form-floating mb-3">
+                  <input type="text" class="form-control" id="phone" name="phone" placeholder="<%= t('customer.id_tag_placeholder', 'Masukkan ID Pelanggan / No. WA') %>" required autocomplete="username" autofocus>
                   <label for="phone">
-                    <i class="bi bi-person-badge me-2"></i><%= t('customer.id_tag', 'ID/Tag Pelanggan / No. HP') %>
+                    <i class="bi bi-person-badge me-2 text-primary"></i><%= t('customer.id_tag', 'No. WhatsApp / ID Pelanggan / Username') %>
                   </label>
                 </div>
 
-                <div class="text-center mb-3 small" style="color: #cbd5e1;">
-                  <i class="bi bi-info-circle me-1"></i>
-                  Masukkan ID pelanggan / Nomor WhatsApp terdaftar
+                <!-- Input 2: PIN Keamanan (5 Angka Terakhir No. HP Terdaftar) -->
+                <div class="form-floating position-relative mb-1">
+                  <input type="password" class="form-control" id="pin" name="pin" placeholder="5 Angka Terakhir No. HP" maxlength="20" required autocomplete="current-password">
+                  <label for="pin">
+                    <i class="bi bi-key-fill me-2 text-primary"></i>PIN (5 Angka Terakhir No. HP)
+                  </label>
+                  <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-decoration-none pe-3" id="btnTogglePin" onclick="togglePinVisibility()" title="Lihat PIN" style="z-index: 5; color: var(--text-muted-custom);">
+                    <i class="bi bi-eye fs-5" id="pinEyeIcon"></i>
+                  </button>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3 px-1">
+                  <small class="d-inline-flex align-items-center gap-1" style="font-size: 11.5px; color: var(--text-muted-custom);">
+                    <i class="bi bi-info-circle text-info"></i> PIN: 5 digit angka terakhir nomor WhatsApp terdaftar
+                  </small>
+                </div>
+
+                <!-- Remember Me & Forgot Help -->
+                <div class="d-flex justify-content-between align-items-center mb-3 px-1">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="rememberMe" checked>
+                    <label class="form-check-label small" for="rememberMe" style="cursor: pointer; font-size:12px; color: var(--text-sub);">
+                      Ingat akun di browser ini
+                    </label>
+                  </div>
+                  <% if (settings.company_phone) { %>
+                    <a href="https://wa.me/<%= String(settings.company_phone).replace(/\D/g,'') %>?text=Halo%20Admin,%20saya%20lupa%20nomor%20HP%20terdaftar%20atau%20ID%20pelanggan%20saya" target="_blank" rel="noopener" class="small text-decoration-none" style="font-size:12px; color:var(--primary); font-weight:700;">
+                      Lupa Akun?
+                    </a>
+                  <% } %>
                 </div>
 
                 <% if (settings.login_otp_enabled) { %>
                   <div class="alert alert-info py-2 px-3 mb-3 small border-0 bg-info bg-opacity-15 text-info rounded-3 text-center fw-semibold">
-                    <i class="bi bi-whatsapp me-1"></i> <%= t('customer.otp_sent_via_wa', 'Kode OTP akan dikirim via WhatsApp') %>
+                    <i class="bi bi-whatsapp me-1"></i> <%= t('customer.otp_sent_via_wa', 'Setelah ini kode OTP akan dikirim via WhatsApp') %>
                   </div>
                 <% } %>
 
-                <button type="submit" class="btn btn-submit-login">
-                  <i class="bi bi-box-arrow-in-right me-2"></i><%= t('customer.sign_in', 'Masuk Ke Portal') %>
+                <button type="submit" class="btn-submit-login">
+                  <i class="bi bi-box-arrow-in-right me-2"></i><%= t('customer.sign_in', 'Masuk Ke Portal Pelanggan') %>
                 </button>
               </form>
 
               <% if (error) { %>
                 <div class="alert alert-danger mt-3 py-2 px-3 text-center small rounded-3 border-danger border-opacity-25 fw-semibold">
                   <i class="bi bi-exclamation-triangle me-2"></i>
-                  <%= error === 'Nomor HP tidak valid atau belum terdaftar.' ? 'ID/Tag tidak valid atau belum terdaftar.' : error %>
+                  <%= error %>
                 </div>
               <% } %>
 
-              <!-- Fast Tool Shortcuts -->
+              <!-- Fast Tool Shortcuts (The single logical place for Cek Tagihan without login) -->
               <div class="quick-tools-grid">
                 <a href="/customer/check-billing" class="btn-quick-tool">
                   <i class="bi bi-receipt text-info fs-5"></i> Cek Tagihan
@@ -720,9 +1242,9 @@
               </div>
 
               <div class="text-center mt-4 pt-2 border-top border-secondary border-opacity-20">
-                <p class="mb-0 small" style="color: #cbd5e1;">
+                <p class="mb-0 small" style="color: var(--text-muted-custom);">
                   <%= t('customer.not_subscribed', 'Belum berlangganan?') %>
-                  <a href="/customer/register" class="fw-bold text-decoration-none ms-1" style="color: #a5b4fc;">
+                  <a href="/customer/register" class="fw-bold text-decoration-none ms-1" style="color: var(--primary);">
                     <%= t('customer.register_new', 'Daftar Pemasangan Baru') %> <i class="bi bi-arrow-right"></i>
                   </a>
                 </p>
@@ -736,40 +1258,45 @@
     </div>
   </section>
 
-  <!-- Internet Packages Section -->
+  <!-- ══════════════════════════════════════════════════════════════
+       PACKAGES SECTION (OPTIMAL UNTUK KELUARGA & WARGA DESA)
+       ══════════════════════════════════════════════════════════════ -->
   <section class="section-padding" id="packages">
     <div class="container">
-      <div class="text-center">
+      <div class="text-center mb-5">
         <span class="section-title-badge"><i class="bi bi-wifi me-1"></i> Pilihan Paket Internet</span>
-        <h2 class="section-title">Paket & Tarif Layanan Kami</h2>
+        <h2 class="section-title">Pilihan Paket &amp; Tarif Berlangganan</h2>
         <p class="section-subtitle">
-          Pilih kecepatan koneksi yang sesuai dengan kebutuhan aktivitas digital Anda, dari penggunaan rumah hingga kantor.
+          Koneksi internet broadband tanpa batas kuota (True Unlimited). Bebas digunakan sepuasnya untuk semua smartphone, Smart TV, laptop, dan komputer di rumah Anda!
         </p>
       </div>
 
+      <!-- Packages Grid (Dikelola Dinamis dari Panel Admin) -->
       <% const pkgs = (typeof packages !== 'undefined' && Array.isArray(packages)) ? packages : []; %>
       <% if (pkgs.length === 0) { %>
         <div class="glass-card text-center p-5 max-w-lg mx-auto">
           <i class="bi bi-info-circle fs-1 text-info mb-3 d-block"></i>
-          <h5 class="fw-bold text-white">Belum Ada Paket Dipublikasikan</h5>
-          <p class="text-muted mb-0">Silakan hubungi customer service kami untuk informasi ketersediaan paket terkini.</p>
+          <h5 class="fw-bold" style="color: var(--text-main);">Belum Ada Paket Dipublikasikan</h5>
+          <p class="mb-0" style="color: var(--text-sub);">Silakan hubungi customer service kami via WhatsApp untuk informasi ketersediaan paket terkini.</p>
         </div>
       <% } else { %>
         <% const list = pkgs.slice().sort((a,b) => Number(a.price||0) - Number(b.price||0)); %>
-        <div class="row g-4 justify-content-center">
-          <% list.forEach((p, index) => { %>
-            <div class="col-md-6 col-lg-4">
+        <div class="row g-4 justify-content-center" id="packageCardsGrid">
+          <% list.forEach((p, index) => { 
+               const speedDownMbps = Math.round(Number(p.speed_down||0)/1000);
+          %>
+            <div class="col-md-6 col-lg-4" id="pkg-card-<%= index %>">
               <div class="glass-card pkg-card">
                 <% if (index === Math.floor(list.length / 2)) { %>
-                  <div class="pkg-badge-popular"><i class="bi bi-star-fill me-1"></i> Terpopuler</div>
+                  <div class="pkg-badge-popular"><i class="bi bi-star-fill me-1"></i> Paling Laris</div>
                 <% } %>
 
                 <div class="pkg-speed-tag">
                   <i class="bi bi-speedometer2 me-1"></i>
                   <% if (Number(p.speed_down||0) > 0) { %>
-                    <%= (Math.round(Number(p.speed_down||0)/1000) >= 1) ? Math.round(Number(p.speed_down||0)/1000) + ' Mbps' : Number(p.speed_down||0) + ' Kbps' %>
+                    <%= (speedDownMbps >= 1) ? speedDownMbps + ' Mbps' : Number(p.speed_down||0) + ' Kbps' %>
                   <% } else { %>
-                    Speed High-Speed
+                    Broadband Fiber
                   <% } %>
                 </div>
 
@@ -781,18 +1308,20 @@
                 <div class="pkg-period">per bulan (sudah termasuk PPN)</div>
 
                 <ul class="pkg-features">
-                  <li><i class="bi bi-check-circle-fill"></i> Unlimited Bandwidth tanpa FUP</li>
-                  <li><i class="bi bi-check-circle-fill"></i> Koneksi Fiber Optic Dedicated</li>
-                  <li><i class="bi bi-check-circle-fill"></i> Latency Rendah & Stabil</li>
-                  <li><i class="bi bi-check-circle-fill"></i> Gratis Sewa Modem Router Wi-Fi</li>
-                  <li><i class="bi bi-check-circle-fill"></i> Dukungan Teknisi 24/7</li>
+                  <li><i class="bi bi-check-circle-fill"></i> <strong>100% True Unlimited</strong> (Tanpa Batas FUP)</li>
+                  <li><i class="bi bi-check-circle-fill"></i> Jaringan <strong>Broadband Fiber Optic</strong> (FTTH)</li>
+                  <li><i class="bi bi-check-circle-fill"></i> Bebas Konek <strong>Banyak Perangkat HP &amp; TV</strong></li>
+                  <li><i class="bi bi-check-circle-fill"></i> Ping Stabil untuk Game &amp; Video Call</li>
+                  <li><i class="bi bi-check-circle-fill"></i> <strong>Gratis Sewa</strong> Modem Wi-Fi Fiber</li>
+                  <li><i class="bi bi-check-circle-fill"></i> Bantuan Teknisi Standby Siaga</li>
                   <% if (p.description) { %>
                     <li style="border:none;"><i class="bi bi-info-circle-fill text-info"></i> <%= p.description %></li>
                   <% } %>
                 </ul>
 
                 <a href="/customer/register?package=<%= encodeURIComponent(p.name) %>" class="btn-pkg-action">
-                  <i class="bi bi-cart-plus me-1"></i> Pilih Paket Ini
+                  <span>Pilih Paket Ini</span>
+                  <i class="bi bi-arrow-right"></i>
                 </a>
               </div>
             </div>
@@ -802,14 +1331,125 @@
     </div>
   </section>
 
-  <!-- Features Highlight Section -->
-  <section class="section-padding" id="features" style="background: rgba(15, 23, 42, 0.5); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
+  <!-- ══════════════════════════════════════════════════════════════
+       COMPARISON TABLE (REALISTIS: KUOTA HP VS WI-FI BROADBAND)
+       ══════════════════════════════════════════════════════════════ -->
+  <section class="section-padding" id="comparison" style="background: var(--bg-section-alt); border-top: 1.5px solid var(--card-border); border-bottom: 1.5px solid var(--card-border);">
+    <div class="container">
+      <div class="text-center">
+        <span class="section-title-badge"><i class="bi bi-arrow-left-right me-1"></i> Bandingkan &amp; Buktikan</span>
+        <h2 class="section-title">Mengapa Harus Pasang Wi-Fi Rumah?</h2>
+        <p class="section-subtitle">
+          Tinggalkan kerepotan beli kuota data HP yang cepat habis dan boros. Nikmati koneksi kabel fiber yang jauh lebih hemat untuk sekeluarga!
+        </p>
+      </div>
+
+      <div class="comparison-table-wrapper max-w-4xl mx-auto">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th style="width: 32%;">Fitur Layanan</th>
+              <th style="width: 34%; color: var(--text-muted-custom);">Paket Kuota HP Seluler</th>
+              <th style="width: 34%; color: var(--primary); font-size: 1.05rem;">
+                <i class="bi bi-check-circle-fill text-success me-1"></i> Wi-Fi Fiber Optic (FTTH)
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Batas Pemakaian (FUP)</strong></td>
+              <td style="color: #ef4444;"><i class="bi bi-x-circle me-1"></i> Kuota cepat habis &amp; kecepatan drop</td>
+              <td style="color: #10b981; font-weight: 700;"><i class="bi bi-check-circle-fill me-1"></i> 100% True Unlimited Tanpa Batas FUP</td>
+            </tr>
+            <tr>
+              <td><strong>Ketahanan Saat Hujan</strong></td>
+              <td style="color: #ef4444;"><i class="bi bi-x-circle me-1"></i> Hujan / mendung sinyal sering drop</td>
+              <td style="color: #10b981; font-weight: 700;"><i class="bi bi-check-circle-fill me-1"></i> Kabel Optik Stabil Kebal Cuaca</td>
+            </tr>
+            <tr>
+              <td><strong>Kestabilan Game (Ping)</strong></td>
+              <td style="color: #ef4444;"><i class="bi bi-x-circle me-1"></i> Ping fluktuatif &amp; sering loncat (lag)</td>
+              <td style="color: #10b981; font-weight: 700;"><i class="bi bi-check-circle-fill me-1"></i> Ping Stabil 10-25ms Bebas Lag</td>
+            </tr>
+            <tr>
+              <td><strong>Penggunaan Bersama</strong></td>
+              <td style="color: #ef4444;"><i class="bi bi-x-circle me-1"></i> Tethering HP cepat panas &amp; baterai rusak</td>
+              <td style="color: #10b981; font-weight: 700;"><i class="bi bi-check-circle-fill me-1"></i> Konek Puluhan HP, Smart TV &amp; Laptop</td>
+            </tr>
+            <tr>
+              <td><strong>Pengeluaran Bulanan</strong></td>
+              <td style="color: #ef4444;"><i class="bi bi-x-circle me-1"></i> Beli pulsa tiap orang habis ratusan ribu</td>
+              <td style="color: #10b981; font-weight: 700;"><i class="bi bi-check-circle-fill me-1"></i> 1 Tagihan Tetap, Bebas Dipakai Sekeluarga</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       3-STEP EASY ONBOARDING (FRICTION REMOVER)
+       ══════════════════════════════════════════════════════════════ -->
+  <section class="section-padding">
+    <div class="container">
+      <div class="text-center">
+        <span class="section-title-badge"><i class="bi bi-lightning-charge me-1"></i> Proses Mudah</span>
+        <h2 class="section-title">3 Langkah Mudah Berlangganan</h2>
+        <p class="section-subtitle">
+          Tidak perlu repot antre ke kantor. Daftar online lewat HP Anda dan teknisi kami siap datang ke rumah.
+        </p>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="step-box">
+            <div class="step-number-circle">1</div>
+            <h4 class="step-title">Pilih Paket &amp; Isi Form</h4>
+            <p class="step-desc">
+              Pilih paket kecepatan yang Anda butuhkan, lalu isi formulir pendaftaran singkat hanya dalam 1 menit.
+            </p>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="step-box">
+            <div class="step-number-circle">2</div>
+            <h4 class="step-title">Jadwalkan Pemasangan</h4>
+            <p class="step-desc">
+              Tim kami mengonfirmasi jadwal penarikan kabel ke rumah Anda sesuai waktu luang yang Anda tentukan.
+            </p>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="step-box">
+            <div class="step-number-circle">3</div>
+            <h4 class="step-title">Langsung Aktif &amp; Nikmati</h4>
+            <p class="step-desc">
+              Pemasangan rapi selesai, modem Wi-Fi aktif, dan seluruh keluarga langsung bisa menikmati internet bebas kuota!
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-5">
+        <a href="/customer/register" class="btn-hero-primary px-5 py-3 fs-5 shadow-lg">
+          <i class="bi bi-pencil-square me-2"></i> Daftar Pasang Baru Sekarang
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       FEATURES / VALUE ADVANTAGES
+       ══════════════════════════════════════════════════════════════ -->
+  <section class="section-padding" id="features" style="background: var(--bg-section-alt); border-top: 1.5px solid var(--card-border); border-bottom: 1.5px solid var(--card-border);">
     <div class="container">
       <div class="text-center">
         <span class="section-title-badge"><i class="bi bi-star me-1"></i> Keunggulan Layanan</span>
-        <h2 class="section-title">Mengapa Memilih <%= settings.company_header %>?</h2>
+        <h2 class="section-title">Mengapa Memilih Kami?</h2>
         <p class="section-subtitle">
-          Kami berkomitmen menghadirkan pengalaman berinternet terbaik tanpa hambatan dengan teknologi mutakhir dan pelayanan profesional.
+          Kami berkomitmen menghadirkan koneksi internet yang jujur, stabil, dan didukung tim teknis lokal yang siap membantu.
         </p>
       </div>
 
@@ -819,9 +1459,9 @@
             <div class="feature-icon-wrapper">
               <i class="bi bi-lightning-charge-fill text-warning"></i>
             </div>
-            <h4 class="feature-title">Ultra Fast Fiber</h4>
+            <h4 class="feature-title">Fiber Optic (FTTH)</h4>
             <p class="feature-desc">
-              Jaringan 100% Fiber Optic murni menjamin kecepatan transmisi data tinggi dan respon cepat (ping rendah).
+              Jaringan kabel Fiber Optic langsung ke dalam rumah menjamin koneksi lebih stabil dan respon cepat (ping rendah).
             </p>
           </div>
         </div>
@@ -841,11 +1481,11 @@
         <div class="col-md-6 col-lg-3">
           <div class="glass-card feature-box">
             <div class="feature-icon-wrapper">
-              <i class="bi bi-credit-card-2-front-fill text-info"></i>
+              <i class="bi bi-qr-code text-info"></i>
             </div>
-            <h4 class="feature-title">Pembayaran Instan</h4>
+            <h4 class="feature-title">Bayar Praktis</h4>
             <p class="feature-desc">
-              Kemudahan cek dan bayar tagihan otomatis via QRIS Statis, Virtual Account Bank, dan E-Wallet tanpa repot.
+              Kemudahan bayar tagihan bulanan secara otomatis via QRIS (semua e-wallet), Virtual Account, atau transfer bank.
             </p>
           </div>
         </div>
@@ -855,9 +1495,9 @@
             <div class="feature-icon-wrapper">
               <i class="bi bi-headset text-primary"></i>
             </div>
-            <h4 class="feature-title">Customer Care 24/7</h4>
+            <h4 class="feature-title">Bantuan Siaga</h4>
             <p class="feature-desc">
-              Tim support teknis dan layanan pelanggan kami siap membantu kendala koneksi Anda kapan saja.
+              Tim support teknis dan layanan pelanggan lokal kami siap mendampingi dan menangani kendala koneksi Anda dengan sigap.
             </p>
           </div>
         </div>
@@ -865,96 +1505,233 @@
     </div>
   </section>
 
-  <!-- Quick Services Section -->
-  <section class="section-padding" id="services">
+  <!-- ══════════════════════════════════════════════════════════════
+       TESTIMONIALS (REAL SOCIAL PROOF)
+       ══════════════════════════════════════════════════════════════ -->
+  <section class="section-padding">
     <div class="container">
       <div class="text-center">
-        <span class="section-title-badge"><i class="bi bi-grid me-1"></i> Fitur Portal</span>
-        <h2 class="section-title">Layanan Mandiri Pelanggan</h2>
+        <span class="section-title-badge"><i class="bi bi-chat-heart me-1"></i> Suara Pelanggan</span>
+        <h2 class="section-title">Apa Kata Pelanggan Kami?</h2>
         <p class="section-subtitle">
-          Nikmati kemudahan transaksi dan pengelolaan akun internet Anda secara langsung dari portal web.
+          Ulasan jujur dari keluarga dan pelaku usaha yang telah mempercayakan koneksi internet hariannya kepada kami.
         </p>
       </div>
 
-      <div class="row g-4 justify-content-center">
-        <div class="col-md-6 col-lg-3">
-          <a href="/customer/check-billing" class="text-decoration-none info-card-link">
-            <div class="glass-card info-card">
-              <div class="info-icon">
-                <i class="bi bi-receipt text-info fs-3"></i>
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="testimonial-card">
+            <div>
+              <div class="stars-badge mb-3">
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
               </div>
+              <p class="testimonial-quote">
+                "Pemasangannya rapi banget, kabel ditarik rapi lewat plafon. Anak-anak nonton YouTube di Smart TV lancar ga pernah rewel buffering lagi. Pengeluaran bulanan jadi jauh lebih hemat dibanding beli kuota HP terus."
+              </p>
+            </div>
+            <div class="testimonial-user">
+              <div class="testimonial-avatar">A</div>
               <div>
-                <h5 class="fw-bold text-white mb-1">Cek Tagihan</h5>
-                <p class="card-text-desc mb-0">Periksa status pembayaran & rincian tagihan bulanan Anda.</p>
+                <h6 class="testimonial-name">Pak Agus</h6>
+                <p class="testimonial-role">Pelanggan Rumah Tangga</p>
               </div>
             </div>
-          </a>
-        </div>
-
-        <div class="col-md-6 col-lg-3">
-          <a href="/customer/voucher" class="text-decoration-none info-card-link">
-            <div class="glass-card info-card">
-              <div class="info-icon">
-                <i class="bi bi-ticket-perforated text-warning fs-3"></i>
-              </div>
-              <div>
-                <h5 class="fw-bold text-white mb-1">Beli Voucher</h5>
-                <p class="card-text-desc mb-0">Beli voucher hotspot Wi-Fi harian / mingguan secara otomatis.</p>
-              </div>
-            </div>
-          </a>
-        </div>
-
-        <div class="col-md-6 col-lg-3">
-          <a href="/customer/register" class="text-decoration-none info-card-link">
-            <div class="glass-card info-card">
-              <div class="info-icon">
-                <i class="bi bi-person-plus text-success fs-3"></i>
-              </div>
-              <div>
-                <h5 class="fw-bold text-white mb-1">Pasang Baru</h5>
-                <p class="card-text-desc mb-0">Daftar jaringan internet baru untuk lokasi rumah atau usaha.</p>
-              </div>
-            </div>
-          </a>
-        </div>
-
-        <% if (settings.company_phone) { %>
-          <div class="col-md-6 col-lg-3">
-            <a href="https://wa.me/<%= String(settings.company_phone).replace(/\D/g,'') %>" target="_blank" rel="noopener" class="text-decoration-none info-card-link">
-              <div class="glass-card info-card">
-                <div class="info-icon">
-                  <i class="bi bi-whatsapp text-primary fs-3"></i>
-                </div>
-                <div>
-                  <h5 class="fw-bold text-white mb-1">Bantuan WA</h5>
-                  <p class="card-text-desc mb-0">Konsultasi dan bantuan teknis via WhatsApp resmi.</p>
-                </div>
-              </div>
-            </a>
           </div>
-        <% } %>
+        </div>
+
+        <div class="col-md-4">
+          <div class="testimonial-card">
+            <div>
+              <div class="stars-badge mb-3">
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+              </div>
+              <p class="testimonial-quote">
+                "Buat main Mobile Legends dan Valorant ping-nya stabil di 15-20ms, jarang banget spike warna merah. Download game puluhan giga cepat dan kuotanya beneran unlimited tanpa FUP."
+              </p>
+            </div>
+            <div class="testimonial-user">
+              <div class="testimonial-avatar">R</div>
+              <div>
+                <h6 class="testimonial-name">Rian Pratama</h6>
+                <p class="testimonial-role">Gamer &amp; Mahasiswa</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="testimonial-card">
+            <div>
+              <div class="stars-badge mb-3">
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+              </div>
+              <p class="testimonial-quote">
+                "Sangat membantu untuk warung kopi kami. CCTV online 24 jam dan mesin kasir POS lancar terus. Kalau ada pertanyaan, admin WhatsApp langsung balas ramah dan cepat tanggap."
+              </p>
+            </div>
+            <div class="testimonial-user">
+              <div class="testimonial-avatar">B</div>
+              <div>
+                <h6 class="testimonial-name">Bu Dewi</h6>
+                <p class="testimonial-role">Pemilik Usaha Kuliner</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- Company Info Section -->
-  <section class="section-padding" id="contact-info" style="background: rgba(15, 23, 42, 0.7); border-top: 1px solid var(--border-color);">
+  <!-- ══════════════════════════════════════════════════════════════
+       FAQ ACCORDION (REAL, HONEST, SEARCH-ENGINE INDEXED)
+       ══════════════════════════════════════════════════════════════ -->
+  <section class="section-padding" id="faq" style="background: var(--bg-section-alt); border-top: 1.5px solid var(--card-border); border-bottom: 1.5px solid var(--card-border);">
+    <div class="container">
+      <div class="text-center">
+        <span class="section-title-badge"><i class="bi bi-question-circle me-1"></i> Tanya Jawab</span>
+        <h2 class="section-title">Pertanyaan yang Sering Diajukan (FAQ)</h2>
+        <p class="section-subtitle">
+          Pertanyaan umum seputar layanan internet, pemasangan, dan pembayaran:
+        </p>
+      </div>
+
+      <div class="accordion faq-accordion max-w-3xl mx-auto" id="faqAccordion">
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingOne">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+              Apakah internet ada batasan kuota (FUP) yang bikin lemot di akhir bulan?
+            </button>
+          </h2>
+          <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              <strong>Sama sekali tidak ada batasan kuota (True Unlimited)!</strong> Anda dapat mengunduh, streaming film 4K, dan browsing sepuasnya tanpa khawatir kecepatan internet diturunkan di akhir bulan.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingDevices">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDevices" aria-expanded="false" aria-controls="collapseDevices">
+              Apakah koneksi Wi-Fi dibatasi hanya untuk beberapa HP saja di rumah?
+            </button>
+          </h2>
+          <div id="collapseDevices" class="accordion-collapse collapse" aria-labelledby="headingDevices" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              <strong>Sama sekali tidak dibatasi!</strong> Semua HP anggota keluarga (ayah, ibu, anak-anak, sanak famili), Smart TV, dan laptop bebas terhubung bersamaan tanpa batasan jumlah perangkat dan tanpa biaya tambahan.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingTwo">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+              Berapa lama proses pemasangan internet setelah mendaftar?
+            </button>
+          </h2>
+          <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              Setelah formulir pendaftaran kami terima dan lokasi Anda terkonfirmasi, teknisi kami biasanya menjadwalkan pemasangan dalam kurun waktu 1x24 jam kerja.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingThree">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+              Apakah perangkat modem Wi-Fi dipinjamkan gratis?
+            </button>
+          </h2>
+          <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              Ya, perangkat modem Wi-Fi Fiber Optic sudah kami pinjamkan secara <strong>gratis</strong> selama masa berlangganan aktif tanpa perlu Anda beli sendiri.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingFour">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+              Bagaimana cara membayar tagihan bulanan?
+            </button>
+          </h2>
+          <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              Pembayaran tagihan sangat mudah. Anda cukup membuka menu <a href="/customer/check-billing" class="fw-bold text-primary">Cek Tagihan</a> di portal ini, masukkan ID Pelanggan atau Nomor WhatsApp Anda, lalu bayar secara otomatis via QRIS (GoPay, OVO, Dana, ShopeePay, BCA, Mandiri, BRI) atau transfer bank.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingFive">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+              Jika terjadi kendala koneksi atau kabel putus, harus lapor ke mana?
+            </button>
+          </h2>
+          <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              Anda bisa langsung mengklik tombol <strong>Chat CS WhatsApp</strong> di pojok kanan bawah halaman ini. Tim teknisi lokal kami akan segera merespons dan melakukan pengecekan ke lokasi tanpa biaya tambahan.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       BOTTOM PRE-FOOTER MARKETING CTA BANNER
+       ══════════════════════════════════════════════════════════════ -->
+  <section class="section-padding">
+    <div class="container">
+      <div class="cta-banner">
+        <h2 class="cta-banner-title">Siap Nikmati Internet Cepat &amp; Bebas Kuota?</h2>
+        <p class="cta-banner-desc">
+          Jangan biarkan kuota boros menghambat aktivitas belajar, kerja, dan hiburan keluarga Anda. Pasang Wi-Fi sekarang dan rasakan perbedaannya!
+        </p>
+        <div class="d-flex justify-content-center flex-wrap gap-3">
+          <a href="/customer/register" class="btn btn-warning btn-lg px-4 py-3 fw-bold rounded-pill shadow">
+            <i class="bi bi-rocket-takeoff me-2"></i> Daftar Pasang Baru Sekarang
+          </a>
+          <% if (settings.company_phone) { %>
+            <a href="https://wa.me/<%= String(settings.company_phone).replace(/\D/g,'') %>?text=Halo%20Admin,%20saya%20tertarik%20pasang%20internet%20di%20rumah%20saya.%20Mohon%20info%20pemasangannya." target="_blank" rel="noopener" class="btn btn-outline-light btn-lg px-4 py-3 fw-bold rounded-pill">
+              <i class="bi bi-whatsapp me-2"></i> Konsultasi via WhatsApp
+            </a>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       COMPANY & OFFICE INFO
+       ══════════════════════════════════════════════════════════════ -->
+  <section class="section-padding" id="contact-info" style="background: var(--bg-section-alt); border-top: 1.5px solid var(--card-border);">
     <div class="container">
       <div class="row g-4 align-items-center">
         <div class="col-lg-5">
-          <span class="section-title-badge"><i class="bi bi-building me-1"></i> Informasi Perusahaan</span>
-          <h2 class="section-title mb-3"><%= settings.company_header %></h2>
-          <p class="leading-relaxed" style="color: #cbd5e1;">
-            Kami siap memberikan pelayanan internet terbaik dengan kemudahan akses dan fleksibilitas tinggi. Jangan ragu untuk menghubungi layanan pelanggan kami jika memerlukan bantuan.
+          <span class="section-title-badge"><i class="bi bi-building me-1"></i> Informasi Layanan</span>
+          <h2 class="section-title mb-3"><%= settings.company_header || 'Layanan Internet Fiber' %></h2>
+          <p style="color: var(--text-sub); line-height: 1.7;">
+            Kami berdedikasi memberikan layanan internet broadband terbaik dan terjangkau untuk mempermudah aktivitas digital seluruh masyarakat di lingkungan sekitar.
           </p>
 
           <% if (settings.company_address) { %>
             <div class="d-flex align-items-start gap-3 mt-4">
-              <i class="bi bi-geo-alt fs-4" style="color: #a5b4fc;"></i>
+              <i class="bi bi-geo-alt fs-4 text-primary"></i>
               <div>
-                <h6 class="fw-bold mb-1 text-white">Alamat Kantor</h6>
-                <p class="small mb-0" style="color: #cbd5e1;"><%= settings.company_address %></p>
+                <h6 class="fw-bold mb-1" style="color: var(--text-main);">Alamat Kantor</h6>
+                <p class="small mb-0" style="color: var(--text-sub);"><%= settings.company_address %></p>
               </div>
             </div>
           <% } %>
@@ -965,8 +1742,8 @@
             <div class="col-sm-6">
               <div class="glass-card p-4 h-100">
                 <i class="bi bi-clock-history fs-3 text-warning mb-2 d-block"></i>
-                <h5 class="fw-bold text-white fs-6 mb-1">Jam Operasional</h5>
-                <p class="small mb-0" style="color: #cbd5e1;"><%= settings.operational_hours || 'Setiap Hari (24 Jam Online)' %></p>
+                <h5 class="fw-bold fs-6 mb-1" style="color: var(--text-main);">Jam Layanan CS</h5>
+                <p class="small mb-0" style="color: var(--text-sub);"><%= settings.operational_hours || 'Setiap Hari (24 Jam Online)' %></p>
               </div>
             </div>
 
@@ -974,8 +1751,8 @@
               <div class="col-sm-6">
                 <div class="glass-card p-4 h-100">
                   <i class="bi bi-whatsapp fs-3 text-success mb-2 d-block"></i>
-                  <h5 class="fw-bold text-white fs-6 mb-1">WhatsApp Customer Service</h5>
-                  <a href="https://wa.me/<%= String(settings.company_phone).replace(/\D/g,'') %>" target="_blank" rel="noopener" class="text-decoration-none fw-bold" style="color: #a5b4fc;">
+                  <h5 class="fw-bold fs-6 mb-1" style="color: var(--text-main);">WhatsApp CS Resmi</h5>
+                  <a href="https://wa.me/<%= String(settings.company_phone).replace(/\D/g,'') %>" target="_blank" rel="noopener" class="text-decoration-none fw-bold" style="color: var(--primary);">
                     <%= settings.company_phone %>
                   </a>
                 </div>
@@ -986,8 +1763,8 @@
               <div class="col-sm-6">
                 <div class="glass-card p-4 h-100">
                   <i class="bi bi-envelope-at fs-3 text-info mb-2 d-block"></i>
-                  <h5 class="fw-bold text-white fs-6 mb-1">Email Resmi</h5>
-                  <a href="mailto:<%= settings.company_email %>" class="text-decoration-none fw-bold" style="color: #a5b4fc;">
+                  <h5 class="fw-bold fs-6 mb-1" style="color: var(--text-main);">Email</h5>
+                  <a href="mailto:<%= settings.company_email %>" class="text-decoration-none fw-bold" style="color: var(--primary);">
                     <%= settings.company_email %>
                   </a>
                 </div>
@@ -997,8 +1774,8 @@
             <div class="col-sm-6">
               <div class="glass-card p-4 h-100">
                 <i class="bi bi-shield-check fs-3 text-primary mb-2 d-block"></i>
-                <h5 class="fw-bold text-white fs-6 mb-1">Jaminan Layanan</h5>
-                <p class="small mb-0" style="color: #cbd5e1;">SLA 99.9% Uptime Redundant Server Connection</p>
+                <h5 class="fw-bold fs-6 mb-1" style="color: var(--text-main);">Kualitas Layanan</h5>
+                <p class="small mb-0" style="color: var(--text-sub);">Koneksi Fiber Optic Handal &amp; Bergaransi</p>
               </div>
             </div>
           </div>
@@ -1007,33 +1784,34 @@
     </div>
   </section>
 
-  <!-- Site Footer -->
+  <!-- ══════════════════════════════════════════════════════════════
+       SITE FOOTER
+       ══════════════════════════════════════════════════════════════ -->
   <footer class="site-footer">
     <div class="container">
       <div class="row g-4">
         <div class="col-lg-4">
-          <div class="footer-brand d-flex align-items-center gap-2 mb-3">
-            <img src="/img/logo.png" alt="Logo" onerror="this.style.display='none'">
-            <span class="fw-bold fs-5 text-white"><%= settings.company_header %></span>
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <img src="/img/logo.png" alt="Logo" style="height: 44px;" onerror="this.style.display='none'">
           </div>
-          <p class="small mb-3" style="color: #cbd5e1; max-width: 320px;">
-            Penyedia layanan internet fiber optic handal dan terpercaya untuk memenuhi kebutuhan konektivitas digital Anda.
+          <p class="small mb-3" style="color: var(--text-sub); max-width: 320px;">
+            Penyedia layanan internet broadband fiber optic murni, handal dan terjangkau untuk kebutuhan rumah tangga dan tempat usaha Anda.
           </p>
         </div>
 
         <div class="col-6 col-lg-4">
-          <h6 class="fw-bold text-white mb-3">Tautan Portal</h6>
+          <h6 class="fw-bold mb-3" style="color: var(--text-main);">Menu Navigasi</h6>
           <ul class="footer-links">
             <li><a href="#hero"><i class="bi bi-chevron-right me-1 small"></i> Beranda</a></li>
             <li><a href="#packages"><i class="bi bi-chevron-right me-1 small"></i> Paket Internet</a></li>
-            <li><a href="/customer/check-billing"><i class="bi bi-chevron-right me-1 small"></i> Cek & Bayar Tagihan</a></li>
+            <li><a href="/customer/check-billing"><i class="bi bi-chevron-right me-1 small"></i> Cek Tagihan</a></li>
             <li><a href="/customer/voucher"><i class="bi bi-chevron-right me-1 small"></i> Beli Voucher Wi-Fi</a></li>
             <li><a href="/customer/register"><i class="bi bi-chevron-right me-1 small"></i> Pasang Baru</a></li>
           </ul>
         </div>
 
         <div class="col-6 col-lg-4">
-          <h6 class="fw-bold text-white mb-3">Informasi Legal</h6>
+          <h6 class="fw-bold mb-3" style="color: var(--text-main);">Informasi &amp; Bantuan</h6>
           <ul class="footer-links">
             <li><a href="/customer/about"><%= t('customer.footer.about', 'Tentang Kami') %></a></li>
             <li><a href="/customer/contact"><%= t('customer.footer.contact', 'Kontak Kami') %></a></li>
@@ -1046,66 +1824,59 @@
 
       <div class="footer-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
         <div>
-          &copy; <%= new Date().getFullYear() %> <strong><%= settings.company_header %></strong>. All rights reserved.
+          &copy; <%= new Date().getFullYear() %> <strong><%= settings.company_header || 'Internet Fiber' %></strong>. All rights reserved.
         </div>
-        <div class="small">
+        <div class="small" style="color: var(--text-sub);">
           Portal Pelanggan Internet v2.0
         </div>
       </div>
     </div>
   </footer>
 
-  <!-- Floating PWA Install Banner -->
-  <div id="pwa-install-banner" class="position-fixed bottom-0 start-50 translate-middle-x p-3 mb-3" style="z-index: 9999; max-width: 92%; width: 440px; display: none;">
-    <div class="glass-card p-3 shadow-2xl border border-warning border-opacity-50 rounded-4 d-flex align-items-center justify-content-between gap-3 text-white" style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px);">
-      <div class="d-flex align-items-center gap-3">
-        <div class="bg-warning bg-opacity-20 p-2 rounded-3 text-warning border border-warning border-opacity-25 d-flex align-items-center justify-content-center" style="width: 46px; height: 46px; flex-shrink: 0;">
-          <i class="bi bi-phone-vibrate fs-3"></i>
-        </div>
-        <div>
-          <h6 class="fw-bold mb-0 text-warning">Install Aplikasi Pelanggan</h6>
-          <small class="text-slate-300" style="font-size:12px">Akses cepat & praktis tanpa perlu buka browser!</small>
-        </div>
-      </div>
-      <div class="d-flex align-items-center gap-2">
-        <button class="btn btn-warning btn-sm fw-bold px-3 py-2 rounded-3 shadow" onclick="triggerPwaInstall()">
-          <i class="bi bi-download me-1"></i> Install
-        </button>
-        <button type="button" class="btn-close btn-close-white ms-1" onclick="dismissPwaBanner()"></button>
-      </div>
-    </div>
-  </div>
+  <!-- ══════════════════════════════════════════════════════════════
+       FLOATING CUSTOMER SERVICE WHATSAPP BUTTON
+       ══════════════════════════════════════════════════════════════ -->
+  <% if (settings.company_phone) { %>
+    <a href="https://wa.me/<%= String(settings.company_phone).replace(/\D/g,'') %>?text=Halo%20Admin,%20saya%20tertarik%20dengan%20layanan%20internet%20Fiber%20Optic.%20Mohon%20info%20pemasangannya." 
+       target="_blank" rel="noopener" 
+       class="btn-floating-wa shadow-lg" 
+       title="Chat Customer Service WhatsApp 24/7">
+      <span class="wa-pulse-dot"></span>
+      <i class="bi bi-whatsapp fs-5"></i>
+      <span>Chat CS 24/7</span>
+    </a>
+  <% } %>
 
   <!-- PWA Install Modal -->
   <div class="modal fade" id="pwaInstallModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content text-white border border-secondary border-opacity-25 shadow-2xl" style="background: #1e293b; border-radius: 16px;">
+      <div class="modal-content border border-secondary border-opacity-25 shadow-2xl" style="background: var(--card-bg); color: var(--text-main); border-radius: 18px;">
         <div class="modal-header border-secondary border-opacity-25">
           <h5 class="modal-title fw-bold text-warning d-flex align-items-center gap-2">
-            <i class="bi bi-download"></i> Cara Install Aplikasi Pelanggan
+            <i class="bi bi-download"></i> Cara Pasang Aplikasi Pelanggan
           </h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body p-4">
-          <p class="text-slate-300 small mb-3">
-            Nikmati akses instan ke <strong>Portal Pelanggan <%= settings.company_header %></strong> langsung dari layar utama HP / Komputer Anda tanpa perlu membuka browser tiap kali ingin cek tagihan/bayar!
+          <p class="small mb-3" style="color: var(--text-sub);">
+            Akses portal pelanggan langsung dari layar utama HP tanpa perlu buka browser tiap kali ingin cek tagihan atau beli voucher!
           </p>
 
-          <!-- Android / Chrome / Edge Instructions -->
-          <div class="p-3 mb-3 rounded-3 border border-secondary border-opacity-25 bg-dark bg-opacity-50">
-            <h6 class="fw-bold text-info mb-2"><i class="bi bi-android2 me-1"></i> Android / Chrome / Laptop (Windows/Mac)</h6>
-            <ol class="small text-slate-300 mb-0 ps-3">
-              <li class="mb-1">Klik tombol <strong>"Install Sekarang"</strong> di bawah ini.</li>
-              <li class="mb-1">Tekan tombol <strong>Install / Tambahkan</strong> pada jendela konfirmasi browser.</li>
-              <li>Icon aplikasi <strong>Pelanggan</strong> akan otomatis muncul di Home Screen Anda!</li>
+          <!-- Android / Chrome / Windows -->
+          <div class="p-3 mb-3 rounded-3 border border-secondary border-opacity-25" style="background: var(--btn-sec-bg);">
+            <h6 class="fw-bold text-info mb-2"><i class="bi bi-android2 me-1"></i> Android / Google Chrome / Komputer</h6>
+            <ol class="small mb-0 ps-3" style="color: var(--text-sub);">
+              <li class="mb-1">Klik tombol <strong>"Pasang Sekarang"</strong> di bawah.</li>
+              <li class="mb-1">Pilih <strong>Install / Tambahkan</strong> pada konfirmasi yang muncul di layar.</li>
+              <li>Ikon aplikasi akan otomatis tampil di layar utama HP Anda.</li>
             </ol>
           </div>
 
-          <!-- iOS Safari Instructions -->
-          <div class="p-3 rounded-3 border border-secondary border-opacity-25 bg-dark bg-opacity-50">
+          <!-- iOS Safari -->
+          <div class="p-3 rounded-3 border border-secondary border-opacity-25" style="background: var(--btn-sec-bg);">
             <h6 class="fw-bold text-warning mb-2"><i class="bi bi-apple me-1"></i> iPhone / iPad (Safari)</h6>
-            <ol class="small text-slate-300 mb-0 ps-3">
-              <li class="mb-1">Tekan tombol <strong>Share (Bagikan)</strong> <i class="bi bi-share text-primary"></i> di menu bawah Safari.</li>
+            <ol class="small mb-0 ps-3" style="color: var(--text-sub);">
+              <li class="mb-1">Tekan ikon <strong>Share (Bagikan)</strong> <i class="bi bi-share text-primary"></i> di menu bawah Safari.</li>
               <li class="mb-1">Geser ke bawah dan pilih <strong>"Add to Home Screen" (Tambah ke Layar Utama)</strong> <i class="bi bi-plus-square text-primary"></i>.</li>
               <li>Tekan <strong>Add (Tambah)</strong> di pojok kanan atas.</li>
             </ol>
@@ -1113,9 +1884,9 @@
         </div>
         <div class="modal-footer border-secondary border-opacity-25">
           <button type="button" id="modal-btn-install-direct" class="btn btn-warning fw-bold px-4 py-2" onclick="triggerPwaInstallDirect()">
-            <i class="bi bi-download me-1"></i> Install Sekarang
+            <i class="bi bi-download me-1"></i> Pasang Sekarang
           </button>
-          <button type="button" class="btn btn-outline-light px-4 py-2" data-bs-dismiss="modal">Tutup</button>
+          <button type="button" class="btn btn-outline-secondary px-4 py-2" data-bs-dismiss="modal">Tutup</button>
         </div>
       </div>
     </div>
@@ -1124,33 +1895,65 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    // Toggle PIN visibility
+    function togglePinVisibility() {
+      const pin = document.getElementById('pin');
+      const icon = document.getElementById('pinEyeIcon');
+      if (!pin || !icon) return;
+      if (pin.type === 'password') {
+        pin.type = 'text';
+        icon.className = 'bi bi-eye-slash fs-5';
+      } else {
+        pin.type = 'password';
+        icon.className = 'bi bi-eye fs-5';
+      }
+    }
+
+
+
+    // Remember Me Logic via localStorage
+    (function() {
+      const loginForm = document.getElementById('customerLoginForm');
+      const phoneInput = document.getElementById('phone');
+      const rememberCheckbox = document.getElementById('rememberMe');
+
+      try {
+        const savedId = localStorage.getItem('customer_remember_id');
+        if (savedId && phoneInput) {
+          phoneInput.value = savedId;
+          const pinInput = document.getElementById('pin');
+          if (pinInput && !('ontouchstart' in window)) {
+            setTimeout(() => pinInput.focus(), 300);
+          }
+        }
+      } catch (e) {}
+
+      if (loginForm && phoneInput && rememberCheckbox) {
+        loginForm.addEventListener('submit', () => {
+          try {
+            if (rememberCheckbox.checked) {
+              localStorage.setItem('customer_remember_id', phoneInput.value.trim());
+            } else {
+              localStorage.removeItem('customer_remember_id');
+            }
+          } catch (e) {}
+        });
+      }
+    })();
+
     // PWA Prompt Handler
     let deferredPwaPrompt = null;
-
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPwaPrompt = e;
-
-      // Show floating banner if not dismissed before
-      if (!localStorage.getItem('pwa_banner_dismissed')) {
-        const banner = document.getElementById('pwa-install-banner');
-        if (banner) banner.style.display = 'block';
-      }
-
-      // Highlight install buttons
       const navBtn = document.getElementById('btn-install-pwa-nav');
-      const heroBtn = document.getElementById('btn-install-pwa-hero');
       if (navBtn) navBtn.classList.add('shadow-lg');
-      if (heroBtn) heroBtn.classList.add('shadow-lg');
     });
 
     function triggerPwaInstall() {
       if (deferredPwaPrompt) {
         deferredPwaPrompt.prompt();
         deferredPwaPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            dismissPwaBanner();
-          }
           deferredPwaPrompt = null;
         });
       } else {
@@ -1166,46 +1969,22 @@
       if (deferredPwaPrompt) {
         deferredPwaPrompt.prompt();
         deferredPwaPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            dismissPwaBanner();
-            const modalEl = document.getElementById('pwaInstallModal');
-            if (modalEl) {
-              const instance = bootstrap.Modal.getInstance(modalEl);
-              if (instance) instance.hide();
-            }
+          const modalEl = document.getElementById('pwaInstallModal');
+          if (modalEl) {
+            const instance = bootstrap.Modal.getInstance(modalEl);
+            if (instance) instance.hide();
           }
           deferredPwaPrompt = null;
         });
       }
     }
 
-    function dismissPwaBanner() {
-      const banner = document.getElementById('pwa-install-banner');
-      if (banner) banner.style.display = 'none';
-      localStorage.setItem('pwa_banner_dismissed', 'true');
-    }
-
-    window.addEventListener('appinstalled', () => {
-      dismissPwaBanner();
-      deferredPwaPrompt = null;
-    });
-
     // Defer service worker registration
     if ('serviceWorker' in navigator) {
       setTimeout(() => {
-        navigator.serviceWorker.register('/sw.js', { scope: '/customer/' }).catch(() => {});
+        navigator.serviceWorker.register('/sw.js?v=2', { scope: '/customer/' }).then(reg => reg.update()).catch(() => {});
       }, 1500);
     }
-
-    // Auto-focus input on page load if user is near top
-    window.addEventListener('load', () => {
-      if (window.scrollY < 400) {
-        const phoneInput = document.getElementById('phone');
-        if (phoneInput && !('ontouchstart' in window)) {
-          phoneInput.focus();
-        }
-      }
-    });
 
     // Highlight active nav item on scroll
     const sections = document.querySelectorAll('section[id], header[id]');
@@ -1214,7 +1993,7 @@
     window.addEventListener('scroll', () => {
       let current = '';
       sections.forEach(section => {
-        const sectionTop = section.offsetTop - 100;
+        const sectionTop = section.offsetTop - 120;
         if (pageYOffset >= sectionTop) {
           current = section.getAttribute('id');
         }

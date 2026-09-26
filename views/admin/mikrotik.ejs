@@ -200,13 +200,14 @@
   </div>
 
   <div class="page">
-    <% const mTab = 'monitoring'; %>
+    <% const mTab = 'mikrotik'; %>
 
     <!-- SUB-NAVIGATION TABS -->
-    <div class="mtabs" style="margin-bottom:18px;">
-      <a href="/admin/mikrotik" class="mtab <%= mTab==='monitoring' ? 'active' : '' %>"><i class="bi bi-router"></i> Monitoring &amp; Manajemen Sesi</a>
+    <div class="mtabs" style="margin-bottom:20px;">
+      <a href="/admin/mikrotik" class="mtab <%= mTab==='mikrotik' ? 'active' : '' %>"><i class="bi bi-router"></i> Monitoring &amp; Sesi</a>
+      <a href="/admin/routers" class="mtab <%= mTab==='routers' ? 'active' : '' %>"><i class="bi bi-hdd-network"></i> Manajemen Router</a>
       <a href="/admin/vouchers" class="mtab <%= mTab==='vouchers' ? 'active' : '' %>"><i class="bi bi-ticket-perforated"></i> Voucher Hotspot</a>
-      <a href="/admin/routers" class="mtab <%= mTab==='routers' ? 'active' : '' %>"><i class="bi bi-hdd-network"></i> Konfigurasi Router NAS</a>
+      <a href="/admin/vouchers/packages" class="mtab <%= mTab==='packages' ? 'active' : '' %>"><i class="bi bi-wifi"></i> Paket Hotspot</a>
     </div>
 
     <!-- ROUTER HARDWARE TELEMETRY STRIP (LIVE) -->

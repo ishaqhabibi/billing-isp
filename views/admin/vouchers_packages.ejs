@@ -30,9 +30,11 @@
       <div class="alert <%= msg.type === 'success' ? 's' : 'd' %>"><%= msg.text %></div>
     <% } %>
 
-    <div class="mtabs">
-      <a href="/admin/vouchers" class="mtab"><i class="bi bi-ticket-perforated"></i> Pembuatan Voucher (Batch)</a>
-      <a href="/admin/vouchers/packages" class="mtab active"><i class="bi bi-ticket-detailed"></i> Konfigurasi Paket (Real-Time)</a>
+    <div class="mtabs" style="margin-bottom:20px;">
+      <a href="/admin/mikrotik" class="mtab"><i class="bi bi-router"></i> Monitoring &amp; Sesi</a>
+      <a href="/admin/routers" class="mtab"><i class="bi bi-hdd-network"></i> Manajemen Router</a>
+      <a href="/admin/vouchers" class="mtab"><i class="bi bi-ticket-perforated"></i> Voucher Hotspot</a>
+      <a href="/admin/vouchers/packages" class="mtab active"><i class="bi bi-wifi"></i> Paket Hotspot</a>
     </div>
 
     <div class="card">

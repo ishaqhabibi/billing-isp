@@ -119,6 +119,223 @@
         gap: 10px !important;
       }
     }
+    /* Quick Filter Chips */
+    .cust-quick-filters {
+      display: flex;
+      gap: 8px;
+      margin: 14px 0 16px 0;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .cust-filter-chip {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+    .cust-filter-chip:hover {
+      background: var(--bg3);
+      color: var(--text);
+      border-color: rgba(255,255,255,0.2);
+    }
+    .cust-filter-chip.active {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: var(--primary);
+      color: var(--primary);
+      font-weight: 700;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+    }
+    .online-pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+      box-shadow: 0 0 6px #10b981;
+      animation: pulseGreen 1.5s infinite;
+    }
+    @keyframes pulseGreen {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Action Dropdown Menu */
+    .action-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .action-dropdown-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .action-dropdown-btn:hover, .action-dropdown.active .action-dropdown-btn {
+      background: var(--bg3);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .action-dropdown-menu {
+      display: none;
+      position: fixed;
+      min-width: 215px;
+      max-width: 260px;
+      background: var(--bg2, #131b2e);
+      color: var(--text, #e6edf3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+      z-index: 999999;
+      padding: 6px 0;
+      text-align: left;
+    }
+    .action-dropdown.active .action-dropdown-menu {
+      display: block;
+      animation: fadeInDropdown 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes fadeInDropdown {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .action-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text, #e6edf3);
+      background: transparent;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      text-decoration: none;
+      box-sizing: border-box;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .action-dropdown-item:hover {
+      background: rgba(0, 82, 204, 0.08);
+      color: var(--primary);
+    }
+    .action-dropdown-item.danger-item {
+      color: var(--danger, #ef4444);
+    }
+    .action-dropdown-item.danger-item:hover {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger, #ef4444);
+    }
+    .action-dropdown-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+    .tbl-wrap {
+      min-height: 180px;
+    }
+
+    /* Light Theme Explicit Support for Dropdown */
+    html[data-theme="light"] .action-dropdown-menu,
+    body.light-theme .action-dropdown-menu {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border: 1px solid rgba(0, 52, 120, 0.16) !important;
+      box-shadow: 0 12px 30px rgba(0, 52, 120, 0.18), 0 4px 10px rgba(0, 0, 0, 0.05) !important;
+    }
+    html[data-theme="light"] .action-dropdown-item,
+    body.light-theme .action-dropdown-item {
+      color: #1e293b !important;
+    }
+    html[data-theme="light"] .action-dropdown-item:hover,
+    body.light-theme .action-dropdown-item:hover {
+      background: #f1f6fc !important;
+      color: #0052cc !important;
+    }
+    html[data-theme="light"] .action-dropdown-item.danger-item,
+    body.light-theme .action-dropdown-item.danger-item {
+      color: #ef4444 !important;
+    }
+    html[data-theme="light"] .action-dropdown-item.danger-item:hover,
+    body.light-theme .action-dropdown-item.danger-item:hover {
+      background: #fef2f2 !important;
+      color: #dc2626 !important;
+    }
+    html[data-theme="light"] .action-dropdown-divider,
+    body.light-theme .action-dropdown-divider {
+      background: rgba(0, 52, 120, 0.09) !important;
+    }
+    html[data-theme="light"] .action-dropdown-btn,
+    body.light-theme .action-dropdown-btn {
+      background: #ffffff !important;
+      color: #334155 !important;
+      border: 1px solid rgba(0, 52, 120, 0.18) !important;
+    }
+    html[data-theme="light"] .action-dropdown-btn:hover,
+    html[data-theme="light"] .action-dropdown.active .action-dropdown-btn,
+    body.light-theme .action-dropdown-btn:hover,
+    body.light-theme .action-dropdown.active .action-dropdown-btn {
+      background: #f1f6fc !important;
+      border-color: #0052cc !important;
+      color: #0052cc !important;
+    }
+
+    /* Bulk Action Bar */
+    .bulk-action-bar {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98));
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: 12px;
+      padding: 10px 16px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      animation: fadeInBulk 0.2s ease forwards;
+    }
+    @keyframes fadeInBulk {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Direct WhatsApp button */
+    .btn-wa-direct {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      background: rgba(37, 211, 102, 0.12);
+      color: #25d366;
+      border: 1px solid rgba(37, 211, 102, 0.25);
+      text-decoration: none;
+      font-size: 11px;
+      transition: all 0.15s ease;
+    }
+    .btn-wa-direct:hover {
+      background: #25d366;
+      color: #fff;
+      transform: scale(1.1);
+    }
   </style>
 </head>
 <body>
@@ -148,7 +365,7 @@
       .sc.w.stat-card-active { border-color: var(--warning) !important; box-shadow: 0 0 12px var(--wdim); }
       .sc.d.stat-card-active { border-color: var(--danger) !important; box-shadow: 0 0 12px var(--ddim); }
     </style>
-    <div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stat-grid" style="grid-template-columns:repeat(5,1fr)">
       <div class="sc p sc-clickable <%= (!filterStatus) ? 'stat-card-active' : '' %>" onclick="filterByStatus('')" title="Klik untuk tampilkan semua pelanggan">
         <i class="bi bi-people sc-icon"></i>
         <div class="sc-label"><%= t('admin.customers.stats.total', 'Total') %></div>
@@ -165,6 +382,14 @@
           <div style="font-size:10px;font-weight:800;color:var(--success);margin-top:4px"><i class="bi bi-funnel-fill"></i> Filter Aktif</div>
         <% } %>
       </div>
+      <div class="sc d sc-clickable <%= (filterStatus === 'unpaid') ? 'stat-card-active' : '' %>" onclick="filterByStatus('unpaid')" title="Klik untuk filter pelanggan Menunggak (Ada Tagihan Belum Lunas)">
+        <i class="bi bi-exclamation-octagon sc-icon" style="color:#f43f5e;"></i>
+        <div class="sc-label" style="color:#f43f5e;">Menunggak</div>
+        <div class="sc-val" style="color:#f43f5e;"><%= stats.unpaid || 0 %></div>
+        <% if (filterStatus === 'unpaid') { %>
+          <div style="font-size:10px;font-weight:800;color:#f43f5e;margin-top:4px"><i class="bi bi-funnel-fill"></i> Filter Aktif</div>
+        <% } %>
+      </div>
       <div class="sc w sc-clickable <%= (filterStatus === 'suspended') ? 'stat-card-active' : '' %>" onclick="filterByStatus('suspended')" title="Klik untuk filter pelanggan Disuspend">
         <i class="bi bi-pause-circle sc-icon"></i>
         <div class="sc-label"><%= t('admin.customers.stats.suspended', 'Disuspend') %></div>
@@ -175,12 +400,39 @@
       </div>
       <div class="sc d sc-clickable <%= (filterStatus === 'inactive') ? 'stat-card-active' : '' %>" onclick="filterByStatus('inactive')" title="Klik untuk filter Pendaftar Baru / Nonaktif">
         <i class="bi bi-person-plus sc-icon"></i>
-        <div class="sc-label"><%= t('admin.customers.stats.inactive', 'Pendaftar Baru (Nonaktif)') %></div>
+        <div class="sc-label"><%= t('admin.customers.stats.inactive', 'Pendaftar Baru') %></div>
         <div class="sc-val"><%= stats.inactive %></div>
         <% if (filterStatus === 'inactive') { %>
           <div style="font-size:10px;font-weight:800;color:var(--danger);margin-top:4px"><i class="bi bi-funnel-fill"></i> Filter Aktif</div>
         <% } %>
       </div>
+    </div>
+
+    <!-- Quick Filter Chips -->
+    <div class="cust-quick-filters">
+      <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-right:2px;"><i class="bi bi-funnel"></i> Filter:</span>
+      <button type="button" class="cust-filter-chip <%= (!filterStatus) ? 'active' : '' %>" onclick="filterByStatus('')">
+        Semua (<%= stats.total %>)
+      </button>
+      <button type="button" class="cust-filter-chip <%= (filterStatus === 'active') ? 'active' : '' %>" onclick="filterByStatus('active')">
+        <i class="bi bi-check-circle-fill text-success"></i> Aktif (<%= stats.active %>)
+      </button>
+      <button type="button" class="cust-filter-chip <%= (filterStatus === 'unpaid') ? 'active' : '' %>" onclick="filterByStatus('unpaid')">
+        <i class="bi bi-exclamation-circle-fill text-danger"></i> Menunggak (<%= stats.unpaid || 0 %>)
+      </button>
+      <button type="button" class="cust-filter-chip <%= (filterStatus === 'suspended') ? 'active' : '' %>" onclick="filterByStatus('suspended')">
+        <i class="bi bi-pause-circle-fill text-warning"></i> Disuspend (<%= stats.suspended %>)
+      </button>
+      <button type="button" class="cust-filter-chip <%= (filterStatus === 'inactive') ? 'active' : '' %>" onclick="filterByStatus('inactive')">
+        <i class="bi bi-person-x-fill text-muted"></i> Nonaktif (<%= stats.inactive %>)
+      </button>
+      <span style="width:1px;height:18px;background:var(--border);margin:0 4px;display:inline-block;"></span>
+      <button type="button" class="cust-filter-chip" id="chip_filter_online" onclick="toggleConnFilter('online')">
+        <span class="online-pulse-dot"></span> Online (<span id="count_live_online">0</span>)
+      </button>
+      <button type="button" class="cust-filter-chip" id="chip_filter_offline" onclick="toggleConnFilter('offline')">
+        <i class="bi bi-circle-fill text-muted" style="font-size:8px;"></i> Offline (<span id="count_live_offline">0</span>)
+      </button>
     </div>
 
     <!-- Print Header (Only visible on paper print) -->
@@ -197,11 +449,40 @@
       </div>
     </div>
 
+    <!-- Bulk Actions Floating Bar -->
+    <div id="bulkActionBar" class="bulk-action-bar" style="display:none;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span class="badge bp" style="font-size:12px;padding:6px 12px;font-weight:700;">
+          <i class="bi bi-check2-square me-1"></i> <span id="selectedCountText">0</span> Pelanggan Dipilih
+        </span>
+        <button type="button" class="btn btn-w btn-sm" onclick="triggerBulkAction('isolate', 'Apakah Anda yakin ingin MENGISOLIR semua pelanggan terpilih?')">
+          <i class="bi bi-pause-circle me-1"></i> Isolir Terpilih
+        </button>
+        <button type="button" class="btn btn-s btn-sm" onclick="triggerBulkAction('unisolate', 'Apakah Anda yakin ingin MENGAKTIFKAN kembali semua pelanggan terpilih?')">
+          <i class="bi bi-play-circle me-1"></i> Buka Isolir
+        </button>
+        <button type="button" class="btn btn-g btn-sm" onclick="openBulkWaModal()">
+          <i class="bi bi-whatsapp text-success me-1"></i> Kirim WhatsApp
+        </button>
+        <% if (typeof session !== 'undefined' && session && !session.isCashier) { %>
+        <button type="button" class="btn btn-d btn-sm" onclick="triggerBulkAction('delete', 'PERINGATAN: Hapus semua data pelanggan terpilih?')">
+          <i class="bi bi-trash me-1"></i> Hapus Terpilih
+        </button>
+        <% } %>
+      </div>
+      <button type="button" class="btn btn-g btn-sm" onclick="clearSelectedCust()"><i class="bi bi-x-lg"></i> Batal Pilih</button>
+    </div>
+
+    <form id="bulkActionForm" method="POST" action="/admin/customers/bulk-action" style="display:none;">
+      <input type="hidden" name="action" id="bulkActionInput">
+      <input type="hidden" name="customer_ids" id="bulkCustomerIdsInput">
+    </form>
+
     <!-- Search & Add -->
     <div class="card">
       <div class="card-hd">
         <h6><i class="bi bi-people"></i> <%= t('admin.customers.list', 'Daftar Pelanggan') %> (<%= customers.length %>)</h6>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" class="btn btn-g btn-sm" onclick="window.print()" title="Cetak Data Pelanggan"><i class="bi bi-printer"></i> Cetak</button>
           <a href="/admin/onu-stickers" class="btn btn-g btn-sm" title="Cetak Stiker Modem / ONU"><i class="bi bi-qr-code-scan"></i> Stiker ONU</a>
           <a href="/admin/customers/export" class="btn btn-g btn-sm"><i class="bi bi-file-earmark-excel"></i> <%= t('admin.customers.export_excel', 'Export Excel') %></a>
@@ -211,14 +492,15 @@
       </div>
       <div class="card-bd" style="padding-bottom:0">
         <form method="GET" action="/admin/customers" class="srow">
-          <div class="sinput" style="max-width:340px">
+          <div class="sinput" style="max-width:320px">
             <i class="bi bi-search"></i>
             <input class="fc" name="search" placeholder="<%= t('admin.customers.search_placeholder', 'Cari nama, telepon, tag...') %>" value="<%= search %>">
           </div>
-          <select class="fs" name="status" style="width:140px" onchange="this.form.submit()">
+          <select class="fs" name="status" style="width:160px" onchange="this.form.submit()">
             <option value=""><%= t('admin.customers.filter.all_status', 'Semua Status') %></option>
             <option value="active" <%= filterStatus==='active' ? 'selected':'' %>><%= t('admin.customers.filter.active', 'Aktif') %></option>
-            <option value="suspended" <%= filterStatus==='suspended' ? 'selected':'' %>><%= t('admin.customers.filter.suspended', 'Suspend') %></option>
+            <option value="unpaid" <%= filterStatus==='unpaid' ? 'selected':'' %>>⚠️ Menunggak (Unpaid)</option>
+            <option value="suspended" <%= filterStatus==='suspended' ? 'selected':'' %>><%= t('admin.customers.filter.suspended', 'Suspend / Isolir') %></option>
             <option value="inactive" <%= filterStatus==='inactive' ? 'selected':'' %>><%= t('admin.customers.filter.inactive', 'Pendaftar Baru / Nonaktif') %></option>
           </select>
           <select class="fs" name="area" style="width:160px" onchange="this.form.submit()">
@@ -245,24 +527,46 @@
         <table class="dtbl">
           <thead>
             <tr>
+              <th style="width:36px;text-align:center;">
+                <input type="checkbox" id="selectAllCust" onchange="toggleSelectAllCust(this)" style="cursor:pointer;width:15px;height:15px;" title="Pilih Semua">
+              </th>
               <th>#</th>
               <th>Kode ID</th>
               <th><%= t('admin.customers.table.name', 'Nama') %></th>
-              <th><%= t('admin.customers.table.phone_tag', 'Telepon / Tag ONU') %></th>
+              <th><%= t('admin.customers.table.phone_tag', 'Kontak & WhatsApp') %></th>
               <th><%= t('admin.customers.table.package', 'Paket') %></th>
               <th>Koneksi MikroTik</th>
-              <th><%= t('admin.customers.table.address', 'Alamat') %></th>
+              <th><%= t('admin.customers.table.address', 'Alamat & Topologi') %></th>
               <th><%= t('admin.customers.table.status', 'Status') %></th>
-              <th><%= t('admin.customers.table.unpaid', 'Tagihan Belum Bayar') %></th>
-              <th><%= t('admin.customers.table.actions', 'Aksi') %></th>
+              <th><%= t('admin.customers.table.unpaid', 'Tagihan') %></th>
+              <th style="text-align:center;"><%= t('admin.customers.table.actions', 'Aksi') %></th>
             </tr>
           </thead>
           <tbody>
           <% if (customers.length === 0) { %>
-            <tr><td colspan="10" class="text-center text-muted" style="padding:32px"><%= t('admin.customers.empty', 'Belum ada pelanggan') %></td></tr>
+            <tr><td colspan="11" class="text-center text-muted" style="padding:32px"><%= t('admin.customers.empty', 'Belum ada pelanggan') %></td></tr>
           <% } %>
-          <% customers.forEach((c, i) => { %>
-            <tr>
+          <% customers.forEach((c, i) => { 
+            const username = String(c.pppoe_username || c.hotspot_username || '').trim().toLowerCase();
+            const session = username && typeof activeSessionsMap !== 'undefined' && activeSessionsMap && activeSessionsMap.get ? activeSessionsMap.get(username) : null;
+            const isOnline = !!session;
+            
+            const rxBytes = session && session.bytesIn ? session.bytesIn : (c.bytes_in || 0);
+            const txBytes = session && session.bytesOut ? session.bytesOut : (c.bytes_out || 0);
+            
+            function fmtB(b) {
+              const num = Number(b) || 0;
+              if (num <= 0) return '0 B';
+              const k = 1024;
+              const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+              const i = Math.floor(Math.log(num) / Math.log(k));
+              return (num / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
+            }
+          %>
+            <tr class="cust-row" data-conn="<%= isOnline ? 'online' : 'offline' %>">
+              <td style="text-align:center;">
+                <input type="checkbox" class="cust-select-cb" value="<%= c.id %>" onchange="updateBulkBar()" style="cursor:pointer;width:15px;height:15px;">
+              </td>
               <td class="text-muted"><%= i+1 %></td>
               <td>
                 <span class="badge" style="background:rgba(59,130,246,0.12);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);font-family:monospace;font-weight:800;letter-spacing:0.5px;font-size:11px;">
@@ -279,7 +583,16 @@
                 </div>
               </td>
               <td>
-                <div><%= c.phone || '-' %></div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span><%= c.phone || '-' %></span>
+                  <% if (c.phone) { 
+                    const cleanPhone = String(c.phone).replace(/\D/g, '').replace(/^0/, '62');
+                  %>
+                    <a href="https://wa.me/<%= cleanPhone %>" target="_blank" class="btn-wa-direct" title="Chat WhatsApp">
+                      <i class="bi bi-whatsapp"></i>
+                    </a>
+                  <% } %>
+                </div>
                 <% if (c.genieacs_tag) { %><div style="font-size:11px;color:var(--primary)"><i class="bi bi-wifi"></i> <%= c.genieacs_tag %></div><% } %>
               </td>
               <td>
@@ -299,27 +612,10 @@
                   <% } %>
                 <% } else { %><span class="text-muted">-</span><% } %>
               </td>
-              <td class="cust-conn-cell" data-username="<%= String(c.pppoe_username || c.hotspot_username || '').trim().toLowerCase() %>">
-                <% 
-                  const username = String(c.pppoe_username || c.hotspot_username || '').trim().toLowerCase();
-                  const session = username && typeof activeSessionsMap !== 'undefined' && activeSessionsMap && activeSessionsMap.get ? activeSessionsMap.get(username) : null;
-                  const isOnline = !!session;
-                  
-                  const rxBytes = session && session.bytesIn ? session.bytesIn : (c.bytes_in || 0);
-                  const txBytes = session && session.bytesOut ? session.bytesOut : (c.bytes_out || 0);
-                  
-                  function fmtB(b) {
-                    const num = Number(b) || 0;
-                    if (num <= 0) return '0 B';
-                    const k = 1024;
-                    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-                    const i = Math.floor(Math.log(num) / Math.log(k));
-                    return (num / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
-                  }
-                %>
+              <td class="cust-conn-cell" data-username="<%= username %>">
                 <% if (isOnline) { %>
                   <span class="badge" style="background:rgba(16,185,129,0.18);color:#10b981;border:1px solid rgba(16,185,129,0.35);font-weight:700">
-                    <i class="bi bi-circle-fill" style="font-size:7px;margin-right:4px"></i>ONLINE
+                    <span class="online-pulse-dot" style="margin-right:4px;"></span>ONLINE
                   </span>
                   <div style="font-size:12px;font-weight:800;color:var(--text);margin-top:3px">
                     <i class="bi bi-clock-history text-success me-1"></i><span class="conn-uptime"><%= session.uptime %></span>
@@ -339,12 +635,29 @@
                 </div>
               </td>
               <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                <div><%= c.address || '-' %></div>
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <span><%= c.address || '-' %></span>
+                  <% if (c.lat && c.lng) { %>
+                    <a href="https://www.google.com/maps?q=<%= c.lat %>,<%= c.lng %>" target="_blank" style="color:#38bdf8;font-size:11px;" title="Lihat Lokasi GPS di Google Maps"><i class="bi bi-geo-alt-fill"></i></a>
+                  <% } %>
+                </div>
                 <% if (c.area) { %><div style="font-size:11px;color:#0284c7"><i class="bi bi-geo-alt"></i> <%= c.area %></div><% } %>
+                <% if (c.odc_name || c.odp_name) { %>
+                  <div style="font-size:10px;color:var(--muted);margin-top:2px;" title="Topologi: <%= c.odc_name || 'ODC' %> / <%= c.odp_name || 'ODP' %>">
+                    <i class="bi bi-diagram-2 text-info"></i> <%= c.odc_name || 'ODC' %> &bull; <%= c.odp_name || 'ODP' %><%= c.odp_port ? ' [P' + c.odp_port + ']' : '' %>
+                  </div>
+                <% } %>
+                <% if (c.initial_rx_power !== null && c.initial_rx_power !== undefined && c.initial_rx_power !== '') { %>
+                  <div style="font-size:10px;margin-top:1px;">
+                    <span class="badge" style="padding:1px 5px;font-size:9px;background:rgba(56,189,248,0.12);color:#38bdf8;border:1px solid rgba(56,189,248,0.25);" title="Redaman Awal Saat QC">
+                      <i class="bi bi-speedometer2"></i> <%= Number(c.initial_rx_power).toFixed(2) %> dBm
+                    </span>
+                  </div>
+                <% } %>
               </td>
               <td>
                 <% if (c.status==='active') { %><span class="badge bs"><i class="bi bi-circle-fill" style="font-size:7px"></i><%= t('admin.customers.filter.active', 'Aktif') %></span>
-                <% } else if (c.status==='suspended') { %><span class="badge bw"><%= t('admin.customers.filter.suspended', 'Suspend') %></span>
+                <% } else if (c.status==='suspended') { %><span class="badge bw"><i class="bi bi-pause-circle" style="font-size:9px"></i> <%= t('admin.customers.filter.suspended', 'Suspend') %></span>
                 <% } else { %><span class="badge bm"><%= t('admin.customers.filter.inactive', 'Nonaktif') %></span><% } %>
                 <div style="font-size:10px;margin-top:4px">
                   <i class="bi bi-clock-history"></i> <%= t('admin.customers.auto_isolate.label', 'Auto Isolir') %>:
@@ -355,31 +668,73 @@
               </td>
               <td class="text-center">
                 <% if (c.unpaid_count > 0) { %>
-                  <span class="badge bd"><%= c.unpaid_count %> <%= t('admin.customers.unpaid_suffix', 'tagihan') %></span>
-                <% } else { %><span class="text-muted" style="font-size:12px"><%= t('admin.customers.paid_label', 'Lunas') %></span><% } %>
+                  <span class="badge bd" style="font-weight:700;"><%= c.unpaid_count %> <%= t('admin.customers.unpaid_suffix', 'tagihan') %></span>
+                <% } else { %><span class="text-muted" style="font-size:12px"><i class="bi bi-check2 text-success"></i> <%= t('admin.customers.paid_label', 'Lunas') %></span><% } %>
               </td>
-              <td>
-                <button class="btn btn-g btn-icon btn-sm" title="Lihat Detail & Koneksi MikroTik" onclick="viewCustDetail(<%= i %>)"><i class="bi bi-eye"></i></button>
-                <a href="/admin/customers/<%= c.id %>/sticker-onu" target="_blank" class="btn btn-g btn-icon btn-sm" title="Cetak Stiker Modem / ONU"><i class="bi bi-qr-code"></i></a>
-                <button class="btn btn-s btn-icon btn-sm" title="<%= t('admin.customers.actions.generate_invoice', 'Generate Tagihan') %>" data-idx="<%= i %>" onclick="openGenInvoice(+this.dataset.idx)"><i class="bi bi-lightning-charge"></i></button>
-                <button class="btn btn-p btn-icon btn-sm" title="<%= t('admin.customers.actions.pay_invoice', 'Bayar Tagihan') %>" data-idx="<%= i %>" onclick="openPayInvoice(+this.dataset.idx)"><i class="bi bi-cash-coin"></i></button>
-                <button class="btn btn-g btn-icon btn-sm" title="Kelola / Top-Up Saldo Dompet" data-idx="<%= i %>" onclick="openTopupModal(+this.dataset.idx)" style="color:#10b981;"><i class="bi bi-wallet2"></i></button>
-                <% if (typeof session !== 'undefined' && session && !session.isCashier) { %>
-                <% if (c.package_id && (c.package_promo_cycles || 0) > 0) { %>
-                <form method="POST" action="/admin/customers/<%= c.id %>/billing/reset-promo-cycles" style="display:inline" onsubmit="return confirm('Reset counter siklus promo untuk pelanggan ini? Tagihan berikutnya akan memakai harga promo lagi sesuai pengaturan paket.')">
-                  <button type="submit" class="btn btn-g btn-icon btn-sm" title="Reset siklus promo"><i class="bi bi-arrow-counterclockwise"></i></button>
-                </form>
-                <% } %>
-                <% if (c.package_id && c.install_date && c.package_prorate_first_invoice) { %>
-                <form method="POST" action="/admin/customers/<%= c.id %>/billing/install-prorata" style="display:inline" onsubmit="return confirm('Buat tagihan SUSULAN prorata untuk bulan tanggal pasang? Hanya jika belum ada tagihan periode itu. Dasar harga: reguler (bukan promo).')">
-                  <button type="submit" class="btn btn-g btn-icon btn-sm" title="Susulan prorata bulan pasang"><i class="bi bi-calendar2-check"></i></button>
-                </form>
-                <% } %>
-                <% } %>
-                <button class="btn btn-g btn-icon btn-sm" title="<%= t('common.edit', 'Edit') %>" data-idx="<%= i %>" onclick="editCust(+this.dataset.idx)"><i class="bi bi-pencil"></i></button>
-                <form method="POST" action="/admin/customers/<%= c.id %>/delete" style="display:inline" data-confirm-msg=<%- JSON.stringify(t('admin.customers.confirm_delete', 'Hapus pelanggan ini?')) %> onsubmit="return confirm(this.dataset.confirmMsg)">
-                  <button class="btn btn-d btn-icon btn-sm" title="<%= t('common.delete', 'Hapus') %>"><i class="bi bi-trash"></i></button>
-                </form>
+              <td style="white-space:nowrap;text-align:center;">
+                <!-- Clean & Ergonomic Action Group -->
+                <div style="display:inline-flex;align-items:center;gap:4px;">
+                  <button class="btn btn-g btn-sm" title="Lihat Detail & Koneksi" onclick="viewCustDetail(<%= i %>)" style="padding:4px 8px;font-size:11px;font-weight:600;">
+                    <i class="bi bi-eye"></i> Detail
+                  </button>
+                  <button class="btn btn-p btn-sm" title="<%= t('admin.customers.actions.pay_invoice', 'Bayar Tagihan') %>" data-idx="<%= i %>" onclick="openPayInvoice(+this.dataset.idx)" style="padding:4px 8px;font-size:11px;font-weight:600;">
+                    <i class="bi bi-cash-coin"></i> Bayar
+                  </button>
+                  <div class="action-dropdown">
+                    <button type="button" class="action-dropdown-btn" onclick="toggleActionDropdown(this, event)" title="Aksi Lainnya">
+                      <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <div class="action-dropdown-menu">
+                      <% if (c.status === 'suspended') { %>
+                        <form method="POST" action="/admin/customers/<%= c.id %>/unisolate" style="margin:0;" onsubmit="return confirm('Aktifkan kembali layanan untuk pelanggan ini?')">
+                          <button type="submit" class="action-dropdown-item" style="color:#10b981;">
+                            <i class="bi bi-play-circle"></i> Buka Isolir (Aktifkan)
+                          </button>
+                        </form>
+                      <% } else { %>
+                        <form method="POST" action="/admin/customers/<%= c.id %>/isolate" style="margin:0;" onsubmit="return confirm('Apakah Anda yakin ingin mengisolir pelanggan ini secara manual?')">
+                          <button type="submit" class="action-dropdown-item" style="color:#f59e0b;">
+                            <i class="bi bi-pause-circle"></i> Isolir Pelanggan
+                          </button>
+                        </form>
+                      <% } %>
+                      <button type="button" class="action-dropdown-item" onclick="openTopupModal(<%= i %>)">
+                        <i class="bi bi-wallet2 text-success"></i> Kelola Saldo Dompet
+                      </button>
+                      <button type="button" class="action-dropdown-item" onclick="openGenInvoice(<%= i %>)">
+                        <i class="bi bi-lightning-charge text-warning"></i> Generate Tagihan
+                      </button>
+                      <a href="/admin/customers/<%= c.id %>/sticker-onu" target="_blank" class="action-dropdown-item">
+                        <i class="bi bi-qr-code text-info"></i> Cetak Stiker ONU
+                      </a>
+                      <button type="button" class="action-dropdown-item" onclick="editCust(<%= i %>)">
+                        <i class="bi bi-pencil text-primary"></i> Edit Data Pelanggan
+                      </button>
+                      <% if (typeof session !== 'undefined' && session && !session.isCashier) { %>
+                        <% if (c.package_id && (c.package_promo_cycles || 0) > 0) { %>
+                          <form method="POST" action="/admin/customers/<%= c.id %>/billing/reset-promo-cycles" style="margin:0;" onsubmit="return confirm('Reset counter siklus promo untuk pelanggan ini?')">
+                            <button type="submit" class="action-dropdown-item">
+                              <i class="bi bi-arrow-counterclockwise text-secondary"></i> Reset Siklus Promo
+                            </button>
+                          </form>
+                        <% } %>
+                        <% if (c.package_id && c.install_date && c.package_prorate_first_invoice) { %>
+                          <form method="POST" action="/admin/customers/<%= c.id %>/billing/install-prorata" style="margin:0;" onsubmit="return confirm('Buat tagihan susulan prorata untuk bulan pasang?')">
+                            <button type="submit" class="action-dropdown-item">
+                              <i class="bi bi-calendar2-check text-secondary"></i> Susulan Prorata Pasang
+                            </button>
+                          </form>
+                        <% } %>
+                      <% } %>
+                      <div class="action-dropdown-divider"></div>
+                      <form method="POST" action="/admin/customers/<%= c.id %>/delete" style="margin:0;" onsubmit="return confirm('Apakah Anda yakin ingin MENGHAPUS pelanggan ini? Data tidak dapat dipulihkan!')">
+                        <button type="submit" class="action-dropdown-item danger-item">
+                          <i class="bi bi-trash"></i> Hapus Pelanggan
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
               </td>
             </tr>
           <% }) %>
@@ -394,7 +749,7 @@
 <div class="mo" id="addModal">
   <div class="mb" style="max-width:720px;">
     <div class="mh"><span class="mt"><i class="bi bi-person-plus"></i> Tambah Pelanggan Baru</span><button class="mc" onclick="closeModal('addModal')">&times;</button></div>
-    <form method="POST" action="/admin/customers">
+    <form method="POST" action="/admin/customers" enctype="multipart/form-data">
       <div class="mbody" style="max-height:75vh; overflow-y:auto; padding-right:6px;">
         
         <% const isRadiusActive = (typeof settings !== 'undefined' && settings && String(settings.radius_enabled) === '1'); %>
@@ -428,10 +783,10 @@
             <div class="fg">
               <label class="fl" style="font-weight:700;color:var(--primary);"><i class="bi bi-upc-scan"></i> Kode Pelanggan (ID)</label>
               <div style="display:flex;gap:6px;">
-                <input class="fc" name="customer_code" id="add_customer_code" placeholder="Contoh: PGG0104" style="font-family:monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
+                <input class="fc" name="customer_code" id="add_customer_code" placeholder="Contoh: PWK010204" style="font-family:monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
                 <button type="button" class="btn btn-g btn-sm" onclick="triggerAutoGenerateCode('add')" title="Generate Kode & PPPoE"><i class="bi bi-magic text-primary"></i> Auto</button>
               </div>
-              <small class="text-muted" style="font-size:11px;">Format: <strong>[AREA][ODP][PORT]</strong> (otomatis terisi saat Area, ODP, & Port dipilih).</small>
+              <small class="text-muted" style="font-size:11px;">Format: <strong>[AREA][ODC][ODP][PORT]</strong> (otomatis terisi saat Area, ODC, ODP, & Port dipilih).</small>
             </div>
             <div class="fg">
               <label class="fl"><i class="bi bi-card-text"></i> NIK / No. KTP (Opsional)</label>
@@ -619,13 +974,13 @@
           </div>
         </div>
 
-        <!-- SECTION 5: OPSEK & INFRASTRUKTUR (OLT, ODP, KOORDINAT) -->
+        <!-- SECTION 5: OPSEK & INFRASTRUKTUR (OLT, ODC, ODP, & PORT) -->
         <div style="background: rgba(255, 255, 255, 0.02); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px;">
-          <div class="fw6 mb-2" style="font-size:13px; color:var(--text);"><i class="bi bi-diagram-3 text-secondary me-1"></i> Infrastruktur (OLT, ODP, & Peta)</div>
+          <div class="fw6 mb-2" style="font-size:13px; color:var(--text);"><i class="bi bi-diagram-3 text-secondary me-1"></i> Infrastruktur FTTH (OLT, ODC, ODP, & Port)</div>
           <div class="form-row">
             <div class="fg">
               <label class="fl">Perangkat OLT</label>
-              <select class="fs" name="olt_id">
+              <select class="fs" name="olt_id" id="add_olt_id">
                 <option value="">-- Tanpa OLT --</option>
                 <% if (typeof olts !== 'undefined') { %>
                   <% olts.forEach(o => { %>
@@ -635,19 +990,39 @@
               </select>
             </div>
             <div class="fg">
-              <label class="fl">ODP</label>
-              <select class="fs" name="odp_id" id="add_odp_id" onchange="autoGenerateCustomerCode('add')">
-                <option value="">-- Tanpa ODP --</option>
-                <% if (typeof odps !== 'undefined') { %>
-                  <% odps.forEach(o => { %>
-                    <option value="<%= o.id %>" data-name="<%= o.name %>"><%= o.name %></option>
+              <label class="fl"><i class="bi bi-hdd-network text-info"></i> ODC (Optical Distribution Cabinet)</label>
+              <select class="fs" name="odc_id" id="add_odc_id" onchange="handleOdcChange('add'); autoGenerateCustomerCode('add');">
+                <option value="">-- Tanpa ODC --</option>
+                <% if (typeof odcs !== 'undefined') { %>
+                  <% odcs.forEach(o => { %>
+                    <option value="<%= o.id %>" data-name="<%= o.name %>"><%= o.name %><%= o.olt_name ? ' (' + o.olt_name + ')' : '' %></option>
                   <% }) %>
                 <% } %>
               </select>
             </div>
           </div>
           <div class="form-row">
-            <div class="fg"><label class="fl">Port PON / ODP</label><input class="fc" name="pon_port" id="add_pon_port" oninput="autoGenerateCustomerCode('add')" placeholder="Contoh: 1, 2, 4 (Nomor Port ODP)"></div>
+            <div class="fg">
+              <label class="fl"><i class="bi bi-distribute-vertical text-warning"></i> ODP (Optical Distribution Point)</label>
+              <select class="fs" name="odp_id" id="add_odp_id" onchange="handleOdpChange('add'); autoGenerateCustomerCode('add');">
+                <option value="">-- Tanpa ODP --</option>
+                <% if (typeof odps !== 'undefined') { %>
+                  <% odps.forEach(o => { %>
+                    <option value="<%= o.id %>" data-name="<%= o.name %>" data-odc-id="<%= o.odc_id || '' %>"><%= o.name %></option>
+                  <% }) %>
+                <% } %>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="fl"><i class="bi bi-plug text-success"></i> Nomor Port ODP</label>
+              <input class="fc" type="number" min="1" max="64" name="odp_port" id="add_odp_port" oninput="autoGenerateCustomerCode('add')" placeholder="Contoh: 1 s/d 16">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="fg">
+              <label class="fl">Port PON OLT (Opsional)</label>
+              <input class="fc" name="pon_port" id="add_pon_port" placeholder="Contoh: PON 1/1/1">
+            </div>
             <div class="fg" id="add_mac_field" style="display:none">
               <label class="fl">MAC Address (Opsional)</label>
               <input class="fc" name="mac_address" placeholder="Contoh: AA:BB:CC:DD:EE:FF">
@@ -664,6 +1039,85 @@
             </div>
           </div>
           <div class="fg" style="margin-top:10px;"><label class="fl">Catatan</label><textarea class="fc" name="notes" placeholder="Catatan internal opsional..."></textarea></div>
+        </div>
+
+        <!-- SECTION 6: DOKUMENTASI INSTALASI & KYC BERSTANDAR ISP -->
+        <div style="background: rgba(255, 255, 255, 0.02); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div class="fw6" style="font-size:13px; color:var(--text);">
+              <i class="bi bi-camera-fill text-primary me-1"></i> Dokumentasi Instalasi & QC Redaman (SOP ISP)
+            </div>
+            <span class="badge bp" style="font-size:10px; padding:3px 8px;"><i class="bi bi-patch-check me-1"></i>Commissioning Standard</span>
+          </div>
+
+          <!-- Redaman Awal (Optical Power Meter) -->
+          <div style="background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:14px;">
+            <div class="form-row" style="margin-bottom:0; align-items:center;">
+              <div class="fg" style="margin-bottom:0; flex:1;">
+                <label class="fl" style="font-weight:700; color:var(--text); display:flex; justify-content:space-between;">
+                  <span><i class="bi bi-speedometer2 text-info me-1"></i> Redaman Awal / Rx Optical Power (dBm)</span>
+                  <span id="add_rx_status_badge" class="badge" style="display:none; font-size:11px;"></span>
+                </label>
+                <div style="display:flex; gap:8px; align-items:center;">
+                  <input class="fc" type="number" step="0.01" name="initial_rx_power" id="add_initial_rx_power" placeholder="Contoh: -19.50" oninput="updateRxBadge('add')" style="font-family:monospace; font-weight:700; font-size:14px; max-width:200px;">
+                  <span style="font-size:13px; font-weight:600; color:var(--muted);">dBm</span>
+                </div>
+                <small class="text-muted" style="font-size:11px; display:block; margin-top:4px;">
+                  Standar GPON: <strong>-15.00 dBm s/d -24.00 dBm</strong> (Ideal). Di atas -27.00 dBm dianggap redaman loss tinggi.
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grid 3 Foto: Rumah, Pelanggan, Redaman OPM -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+            
+            <!-- Card 1: Foto Rumah -->
+            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center; position:relative;">
+              <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:8px;">
+                <i class="bi bi-house-door text-primary me-1"></i> Foto Rumah Pelanggan
+              </div>
+              <div id="add_preview_house_box" style="width:100%; height:110px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:8px; border:1px solid var(--border);">
+                <i class="bi bi-image text-muted" style="font-size:32px;"></i>
+              </div>
+              <label class="btn btn-g btn-sm w-100" style="cursor:pointer; font-size:11px; margin:0;">
+                <i class="bi bi-upload me-1"></i> Upload Foto Rumah
+                <input type="file" name="photo_house" accept="image/*" style="display:none" onchange="previewDocFile(this, 'add_preview_house_box')">
+              </label>
+              <div style="font-size:10px; color:var(--muted); margin-top:4px;">Tampak depan & nomor rumah</div>
+            </div>
+
+            <!-- Card 2: Foto Pelanggan / KYC -->
+            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center; position:relative;">
+              <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:8px;">
+                <i class="bi bi-person-bounding-box text-success me-1"></i> Foto Pelanggan / KTP
+              </div>
+              <div id="add_preview_customer_box" style="width:100%; height:110px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:8px; border:1px solid var(--border);">
+                <i class="bi bi-person-badge text-muted" style="font-size:32px;"></i>
+              </div>
+              <label class="btn btn-g btn-sm w-100" style="cursor:pointer; font-size:11px; margin:0;">
+                <i class="bi bi-upload me-1"></i> Upload Foto Pelanggan
+                <input type="file" name="photo_customer" accept="image/*" style="display:none" onchange="previewDocFile(this, 'add_preview_customer_box')">
+              </label>
+              <div style="font-size:10px; color:var(--muted); margin-top:4px;">Verifikasi identitas / KTP</div>
+            </div>
+
+            <!-- Card 3: Foto Layar OPM Redaman -->
+            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center; position:relative;">
+              <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:8px;">
+                <i class="bi bi-broadcast-pin text-warning me-1"></i> Foto Redaman OPM
+              </div>
+              <div id="add_preview_optical_box" style="width:100%; height:110px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:8px; border:1px solid var(--border);">
+                <i class="bi bi-activity text-muted" style="font-size:32px;"></i>
+              </div>
+              <label class="btn btn-g btn-sm w-100" style="cursor:pointer; font-size:11px; margin:0;">
+                <i class="bi bi-upload me-1"></i> Upload Foto OPM
+                <input type="file" name="photo_optical_power" accept="image/*" style="display:none" onchange="previewDocFile(this, 'add_preview_optical_box')">
+              </label>
+              <div style="font-size:10px; color:var(--muted); margin-top:4px;">Layar Optical Power Meter saat QC</div>
+            </div>
+
+          </div>
         </div>
 
       </div>
@@ -703,7 +1157,7 @@
 <div class="mo" id="editModal">
   <div class="mb" style="max-width:720px;">
     <div class="mh"><span class="mt"><i class="bi bi-pencil"></i> Edit Pelanggan</span><button class="mc" onclick="closeModal('editModal')">&times;</button></div>
-    <form method="POST" id="editForm">
+    <form method="POST" id="editForm" enctype="multipart/form-data">
       <div class="mbody" style="max-height:75vh; overflow-y:auto; padding-right:6px;">
         
         <% if (isRadiusActive) { %>
@@ -736,9 +1190,10 @@
             <div class="fg">
               <label class="fl" style="font-weight:700;color:var(--primary);"><i class="bi bi-upc-scan"></i> Kode Pelanggan (ID)</label>
               <div style="display:flex;gap:6px;">
-                <input class="fc" name="customer_code" id="e_customer_code" placeholder="Contoh: PGG0104" style="font-family:monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
+                <input class="fc" name="customer_code" id="e_customer_code" placeholder="Contoh: PWK010204" style="font-family:monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
                 <button type="button" class="btn btn-g btn-sm" onclick="triggerAutoGenerateCode('edit')" title="Generate Kode dari Area/ODP/Port"><i class="bi bi-magic text-primary"></i> Auto</button>
               </div>
+              <small class="text-muted" style="font-size:11px;">Format: <strong>[AREA][ODC][ODP][PORT]</strong> (otomatis terisi saat Area, ODC, ODP, & Port dipilih).</small>
             </div>
             <div class="fg">
               <label class="fl"><i class="bi bi-card-text"></i> NIK / No. KTP (Opsional)</label>
@@ -914,9 +1369,9 @@
           </div>
         </div>
 
-        <!-- SECTION 5: OPSEK & INFRASTRUKTUR (OLT, ODP, KOORDINAT) -->
+        <!-- SECTION 5: OPSEK & INFRASTRUKTUR (OLT, ODC, ODP, & PORT) -->
         <div style="background: rgba(255, 255, 255, 0.02); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px;">
-          <div class="fw6 mb-2" style="font-size:13px; color:var(--text);"><i class="bi bi-diagram-3 text-secondary me-1"></i> Infrastruktur (OLT, ODP, & Peta)</div>
+          <div class="fw6 mb-2" style="font-size:13px; color:var(--text);"><i class="bi bi-diagram-3 text-secondary me-1"></i> Infrastruktur FTTH (OLT, ODC, ODP, & Port)</div>
           <div class="form-row">
             <div class="fg">
               <label class="fl">Perangkat OLT</label>
@@ -930,19 +1385,39 @@
               </select>
             </div>
             <div class="fg">
-              <label class="fl">ODP</label>
-              <select class="fs" name="odp_id" id="e_odp_id" onchange="autoGenerateCustomerCode('edit')">
-                <option value="">-- Tanpa ODP --</option>
-                <% if (typeof odps !== 'undefined') { %>
-                  <% odps.forEach(o => { %>
-                    <option value="<%= o.id %>" data-name="<%= o.name %>"><%= o.name %></option>
+              <label class="fl"><i class="bi bi-hdd-network text-info"></i> ODC (Optical Distribution Cabinet)</label>
+              <select class="fs" name="odc_id" id="e_odc_id" onchange="handleOdcChange('edit'); autoGenerateCustomerCode('edit');">
+                <option value="">-- Tanpa ODC --</option>
+                <% if (typeof odcs !== 'undefined') { %>
+                  <% odcs.forEach(o => { %>
+                    <option value="<%= o.id %>" data-name="<%= o.name %>"><%= o.name %><%= o.olt_name ? ' (' + o.olt_name + ')' : '' %></option>
                   <% }) %>
                 <% } %>
               </select>
             </div>
           </div>
           <div class="form-row">
-            <div class="fg"><label class="fl">Port PON / ODP</label><input class="fc" name="pon_port" id="e_pon_port" oninput="autoGenerateCustomerCode('edit')" placeholder="Contoh: 1, 2, 4 (Nomor Port ODP)"></div>
+            <div class="fg">
+              <label class="fl"><i class="bi bi-distribute-vertical text-warning"></i> ODP (Optical Distribution Point)</label>
+              <select class="fs" name="odp_id" id="e_odp_id" onchange="handleOdpChange('edit'); autoGenerateCustomerCode('edit');">
+                <option value="">-- Tanpa ODP --</option>
+                <% if (typeof odps !== 'undefined') { %>
+                  <% odps.forEach(o => { %>
+                    <option value="<%= o.id %>" data-name="<%= o.name %>" data-odc-id="<%= o.odc_id || '' %>"><%= o.name %></option>
+                  <% }) %>
+                <% } %>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="fl"><i class="bi bi-plug text-success"></i> Nomor Port ODP</label>
+              <input class="fc" type="number" min="1" max="64" name="odp_port" id="e_odp_port" oninput="autoGenerateCustomerCode('edit')" placeholder="Contoh: 1 s/d 16">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="fg">
+              <label class="fl">Port PON OLT (Opsional)</label>
+              <input class="fc" name="pon_port" id="e_pon_port" placeholder="Contoh: PON 1/1/1">
+            </div>
             <div class="fg" id="e_mac_field" style="display:none">
               <label class="fl">MAC Address (Opsional)</label>
               <input class="fc" name="mac_address" id="e_mac_address" placeholder="Contoh: AA:BB:CC:DD:EE:FF">
@@ -959,6 +1434,85 @@
             </div>
           </div>
           <div class="fg" style="margin-top:10px;"><label class="fl">Catatan</label><textarea class="fc" name="notes" id="e_notes" placeholder="Catatan internal opsional..."></textarea></div>
+        </div>
+
+        <!-- SECTION 6: DOKUMENTASI INSTALASI & KYC BERSTANDAR ISP -->
+        <div style="background: rgba(255, 255, 255, 0.02); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div class="fw6" style="font-size:13px; color:var(--text);">
+              <i class="bi bi-camera-fill text-primary me-1"></i> Dokumentasi Instalasi & QC Redaman (SOP ISP)
+            </div>
+            <span class="badge bp" style="font-size:10px; padding:3px 8px;"><i class="bi bi-patch-check me-1"></i>Commissioning Standard</span>
+          </div>
+
+          <!-- Redaman Awal (Optical Power Meter) -->
+          <div style="background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:14px;">
+            <div class="form-row" style="margin-bottom:0; align-items:center;">
+              <div class="fg" style="margin-bottom:0; flex:1;">
+                <label class="fl" style="font-weight:700; color:var(--text); display:flex; justify-content:space-between;">
+                  <span><i class="bi bi-speedometer2 text-info me-1"></i> Redaman Awal / Rx Optical Power (dBm)</span>
+                  <span id="e_rx_status_badge" class="badge" style="display:none; font-size:11px;"></span>
+                </label>
+                <div style="display:flex; gap:8px; align-items:center;">
+                  <input class="fc" type="number" step="0.01" name="initial_rx_power" id="e_initial_rx_power" placeholder="Contoh: -19.50" oninput="updateRxBadge('edit')" style="font-family:monospace; font-weight:700; font-size:14px; max-width:200px;">
+                  <span style="font-size:13px; font-weight:600; color:var(--muted);">dBm</span>
+                </div>
+                <small class="text-muted" style="font-size:11px; display:block; margin-top:4px;">
+                  Standar GPON: <strong>-15.00 dBm s/d -24.00 dBm</strong> (Ideal). Di atas -27.00 dBm dianggap redaman loss tinggi.
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grid 3 Foto: Rumah, Pelanggan, Redaman OPM -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+            
+            <!-- Card 1: Foto Rumah -->
+            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center; position:relative;">
+              <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:8px;">
+                <i class="bi bi-house-door text-primary me-1"></i> Foto Rumah Pelanggan
+              </div>
+              <div id="e_preview_house_box" style="width:100%; height:110px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:8px; border:1px solid var(--border);">
+                <i class="bi bi-image text-muted" style="font-size:32px;"></i>
+              </div>
+              <label class="btn btn-g btn-sm w-100" style="cursor:pointer; font-size:11px; margin:0;">
+                <i class="bi bi-upload me-1"></i> Ganti Foto Rumah
+                <input type="file" name="photo_house" accept="image/*" style="display:none" onchange="previewDocFile(this, 'e_preview_house_box')">
+              </label>
+              <div style="font-size:10px; color:var(--muted); margin-top:4px;">Tampak depan & nomor rumah</div>
+            </div>
+
+            <!-- Card 2: Foto Pelanggan / KYC -->
+            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center; position:relative;">
+              <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:8px;">
+                <i class="bi bi-person-bounding-box text-success me-1"></i> Foto Pelanggan / KTP
+              </div>
+              <div id="e_preview_customer_box" style="width:100%; height:110px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:8px; border:1px solid var(--border);">
+                <i class="bi bi-person-badge text-muted" style="font-size:32px;"></i>
+              </div>
+              <label class="btn btn-g btn-sm w-100" style="cursor:pointer; font-size:11px; margin:0;">
+                <i class="bi bi-upload me-1"></i> Ganti Foto Pelanggan
+                <input type="file" name="photo_customer" accept="image/*" style="display:none" onchange="previewDocFile(this, 'e_preview_customer_box')">
+              </label>
+              <div style="font-size:10px; color:var(--muted); margin-top:4px;">Verifikasi identitas / KTP</div>
+            </div>
+
+            <!-- Card 3: Foto Layar OPM Redaman -->
+            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center; position:relative;">
+              <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:8px;">
+                <i class="bi bi-broadcast-pin text-warning me-1"></i> Foto Redaman OPM
+              </div>
+              <div id="e_preview_optical_box" style="width:100%; height:110px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:8px; border:1px solid var(--border);">
+                <i class="bi bi-activity text-muted" style="font-size:32px;"></i>
+              </div>
+              <label class="btn btn-g btn-sm w-100" style="cursor:pointer; font-size:11px; margin:0;">
+                <i class="bi bi-upload me-1"></i> Ganti Foto OPM
+                <input type="file" name="photo_optical_power" accept="image/*" style="display:none" onchange="previewDocFile(this, 'e_preview_optical_box')">
+              </label>
+              <div style="font-size:10px; color:var(--muted); margin-top:4px;">Layar Optical Power Meter saat QC</div>
+            </div>
+
+          </div>
         </div>
 
       </div>
@@ -1110,8 +1664,19 @@
             </div>
           </div>
         </div>
-        <div id="v_online_badge">
-          <!-- Badge Online/Offline inserted dynamically -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div id="v_online_badge">
+            <!-- Badge Online/Offline inserted dynamically -->
+          </div>
+          <a id="v_btn_wa" href="#" target="_blank" class="btn btn-sm" style="background:#25d366;color:#fff;font-weight:700;padding:6px 12px;border-radius:8px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;" title="Chat WhatsApp">
+            <i class="bi bi-whatsapp"></i> Chat WA
+          </a>
+          <a id="v_btn_maps" href="#" target="_blank" class="btn btn-g btn-sm" style="display:none;padding:6px 12px;border-radius:8px;font-weight:600;" title="Buka Koordinat GPS di Google Maps">
+            <i class="bi bi-geo-alt-fill text-danger me-1"></i> Maps
+          </a>
+          <form id="v_isolate_form" method="POST" action="" style="display:inline;margin:0;" data-msg="" onsubmit="return confirm(this.dataset.msg)">
+            <button type="submit" id="v_btn_isolate" class="btn btn-sm" style="font-weight:700;padding:6px 12px;border-radius:8px;"></button>
+          </form>
         </div>
       </div>
       
@@ -1126,6 +1691,9 @@
         <div style="background:var(--bg3); padding:7px 12px; border-radius:8px; border:1px solid var(--border); display:flex; align-items:center; gap:6px;">
           <i class="bi bi-wallet2 text-success"></i> <span class="text-muted">Saldo:</span> <strong id="v_balance" style="color:#10b981;">Rp 0</strong>
           <button type="button" class="btn btn-s btn-sm py-0 px-2 ms-1" style="font-size:11px; padding:2px 8px;" onclick="openTopupFromDetail()"><i class="bi bi-plus"></i></button>
+        </div>
+        <div style="background:var(--bg3); padding:7px 12px; border-radius:8px; border:1px solid var(--border); display:flex; align-items:center; gap:6px;">
+          <i class="bi bi-receipt text-info"></i> <span class="text-muted">Tagihan:</span> <strong id="v_unpaid_info">-</strong>
         </div>
       </div>
     </div>
@@ -1142,6 +1710,13 @@
         </button>
         <button type="button" class="cust-detail-tab-btn" id="tab_btn_profile" onclick="switchCustDetailTab('profile', this)">
           <i class="bi bi-person-vcard me-1"></i> Data Pelanggan
+        </button>
+        <button type="button" class="cust-detail-tab-btn" id="tab_btn_docs" onclick="switchCustDetailTab('docs', this)">
+          <i class="bi bi-camera me-1"></i> SOP Redaman
+        </button>
+        <button type="button" class="cust-detail-tab-btn" id="tab_btn_invoices" onclick="switchCustDetailTab('invoices', this)">
+          <i class="bi bi-receipt me-1"></i> Tagihan & Invoices
+          <span id="v_tab_unpaid_badge" class="badge bd ms-1" style="display:none;font-size:9px;padding:2px 5px;">0</span>
         </button>
       </div>
     </div>
@@ -1310,6 +1885,130 @@
         </div>
       </div>
 
+      <!-- TAB 4: DOKUMENTASI INSTALASI & REDAMAN (ISP GRADE) -->
+      <div id="cust_tab_docs" class="cust-detail-pane">
+        <div style="display:grid; gap:16px;">
+          
+          <!-- Topology & Commissioning Status Card -->
+          <div class="cust-card-panel">
+            <div class="fw6 mb-3 text-primary d-flex align-items-center justify-content-between" style="font-size:13px; display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+              <span><i class="bi bi-diagram-3 me-1"></i> Jalur Topologi & Redaman Awal (Commissioning)</span>
+              <span id="v_rx_status_badge" class="badge bp">-</span>
+            </div>
+            
+            <div class="cust-modal-grid-3" style="gap:12px; margin-bottom:12px;">
+              <div class="cust-kpi-card">
+                <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700;"><i class="bi bi-speedometer2 text-info me-1"></i>Redaman Awal (OPM)</div>
+                <div id="v_initial_rx_power_display" style="font-size:20px; font-weight:800; font-family:monospace; color:var(--text); margin-top:6px;">- dBm</div>
+              </div>
+              <div class="cust-kpi-card">
+                <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700;"><i class="bi bi-hdd-network text-primary me-1"></i>ODC Distribution</div>
+                <div id="v_odc_display" style="font-size:14px; font-weight:700; color:var(--text); margin-top:8px;">-</div>
+              </div>
+              <div class="cust-kpi-card">
+                <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700;"><i class="bi bi-distribute-vertical text-warning me-1"></i>ODP & Port Akses</div>
+                <div id="v_odp_port_display" style="font-size:14px; font-weight:700; color:var(--text); margin-top:8px;">-</div>
+              </div>
+            </div>
+
+            <!-- Breadcrumb Circuit ID Path -->
+            <div style="background:var(--bg2); padding:10px 14px; border-radius:8px; border:1px solid var(--border); display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px;">
+              <span class="text-muted"><i class="bi bi-signpost-split me-1"></i>Circuit Path:</span>
+              <span class="badge" style="background:rgba(56,189,248,0.15); color:#38bdf8;" id="v_path_area">AREA: -</span>
+              <i class="bi bi-chevron-right text-muted" style="font-size:10px;"></i>
+              <span class="badge" style="background:rgba(129,140,248,0.15); color:#818cf8;" id="v_path_odc">ODC: -</span>
+              <i class="bi bi-chevron-right text-muted" style="font-size:10px;"></i>
+              <span class="badge" style="background:rgba(251,191,36,0.15); color:#fbbf24;" id="v_path_odp">ODP: -</span>
+              <i class="bi bi-chevron-right text-muted" style="font-size:10px;"></i>
+              <span class="badge" style="background:rgba(52,211,153,0.15); color:#34d399;" id="v_path_port">PORT: -</span>
+            </div>
+          </div>
+
+          <!-- 3 Photo Galleries Card -->
+          <div class="cust-card-panel">
+            <div class="fw6 mb-3 text-primary" style="font-size:13px; margin-bottom:14px;">
+              <i class="bi bi-images me-1"></i> Berkas Foto Fisik Instalasi (Evidence & KYC)
+            </div>
+            
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap:14px;">
+              <!-- Photo 1: House -->
+              <div style="background:var(--bg2); border:1px solid var(--border); border-radius:12px; overflow:hidden;">
+                <div style="padding:10px 12px; border-bottom:1px solid var(--border); font-size:12px; font-weight:700; display:flex; justify-content:space-between; align-items:center;">
+                  <span><i class="bi bi-house-door text-primary me-1"></i> Foto Rumah</span>
+                  <a id="v_link_house" href="#" target="_blank" class="btn btn-g btn-sm py-0 px-2" style="font-size:10px; display:none;"><i class="bi bi-box-arrow-up-right"></i> Buka</a>
+                </div>
+                <div id="v_wrap_photo_house" style="height:160px; background:rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                  <span class="text-muted" style="font-size:12px;"><i class="bi bi-image me-1"></i> Belum ada foto</span>
+                </div>
+              </div>
+
+              <!-- Photo 2: Customer / KYC -->
+              <div style="background:var(--bg2); border:1px solid var(--border); border-radius:12px; overflow:hidden;">
+                <div style="padding:10px 12px; border-bottom:1px solid var(--border); font-size:12px; font-weight:700; display:flex; justify-content:space-between; align-items:center;">
+                  <span><i class="bi bi-person-badge text-success me-1"></i> Foto Pelanggan / KTP</span>
+                  <a id="v_link_customer" href="#" target="_blank" class="btn btn-g btn-sm py-0 px-2" style="font-size:10px; display:none;"><i class="bi bi-box-arrow-up-right"></i> Buka</a>
+                </div>
+                <div id="v_wrap_photo_customer" style="height:160px; background:rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                  <span class="text-muted" style="font-size:12px;"><i class="bi bi-person-bounding-box me-1"></i> Belum ada foto</span>
+                </div>
+              </div>
+
+              <!-- Photo 3: Optical Power Meter -->
+              <div style="background:var(--bg2); border:1px solid var(--border); border-radius:12px; overflow:hidden;">
+                <div style="padding:10px 12px; border-bottom:1px solid var(--border); font-size:12px; font-weight:700; display:flex; justify-content:space-between; align-items:center;">
+                  <span><i class="bi bi-speedometer2 text-warning me-1"></i> Foto Redaman OPM</span>
+                  <a id="v_link_optical" href="#" target="_blank" class="btn btn-g btn-sm py-0 px-2" style="font-size:10px; display:none;"><i class="bi bi-box-arrow-up-right"></i> Buka</a>
+                </div>
+                <div id="v_wrap_photo_optical" style="height:160px; background:rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                  <span class="text-muted" style="font-size:12px;"><i class="bi bi-activity me-1"></i> Belum ada foto</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB 5: TAGIHAN & INVOICES -->
+      <div id="cust_tab_invoices" class="cust-detail-pane">
+        <div class="cust-card-panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+            <div class="fw6 text-primary" style="font-size:13px;">
+              <i class="bi bi-receipt me-1"></i> Riwayat Tagihan Pelanggan (12 Bulan Terakhir)
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button type="button" class="btn btn-s btn-sm" onclick="openGenInvoiceFromDetail()">
+                <i class="bi bi-lightning-charge me-1"></i> Buat Tagihan
+              </button>
+              <button type="button" class="btn btn-p btn-sm" onclick="openPayInvoiceFromDetail()">
+                <i class="bi bi-cash-coin me-1"></i> Bayar Tagihan
+              </button>
+            </div>
+          </div>
+          
+          <div id="v_invoices_loading" style="text-align:center; padding:24px; color:var(--muted); font-size:13px;">
+            <i class="bi bi-hourglass-split me-1"></i> Memuat data tagihan...
+          </div>
+          <div id="v_invoices_content" style="display:none;">
+            <div class="tbl-wrap" style="max-height:280px; overflow-y:auto; border:1px solid var(--border); border-radius:8px;">
+              <table class="tbl" style="width:100%; border-collapse:collapse; font-size:12px;">
+                <thead>
+                  <tr style="background:var(--bg2); border-bottom:1px solid var(--border); text-align:left; color:var(--muted);">
+                    <th style="padding:8px 10px;">Periode</th>
+                    <th style="padding:8px 10px;">No. Invoice</th>
+                    <th style="padding:8px 10px;">Nominal</th>
+                    <th style="padding:8px 10px;">Status</th>
+                    <th style="padding:8px 10px;">Tanggal Bayar / Kasir</th>
+                  </tr>
+                </thead>
+                <tbody id="v_invoices_tbody">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Footer Action Bar -->
@@ -1465,8 +2164,55 @@
   </div>
 </div>
 
+<!-- Modal Bulk WhatsApp Message -->
+<div class="mo" id="bulkWaModal">
+  <div class="mb" style="max-width:560px;">
+    <div class="mh">
+      <span class="mt"><i class="bi bi-whatsapp text-success"></i> Kirim WhatsApp ke Pelanggan Terpilih</span>
+      <button type="button" class="mc" onclick="closeModal('bulkWaModal')">&times;</button>
+    </div>
+    <form method="POST" action="/admin/customers/bulk-action" id="bulkWaForm">
+      <input type="hidden" name="action" value="send_wa">
+      <input type="hidden" name="customer_ids" id="bulkWaCustomerIds">
+      <div class="mbody" style="padding:16px 20px;">
+        <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:10px;padding:12px;margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;">
+            <i class="bi bi-people-fill text-success"></i> Penerima: <span id="bulkWaCountText" class="badge bp" style="font-size:11px;">0 Pelanggan</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+            Pesan akan dikirimkan satu per satu dengan jeda aman otomatis untuk melindungi nomor WhatsApp Anda dari pemblokiran (banned).
+          </div>
+        </div>
+
+        <div class="fg" style="margin-bottom:12px;">
+          <label class="fl" style="font-weight:600;">Isi Pesan WhatsApp <span class="text-danger">*</span></label>
+          <textarea class="fc" name="message" id="bulkWaMessage" rows="7" required placeholder="Tulis pesan untuk pelanggan terpilih..." style="font-size:13px;line-height:1.5;"></textarea>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+            <button type="button" class="btn btn-g btn-sm" style="font-size:11px;padding:2px 8px;" onclick="insertWaVar('{{nama}}')">+ Nama</button>
+            <button type="button" class="btn btn-g btn-sm" style="font-size:11px;padding:2px 8px;" onclick="insertWaVar('*Tebal*')">+ Tebal</button>
+            <button type="button" class="btn btn-g btn-sm" style="font-size:11px;padding:2px 8px;" onclick="insertWaVar('_Miring_')">+ Miring</button>
+            <button type="button" class="btn btn-g btn-sm" style="font-size:11px;padding:2px 8px;" onclick="insertWaVar('{Halo|Selamat Pagi|Salam}')">+ Spintax</button>
+          </div>
+        </div>
+
+        <div class="alert alert-i" style="font-size:11px;line-height:1.4;margin:0;">
+          <i class="bi bi-info-circle-fill me-1"></i> Gunakan <code>{{nama}}</code> untuk otomatis menyebutkan nama pelanggan masing-masing.
+        </div>
+      </div>
+      <div class="mf d-flex justify-content-between">
+        <button type="button" class="btn btn-g" onclick="closeModal('bulkWaModal')">Batal</button>
+        <button type="submit" class="btn btn-s" onclick="return confirm('Kirim pesan WhatsApp sekarang ke semua pelanggan terpilih?')">
+          <i class="bi bi-send-fill me-1"></i> Kirim Sekarang
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 
 <script id="customers-data" type="application/json"><%- JSON.stringify(customers) %></script>
+<script id="odcs-data" type="application/json"><%- JSON.stringify(typeof odcs !== 'undefined' ? odcs : []) %></script>
+<script id="odps-data" type="application/json"><%- JSON.stringify(typeof odps !== 'undefined' ? odps : []) %></script>
 <script id="sessions-data" type="application/json"><%- JSON.stringify(Array.from(typeof activeSessionsMap !== 'undefined' && activeSessionsMap && activeSessionsMap.entries ? activeSessionsMap.entries() : [])) %></script>
 <script id="settings-data" type="application/json"><%- JSON.stringify(settings) %></script>
 <script id="routers-data" type="application/json"><%- JSON.stringify(routers || []) %></script>
@@ -1501,6 +2247,8 @@ function safeParseJSON(elementId, fallback = []) {
 }
 
 const customersData = safeParseJSON('customers-data', []);
+const odcsData = safeParseJSON('odcs-data', []);
+const odpsData = safeParseJSON('odps-data', []);
 const activeSessionsArray = safeParseJSON('sessions-data', []);
 const activeSessionsMapObj = new Map(Array.isArray(activeSessionsArray) ? activeSessionsArray : []);
 const routersData = safeParseJSON('routers-data', []);
@@ -1536,6 +2284,110 @@ function copyToClipboard(elementId, label) {
     document.body.removeChild(input);
     alert('📋 ' + label + ' berhasil disalin: ' + text);
   });
+}
+
+function renderPhotoBox(wrapId, linkId, photoUrl, label) {
+  const wrap = document.getElementById(wrapId);
+  const link = document.getElementById(linkId);
+  if (!wrap) return;
+  if (photoUrl && String(photoUrl).trim()) {
+    wrap.innerHTML = `<img src="${photoUrl}" alt="${label}" style="width:100%; height:100%; object-fit:cover; cursor:pointer;" onclick="window.open('${photoUrl}', '_blank')" title="Klik untuk perbesar">`;
+    if (link) {
+      link.href = photoUrl;
+      link.style.display = 'inline-flex';
+    }
+  } else {
+    wrap.innerHTML = `<span class="text-muted" style="font-size:12px;"><i class="bi bi-image me-1"></i> Belum ada foto</span>`;
+    if (link) link.style.display = 'none';
+  }
+}
+
+function setupEditPhotoPreview(boxId, photoUrl, defaultIcon) {
+  const box = document.getElementById(boxId);
+  if (!box) return;
+  if (photoUrl && String(photoUrl).trim()) {
+    box.innerHTML = `<img src="${photoUrl}" style="width:100%; height:100%; object-fit:cover; border-radius:6px;" title="Foto saat ini (akan ditimpa jika file baru diupload)">`;
+  } else {
+    box.innerHTML = `<i class="bi ${defaultIcon} text-muted" style="font-size:32px;"></i>`;
+  }
+}
+
+function updateRxBadge(type = 'add') {
+  const prefix = type === 'add' ? 'add_' : 'e_';
+  const input = document.getElementById(prefix + 'initial_rx_power');
+  const badge = document.getElementById(prefix + 'rx_status_badge');
+  if (!input || !badge) return;
+  const val = parseFloat(input.value);
+  if (isNaN(val) || input.value.trim() === '') {
+    badge.style.display = 'none';
+    return;
+  }
+  badge.style.display = 'inline-block';
+  if (val >= -24.0 && val <= -15.0) {
+    badge.className = 'badge bs';
+    badge.innerHTML = `<i class="bi bi-check-circle me-1"></i>Optimal (${val.toFixed(2)} dBm)`;
+  } else if (val >= -26.5 && val < -24.0) {
+    badge.className = 'badge bw';
+    badge.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i>Peringatan (${val.toFixed(2)} dBm)`;
+  } else {
+    badge.className = 'badge bd';
+    badge.innerHTML = `<i class="bi bi-x-octagon me-1"></i>Loss Tinggi / Kritis (${val.toFixed(2)} dBm)`;
+  }
+}
+
+function previewDocFile(inputEl, boxId) {
+  const box = document.getElementById(boxId);
+  if (!box || !inputEl.files || !inputEl.files[0]) return;
+  const file = inputEl.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    box.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover; border-radius:6px;">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleOdpChange(type = 'add') {
+  const prefix = type === 'add' ? 'add_' : 'e_';
+  const odpSelect = document.getElementById(prefix + 'odp_id');
+  const odcSelect = document.getElementById(prefix + 'odc_id');
+  if (!odpSelect || !odcSelect) return;
+  
+  if (odpSelect.selectedIndex > 0) {
+    const opt = odpSelect.options[odpSelect.selectedIndex];
+    const dataOdcId = opt ? opt.getAttribute('data-odc-id') : null;
+    if (dataOdcId && (!odcSelect.value || odcSelect.value === '')) {
+      odcSelect.value = dataOdcId;
+    }
+  }
+}
+
+function handleOdcChange(type = 'add') {
+  const prefix = type === 'add' ? 'add_' : 'e_';
+  const odcSelect = document.getElementById(prefix + 'odc_id');
+  const odpSelect = document.getElementById(prefix + 'odp_id');
+  if (!odcSelect || !odpSelect) return;
+  const selectedOdcId = odcSelect.value;
+
+  Array.from(odpSelect.options).forEach(opt => {
+    if (!opt.value) return;
+    const optOdcId = opt.getAttribute('data-odc-id');
+    if (!selectedOdcId) {
+      opt.style.display = '';
+    } else {
+      if (optOdcId === selectedOdcId) {
+        opt.style.display = '';
+      } else {
+        opt.style.display = 'none';
+      }
+    }
+  });
+
+  if (selectedOdcId && odpSelect.selectedIndex > 0) {
+    const curOpt = odpSelect.options[odpSelect.selectedIndex];
+    if (curOpt && curOpt.getAttribute('data-odc-id') && curOpt.getAttribute('data-odc-id') !== selectedOdcId) {
+      odpSelect.value = '';
+    }
+  }
 }
 
 function switchCustDetailTab(tabKey, btn) {
@@ -1628,6 +2480,103 @@ function viewCustDetail(idx) {
     if (document.getElementById('v_status_account')) document.getElementById('v_status_account').textContent = `Status: ${c.status || 'active'} | Auto Isolir: ${c.auto_isolate === 0 ? 'Nonaktif' : 'Aktif (Tgl ' + (c.isolate_day || '-') + ')'}`;
     if (document.getElementById('v_balance')) document.getElementById('v_balance').textContent = 'Rp ' + Number(c.balance || 0).toLocaleString('id-ID');
 
+    // Populate Tab 4: Dokumentasi Instalasi & Topologi ISP
+    const rxVal = (c.initial_rx_power !== null && c.initial_rx_power !== undefined && c.initial_rx_power !== '') ? Number(c.initial_rx_power) : null;
+    const rxDisplayEl = document.getElementById('v_initial_rx_power_display');
+    const rxBadgeEl = document.getElementById('v_rx_status_badge');
+    if (rxDisplayEl) {
+      rxDisplayEl.textContent = rxVal !== null ? `${rxVal.toFixed(2)} dBm` : '- dBm';
+    }
+    if (rxBadgeEl) {
+      if (rxVal === null) {
+        rxBadgeEl.className = 'badge bm';
+        rxBadgeEl.textContent = 'Belum Ada Data OPM';
+      } else if (rxVal >= -24.0 && rxVal <= -15.0) {
+        rxBadgeEl.className = 'badge bs';
+        rxBadgeEl.innerHTML = '<i class="bi bi-check-circle me-1"></i>Redaman Optimal (Bagus)';
+      } else if (rxVal >= -26.5 && rxVal < -24.0) {
+        rxBadgeEl.className = 'badge bw';
+        rxBadgeEl.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Peringatan (Cukup)';
+      } else {
+        rxBadgeEl.className = 'badge bd';
+        rxBadgeEl.innerHTML = '<i class="bi bi-x-octagon me-1"></i>Loss Tinggi / Kritis';
+      }
+    }
+
+    const odcObj = (odcsData || []).find(o => Number(o.id) === Number(c.odc_id));
+    const odcName = odcObj ? odcObj.name : (c.odc_name || (c.odc_id ? ('ODC #' + c.odc_id) : '-'));
+    const odpObj = (odpsData || []).find(o => Number(o.id) === Number(c.odp_id));
+    const odpName = odpObj ? odpObj.name : (c.odp_name || (c.odp_id ? ('ODP #' + c.odp_id) : '-'));
+    const portVal = c.odp_port || c.pon_port || '-';
+
+    if (document.getElementById('v_odc_display')) document.getElementById('v_odc_display').textContent = odcName;
+    if (document.getElementById('v_odp_port_display')) document.getElementById('v_odp_port_display').textContent = `${odpName} (Port ${portVal})`;
+    if (document.getElementById('v_path_area')) document.getElementById('v_path_area').textContent = 'AREA: ' + (c.area || '-');
+    if (document.getElementById('v_path_odc')) document.getElementById('v_path_odc').textContent = 'ODC: ' + odcName;
+    if (document.getElementById('v_path_odp')) document.getElementById('v_path_odp').textContent = 'ODP: ' + odpName;
+    if (document.getElementById('v_path_port')) document.getElementById('v_path_port').textContent = 'PORT: ' + portVal;
+
+    // Photos
+    renderPhotoBox('v_wrap_photo_house', 'v_link_house', c.photo_house, 'Foto Rumah Pelanggan');
+    renderPhotoBox('v_wrap_photo_customer', 'v_link_customer', c.photo_customer, 'Foto Pelanggan / KTP');
+    renderPhotoBox('v_wrap_photo_optical', 'v_link_optical', c.photo_optical_power, 'Foto Layar OPM Redaman');
+
+    // Ribbon unpaid info
+    const unpaidCount = Number(c.unpaid_count || 0);
+    const unpaidInfoEl = document.getElementById('v_unpaid_info');
+    if (unpaidInfoEl) {
+      unpaidInfoEl.innerHTML = unpaidCount > 0 
+        ? `<span style="color:#ef4444;font-weight:800;">${unpaidCount} Belum Bayar</span>` 
+        : `<span style="color:#10b981;font-weight:800;">Lunas</span>`;
+    }
+    const tabUnpaidBadge = document.getElementById('v_tab_unpaid_badge');
+    if (tabUnpaidBadge) {
+      tabUnpaidBadge.textContent = unpaidCount;
+      tabUnpaidBadge.style.display = unpaidCount > 0 ? 'inline-block' : 'none';
+    }
+
+    // Direct WhatsApp button in modal banner
+    const btnWa = document.getElementById('v_btn_wa');
+    if (btnWa) {
+      const cleanPhone = String(c.phone || '').replace(/\D/g, '').replace(/^0/, '62');
+      if (cleanPhone) {
+        btnWa.href = `https://wa.me/${cleanPhone}`;
+        btnWa.style.display = 'inline-flex';
+      } else {
+        btnWa.style.display = 'none';
+      }
+    }
+
+    // Google Maps button in modal banner
+    const btnMaps = document.getElementById('v_btn_maps');
+    if (btnMaps) {
+      if (c.lat && c.lng) {
+        btnMaps.href = `https://www.google.com/maps?q=${c.lat},${c.lng}`;
+        btnMaps.style.display = 'inline-flex';
+      } else {
+        btnMaps.style.display = 'none';
+      }
+    }
+
+    // Quick Isolate / Unisolate toggle form
+    const isolateForm = document.getElementById('v_isolate_form');
+    const btnIsolate = document.getElementById('v_btn_isolate');
+    if (isolateForm && btnIsolate) {
+      if (c.status === 'suspended') {
+        isolateForm.action = `/admin/customers/${c.id}/unisolate`;
+        isolateForm.dataset.msg = `Aktifkan kembali layanan untuk "${c.name}"?`;
+        btnIsolate.className = 'btn btn-s btn-sm';
+        btnIsolate.innerHTML = '<i class="bi bi-play-circle me-1"></i> Buka Isolir';
+      } else {
+        isolateForm.action = `/admin/customers/${c.id}/isolate`;
+        isolateForm.dataset.msg = `Apakah Anda yakin ingin mengisolir "${c.name}" secara manual?`;
+        btnIsolate.className = 'btn btn-w btn-sm';
+        btnIsolate.innerHTML = '<i class="bi bi-pause-circle me-1"></i> Isolir Layanan';
+      }
+    }
+
+    loadCustomerInvoices(c.id);
+
     if (document.getElementById('v_disconnect_form')) {
       document.getElementById('v_disconnect_form').action = '/admin/customers/' + c.id + '/disconnect';
     }
@@ -1641,6 +2590,63 @@ function viewCustDetail(idx) {
     console.error('Error in viewCustDetail:', err);
     alert('Terjadi kesalahan saat memuat detail pelanggan: ' + err.message);
   }
+}
+
+async function loadCustomerInvoices(customerId) {
+  const loadingEl = document.getElementById('v_invoices_loading');
+  const contentEl = document.getElementById('v_invoices_content');
+  const tbody = document.getElementById('v_invoices_tbody');
+  if (!tbody) return;
+  if (loadingEl) loadingEl.style.display = 'block';
+  if (contentEl) contentEl.style.display = 'none';
+  tbody.innerHTML = '';
+  try {
+    const res = await fetch('/admin/api/customers/' + customerId + '/invoices');
+    const data = await res.json();
+    if (data.ok && Array.isArray(data.invoices) && data.invoices.length > 0) {
+      const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      tbody.innerHTML = data.invoices.map(inv => {
+        const isPaid = inv.status === 'paid';
+        const mStr = (months[inv.period_month - 1] || inv.period_month) + ' ' + inv.period_year;
+        const amountStr = 'Rp ' + Number(inv.amount || 0).toLocaleString('id-ID');
+        const badgeClass = isPaid ? 'bs' : 'bd';
+        const badgeText = isPaid ? 'Lunas' : 'Belum Bayar';
+        const extraInfo = isPaid 
+          ? ('Dibayar: ' + (inv.paid_at ? String(inv.paid_at).slice(0, 10) : '-') + (inv.paid_by ? (' (' + inv.paid_by + ')') : ''))
+          : '<span style="color:#ef4444;font-weight:600;"><i class="bi bi-clock-history"></i> Menunggak</span>';
+        return `
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+            <td style="padding:9px 10px;font-weight:700;">${mStr}</td>
+            <td style="padding:9px 10px;font-family:monospace;color:var(--primary);">${inv.invoice_number || '-'}</td>
+            <td style="padding:9px 10px;font-weight:700;">${amountStr}</td>
+            <td style="padding:9px 10px;"><span class="badge ${badgeClass}">${badgeText}</span></td>
+            <td style="padding:9px 10px;color:var(--muted);">${extraInfo}</td>
+          </tr>
+        `;
+      }).join('');
+    } else {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted);">Belum ada riwayat tagihan untuk pelanggan ini.</td></tr>`;
+    }
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:#ef4444;">Gagal memuat tagihan: ${e.message}</td></tr>`;
+  } finally {
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (contentEl) contentEl.style.display = 'block';
+  }
+}
+
+function openGenInvoiceFromDetail() {
+  if (currentDetailIdx === null) return;
+  const idx = currentDetailIdx;
+  closeModal('viewDetailModal');
+  setTimeout(() => openGenInvoice(idx), 200);
+}
+
+function openPayInvoiceFromDetail() {
+  if (currentDetailIdx === null) return;
+  const idx = currentDetailIdx;
+  closeModal('viewDetailModal');
+  setTimeout(() => openPayInvoice(idx), 200);
 }
 
 let currentCustomerCpeTag = null;
@@ -1799,18 +2805,31 @@ async function fetchLiveSessions() {
       const username = cell.dataset.username;
       if (!username) return;
       const s = data.sessions[username];
+      const row = cell.closest('.cust-row');
       const rxEl = cell.querySelector('.conn-rx');
       const txEl = cell.querySelector('.conn-tx');
       const uptimeEl = cell.querySelector('.conn-uptime');
       const ipEl = cell.querySelector('.conn-ip');
 
       if (s) {
+        if (row) row.setAttribute('data-conn', 'online');
         if (rxEl) rxEl.textContent = formatBytesVal(s.bytesIn);
         if (txEl) txEl.textContent = formatBytesVal(s.bytesOut);
         if (uptimeEl) uptimeEl.textContent = s.uptime || '-';
         if (ipEl) ipEl.textContent = s.ip || '-';
+      } else {
+        if (row) row.setAttribute('data-conn', 'offline');
       }
     });
+
+    updateLiveConnCounts();
+
+    if (currentActiveConnFilter) {
+      document.querySelectorAll('.cust-row').forEach(r => {
+        const conn = r.getAttribute('data-conn') || 'offline';
+        r.style.display = (conn === currentActiveConnFilter) ? '' : 'none';
+      });
+    }
 
     if (currentDetailIdx !== null) {
       updateDetailModalLive(currentDetailIdx);
@@ -1857,7 +2876,234 @@ function filterByStatus(statusVal) {
   window.location.href = url.toString();
 }
 
+// ─── ACTION DROPDOWN TOGGLER ─────────────────────────────────────────
+function toggleActionDropdown(btn, e) {
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+  const parent = btn.closest('.action-dropdown');
+  if (!parent) return;
+  const menu = parent.querySelector('.action-dropdown-menu');
+  if (!menu) return;
+  const wasActive = parent.classList.contains('active');
+  
+  // Close any other open dropdowns
+  document.querySelectorAll('.action-dropdown.active').forEach(d => {
+    if (d !== parent) d.classList.remove('active');
+  });
+
+  if (!wasActive) {
+    parent.classList.add('active');
+
+    // Get trigger button screen coordinates
+    const rect = btn.getBoundingClientRect();
+    const menuWidth = 220; // Standard menu width
+    const menuHeight = 280; // Total height of action items
+    const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // HORIZONTAL POSITIONING:
+    // Place menu so its right edge aligns with the button's right edge
+    let targetLeft = rect.right - menuWidth;
+
+    // Strict boundary checks to ensure menu NEVER overflows the screen:
+    if (targetLeft + menuWidth > viewportWidth - 14) {
+      targetLeft = viewportWidth - menuWidth - 14;
+    }
+    if (targetLeft < 10) {
+      targetLeft = 10;
+    }
+
+    menu.style.position = 'fixed';
+    menu.style.left = Math.round(targetLeft) + 'px';
+    menu.style.right = 'auto';
+    menu.style.width = menuWidth + 'px';
+
+    // VERTICAL POSITIONING:
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+      // Open upwards (dropup)
+      menu.style.top = 'auto';
+      menu.style.bottom = Math.round(viewportHeight - rect.top + 6) + 'px';
+    } else {
+      // Open downwards
+      menu.style.bottom = 'auto';
+      menu.style.top = Math.round(rect.bottom + 6) + 'px';
+    }
+  } else {
+    parent.classList.remove('active');
+  }
+}
+
+// Global click listener to close action dropdowns
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.action-dropdown')) {
+    document.querySelectorAll('.action-dropdown.active').forEach(d => d.classList.remove('active'));
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.action-dropdown.active').forEach(d => d.classList.remove('active'));
+  }
+});
+
+// Auto close dropdown on any scroll (window, main container, or table)
+window.addEventListener('scroll', () => {
+  document.querySelectorAll('.action-dropdown.active').forEach(d => d.classList.remove('active'));
+}, { passive: true });
+document.addEventListener('DOMContentLoaded', () => {
+  const mw = document.querySelector('.mw');
+  if (mw) {
+    mw.addEventListener('scroll', () => {
+      document.querySelectorAll('.action-dropdown.active').forEach(d => d.classList.remove('active'));
+    }, { passive: true });
+  }
+  document.querySelectorAll('.tbl-wrap').forEach(w => {
+    w.addEventListener('scroll', () => {
+      document.querySelectorAll('.action-dropdown.active').forEach(d => d.classList.remove('active'));
+    }, { passive: true });
+  });
+});
+
+// ─── BULK ACTIONS SELECTION & OPERATIONS ──────────────────────────────
+function toggleSelectAllCust(masterCb) {
+  const cbs = document.querySelectorAll('.cust-select-cb');
+  cbs.forEach(cb => {
+    const row = cb.closest('tr');
+    if (row && row.style.display !== 'none') {
+      cb.checked = masterCb.checked;
+    }
+  });
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  const checked = document.querySelectorAll('.cust-select-cb:checked');
+  const count = checked.length;
+  const bar = document.getElementById('bulkActionBar');
+  const countText = document.getElementById('selectedCountText');
+  if (countText) countText.textContent = count;
+  
+  if (bar) {
+    bar.style.display = (count > 0) ? 'flex' : 'none';
+  }
+
+  const allCbs = document.querySelectorAll('.cust-select-cb');
+  const masterCb = document.getElementById('selectAllCust');
+  if (masterCb && allCbs.length > 0) {
+    masterCb.checked = (checked.length === allCbs.length);
+    masterCb.indeterminate = (checked.length > 0 && checked.length < allCbs.length);
+  }
+}
+
+function clearSelectedCust() {
+  document.querySelectorAll('.cust-select-cb').forEach(cb => cb.checked = false);
+  const masterCb = document.getElementById('selectAllCust');
+  if (masterCb) {
+    masterCb.checked = false;
+    masterCb.indeterminate = false;
+  }
+  updateBulkBar();
+}
+
+function triggerBulkAction(action, confirmMsg) {
+  const checked = document.querySelectorAll('.cust-select-cb:checked');
+  if (checked.length === 0) {
+    alert('Pilih minimal satu pelanggan terlebih dahulu!');
+    return;
+  }
+  if (!confirm(confirmMsg)) return;
+
+  const ids = Array.from(checked).map(cb => cb.value);
+  const actionInput = document.getElementById('bulkActionInput');
+  const idsInput = document.getElementById('bulkCustomerIdsInput');
+  const form = document.getElementById('bulkActionForm');
+
+  if (actionInput) actionInput.value = action;
+  if (idsInput) idsInput.value = ids.join(',');
+  if (form) form.submit();
+}
+
+function openBulkWaModal() {
+  const checked = document.querySelectorAll('.cust-select-cb:checked');
+  if (checked.length === 0) {
+    alert('Pilih minimal satu pelanggan terlebih dahulu!');
+    return;
+  }
+  const ids = Array.from(checked).map(cb => cb.value);
+  const idsInput = document.getElementById('bulkWaCustomerIds');
+  const countText = document.getElementById('bulkWaCountText');
+  if (idsInput) idsInput.value = ids.join(',');
+  if (countText) countText.textContent = ids.length + ' Pelanggan';
+  openModal('bulkWaModal');
+}
+
+function insertWaVar(val) {
+  const textarea = document.getElementById('bulkWaMessage');
+  if (!textarea) return;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const text = textarea.value;
+  textarea.value = text.substring(0, start) + val + text.substring(end);
+  textarea.focus();
+  textarea.selectionStart = textarea.selectionEnd = start + val.length;
+}
+
+// ─── LIVE ONLINE / OFFLINE FILTERING ──────────────────────────────────
+let currentActiveConnFilter = null;
+
+function toggleConnFilter(type) {
+  const chipOnline = document.getElementById('chip_filter_online');
+  const chipOffline = document.getElementById('chip_filter_offline');
+
+  if (currentActiveConnFilter === type) {
+    currentActiveConnFilter = null;
+    if (chipOnline) chipOnline.classList.remove('active');
+    if (chipOffline) chipOffline.classList.remove('active');
+    document.querySelectorAll('.cust-row').forEach(r => r.style.display = '');
+  } else {
+    currentActiveConnFilter = type;
+    if (chipOnline) chipOnline.classList.toggle('active', type === 'online');
+    if (chipOffline) chipOffline.classList.toggle('active', type === 'offline');
+    document.querySelectorAll('.cust-row').forEach(r => {
+      const conn = r.getAttribute('data-conn') || 'offline';
+      r.style.display = (conn === type) ? '' : 'none';
+    });
+  }
+  updateBulkBar();
+}
+
+function updateLiveConnCounts() {
+  let onlineCount = 0;
+  let offlineCount = 0;
+  document.querySelectorAll('.cust-row').forEach(r => {
+    const conn = r.getAttribute('data-conn') || 'offline';
+    if (conn === 'online') onlineCount++;
+    else offlineCount++;
+  });
+  const elOnline = document.getElementById('count_live_online');
+  const elOffline = document.getElementById('count_live_offline');
+  if (elOnline) elOnline.textContent = onlineCount;
+  if (elOffline) elOffline.textContent = offlineCount;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateLiveConnCounts();
+});
+
 window.filterByStatus = filterByStatus;
+window.toggleActionDropdown = toggleActionDropdown;
+window.toggleSelectAllCust = toggleSelectAllCust;
+window.updateBulkBar = updateBulkBar;
+window.clearSelectedCust = clearSelectedCust;
+window.triggerBulkAction = triggerBulkAction;
+window.openBulkWaModal = openBulkWaModal;
+window.insertWaVar = insertWaVar;
+window.toggleConnFilter = toggleConnFilter;
+window.updateLiveConnCounts = updateLiveConnCounts;
 window.viewCustDetail = viewCustDetail;
 window.copyToClipboard = copyToClipboard;
 window.switchCustDetailTab = switchCustDetailTab;
@@ -2041,8 +3287,17 @@ function editCust(idx) {
   document.getElementById('e_tag').value=c.genieacs_tag||'';
   document.getElementById('e_collector_id').value=c.collector_id||'';
   document.getElementById('e_olt_id').value=c.olt_id||'';
+  if (document.getElementById('e_odc_id')) document.getElementById('e_odc_id').value=c.odc_id||'';
   document.getElementById('e_odp_id').value=c.odp_id||'';
+  if (document.getElementById('e_odp_port')) document.getElementById('e_odp_port').value=c.odp_port||c.pon_port||'';
   document.getElementById('e_pon_port').value=c.pon_port||'';
+  if (document.getElementById('e_initial_rx_power')) {
+    document.getElementById('e_initial_rx_power').value = (c.initial_rx_power !== null && c.initial_rx_power !== undefined && c.initial_rx_power !== '') ? c.initial_rx_power : '';
+    updateRxBadge('edit');
+  }
+  setupEditPhotoPreview('e_preview_house_box', c.photo_house, 'bi-image');
+  setupEditPhotoPreview('e_preview_customer_box', c.photo_customer, 'bi-person-badge');
+  setupEditPhotoPreview('e_preview_optical_box', c.photo_optical_power, 'bi-activity');
   document.getElementById('e_lat').value=c.lat||'';
   document.getElementById('e_lng').value=c.lng||'';
   document.getElementById('e_isolir_profile').value=c.isolir_profile||'isolir';
@@ -2378,15 +3633,16 @@ function generateRandomPassword(length = 6) {
 function autoGenerateCustomerCode(type = 'add') {
   const prefix = type === 'add' ? 'add_' : 'e_';
   const areaSelect = document.getElementById(prefix + 'area');
+  const odcSelect = document.getElementById(prefix + 'odc_id');
   const odpSelect = document.getElementById(prefix + 'odp_id');
-  const portInput = document.getElementById(prefix + 'pon_port');
+  const portInput = document.getElementById(prefix + 'odp_port') || document.getElementById(prefix + 'pon_port');
   const codeInput = document.getElementById(prefix + 'customer_code');
 
-  if (!areaSelect || !odpSelect || !portInput || !codeInput) return;
+  if (!codeInput) return;
 
   // 1. Get Area Code (from data-code, or derive 3 letters from area name)
   let areaCode = '';
-  if (areaSelect.selectedIndex > 0) {
+  if (areaSelect && areaSelect.selectedIndex > 0) {
     const opt = areaSelect.options[areaSelect.selectedIndex];
     const dataCode = opt ? opt.getAttribute('data-code') : '';
     if (dataCode && dataCode.trim()) {
@@ -2396,9 +3652,22 @@ function autoGenerateCustomerCode(type = 'add') {
     }
   }
 
-  // 2. Get ODP Number (extract digits from ODP name, pad to 2 digits)
+  // 2. Get ODC Number (extract digits from ODC name, pad to 2 digits)
+  let odcNumber = '';
+  if (odcSelect && odcSelect.selectedIndex > 0) {
+    const opt = odcSelect.options[odcSelect.selectedIndex];
+    const odcName = (opt ? (opt.getAttribute('data-name') || opt.text || '') : '').trim();
+    const digitsMatch = odcName.match(/\d+/);
+    if (digitsMatch) {
+      odcNumber = String(digitsMatch[0]).padStart(2, '0');
+    } else if (opt && opt.value) {
+      odcNumber = String(opt.value).padStart(2, '0');
+    }
+  }
+
+  // 3. Get ODP Number (extract digits from ODP name, pad to 2 digits)
   let odpNumber = '';
-  if (odpSelect.selectedIndex > 0) {
+  if (odpSelect && odpSelect.selectedIndex > 0) {
     const opt = odpSelect.options[odpSelect.selectedIndex];
     const odpName = (opt ? (opt.getAttribute('data-name') || opt.text || '') : '').trim();
     const digitsMatch = odpName.match(/\d+/);
@@ -2409,20 +3678,23 @@ function autoGenerateCustomerCode(type = 'add') {
     }
   }
 
-  // 3. Get Port Number (extract digits from PON/ODP port input, pad to 2 digits)
+  // 4. Get Port Number (extract digits from ODP port or PON port, pad to 2 digits)
   let portNumber = '';
-  const portVal = (portInput.value || '').trim();
-  const portMatch = portVal.match(/\d+/);
-  if (portMatch) {
-    portNumber = String(portMatch[0]).padStart(2, '0');
+  if (portInput) {
+    const portVal = (portInput.value || '').trim();
+    const portMatch = portVal.match(/\d+/);
+    if (portMatch) {
+      portNumber = String(portMatch[0]).padStart(2, '0');
+    }
   }
 
-  // If user has chosen area, ODP, or port:
-  if (areaCode || odpNumber || portNumber) {
+  // If user has chosen area, ODC, ODP, or port:
+  if (areaCode || odcNumber || odpNumber || portNumber) {
     const finalArea = areaCode || 'PGG';
+    const finalOdc = odcNumber || '01';
     const finalOdp = odpNumber || '01';
     const finalPort = portNumber || '01';
-    const customerCode = `${finalArea}${finalOdp}${finalPort}`;
+    const customerCode = `${finalArea}${finalOdc}${finalOdp}${finalPort}`;
 
     codeInput.value = customerCode;
 

@@ -1,93 +1,802 @@
 <!DOCTYPE html>
-<html lang="<%= lang || 'id' %>">
-
+<html lang="<%= typeof lang !== 'undefined' ? lang : 'id' %>" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title><%= t('tech.login_title', 'Login Teknisi') %> - <%= company %>
-  </title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title><%= t('tech.login_title', 'Login Teknisi') %> | <%= company %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="icon" href="/img/logo.png">
+  <script src="/js/theme.js"></script>
   <style>
+    /* ─── DUAL THEME TOKENS (DARK & LIGHT) ─── */
+    :root, html[data-theme="dark"], body.dark-theme {
+      --login-bg: #090d16;
+      --login-card: rgba(17, 24, 39, 0.92);
+      --login-border: rgba(148, 163, 184, 0.16);
+      --text-main: #f8fafc;
+      --text-sub: #cbd5e1;
+      --text-muted-custom: #94a3b8;
+      --input-bg: rgba(15, 23, 42, 0.75);
+      --input-border: rgba(148, 163, 184, 0.22);
+      --input-text: #ffffff;
+      --input-placeholder: #64748b;
+      --input-focus-border: #0ea5e9;
+      --input-focus-ring: rgba(14, 165, 233, 0.2);
+      --shortcut-bg: rgba(15, 23, 42, 0.6);
+      --shortcut-border: rgba(148, 163, 184, 0.14);
+      --shortcut-hover: rgba(30, 41, 59, 0.85);
+      --body-grad-1: rgba(14, 165, 233, 0.14);
+      --body-grad-2: rgba(245, 158, 11, 0.12);
+      --card-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      --header-line: linear-gradient(90deg, transparent, #0ea5e9, #f59e0b, transparent);
+      --top-btn-bg: rgba(17, 24, 39, 0.8);
+      --top-btn-border: rgba(148, 163, 184, 0.2);
+    }
+
+    /* LIGHT MODE HIGH CONTRAST (OUTDOOR FIELD TECHNICIAN USE) */
+    html[data-theme="light"], body.light-theme {
+      --login-bg: #f1f5f9;
+      --login-card: #ffffff;
+      --login-border: #cbd5e1;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted-custom: #64748b;
+      --input-bg: #f8fafc;
+      --input-border: #cbd5e1;
+      --input-text: #0f172a;
+      --input-placeholder: #94a3b8;
+      --input-focus-border: #0284c7;
+      --input-focus-ring: rgba(2, 132, 199, 0.15);
+      --shortcut-bg: #f8fafc;
+      --shortcut-border: #e2e8f0;
+      --shortcut-hover: #f1f5f9;
+      --body-grad-1: rgba(2, 132, 199, 0.08);
+      --body-grad-2: rgba(245, 158, 11, 0.08);
+      --card-shadow: 0 18px 40px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.05);
+      --header-line: linear-gradient(90deg, transparent, #0284c7, #f59e0b, transparent);
+      --top-btn-bg: #ffffff;
+      --top-btn-border: #cbd5e1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
-      background-color: #0f172a;
-      color: #f8fafc;
-      height: 100vh;
+      background: 
+        radial-gradient(1000px 500px at 15% 10%, var(--body-grad-1) 0%, transparent 60%),
+        radial-gradient(900px 500px at 85% 85%, var(--body-grad-2) 0%, transparent 60%),
+        var(--login-bg);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 14px 14px max(20px, env(safe-area-inset-bottom));
+      -webkit-font-smoothing: antialiased;
+      overflow-y: auto;
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+
+    .login-wrapper {
+      width: 100%;
+      max-width: 420px;
+      margin: auto 0;
+      animation: loginFadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes loginFadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ─── Top In-Flow Navigation Bar (NO absolute positioning = ZERO overlap!) ─── */
+    .login-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      margin-bottom: 12px;
+      padding: 0 2px;
+    }
+
+    .btn-top-nav,
+    .btn-theme-pill {
+      background: var(--top-btn-bg);
+      border: 1.5px solid var(--top-btn-border);
+      color: var(--text-main);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      backdrop-filter: blur(8px);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+    }
+
+    .btn-top-nav:hover,
+    .btn-theme-pill:hover {
+      border-color: var(--input-focus-border);
+      color: var(--input-focus-border);
+      transform: translateY(-1px);
+    }
+
+    /* ─── Main Card ─── */
+    .login-card {
+      background: var(--login-card);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1.5px solid var(--login-border);
+      border-radius: 22px;
+      padding: 26px 22px 22px;
+      box-shadow: var(--card-shadow);
+      position: relative;
+      overflow: hidden;
+      transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .login-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 10%;
+      right: 10%;
+      height: 3px;
+      background: var(--header-line);
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .brand-logo-img {
+      max-height: 46px;
+      max-width: 175px;
+      object-fit: contain;
+      margin: 0 auto 8px auto;
+      display: block;
+      filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.12));
+    }
+
+    .brand-fallback-icon {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #0284c7, #f59e0b);
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: #ffffff;
+      margin-bottom: 8px;
+      box-shadow: 0 8px 20px rgba(2, 132, 199, 0.35);
+    }
+
+    .login-company-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.3px;
+      margin-bottom: 4px;
+    }
+
+    .login-role-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.28);
+      color: #f59e0b;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 11px;
+      border-radius: 999px;
+      letter-spacing: 0.2px;
+    }
+
+    .live-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10.5px;
+      color: #10b981;
+      margin-top: 5px;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      padding: 2px 9px;
+      border-radius: 999px;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 6px #10b981;
+      animation: pulseDot 2s infinite;
+    }
+
+    @keyframes pulseDot {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.7; }
+    }
+
+    /* ─── Form Elements ─── */
+    .form-group-custom {
+      margin-bottom: 14px;
+    }
+
+    .form-label-custom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-sub);
+      margin-bottom: 5px;
+    }
+
+    .input-wrapper-custom {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon-left {
+      position: absolute;
+      left: 12px;
+      color: var(--text-muted-custom);
+      font-size: 15px;
+      pointer-events: none;
+      transition: color 0.2s ease;
+    }
+
+    .form-control-custom {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1.5px solid var(--input-border);
+      border-radius: 11px;
+      padding: 10px 12px 10px 38px;
+      font-size: 13.5px;
+      color: var(--input-text);
+      outline: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: inherit;
+    }
+
+    .form-control-custom::placeholder {
+      color: var(--input-placeholder);
+    }
+
+    .form-control-custom:focus {
+      border-color: var(--input-focus-border);
+      box-shadow: 0 0 0 3px var(--input-focus-ring);
+    }
+
+    .input-wrapper-custom:focus-within .input-icon-left {
+      color: var(--input-focus-border);
+    }
+
+    .btn-toggle-eye {
+      position: absolute;
+      right: 10px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted-custom);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 6px;
+      transition: color 0.2s ease, background 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     }
 
-    .login-card {
-      background: #1e293b;
-      border-radius: 20px;
-      padding: 30px;
-      width: 90%;
-      max-width: 400px;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    .btn-toggle-eye:hover {
+      color: var(--text-main);
+      background: rgba(148, 163, 184, 0.15);
     }
 
-    .form-control {
-      background: #0f172a;
-      border: 1px solid #334155;
-      color: white;
-      padding: 12px;
-      border-radius: 12px;
-    }
-
-    .form-control:focus {
-      background: #0f172a;
-      color: white;
-      border-color: #3b82f6;
-      box-shadow: none;
-    }
-
-    .btn-login {
-      background: #3b82f6;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 12px;
-      width: 100%;
+    .caps-lock-warning {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.28);
+      color: #d97706;
+      font-size: 11px;
       font-weight: 600;
-      margin-top: 10px;
+      padding: 5px 9px;
+      border-radius: 7px;
+      margin-top: 5px;
     }
 
-    .brand-icon {
-      font-size: 40px;
-      color: #3b82f6;
-      margin-bottom: 10px;
+    html[data-theme="dark"] .caps-lock-warning {
+      color: #fbbf24;
+    }
+
+    /* Options: Remember me */
+    .form-options-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      font-size: 12px;
+    }
+
+    .remember-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--text-muted-custom);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .remember-label input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: #0ea5e9;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .remember-label:hover {
+      color: var(--text-main);
+    }
+
+    /* Submit Button */
+    .btn-submit-tech {
+      width: 100%;
+      background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 11px;
+      padding: 11px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 16px rgba(14, 165, 233, 0.35);
+      min-height: 44px;
+    }
+
+    .btn-submit-tech:hover {
+      background: linear-gradient(135deg, #0284c7 0%, #0043a8 100%);
+      box-shadow: 0 6px 20px rgba(14, 165, 233, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .btn-submit-tech:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 10px rgba(14, 165, 233, 0.3);
+    }
+
+    .btn-submit-tech:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .spinner-custom {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spinAnim 0.7s linear infinite;
+      display: none;
+    }
+
+    @keyframes spinAnim {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Error Alert */
+    .alert-error-custom {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.28);
+      color: #ef4444;
+      padding: 9px 12px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    html[data-theme="dark"] .alert-error-custom {
+      color: #fca5a5;
+    }
+
+    /* Portal Switcher Grid */
+    .portal-nav-divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 16px 0 11px;
+      color: var(--text-muted-custom);
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .portal-nav-divider::before,
+    .portal-nav-divider::after {
+      content: "";
+      flex: 1;
+      border-bottom: 1px solid var(--login-border);
+    }
+
+    .portal-nav-divider span {
+      padding: 0 8px;
+    }
+
+    .portal-shortcuts-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+    }
+
+    .portal-shortcut-link {
+      background: var(--shortcut-bg);
+      border: 1.5px solid var(--shortcut-border);
+      border-radius: 9px;
+      padding: 7px 4px;
+      text-align: center;
+      text-decoration: none;
+      color: var(--text-muted-custom);
+      font-size: 11px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .portal-shortcut-link i {
+      font-size: 14px;
+      color: #0284c7;
+      transition: transform 0.2s ease;
+    }
+
+    html[data-theme="dark"] .portal-shortcut-link i {
+      color: #38bdf8;
+    }
+
+    .portal-shortcut-link:hover {
+      background: var(--shortcut-hover);
+      border-color: var(--input-focus-border);
+      color: var(--text-main);
+      transform: translateY(-1px);
+    }
+
+    .portal-shortcut-link:hover i {
+      transform: scale(1.1);
+    }
+
+    .login-footer-info {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 11px;
+      color: var(--text-muted-custom);
+    }
+
+    .security-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 3px;
+      font-size: 10.5px;
+    }
+
+    /* Responsive Mobile Tweaks */
+    @media (max-width: 440px) {
+      body {
+        padding: 10px 12px max(18px, env(safe-area-inset-bottom));
+      }
+      .login-top-bar {
+        margin-bottom: 10px;
+      }
+      .btn-top-nav,
+      .btn-theme-pill {
+        padding: 5px 11px;
+        font-size: 11.5px;
+      }
+      .login-card {
+        padding: 20px 16px 18px;
+        border-radius: 18px;
+      }
+      .brand-logo-img {
+        max-height: 40px;
+        margin-bottom: 6px;
+      }
+      .login-company-title {
+        font-size: 16.5px;
+        margin-bottom: 3px;
+      }
+      .login-header {
+        margin-bottom: 14px;
+      }
+      .form-group-custom {
+        margin-bottom: 12px;
+      }
+      .form-options-row {
+        margin-bottom: 14px;
+      }
+      .portal-nav-divider {
+        margin: 14px 0 10px;
+      }
+      .portal-shortcuts-grid {
+        gap: 6px;
+      }
+      .portal-shortcut-link {
+        padding: 6px 3px;
+        font-size: 10.5px;
+      }
+      .login-footer-info {
+        margin-top: 12px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .btn-top-nav span {
+        display: none;
+      }
+      .btn-top-nav::after {
+        content: "Pelanggan";
+        font-size: 11px;
+      }
     }
   </style>
 </head>
-
 <body>
-  <div class="login-card text-center">
-    <div class="brand-icon"><i class="bi bi-tools"></i></div>
-    <h3 class="mb-1 fw-bold"><%= t('tech.portal_title', 'Portal Teknisi') %></h3>
-    <p class="text-secondary mb-4 small">
-      <%= company %>
-    </p>
 
-    <% if (error) { %>
-      <div class="alert alert-danger py-2 small rounded-3">
-        <%= error %>
+  <div class="login-wrapper">
+
+    <!-- Top Action Bar (In-Flow = Zero Overlap with Logo) -->
+    <div class="login-top-bar">
+      <a href="/customer/login" class="btn-top-nav" title="Kembali ke Portal Pelanggan">
+        <i class="bi bi-arrow-left"></i>
+        <span>Portal Pelanggan</span>
+      </a>
+
+      <button type="button" class="btn-theme-pill theme-toggle-btn" onclick="toggleAppTheme()" title="Ganti Mode Terang / Gelap">
+        <i class="bi bi-sun-fill theme-toggle-icon"></i>
+        <span class="theme-text-label">Tema</span>
+      </button>
+    </div>
+
+    <!-- Main Card -->
+    <div class="login-card">
+
+      <!-- Header Section -->
+      <div class="login-header">
+        <img src="/img/logo.png" alt="Logo <%= company %>" class="brand-logo-img" id="techLogo" onerror="this.style.display='none'; document.getElementById('techFallbackIcon').style.display='inline-flex';">
+        <div class="brand-fallback-icon" id="techFallbackIcon" style="display:none;">
+          <i class="bi bi-tools"></i>
+        </div>
+
+        <h1 class="login-company-title"><%= company %></h1>
+        <div>
+          <span class="login-role-pill">
+            <i class="bi bi-wrench-adjustable"></i> <%= t('tech.portal_title', 'Portal Teknisi Lapangan') %>
+          </span>
+        </div>
+        <div>
+          <span class="live-status-pill">
+            <span class="status-dot"></span>
+            <span>Sistem Operasi Lapangan Online</span>
+          </span>
+        </div>
       </div>
+
+      <!-- Error Notification -->
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert-error-custom" role="alert">
+          <i class="bi bi-exclamation-triangle-fill fs-5" style="color: #ef4444; flex-shrink: 0;"></i>
+          <div><%= error %></div>
+        </div>
       <% } %>
 
-        <form method="POST" action="/tech/login">
-          <div class="mb-3 text-start">
-            <label class="form-label text-secondary small mb-1">Username Teknisi</label>
-            <input type="text" name="username" class="form-control" required placeholder="Masukkan username">
+      <!-- Form Login -->
+      <form method="POST" action="/tech/login" id="techLoginForm">
+        <!-- Username -->
+        <div class="form-group-custom">
+          <label class="form-label-custom" for="username">
+            <span><i class="bi bi-person me-1"></i> Username Teknisi</span>
+            <small style="color: var(--text-muted-custom); font-size: 10.5px; font-weight: normal;">Field Engineer</small>
+          </label>
+          <div class="input-wrapper-custom">
+            <i class="bi bi-person-badge input-icon-left"></i>
+            <input 
+              type="text" 
+              class="form-control-custom" 
+              id="username" 
+              name="username" 
+              placeholder="Masukkan username teknisi" 
+              required 
+              autofocus 
+              autocomplete="username"
+              spellcheck="false"
+            >
           </div>
-          <div class="mb-4 text-start">
-            <label class="form-label text-secondary small mb-1">Password</label>
-            <input type="password" name="password" class="form-control" required placeholder="Masukkan password">
-          </div>
-          <button type="submit" class="btn btn-login"><i class="bi bi-box-arrow-in-right me-2"></i> Masuk</button>
-        </form>
-  </div>
-</body>
+        </div>
 
+        <!-- Password -->
+        <div class="form-group-custom">
+          <label class="form-label-custom" for="password">
+            <span><i class="bi bi-key me-1"></i> Password</span>
+          </label>
+          <div class="input-wrapper-custom">
+            <i class="bi bi-shield-lock input-icon-left"></i>
+            <input 
+              type="password" 
+              class="form-control-custom" 
+              id="password" 
+              name="password" 
+              placeholder="Masukkan kata sandi" 
+              required 
+              autocomplete="current-password"
+            >
+            <button type="button" class="btn-toggle-eye" id="btnTogglePass" onclick="togglePasswordVisibility()" title="Lihat/Sembunyikan Kata Sandi" tabindex="-1">
+              <i class="bi bi-eye" id="toggleIcon"></i>
+            </button>
+          </div>
+
+          <!-- Caps Lock Alert -->
+          <div id="capsLockAlert" class="caps-lock-warning">
+            <i class="bi bi-exclamation-circle-fill"></i>
+            <span>Caps Lock aktif. Pastikan huruf besar/kecil tepat.</span>
+          </div>
+        </div>
+
+        <!-- Options: Remember Me -->
+        <div class="form-options-row">
+          <label class="remember-label">
+            <input type="checkbox" id="rememberTech" checked>
+            <span>Ingat akun di browser ini</span>
+          </label>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn-submit-tech" id="btnTechSubmit">
+          <span id="btnTechText"><i class="bi bi-box-arrow-in-right"></i> Masuk ke Panel Teknisi</span>
+          <span id="btnTechSpinner" class="spinner-custom"></span>
+        </button>
+      </form>
+
+      <!-- Portal Switcher Links -->
+      <div class="portal-nav-divider">
+        <span>Akses Portal Lain</span>
+      </div>
+
+      <div class="portal-shortcuts-grid">
+        <a href="/customer/login" class="portal-shortcut-link" title="Portal Pelanggan">
+          <i class="bi bi-people-fill"></i>
+          <span>Pelanggan</span>
+        </a>
+        <a href="/admin/login" class="portal-shortcut-link" title="Portal Admin Panel">
+          <i class="bi bi-shield-lock-fill"></i>
+          <span>Admin Panel</span>
+        </a>
+        <a href="/collector/login" class="portal-shortcut-link" title="Portal Kolektor">
+          <i class="bi bi-bicycle"></i>
+          <span>Kolektor</span>
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Security & Footer Info -->
+    <div class="login-footer-info">
+      <div>&copy; <%= new Date().getFullYear() %> <%= company %>. Aplikasi Resmi Teknisi Lapangan.</div>
+      <div class="security-badge">
+        <i class="bi bi-shield-check text-success"></i> Dilindungi Session Guard &amp; TLS Encryption
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 1. Password Visibility Toggle
+    function togglePasswordVisibility() {
+      const pass = document.getElementById('password');
+      const icon = document.getElementById('toggleIcon');
+      if (!pass || !icon) return;
+      if (pass.type === 'password') {
+        pass.type = 'text';
+        icon.className = 'bi bi-eye-slash';
+      } else {
+        pass.type = 'password';
+        icon.className = 'bi bi-eye';
+      }
+    }
+
+    // 2. Caps Lock Listener
+    const passInput = document.getElementById('password');
+    const capsAlert = document.getElementById('capsLockAlert');
+    if (passInput && capsAlert) {
+      const checkCaps = (e) => {
+        if (e.getModifierState && e.getModifierState('CapsLock')) {
+          capsAlert.style.display = 'flex';
+        } else {
+          capsAlert.style.display = 'none';
+        }
+      };
+      passInput.addEventListener('keyup', checkCaps);
+      passInput.addEventListener('keydown', checkCaps);
+    }
+
+    // 3. Remember Me & Submit loading
+    (function() {
+      const userInput = document.getElementById('username');
+      const passInput = document.getElementById('password');
+      const remCheck = document.getElementById('rememberTech');
+      const form = document.getElementById('techLoginForm');
+
+      try {
+        const saved = localStorage.getItem('tech_remember_user');
+        if (saved && userInput) {
+          userInput.value = saved;
+          if (passInput) passInput.focus();
+        }
+      } catch (e) {}
+
+      if (form && userInput && remCheck) {
+        form.addEventListener('submit', () => {
+          try {
+            if (remCheck.checked) {
+              localStorage.setItem('tech_remember_user', userInput.value.trim());
+            } else {
+              localStorage.removeItem('tech_remember_user');
+            }
+          } catch (e) {}
+
+          const btn = document.getElementById('btnTechSubmit');
+          const btnText = document.getElementById('btnTechText');
+          const spinner = document.getElementById('btnTechSpinner');
+          if (btn && btnText && spinner) {
+            btn.disabled = true;
+            btnText.innerHTML = '<i class="bi bi-hourglass-split"></i> Memverifikasi...';
+            spinner.style.display = 'inline-block';
+          }
+        });
+      }
+    })();
+  </script>
+</body>
 </html>
+

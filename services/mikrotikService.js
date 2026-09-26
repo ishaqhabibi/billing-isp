@@ -1461,14 +1461,58 @@ function createRouter(data) {
 }
 
 function updateRouter(id, data) {
+  const current = getRouterById(id);
+  const password = (data.password !== undefined && String(data.password).trim() !== '')
+    ? String(data.password).trim()
+    : (current ? current.password : '');
+  const port = Number(data.port) || 8728;
+  const isActive = data.is_active !== undefined ? (Number(data.is_active) ? 1 : 0) : 1;
   return db.prepare(`
-    UPDATE routers SET name=?, host=?, port=?, user=?, password=?, description=?, is_active=?
+    UPDATE routers SET name=?, host=?, port=?, user=?, password=?, description=?, is_active=?, updated_at=(NOW_LOCAL())
     WHERE id=?
-  `).run(data.name, data.host, data.port || 8728, data.user, data.password, data.description || '', data.is_active || 1, id);
+  `).run(
+    String(data.name || '').trim(),
+    String(data.host || '').trim(),
+    port,
+    String(data.user || '').trim(),
+    password,
+    String(data.description || '').trim(),
+    isActive,
+    id
+  );
 }
 
 function deleteRouter(id) {
+  const custCount = db.prepare('SELECT COUNT(*) as c FROM customers WHERE router_id = ?').get(id)?.c || 0;
+  if (custCount > 0) {
+    throw new Error(`Tidak dapat menghapus router: Masih terdapat ${custCount} pelanggan yang terhubung. Alihkan router pelanggan terlebih dahulu.`);
+  }
+  const batchCount = db.prepare('SELECT COUNT(*) as c FROM voucher_batches WHERE router_id = ?').get(id)?.c || 0;
+  if (batchCount > 0) {
+    throw new Error(`Tidak dapat menghapus router: Terdapat ${batchCount} batch voucher yang dibuat di router ini.`);
+  }
   return db.prepare('DELETE FROM routers WHERE id = ?').run(id);
+}
+
+async function setProfileMikhmonScript(profileName, price, validity, routerId = null) {
+  let conn = null;
+  try {
+    conn = await getConnection(routerId);
+    const profileMenu = conn.client.menu('/ip/hotspot/user/profile');
+    const all = await profileMenu.get();
+    const target = (Array.isArray(all) ? all : []).find(p => p.name === profileName);
+    if (!target) throw new Error(`Profile "${profileName}" tidak ditemukan di MikroTik.`);
+    
+    const cleanPrice = String(price || '0').replace(/[^\d]/g, '');
+    const cleanVal = String(validity || '1d').trim();
+    const mikhmonScript = `:put (",rem," . 0 . "," . "${cleanVal}" . "," . "${cleanPrice}" . "," . "0" . "," . "0" . ",")`;
+    
+    await profileMenu.set({ 'on-login': mikhmonScript }, target['.id'] || target.id);
+    listCache.delete(cacheKey(routerId, 'hotspotProfiles'));
+    return { success: true, message: `Script format Mikhmon (${cleanVal}, Rp ${Number(cleanPrice).toLocaleString('id-ID')}) berhasil dipasang pada profile "${profileName}".` };
+  } finally {
+    if (conn && conn.api) conn.api.close();
+  }
 }
 
 /**
@@ -2096,5 +2140,6 @@ module.exports = {
   ensurePppProfileIsolirAddressListHook,
   generateIsolirPortalScript,
   manageStaticIp,
-  removeStaticIp
+  removeStaticIp,
+  setProfileMikhmonScript
 };
