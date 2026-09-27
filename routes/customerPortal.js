@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const customerDevice = require('../services/customerDeviceService');
-const { getSettingsWithCache, getNowLocal, getCurrentTimeInfo, getNowLocalISO, formatDateLocal } = require('../config/settingsManager');
+const { getSettingsWithCache, getNowLocal, getCurrentTimeInfo, getNowLocalISO, formatDateLocal, formatTimeLocal } = require('../config/settingsManager');
 const billingSvc = require('../services/billingService');
 const pdfSvc = require('../services/pdfInvoiceService');
 const paymentSvc = require('../services/paymentService');
@@ -816,8 +816,30 @@ router.get('/check-billing', async (req, res) => {
   }
 
   if (query) {
-    customer = customerSvc.findCustomerByAny(query);
-    if (customer) {
+    const cleanQuery = String(query || '').trim();
+    let customerRow = null;
+
+    // Pengecekan HANYA melalui ID Pelanggan (Angka) atau Nomor/Kode Pelanggan (customer_code)
+    if (/^\d+$/.test(cleanQuery)) {
+      customerRow = db.prepare(`
+        SELECT c.*, p.name as package_name
+        FROM customers c
+        LEFT JOIN packages p ON c.package_id = p.id
+        WHERE c.id = ?
+      `).get(parseInt(cleanQuery, 10));
+    }
+
+    if (!customerRow) {
+      customerRow = db.prepare(`
+        SELECT c.*, p.name as package_name
+        FROM customers c
+        LEFT JOIN packages p ON c.package_id = p.id
+        WHERE c.customer_code = ? OR c.customer_code = ?
+      `).get(cleanQuery, cleanQuery.toUpperCase());
+    }
+
+    if (customerRow) {
+      customer = customerRow;
       const lookup = customer.pppoe_username || customer.genieacs_tag || customer.phone || String(customer.id);
       invoices = billingSvc.getInvoicesByAny(lookup) || [];
       unpaidInvoices = invoices.filter(i => i.status === 'unpaid');
@@ -831,30 +853,6 @@ router.get('/check-billing', async (req, res) => {
         );
         return acc;
       }, {});
-    } else {
-      const invs = billingSvc.getInvoicesByAny(query) || [];
-      const unpaid = (Array.isArray(invs) ? invs : []).filter(i => i && i.status === 'unpaid');
-      const map = new Map();
-      for (const inv of unpaid) {
-        const customerId = Number(inv.customer_id || 0);
-        if (!Number.isFinite(customerId) || customerId <= 0) continue;
-        const prev = map.get(customerId) || {
-          customer_id: customerId,
-          customer_name: inv.customer_name || '-',
-          customer_phone: inv.customer_phone || '',
-          unpaid_count: 0,
-          total_amount: 0
-        };
-        prev.unpaid_count += 1;
-        prev.total_amount += Number(inv.amount || 0) || 0;
-        map.set(customerId, prev);
-      }
-      matches = Array.from(map.values()).sort((a, b) => {
-        const au = Number(a.unpaid_count || 0);
-        const bu = Number(b.unpaid_count || 0);
-        if (au !== bu) return bu - au;
-        return String(a.customer_name || '').localeCompare(String(b.customer_name || ''), 'id');
-      });
     }
   }
 
@@ -1917,6 +1915,38 @@ router.get('/dashboard', async (req, res) => {
   if (!customerDeviceData.wifiPassword && profile && profile.wifi_password) {
     customerDeviceData.wifiPassword = profile.wifi_password;
   }
+  if ((!customerDeviceData.ssid24 || customerDeviceData.ssid24 === '-') && customerDeviceData.ssid) {
+    customerDeviceData.ssid24 = customerDeviceData.ssid;
+  }
+  if (!customerDeviceData.ssid5 && customerDeviceData.ssid24 && customerDeviceData.ssid24 !== '-') {
+    customerDeviceData.ssid5 = customerDeviceData.ssid24.toLowerCase().endsWith('-5g') 
+      ? customerDeviceData.ssid24 
+      : `${customerDeviceData.ssid24}-5G`;
+  }
+  if (!customerDeviceData.wifiPassword24 && customerDeviceData.wifiPassword) {
+    customerDeviceData.wifiPassword24 = customerDeviceData.wifiPassword;
+  }
+  if (!customerDeviceData.wifiPassword5 && customerDeviceData.wifiPassword24) {
+    customerDeviceData.wifiPassword5 = customerDeviceData.wifiPassword24;
+  }
+
+  // Generate QR Code Wi-Fi string (WIFI:S:<SSID>;T:WPA;P:<PASSWORD>;;)
+  let wifiQr24 = '';
+  let wifiQr5 = '';
+  try {
+    const s24 = customerDeviceData.ssid24 || customerDeviceData.ssid || '';
+    const p24 = customerDeviceData.wifiPassword24 || customerDeviceData.wifiPassword || '';
+    if (s24 && s24 !== '-') {
+      wifiQr24 = await QRCode.toDataURL(`WIFI:S:${s24};T:WPA;P:${p24};;`, { margin: 1, width: 240 });
+    }
+    const s5 = customerDeviceData.ssid5 || '';
+    const p5 = customerDeviceData.wifiPassword5 || customerDeviceData.wifiPassword || '';
+    if (s5 && s5 !== '-') {
+      wifiQr5 = await QRCode.toDataURL(`WIFI:S:${s5};T:WPA;P:${p5};;`, { margin: 1, width: 240 });
+    }
+  } catch (e) {
+    logger.debug(`[Dashboard] Failed generating Wi-Fi QR code: ${e.message}`);
+  }
 
   res.render('dashboard', {
     customer: customerDeviceData,
@@ -1931,7 +1961,9 @@ router.get('/dashboard', async (req, res) => {
     customerBalance,
     isLoggedIn: true,
     showPPOB,
-    notif: msgNotif || null
+    notif: msgNotif || null,
+    wifiQr24,
+    wifiQr5
   });
 });
 
@@ -2183,6 +2215,7 @@ router.post('/change-ssid', async (req, res) => {
   }
 
   const profile = findCustomerProfileByLoginId(loginId);
+  const band = String(req.body?.band || 'all').toLowerCase();
   const tokenCandidates = Array.from(new Set([
     req.session?.pppoe_username,
     ...buildCustomerDeviceTokens(loginId, profile)
@@ -2196,7 +2229,7 @@ router.post('/change-ssid', async (req, res) => {
       name: profile?.name || loginId,
       ip: req.ip,
       userAgent: req.headers['user-agent']
-    });
+    }, band);
     if (ok) break;
   }
 
@@ -2207,9 +2240,10 @@ router.post('/change-ssid', async (req, res) => {
     logger.warn(`[change-ssid] Failed updating customers table: ${e.message}`);
   }
 
+  const bandLabel = band === '5' ? ' (5 GHz)' : (band === '2.4' ? ' (2.4 GHz)' : '');
   const message = ok
-    ? 'Nama WiFi (SSID) berhasil diubah dan dikirim ke modem.'
-    : 'Nama WiFi tersimpan di sistem ISP. Modem akan sinkron otomatis saat online.';
+    ? `Nama WiFi${bandLabel} berhasil diubah dan dikirim ke modem.`
+    : `Nama WiFi${bandLabel} tersimpan di sistem ISP. Modem akan sinkron otomatis saat online.`;
 
   // Kirim notifikasi WhatsApp ke pelanggan
   try {
@@ -2218,7 +2252,7 @@ router.post('/change-ssid', async (req, res) => {
       const { sendWA, whatsappStatus } = await import('../services/whatsappBot.mjs');
       if (whatsappStatus && whatsappStatus.connection === 'open') {
         const now = getNowLocal();
-        const msg = `📡 *PERUBAHAN NAMA WIFI (SSID)*\n\n` +
+        const msg = `📡 *PERUBAHAN NAMA WIFI (SSID)${bandLabel}*\n\n` +
           `👤 *Pelanggan:* ${profile.name}\n` +
           `🕒 *Waktu:* ${now}\n\n` +
           `SSID WiFi Anda telah diperbarui menjadi:\n` +
@@ -2231,11 +2265,11 @@ router.post('/change-ssid', async (req, res) => {
   } catch (e) { /* ignore WA notification errors */ }
 
   if (isAjax) {
-    return res.json({ ok: true, message, ssid });
+    return res.json({ ok: true, message, ssid, band });
   }
 
   req.session._msg = { type: 'success', text: message };
-  res.redirect('/customer/dashboard#home-section');
+  res.redirect('/customer/dashboard#wifi-section');
 });
 
 router.post('/change-password', async (req, res) => {
@@ -2253,10 +2287,11 @@ router.post('/change-password', async (req, res) => {
     const errText = 'Gagal mengubah password. Pastikan minimal 8 karakter.';
     if (isAjax) return res.status(400).json({ ok: false, message: errText });
     req.session._msg = { type: 'danger', text: errText };
-    return res.redirect('/customer/dashboard#home-section');
+    return res.redirect('/customer/dashboard#wifi-section');
   }
 
   const profile = findCustomerProfileByLoginId(loginId);
+  const band = String(req.body?.band || 'all').toLowerCase();
   const tokenCandidates = Array.from(new Set([
     req.session?.pppoe_username,
     ...buildCustomerDeviceTokens(loginId, profile)
@@ -2270,7 +2305,7 @@ router.post('/change-password', async (req, res) => {
       name: profile?.name || loginId,
       ip: req.ip,
       userAgent: req.headers['user-agent']
-    });
+    }, band);
     if (ok) break;
   }
 
@@ -2281,9 +2316,10 @@ router.post('/change-password', async (req, res) => {
     logger.warn(`[change-password] Failed updating customers table: ${e.message}`);
   }
 
+  const bandLabel = band === '5' ? ' (5 GHz)' : (band === '2.4' ? ' (2.4 GHz)' : '');
   const message = ok
-    ? 'Password WiFi berhasil diubah dan dikirim ke modem.'
-    : 'Password WiFi tersimpan di sistem ISP. Modem akan sinkron otomatis saat online.';
+    ? `Password WiFi${bandLabel} berhasil diubah dan dikirim ke modem.`
+    : `Password WiFi${bandLabel} tersimpan di sistem ISP. Modem akan sinkron otomatis saat online.`;
 
   // Kirim notifikasi WhatsApp ke pelanggan
   try {
@@ -2292,7 +2328,7 @@ router.post('/change-password', async (req, res) => {
       const { sendWA, whatsappStatus } = await import('../services/whatsappBot.mjs');
       if (whatsappStatus && whatsappStatus.connection === 'open') {
         const now = getNowLocal();
-        const msg = `🔑 *PERUBAHAN KATA SANDI WIFI*\n\n` +
+        const msg = `🔑 *PERUBAHAN KATA SANDI WIFI${bandLabel}*\n\n` +
           `👤 *Pelanggan:* ${profile.name}\n` +
           `🕒 *Waktu:* ${now}\n\n` +
           `Password WiFi Anda telah diperbarui menjadi:\n` +
@@ -2305,11 +2341,11 @@ router.post('/change-password', async (req, res) => {
   } catch (e) { /* ignore WA notification errors */ }
 
   if (isAjax) {
-    return res.json({ ok: true, message });
+    return res.json({ ok: true, message, band });
   }
 
   req.session._msg = { type: 'success', text: message };
-  res.redirect('/customer/dashboard#home-section');
+  res.redirect('/customer/dashboard#wifi-section');
 });
 
 router.post('/reboot', async (req, res) => {

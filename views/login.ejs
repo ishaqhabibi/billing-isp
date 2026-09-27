@@ -535,7 +535,7 @@
     /* Fast Tool Shortcuts inside Login Card */
     .quick-tools-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 10px;
       margin-top: 16px;
     }
@@ -543,20 +543,22 @@
       background: var(--btn-sec-bg);
       border: 1.5px solid var(--btn-sec-border);
       color: var(--text-main);
-      padding: 11px 12px;
+      padding: 12px 16px;
       border-radius: 12px;
-      font-size: 0.9rem;
+      font-size: 0.92rem;
       font-weight: 700;
       text-decoration: none;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 7px;
+      gap: 8px;
       transition: all 0.2s ease;
+      width: 100%;
     }
     .btn-quick-tool:hover {
       border-color: var(--primary);
       color: var(--primary);
+      background: rgba(14, 165, 233, 0.08);
       transform: translateY(-2px);
     }
 
@@ -939,6 +941,14 @@
       color: var(--text-sub);
       transition: all 0.2s ease;
     }
+    .footer-brand-logo {
+      height: 48px;
+      max-height: 52px;
+      width: auto;
+      max-width: 220px;
+      object-fit: contain;
+      display: inline-block;
+    }
     .footer-links {
       list-style: none;
       padding: 0;
@@ -1118,8 +1128,8 @@
           </div>
 
           <!-- CTAs for Prospective Visitors (No repeated Cek Tagihan here) -->
-          <div class="d-flex flex-wrap gap-3 mb-4" style="max-width: 620px;">
-            <a href="/customer/register" class="btn-hero-primary flex-fill" style="min-width: 230px;">
+          <div class="d-flex flex-wrap gap-3 mb-4" style="max-width: 520px;">
+            <a href="/customer/register" class="btn-hero-primary flex-fill" style="min-width: 220px;">
               <i class="bi bi-rocket-takeoff-fill fs-5"></i>
               <span>Daftar Pasang Baru (Promo)</span>
             </a>
@@ -1127,11 +1137,6 @@
             <a href="#packages" class="btn-hero-secondary flex-fill" style="min-width: 180px;">
               <i class="bi bi-wifi fs-5 text-primary"></i>
               <span>Lihat Pilihan Paket</span>
-            </a>
-
-            <a href="/customer/voucher" class="btn-hero-secondary flex-fill" style="min-width: 150px;">
-              <i class="bi bi-ticket-perforated-fill fs-5 text-warning"></i>
-              <span>Beli Voucher</span>
             </a>
           </div>
 
@@ -1161,7 +1166,7 @@
           <div class="glass-card shadow-2xl">
             <!-- Card Header with direct clean logo -->
             <div class="text-center pt-4 px-4 pb-2">
-              <img src="/img/logo.png" alt="Logo" class="login-brand-logo mb-3" onerror="this.style.display='none'">
+              <img src="/img/logo.png" alt="<%= settings.company_header || 'Logo' %>" class="login-brand-logo mb-3" onerror="this.style.display='none'">
               <h4 class="fw-bold mb-1 card-header-title"><%= t('customer.portal_title', 'Portal Pelanggan') %></h4>
               
               <!-- Live Server Status Indicator -->
@@ -1231,13 +1236,10 @@
                 </div>
               <% } %>
 
-              <!-- Fast Tool Shortcuts (The single logical place for Cek Tagihan without login) -->
+              <!-- Fast Tool Shortcut (Cek Tagihan tanpa login) -->
               <div class="quick-tools-grid">
                 <a href="/customer/check-billing" class="btn-quick-tool">
-                  <i class="bi bi-receipt text-info fs-5"></i> Cek Tagihan
-                </a>
-                <a href="/customer/voucher" class="btn-quick-tool">
-                  <i class="bi bi-ticket-perforated text-warning fs-5"></i> Beli Voucher
+                  <i class="bi bi-receipt text-info fs-5"></i> Cek Tagihan Tanpa Login
                 </a>
               </div>
 
@@ -1284,10 +1286,16 @@
         <div class="row g-4 justify-content-center" id="packageCardsGrid">
           <% list.forEach((p, index) => { 
                const speedDownMbps = Math.round(Number(p.speed_down||0)/1000);
+               const speedUpMbps = Math.round(Number(p.speed_up||0)/1000);
+               const speedDownUpto = Math.round(Number(p.speed_down_upto||0)/1000);
+               const hasPromo = (p.promo_cycles > 0 && p.promo_price != null && p.promo_price !== '' && Number(p.promo_price) < Number(p.price));
+               const isPrepaid = p.billing_type === 'prepaid';
           %>
             <div class="col-md-6 col-lg-4" id="pkg-card-<%= index %>">
               <div class="glass-card pkg-card">
-                <% if (index === Math.floor(list.length / 2)) { %>
+                <% if (hasPromo) { %>
+                  <div class="pkg-badge-popular" style="background: linear-gradient(135deg, #f59e0b, #ef4444);"><i class="bi bi-tag-fill me-1"></i> Promo Spesial</div>
+                <% } else if (index === Math.floor(list.length / 2)) { %>
                   <div class="pkg-badge-popular"><i class="bi bi-star-fill me-1"></i> Paling Laris</div>
                 <% } %>
 
@@ -1295,6 +1303,9 @@
                   <i class="bi bi-speedometer2 me-1"></i>
                   <% if (Number(p.speed_down||0) > 0) { %>
                     <%= (speedDownMbps >= 1) ? speedDownMbps + ' Mbps' : Number(p.speed_down||0) + ' Kbps' %>
+                    <% if (speedDownUpto > speedDownMbps) { %>
+                      <span style="font-size: 0.8em; opacity: 0.9; margin-left: 2px;">(Up to <%= speedDownUpto %>M)</span>
+                    <% } %>
                   <% } else { %>
                     Broadband Fiber
                   <% } %>
@@ -1303,17 +1314,44 @@
                 <h3 class="pkg-name"><%= p.name %></h3>
 
                 <div class="pkg-price">
-                  Rp <%= Number(p.price||0).toLocaleString('id-ID') %>
+                  <% if (hasPromo) { %>
+                    <div style="font-size: 0.55em; text-decoration: line-through; opacity: 0.6; color: var(--text-sub); font-weight: 500;">
+                      Rp <%= Number(p.price||0).toLocaleString('id-ID') %>
+                    </div>
+                    Rp <%= Number(p.promo_price).toLocaleString('id-ID') %>
+                  <% } else { %>
+                    Rp <%= Number(p.price||0).toLocaleString('id-ID') %>
+                  <% } %>
                 </div>
-                <div class="pkg-period">per bulan (sudah termasuk PPN)</div>
+                <div class="pkg-period">
+                  <% if (isPrepaid) { %>
+                    per <%= p.duration_days || 30 %> hari <%= p.use_ppn ? '(+ PPN ' + (p.ppn_percentage || 11) + '%)' : '(termasuk PPN)' %>
+                  <% } else { %>
+                    per bulan <%= p.use_ppn ? '(+ PPN ' + (p.ppn_percentage || 11) + '%)' : '(termasuk PPN)' %>
+                  <% } %>
+                  <% if (hasPromo) { %>
+                    <div style="font-size: 11px; color: var(--accent); font-weight: 600; margin-top: 2px;">
+                      *Promo berlaku <%= p.promo_cycles %> bulan pertama
+                    </div>
+                  <% } %>
+                </div>
 
                 <ul class="pkg-features">
-                  <li><i class="bi bi-check-circle-fill"></i> <strong>100% True Unlimited</strong> (Tanpa Batas FUP)</li>
+                  <% if (p.use_fup && p.fup_limit_gb > 0) { %>
+                    <li><i class="bi bi-shield-check"></i> Kuota Utama <strong><%= p.fup_limit_gb %> GB FUP</strong> (Pasca FUP <%= (Number(p.fup_speed_down||0)/1000) %> Mbps)</li>
+                  <% } else { %>
+                    <li><i class="bi bi-check-circle-fill"></i> <strong>100% True Unlimited</strong> (Tanpa Batas FUP)</li>
+                  <% } %>
                   <li><i class="bi bi-check-circle-fill"></i> Jaringan <strong>Broadband Fiber Optic</strong> (FTTH)</li>
+                  <% if (speedUpMbps > 0) { %>
+                    <li><i class="bi bi-check-circle-fill"></i> Upload hingga <strong><%= speedUpMbps %> Mbps</strong></li>
+                  <% } %>
+                  <% if (p.use_night_speed && p.night_speed_down > 0) { %>
+                    <li><i class="bi bi-moon-stars-fill" style="color: #a855f7;"></i> <strong>Bonus Speed Malam:</strong> <%= (Number(p.night_speed_down)/1000) %> Mbps (00:00 - 06:00)</li>
+                  <% } %>
                   <li><i class="bi bi-check-circle-fill"></i> Bebas Konek <strong>Banyak Perangkat HP &amp; TV</strong></li>
                   <li><i class="bi bi-check-circle-fill"></i> Ping Stabil untuk Game &amp; Video Call</li>
                   <li><i class="bi bi-check-circle-fill"></i> <strong>Gratis Sewa</strong> Modem Wi-Fi Fiber</li>
-                  <li><i class="bi bi-check-circle-fill"></i> Bantuan Teknisi Standby Siaga</li>
                   <% if (p.description) { %>
                     <li style="border:none;"><i class="bi bi-info-circle-fill text-info"></i> <%= p.description %></li>
                   <% } %>
@@ -1743,7 +1781,7 @@
               <div class="glass-card p-4 h-100">
                 <i class="bi bi-clock-history fs-3 text-warning mb-2 d-block"></i>
                 <h5 class="fw-bold fs-6 mb-1" style="color: var(--text-main);">Jam Layanan CS</h5>
-                <p class="small mb-0" style="color: var(--text-sub);"><%= settings.operational_hours || 'Setiap Hari (24 Jam Online)' %></p>
+                <p class="small mb-0" style="color: var(--text-sub);"><%= settings.operational_hours || 'Setiap Hari: 08.00 - 17.00 WIB' %></p>
               </div>
             </div>
 
@@ -1792,7 +1830,7 @@
       <div class="row g-4">
         <div class="col-lg-4">
           <div class="d-flex align-items-center gap-2 mb-3">
-            <img src="/img/logo.png" alt="Logo" style="height: 44px;" onerror="this.style.display='none'">
+            <img src="/img/logo.png" alt="<%= settings.company_header || 'Logo' %>" class="footer-brand-logo" onerror="this.style.display='none'">
           </div>
           <p class="small mb-3" style="color: var(--text-sub); max-width: 320px;">
             Penyedia layanan internet broadband fiber optic murni, handal dan terjangkau untuk kebutuhan rumah tangga dan tempat usaha Anda.
@@ -1805,7 +1843,6 @@
             <li><a href="#hero"><i class="bi bi-chevron-right me-1 small"></i> Beranda</a></li>
             <li><a href="#packages"><i class="bi bi-chevron-right me-1 small"></i> Paket Internet</a></li>
             <li><a href="/customer/check-billing"><i class="bi bi-chevron-right me-1 small"></i> Cek Tagihan</a></li>
-            <li><a href="/customer/voucher"><i class="bi bi-chevron-right me-1 small"></i> Beli Voucher Wi-Fi</a></li>
             <li><a href="/customer/register"><i class="bi bi-chevron-right me-1 small"></i> Pasang Baru</a></li>
           </ul>
         </div>
@@ -1840,10 +1877,9 @@
     <a href="https://wa.me/<%= String(settings.company_phone).replace(/\D/g,'') %>?text=Halo%20Admin,%20saya%20tertarik%20dengan%20layanan%20internet%20Fiber%20Optic.%20Mohon%20info%20pemasangannya." 
        target="_blank" rel="noopener" 
        class="btn-floating-wa shadow-lg" 
-       title="Chat Customer Service WhatsApp 24/7">
-      <span class="wa-pulse-dot"></span>
+       title="Hubungi Customer Service via WhatsApp">
       <i class="bi bi-whatsapp fs-5"></i>
-      <span>Chat CS 24/7</span>
+      <span>Hubungi CS</span>
     </a>
   <% } %>
 
@@ -1859,7 +1895,7 @@
         </div>
         <div class="modal-body p-4">
           <p class="small mb-3" style="color: var(--text-sub);">
-            Akses portal pelanggan langsung dari layar utama HP tanpa perlu buka browser tiap kali ingin cek tagihan atau beli voucher!
+            Akses portal pelanggan langsung dari layar utama HP tanpa perlu buka browser tiap kali ingin cek tagihan atau riwayat koneksi!
           </p>
 
           <!-- Android / Chrome / Windows -->

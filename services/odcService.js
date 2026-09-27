@@ -27,33 +27,78 @@ function getOdcById(id) {
 }
 
 function createOdc(data) {
+  const inputPwr = (data.input_power_dbm !== undefined && data.input_power_dbm !== '' && data.input_power_dbm !== null) ? parseFloat(data.input_power_dbm) : null;
+  const outputPwr = (data.output_power_dbm !== undefined && data.output_power_dbm !== '' && data.output_power_dbm !== null) ? parseFloat(data.output_power_dbm) : null;
   const stmt = db.prepare(`
-    INSERT INTO odcs (name, olt_id, lat, lng, description)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO odcs (name, olt_id, pon_port, input_power_dbm, output_power_dbm, splitter_ratio, total_ports, lat, lng, description)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
-  return stmt.run(
+  const info = stmt.run(
     String(data.name || '').trim(),
     data.olt_id ? parseInt(data.olt_id) : null,
+    String(data.pon_port || '').trim(),
+    inputPwr,
+    outputPwr,
+    String(data.splitter_ratio || '1:4').trim(),
+    parseInt(data.total_ports) || 24,
     String(data.lat || '').trim(),
     String(data.lng || '').trim(),
     String(data.description || '').trim()
   );
+
+  if (outputPwr !== null) {
+    try {
+      db.prepare(`
+        INSERT INTO optical_power_history (target_type, target_id, target_name, target_port, measured_power_dbm, measured_by, notes)
+        VALUES ('odc', ?, ?, 'Output Splitter', ?, ?, 'Initial measurement ODC')
+      `).run(info.lastInsertRowid, String(data.name || '').trim(), outputPwr, data.measured_by || 'Admin');
+    } catch (e) {}
+  }
+
+  return info;
 }
 
 function updateOdc(id, data) {
+  const inputPwr = (data.input_power_dbm !== undefined && data.input_power_dbm !== '' && data.input_power_dbm !== null) ? parseFloat(data.input_power_dbm) : null;
+  const outputPwr = (data.output_power_dbm !== undefined && data.output_power_dbm !== '' && data.output_power_dbm !== null) ? parseFloat(data.output_power_dbm) : null;
+  const current = getOdcById(id);
+
   const stmt = db.prepare(`
     UPDATE odcs 
-    SET name = ?, olt_id = ?, lat = ?, lng = ?, description = ?
+    SET name = ?, olt_id = ?, pon_port = ?, input_power_dbm = ?, output_power_dbm = ?, splitter_ratio = ?, total_ports = ?, lat = ?, lng = ?, description = ?
     WHERE id = ?
   `);
-  return stmt.run(
+  const res = stmt.run(
     String(data.name || '').trim(),
     data.olt_id ? parseInt(data.olt_id) : null,
+    String(data.pon_port || '').trim(),
+    inputPwr,
+    outputPwr,
+    String(data.splitter_ratio || '1:4').trim(),
+    parseInt(data.total_ports) || 24,
     String(data.lat || '').trim(),
     String(data.lng || '').trim(),
     String(data.description || '').trim(),
     id
   );
+
+  if (outputPwr !== null && (!current || current.output_power_dbm !== outputPwr)) {
+    try {
+      db.prepare(`
+        INSERT INTO optical_power_history (target_type, target_id, target_name, target_port, measured_power_dbm, reference_loss_db, measured_by, notes)
+        VALUES ('odc', ?, ?, 'Output Splitter', ?, ?, ?, ?)
+      `).run(
+        id,
+        String(data.name || '').trim(),
+        outputPwr,
+        current && current.output_power_dbm != null ? parseFloat((outputPwr - current.output_power_dbm).toFixed(2)) : 0,
+        data.measured_by || 'Admin',
+        data.notes || 'Update redaman ODC'
+      );
+    } catch (e) {}
+  }
+
+  return res;
 }
 
 function getOdcRelations(id) {

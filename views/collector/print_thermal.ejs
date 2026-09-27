@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Struk Thermal #INV-<%= String(invoice.id).padStart(4, '0') %></title>
+  <title>Struk Pembayaran #INV-<%= String(invoice.id).padStart(5, '0') %></title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Courier New', Courier, monospace, 'Lucida Console', sans-serif;
+      font-family: 'Courier New', Courier, monospace, 'Lucida Console', monospace;
       font-size: 12px;
       line-height: 1.35;
       color: #000000;
       background: #e2e8f0;
-      padding: 15px 10px;
+      padding: 16px 10px;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
@@ -22,52 +22,159 @@
       max-width: 100%;
       margin: 0 auto;
       background: #ffffff;
-      padding: 12px 8px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-      border-radius: 4px;
-      transition: width 0.2s;
+      padding: 12px 10px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+      border-radius: 6px;
+      transition: width 0.2s ease;
     }
 
     .ticket.size-80mm {
       width: 80mm;
-      font-size: 13px;
-      padding: 16px 12px;
+      font-size: 13.5px;
+      padding: 18px 14px;
     }
 
     .text-center { text-align: center; }
     .text-end { text-align: right; }
     .fw-bold { font-weight: bold; }
-    .title { font-size: 14px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
-    .subtitle { font-size: 10px; margin-bottom: 3px; color: #222; }
-    .divider { border-top: 1px dashed #000000; margin: 6px 0; }
-    .row-item { display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 11px; }
-    .size-80mm .row-item { font-size: 12.5px; }
-    .row-item .label { color: #333; }
-    .row-item .val { font-weight: bold; text-align: right; word-break: break-word; }
     
-    .total-box {
-      border: 1.5px dashed #000000;
-      padding: 8px 4px;
-      margin: 8px 0;
-      text-align: center;
-    }
-    .total-amount { font-size: 16px; font-weight: bold; margin-top: 2px; }
-    .badge-status {
+    .thermal-logo {
+      max-height: 40px;
+      max-width: 140px;
+      object-fit: contain;
+      filter: grayscale(100%) contrast(150%);
+      margin-bottom: 4px;
       display: inline-block;
-      padding: 2px 10px;
-      font-weight: bold;
-      font-size: 12px;
-      border: 1.5px solid #000;
-      margin-top: 5px;
-      background: #ffffff;
     }
 
-    .no-print {
-      margin-top: 16px;
+    .company-title {
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.25;
+      margin-bottom: 2px;
+    }
+    .size-80mm .company-title {
+      font-size: 15px;
+    }
+
+    .company-sub {
+      font-size: 10px;
+      color: #333333;
+      line-height: 1.3;
+      margin-bottom: 2px;
+    }
+    .size-80mm .company-sub {
+      font-size: 11px;
+    }
+
+    .receipt-badge {
+      display: block;
+      font-size: 11.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin: 4px 0;
+    }
+    .size-80mm .receipt-badge {
+      font-size: 13px;
+    }
+
+    .divider {
+      border-top: 1px dashed #000000;
+      margin: 6px 0;
+    }
+    .divider-double {
+      border-top: 2px double #000000;
+      margin: 6px 0;
+    }
+
+    .row-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 3px;
+      font-size: 11px;
+    }
+    .size-80mm .row-item {
+      font-size: 12.5px;
+    }
+    .row-item .label {
+      color: #333333;
+      flex-shrink: 0;
+    }
+    .row-item .val {
+      font-weight: 700;
+      text-align: right;
+      word-break: break-word;
+    }
+
+    .total-box {
+      border: 1.5px dashed #000000;
+      padding: 8px 6px;
+      margin: 8px 0;
       text-align: center;
+      background: #fafafa;
+    }
+    .total-box .total-title {
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #333;
+    }
+    .total-amount {
+      font-size: 17px;
+      font-weight: 900;
+      margin: 3px 0;
+      letter-spacing: -0.02em;
+    }
+    .size-80mm .total-amount {
+      font-size: 20px;
+    }
+
+    .badge-status {
+      display: inline-block;
+      padding: 3px 12px;
+      font-weight: 900;
+      font-size: 11.5px;
+      border: 1.5px solid #000000;
+      background: #ffffff;
+      letter-spacing: 1px;
+      margin-top: 3px;
+    }
+
+    .validation-code {
+      font-family: monospace;
+      font-size: 9.5px;
+      letter-spacing: 0.5px;
+      color: #333;
+      background: #f1f5f9;
+      padding: 2px 4px;
+      border: 1px dashed #cbd5e1;
+      display: inline-block;
+      margin-top: 4px;
+      word-break: break-all;
+    }
+
+    .footer-note {
+      font-size: 9.5px;
+      color: #444444;
+      line-height: 1.35;
+      margin-top: 6px;
+      text-align: center;
+    }
+    .size-80mm .footer-note {
+      font-size: 10.5px;
+    }
+
+    /* Action bar on screen */
+    .no-print {
+      margin-top: 18px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       align-items: center;
       justify-content: center;
     }
@@ -75,17 +182,22 @@
     .btn-group-size {
       display: flex;
       gap: 6px;
-      margin-bottom: 4px;
+      background: #ffffff;
+      padding: 4px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
 
     .btn-size {
-      background: #ffffff;
-      border: 1px solid #94a3b8;
-      padding: 4px 10px;
+      background: transparent;
+      border: 1px solid transparent;
+      padding: 5px 12px;
       border-radius: 6px;
-      font-size: 11px;
+      font-size: 11.5px;
       cursor: pointer;
-      font-weight: 600;
+      font-weight: 700;
+      color: #64748b;
+      transition: all 0.2s;
     }
 
     .btn-size.active {
@@ -97,29 +209,50 @@
     .btn-row {
       display: flex;
       gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
-    .btn-print {
-      background: #4f46e5;
-      color: white;
+    .btn-action {
       border: none;
       padding: 9px 16px;
       border-radius: 8px;
-      font-weight: bold;
+      font-weight: 700;
       cursor: pointer;
       font-size: 12px;
-      box-shadow: 0 2px 6px rgba(79,70,229,0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-print {
+      background: #2563eb;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    }
+    .btn-print:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+    }
+
+    .btn-copy {
+      background: #ffffff;
+      color: #0f172a;
+      border: 1px solid #cbd5e1;
+    }
+    .btn-copy:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
     }
 
     .btn-close {
       background: #64748b;
-      color: white;
-      border: none;
-      padding: 9px 16px;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 12px;
+      color: #ffffff;
+    }
+    .btn-close:hover {
+      background: #475569;
     }
 
     @media print {
@@ -147,60 +280,133 @@
   </style>
 </head>
 <body>
+  <%
+    const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    const pMonth = invoice.period_month ? Number(invoice.period_month) : null;
+    const periodStr = pMonth && monthNames[pMonth - 1] 
+      ? `${monthNames[pMonth - 1]} ${invoice.period_year || ''}` 
+      : `${invoice.period_month || '-'}/${invoice.period_year || '-'}`;
+    
+    const amt = invoice.amount != null ? Number(invoice.amount) : (customer.package_price != null ? Number(customer.package_price) : 0);
+    const invoiceNum = '#INV-' + String(invoice.id).padStart(5, '0');
+    const custCode = customer.customer_code || ('#CUST-' + customer.id);
+    const payTime = invoice.paid_at ? formatDateLocal(invoice.paid_at) : formatDateLocal(getNowLocal());
+    const payMethod = invoice.payment_gateway 
+      ? invoice.payment_gateway.toUpperCase() 
+      : (invoice.paid_by_name ? 'Kolektor / Kasir' : 'Portal Mandiri / Transfer');
+    const operator = invoice.paid_by_name || collectorName || 'Sistem Billing';
+    const waContact = settings.company_phone || (settings.whatsapp_admin_numbers && settings.whatsapp_admin_numbers[0]) || '';
+    const validationHash = `INV${invoice.id}-${customer.customer_code || customer.id}-${invoice.period_month || ''}${invoice.period_year || ''}`;
+  %>
+
   <div class="ticket" id="ticketBox">
+    <!-- ── HEADER BRANDING ── -->
     <div class="text-center">
-      <div class="title"><%= settings.company_name || company || 'INTERNET SERVICE' %></div>
-      <div class="subtitle"><%= settings.company_address || 'Pusat Layanan Internet Terpercaya' %></div>
-      <% if (settings.company_phone) { %>
-        <div class="subtitle">Telp/WA: <%= settings.company_phone %></div>
+      <img src="/img/logo.png" alt="Logo" class="thermal-logo" onerror="this.style.display='none'">
+      <div class="company-title"><%= settings.company_header || settings.company_name || company || 'INTERNET SERVICE' %></div>
+      <% if (settings.company_address) { %>
+        <div class="company-sub"><%= settings.company_address %></div>
+      <% } %>
+      <% if (waContact) { %>
+        <div class="company-sub">Layanan Pelanggan: <%= waContact %></div>
       <% } %>
     </div>
 
     <div class="divider"></div>
 
-    <div class="text-center fw-bold" style="font-size: 11px; margin: 4px 0;">STRUK BUKTI PEMBAYARAN</div>
+    <div class="text-center">
+      <span class="receipt-badge">STRUK BUKTI PEMBAYARAN</span>
+    </div>
 
     <div class="divider"></div>
 
-    <div class="row-item"><span class="label">No. Faktur:</span><span class="val">#INV-<%= String(invoice.id).padStart(4, '0') %></span></div>
-    <div class="row-item"><span class="label">Waktu:</span><span class="val"><%= formatDateLocal(getNowLocal()) %></span></div>
-    <div class="row-item"><span class="label">Petugas:</span><span class="val"><%= collectorName || 'Kasir / Admin' %></span></div>
+    <!-- ── DATA TRANSAKSI ── -->
+    <div class="row-item">
+      <span class="label">No. Faktur:</span>
+      <span class="val font-monospace"><%= invoiceNum %></span>
+    </div>
+    <div class="row-item">
+      <span class="label">Waktu Bayar:</span>
+      <span class="val"><%= payTime %></span>
+    </div>
+    <div class="row-item">
+      <span class="label">Metode:</span>
+      <span class="val"><%= payMethod %></span>
+    </div>
+    <div class="row-item">
+      <span class="label">Petugas:</span>
+      <span class="val"><%= operator %></span>
+    </div>
 
     <div class="divider"></div>
 
-    <div class="row-item"><span class="label">ID Pelg:</span><span class="val">#<%= customer.id %></span></div>
-    <div class="row-item"><span class="label">Nama:</span><span class="val"><%= customer.name %></span></div>
+    <!-- ── DATA PELANGGAN & LAYANAN ── -->
+    <div class="row-item">
+      <span class="label">ID Pelanggan:</span>
+      <span class="val font-monospace"><%= custCode %></span>
+    </div>
+    <div class="row-item">
+      <span class="label">Nama:</span>
+      <span class="val"><%= customer.name %></span>
+    </div>
     <% if (customer.phone) { %>
-      <div class="row-item"><span class="label">No. HP:</span><span class="val"><%= customer.phone %></span></div>
+      <div class="row-item">
+        <span class="label">No. HP/WA:</span>
+        <span class="val"><%= customer.phone %></span>
+      </div>
     <% } %>
     <% if (customer.pppoe_username) { %>
-      <div class="row-item"><span class="label">PPPoE:</span><span class="val"><%= customer.pppoe_username %></span></div>
+      <div class="row-item">
+        <span class="label">User PPPoE:</span>
+        <span class="val font-monospace"><%= customer.pppoe_username %></span>
+      </div>
     <% } %>
-    <div class="row-item"><span class="label">Paket:</span><span class="val"><%= invoice.package_name || customer.package_name || 'Internet Broadband' %></span></div>
-    <div class="row-item"><span class="label">Periode:</span><span class="val"><%= invoice.period_month %>/<%= invoice.period_year %></span></div>
+    <div class="row-item">
+      <span class="label">Paket:</span>
+      <span class="val"><%= invoice.package_name || customer.package_name || 'Broadband Internet' %></span>
+    </div>
+    <div class="row-item">
+      <span class="label">Periode:</span>
+      <span class="val"><%= periodStr %></span>
+    </div>
 
-    <div class="divider"></div>
+    <div class="divider-double"></div>
 
+    <!-- ── KOTAK TOTAL PEMBAYARAN ── -->
     <div class="total-box">
-      <div style="font-size: 10px; font-weight: bold;">TOTAL PEMBAYARAN</div>
-      <% const amt = invoice.amount != null ? invoice.amount : (customer.package_price != null ? customer.package_price : 0); %>
+      <div class="total-title">TOTAL PEMBAYARAN</div>
       <div class="total-amount">Rp <%= parseInt(amt || 0).toLocaleString('id-ID') %></div>
       <div class="badge-status">*** LUNAS ***</div>
     </div>
 
-    <div class="text-center subtitle" style="margin-top: 8px;">
-      Simpan struk ini sebagai bukti pembayaran yang sah.<br>
-      <strong>Terima Kasih atas Pembayaran Anda!</strong>
+    <!-- ── VALIDASI & CATATAN PENUTUP ── -->
+    <div class="text-center">
+      <div class="validation-code">KODE REF: <%= validationHash %></div>
     </div>
 
+    <div class="footer-note">
+      Struk ini merupakan bukti pembayaran resmi yang sah.<br>
+      Layanan internet Anda aktif &amp; lancar.<br>
+      <strong>Terima Kasih atas Kepercayaan Anda!</strong>
+    </div>
+
+    <!-- ── TOMBOL AKSI LAYAR (TIDAK TERCETAK DI KERTAS) ── -->
     <div class="no-print">
       <div class="btn-group-size">
         <button type="button" class="btn-size active" id="btn58" onclick="setPaperSize('58mm')">Thermal 58mm</button>
         <button type="button" class="btn-size" id="btn80" onclick="setPaperSize('80mm')">Thermal 80mm</button>
       </div>
+
       <div class="btn-row">
-        <button class="btn-print" onclick="window.print()">🖨️ Cetak Struk</button>
-        <button class="btn-close" onclick="window.close()">✕ Tutup</button>
+        <button type="button" class="btn-action btn-print" onclick="window.print()">
+          🖨️ Cetak Struk
+        </button>
+        <button type="button" class="btn-action btn-copy" id="btnCopyText" onclick="copyReceiptText()">
+          📋 Salin Teks
+        </button>
+        <button type="button" class="btn-action btn-close" onclick="window.close()">
+          ✕ Tutup
+        </button>
       </div>
     </div>
   </div>
@@ -223,13 +429,46 @@
       }
     }
 
-    // Restore saved size
     const savedSize = localStorage.getItem('thermal_paper_size');
     if (savedSize === '80mm') {
       setPaperSize('80mm');
     }
 
-    // Otomatis buka dialog pemilih printer saat halaman dimuat
+    function copyReceiptText() {
+      const text = [
+        '================================',
+        '<%= (settings.company_header || settings.company_name || company || "INTERNET SERVICE").toUpperCase() %>',
+        'STRUK BUKTI PEMBAYARAN (LUNAS)',
+        '================================',
+        'No. Faktur : <%= invoiceNum %>',
+        'Waktu      : <%= payTime %>',
+        'Metode     : <%= payMethod %>',
+        'Petugas    : <%= operator %>',
+        '--------------------------------',
+        'ID Pelg    : <%= custCode %>',
+        'Nama       : <%= customer.name %>',
+        'No. HP     : <%= customer.phone || "-" %>',
+        'Paket      : <%= invoice.package_name || customer.package_name || "Broadband Internet" %>',
+        'Periode    : <%= periodStr %>',
+        '--------------------------------',
+        'TOTAL      : Rp <%= parseInt(amt || 0).toLocaleString("id-ID") %>',
+        'STATUS     : LUNAS',
+        'Ref Valid  : <%= validationHash %>',
+        '================================',
+        'Terima kasih atas pembayaran Anda!'
+      ].join('\n');
+
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('btnCopyText');
+        const old = btn.innerHTML;
+        btn.innerHTML = '✅ Tersalin!';
+        setTimeout(() => { btn.innerHTML = old; }, 2000);
+      }).catch(() => {
+        alert('Gagal menyalin teks.');
+      });
+    }
+
+    // Otomatis buka print dialog jika bukan mode preview
     window.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         if (!window.location.search.includes('noprint')) {

@@ -16,6 +16,7 @@ const agentSvc = require('../services/agentService');
 const oltSvc = require('../services/oltService');
 const odpSvc = require('../services/odpService');
 const odcSvc = require('../services/odcService');
+const opticalSvc = require('../services/opticalService');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -1017,6 +1018,71 @@ router.get('/api/odps/:id/relations', requireAdminSession, (req, res) => {
   }
 });
 
+// ─── OPTICAL POWER & FTTH GIS API ───────────────────────────────────────────
+router.get('/api/optical-history/:targetType/:targetId', requireAdminSession, (req, res) => {
+  try {
+    const { targetType, targetId } = req.params;
+    const history = opticalSvc.getOpticalHistory(targetType, targetId, 50);
+    res.json({ ok: true, history });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+router.post('/api/optical-history', requireAdminSession, express.json(), (req, res) => {
+  try {
+    const result = opticalSvc.logOpticalMeasurement(req.body);
+    res.json({ ok: true, ...result });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+router.post('/api/snap-cable-road', requireAdminSession, express.json(), async (req, res) => {
+  try {
+    const { startLat, startLng, endLat, endLng } = req.body;
+    if (!startLat || !startLng || !endLat || !endLng) {
+      return res.status(400).json({ ok: false, error: 'Koordinat titik awal dan tujuan diperlukan' });
+    }
+    const path = await opticalSvc.snapCableToRoad(startLat, startLng, endLat, endLng);
+    res.json({ ok: true, path });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+router.post('/api/customers/:id/snap-cable-road', requireAdminSession, async (req, res) => {
+  try {
+    const customerId = Number(req.params.id);
+    const customer = customerSvc.getCustomerById(customerId);
+    if (!customer) return res.status(404).json({ ok: false, error: 'Pelanggan tidak ditemukan' });
+    if (!customer.coordinates) return res.status(400).json({ ok: false, error: 'Pelanggan tidak memiliki koordinat' });
+    if (!customer.odp_id) return res.status(400).json({ ok: false, error: 'Pelanggan belum terhubung ke ODP' });
+    
+    const odp = odpSvc.getOdpById(customer.odp_id);
+    if (!odp || !odp.coordinates) return res.status(400).json({ ok: false, error: 'ODP tidak memiliki koordinat' });
+
+    const [cLat, cLng] = customer.coordinates.split(',').map(s => parseFloat(s.trim()));
+    const [oLat, oLng] = odp.coordinates.split(',').map(s => parseFloat(s.trim()));
+
+    const roadPath = await opticalSvc.snapCableToRoad(oLat, oLng, cLat, cLng);
+    customerSvc.updateCustomerCablePath(customerId, JSON.stringify(roadPath));
+
+    res.json({ ok: true, path: roadPath });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+router.post('/api/sync-genieacs-optical', requireAdminSession, async (req, res) => {
+  try {
+    const result = await opticalSvc.syncCustomerOpticalPowerFromGenieACS();
+    res.json({ ok: true, ...result });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // --- TECHNICIAN MANAGEMENT ---
 router.get('/technicians', requireAdminSession, requireSidebarMenuAccess('technicians'), restrictToAdmin, (req, res) => {
   const technicians = adminSvc.getAllTechnicians();
@@ -1636,6 +1702,131 @@ router.post('/api/agents/:id/prices/:priceId/delete', requireAdmin, restrictToAd
   }
 });
 
+// ─── DASHBOARD SYSTEM HEALTH HELPER ─────────────────────────────────────────
+let dashboardHealthCache = {
+  data: null,
+  timestamp: 0
+};
+
+async function getDashboardSystemHealth(force = false) {
+  const now = Date.now();
+  if (!force && dashboardHealthCache.data && (now - dashboardHealthCache.timestamp < 15000)) {
+    return dashboardHealthCache.data;
+  }
+
+  // 1. Check MikroTik
+  const routers = db.prepare('SELECT * FROM routers WHERE is_active = 1').all();
+  let mtResult = {
+    configured: routers.length > 0,
+    connected: false,
+    name: '-',
+    host: '-',
+    status: 'unconfigured',
+    message: 'Belum ada router aktif yang dikonfigurasi'
+  };
+
+  if (routers.length > 0) {
+    const defaultRouterId = getSetting('default_router_id', '');
+    const r = (defaultRouterId ? routers.find(item => String(item.id) === String(defaultRouterId)) : null) || routers[0];
+    mtResult.id = r.id;
+    mtResult.name = r.name || 'MikroTik';
+    mtResult.host = r.host || '-';
+    try {
+      const isOnline = await mikrotikService.checkConnection(r.id);
+      mtResult.connected = Boolean(isOnline);
+      mtResult.status = isOnline ? 'online' : 'offline';
+      mtResult.message = isOnline ? 'Terhubung' : 'Tidak dapat terhubung ke MikroTik API (Offline/Refused)';
+    } catch (err) {
+      mtResult.connected = false;
+      mtResult.status = 'offline';
+      mtResult.message = err.message || 'Koneksi gagal';
+    }
+  }
+
+  // 2. Check GenieACS
+  const useBuiltin = getSetting('use_builtin_acs', false) === true || getSetting('use_builtin_acs', false) === 'true';
+  let acsResult = {
+    configured: false,
+    connected: false,
+    mode: useBuiltin ? 'builtin' : 'external',
+    status: 'unconfigured',
+    message: '',
+    lastSync: null,
+    deviceCount: 0
+  };
+
+  if (useBuiltin) {
+    acsResult.configured = true;
+    try {
+      const row = db.prepare('SELECT COUNT(*) as c, MAX(last_inform) as li FROM acs_devices').get();
+      const count = row ? (row.c || 0) : 0;
+      acsResult.deviceCount = count;
+      acsResult.lastSync = row?.li || null;
+      acsResult.connected = count > 0;
+      acsResult.status = count > 0 ? 'online' : 'standby';
+      acsResult.message = count > 0 
+        ? `Built-in ACS Aktif (${count} perangkat terdaftar)` 
+        : 'Built-in ACS Siap (Belum ada perangkat terhubung)';
+    } catch (e) {
+      acsResult.connected = false;
+      acsResult.status = 'error';
+      acsResult.message = e.message;
+    }
+  } else {
+    const acsUrl = getSetting('genieacs_url', '');
+    if (!acsUrl) {
+      acsResult.message = 'URL GenieACS belum dikonfigurasi';
+    } else {
+      acsResult.configured = true;
+      acsResult.url = acsUrl;
+      try {
+        const username = getSetting('genieacs_username', '');
+        const password = getSetting('genieacs_password', '');
+        const config = {
+          timeout: 2000,
+          validateStatus: (s) => s < 500
+        };
+        if (username && password) {
+          config.auth = { username, password };
+        }
+        const cleanUrl = acsUrl.replace(/\/+$/, '');
+        const res = await axios.get(`${cleanUrl}/devices?limit=1`, config);
+        if (res.status === 200 || res.status === 401) {
+          acsResult.connected = true;
+          acsResult.status = 'online';
+          acsResult.message = 'Terhubung ke GenieACS Server';
+          if (Array.isArray(res.data) && res.data.length > 0) {
+            acsResult.deviceCount = res.data.length;
+            acsResult.lastSync = res.data[0]._lastInform || null;
+          }
+        } else {
+          acsResult.connected = false;
+          acsResult.status = 'error';
+          acsResult.message = `GenieACS merespon status ${res.status}`;
+        }
+      } catch (err) {
+        acsResult.connected = false;
+        acsResult.status = 'offline';
+        acsResult.message = `GenieACS tidak terjangkau (${err.code || err.message})`;
+      }
+    }
+  }
+
+  const resultData = {
+    success: true,
+    timestamp: new Date().toISOString(),
+    mikrotik: mtResult,
+    genieacs: acsResult
+  };
+
+  dashboardHealthCache = {
+    data: resultData,
+    timestamp: now
+  };
+
+  return resultData;
+}
+
 // ─── DASHBOARD ─────────────────────────────────────────────────────────────
 router.get('/', requireAdminSession, requireSidebarMenuAccess('dashboard'), async (req, res) => {
   try {
@@ -1657,7 +1848,8 @@ router.get('/', requireAdminSession, requireSidebarMenuAccess('dashboard'), asyn
       ticketStats,
       recentTickets,
       routers,
-      settings
+      settings,
+      systemHealth: dashboardHealthCache.data || null
     });
   } catch (e) {
     logger.error('Admin dashboard error:', e);
@@ -2766,20 +2958,50 @@ router.get('/packages', requireAdminSession, requireSidebarMenuAccess('packages'
   });
 });
 
-router.post('/packages', requireAdminSession, express.urlencoded({ extended: true }), (req, res) => {
+router.post('/packages', requireAdminSession, express.urlencoded({ extended: true }), async (req, res) => {
   try {
-    customerSvc.createPackage(req.body);
-    req.session._msg = { type: 'success', text: `Paket "${req.body.name}" berhasil ditambahkan.` };
+    const info = customerSvc.createPackage(req.body);
+    let pushNotice = '';
+    if (req.body.auto_push_mikrotik === '1') {
+      try {
+        const pkg = customerSvc.getPackageById(info.lastInsertRowid);
+        if (pkg) {
+          const pushRes = await mikrotikService.pushPackageProfileToMikrotik(pkg);
+          const successCount = (pushRes.results || []).filter(r => r.action !== 'failed').length;
+          if (successCount > 0) {
+            pushNotice = ' & Profile MikroTik (' + pushRes.rateLimit + ') berhasil di-push';
+          }
+        }
+      } catch (err) {
+        pushNotice = ' (Catatan MikroTik: ' + err.message + ')';
+      }
+    }
+    req.session._msg = { type: 'success', text: `Paket "${req.body.name}" berhasil ditambahkan${pushNotice}.` };
   } catch (e) {
     req.session._msg = { type: 'error', text: 'Gagal: ' + e.message };
   }
   res.redirect('/admin/packages');
 });
 
-router.post('/packages/:id/update', requireAdminSession, express.urlencoded({ extended: true }), (req, res) => {
+router.post('/packages/:id/update', requireAdminSession, express.urlencoded({ extended: true }), async (req, res) => {
   try {
     customerSvc.updatePackage(req.params.id, req.body);
-    req.session._msg = { type: 'success', text: 'Paket berhasil diperbarui.' };
+    let pushNotice = '';
+    if (req.body.auto_push_mikrotik === '1') {
+      try {
+        const pkg = customerSvc.getPackageById(req.params.id);
+        if (pkg) {
+          const pushRes = await mikrotikService.pushPackageProfileToMikrotik(pkg);
+          const successCount = (pushRes.results || []).filter(r => r.action !== 'failed').length;
+          if (successCount > 0) {
+            pushNotice = ' & Profile MikroTik (' + pushRes.rateLimit + ') berhasil disinkronkan';
+          }
+        }
+      } catch (err) {
+        pushNotice = ' (Catatan MikroTik: ' + err.message + ')';
+      }
+    }
+    req.session._msg = { type: 'success', text: `Paket berhasil diperbarui${pushNotice}.` };
   } catch (e) {
     req.session._msg = { type: 'error', text: 'Gagal: ' + e.message };
   }
@@ -2795,6 +3017,32 @@ router.post('/packages/:id/delete', requireAdminSession, (req, res) => {
   }
   res.redirect('/admin/packages');
 });
+
+router.post('/packages/:id/toggle-status', requireAdminSession, (req, res) => {
+  try {
+    const pkg = customerSvc.getPackageById(req.params.id);
+    if (!pkg) return res.status(404).json({ ok: false, error: 'Paket tidak ditemukan' });
+    const newStatus = pkg.is_active ? 0 : 1;
+    db.prepare('UPDATE packages SET is_active = ? WHERE id = ?').run(newStatus, req.params.id);
+    res.json({ ok: true, is_active: newStatus });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+router.post('/packages/:id/push-mikrotik', requireAdminSession, async (req, res) => {
+  try {
+    const pkg = customerSvc.getPackageById(req.params.id);
+    if (!pkg) return res.status(404).json({ ok: false, error: 'Paket tidak ditemukan' });
+    const targetRouterId = req.query.routerId || req.body?.routerId || null;
+    const result = await mikrotikService.pushPackageProfileToMikrotik(pkg, targetRouterId);
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+
 
 // ─── VOUCHER PACKAGES (ON-DEMAND REAL-TIME CONFIGURATION) ────────────────────
 router.get('/vouchers/packages', requireAdminSession, requireSidebarMenuAccess('voucher_packages'), (req, res) => {
@@ -4890,15 +5138,28 @@ router.get('/api/genieacs/test', requireAdmin, async (req, res) => {
   }
 });
 
+router.get('/api/system-health', requireAdmin, async (req, res) => {
+  try {
+    const force = req.query.force === '1' || req.query.force === 'true';
+    const data = await getDashboardSystemHealth(force);
+    res.json(data);
+  } catch (err) {
+    logger.error('[API] Error checking system health:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ─── API ROUTES (existing) ──────────────────────────────────────────────────
 router.get('/api/stats', requireAdmin, async (req, res) => {
   try {
     const result = await customerDevice.listAllDevices(999999);
-    if (!result.ok) return res.json({ error: result.message });
+    if (!result.ok) {
+      return res.json({ total: 0, online: 0, offline: 0, warning: 0, error: result.message, lastUpdate: getNowLocalISO() });
+    }
     const mikrotikService = require('../services/mikrotikService');
     const activeSessionsMap = await mikrotikService.getActivePppoeSessionsMap().catch(() => new Map());
 
-    const devices = result.devices;
+    const devices = result.devices || [];
     const total = devices.length;
     let online = 0, offline = 0;
 
@@ -4913,7 +5174,7 @@ router.get('/api/stats', requireAdmin, async (req, res) => {
 
     res.json({ total, online, offline, warning: 0, lastUpdate: getNowLocalISO() });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to get stats', detail: e.message });
+    res.status(500).json({ error: 'Failed to get stats', detail: e.message, total: 0, online: 0, offline: 0 });
   }
 });
 
@@ -7857,6 +8118,20 @@ router.get('/radius-settings', requireAdminSession, restrictToAdmin, async (req,
     const todayTrafficMB = (todayStats.total_bytes / (1024 * 1024)).toFixed(1);
     const todayEvents = todayStats.total_events;
 
+    // Ambil seluruh akun kredensial pelanggan yang terdaftar & dapat diautentikasi oleh RADIUS
+    const radiusUsers = db.prepare(`
+      SELECT 
+        c.id, c.customer_code, c.name, c.phone, c.pppoe_username, c.pppoe_password,
+        c.status, c.static_ip, c.is_radius, c.address,
+        p.id as package_id, p.name as package_name, p.speed_up, p.speed_down,
+        p.speed_up_upto, p.speed_down_upto
+      FROM customers c
+      LEFT JOIN packages p ON p.id = c.package_id
+      WHERE (c.pppoe_username IS NOT NULL AND c.pppoe_username != '')
+         OR (c.phone IS NOT NULL AND c.phone != '')
+      ORDER BY c.id DESC
+    `).all() || [];
+
     const msg = req.session._msg || null;
     req.session._msg = null;
 
@@ -7869,6 +8144,7 @@ router.get('/radius-settings', requireAdminSession, restrictToAdmin, async (req,
       onlineSessions,
       acctLogs,
       nasList,
+      radiusUsers,
       todayTrafficMB,
       todayEvents,
       msg
@@ -8116,6 +8392,62 @@ router.post('/radius/nas/delete', requireAdminSession, restrictToAdmin, async (r
     req.session._msg = { type: 'danger', text: 'Gagal menghapus NAS: ' + error.message };
   }
   res.redirect('/admin/radius-settings');
+});
+
+router.post('/radius/user/toggle-mode', requireAdminSession, restrictToAdmin, async (req, res) => {
+  try {
+    const id = Number(req.body.id || 0);
+    const cust = db.prepare('SELECT id, is_radius, pppoe_username, name FROM customers WHERE id = ?').get(id);
+    if (!cust) return res.status(404).json({ success: false, message: 'Pelanggan tidak ditemukan.' });
+
+    const newMode = cust.is_radius ? 0 : 1;
+    db.prepare('UPDATE customers SET is_radius = ? WHERE id = ?').run(newMode, id);
+
+    const modeName = newMode ? 'Full RADIUS' : 'MikroTik Secret';
+    logger.info(`[RADIUS Mode] Mode autentikasi user ${cust.pppoe_username || cust.name} diubah ke ${modeName}`);
+
+    if (req.xhr || req.headers.accept?.includes('json')) {
+      return res.json({ success: true, is_radius: newMode, message: `Mode autentikasi ${cust.pppoe_username || cust.name} diubah ke ${modeName}.` });
+    }
+    req.session._msg = { type: 'success', text: `Mode autentikasi ${cust.pppoe_username || cust.name} diubah ke ${modeName}.` };
+    res.redirect('/admin/radius-settings#users');
+  } catch (error) {
+    logger.error('Error toggling RADIUS user mode:', error);
+    if (req.xhr || req.headers.accept?.includes('json')) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+    req.session._msg = { type: 'danger', text: 'Gagal mengubah mode: ' + error.message };
+    res.redirect('/admin/radius-settings#users');
+  }
+});
+
+router.post('/radius/user/update-password', requireAdminSession, restrictToAdmin, async (req, res) => {
+  try {
+    const id = Number(req.body.id || 0);
+    const pppoe_password = String(req.body.pppoe_password || '').trim();
+    if (!id || !pppoe_password) {
+      return res.status(400).json({ success: false, message: 'ID dan Password PPPoE wajib diisi.' });
+    }
+
+    const cust = db.prepare('SELECT id, pppoe_username, name FROM customers WHERE id = ?').get(id);
+    if (!cust) return res.status(404).json({ success: false, message: 'Pelanggan tidak ditemukan.' });
+
+    db.prepare('UPDATE customers SET pppoe_password = ? WHERE id = ?').run(pppoe_password, id);
+    logger.info(`[RADIUS User] Password PPPoE user ${cust.pppoe_username || cust.name} berhasil diperbarui.`);
+
+    if (req.xhr || req.headers.accept?.includes('json')) {
+      return res.json({ success: true, message: `Password PPPoE ${cust.pppoe_username || cust.name} berhasil diperbarui.` });
+    }
+    req.session._msg = { type: 'success', text: `Password PPPoE ${cust.pppoe_username || cust.name} berhasil diperbarui.` };
+    res.redirect('/admin/radius-settings#users');
+  } catch (error) {
+    logger.error('Error updating RADIUS user password:', error);
+    if (req.xhr || req.headers.accept?.includes('json')) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+    req.session._msg = { type: 'danger', text: 'Gagal mengubah password: ' + error.message };
+    res.redirect('/admin/radius-settings#users');
+  }
 });
 
 module.exports = router;

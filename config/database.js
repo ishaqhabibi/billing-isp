@@ -1220,6 +1220,76 @@ try {
   console.error('Failed to migrate odcs/odps:', e);
 }
 
+// Safe migration: FTTH Optical Power & Measurement History
+try {
+  // ODC optical columns
+  const odcCols = db.prepare("PRAGMA table_info(odcs)").all();
+  if (!odcCols.some(c => c.name === 'pon_port')) {
+    db.exec("ALTER TABLE odcs ADD COLUMN pon_port TEXT DEFAULT ''");
+  }
+  if (!odcCols.some(c => c.name === 'input_power_dbm')) {
+    db.exec("ALTER TABLE odcs ADD COLUMN input_power_dbm REAL DEFAULT NULL");
+  }
+  if (!odcCols.some(c => c.name === 'output_power_dbm')) {
+    db.exec("ALTER TABLE odcs ADD COLUMN output_power_dbm REAL DEFAULT NULL");
+  }
+  if (!odcCols.some(c => c.name === 'splitter_ratio')) {
+    db.exec("ALTER TABLE odcs ADD COLUMN splitter_ratio TEXT DEFAULT '1:4'");
+  }
+  if (!odcCols.some(c => c.name === 'total_ports')) {
+    db.exec("ALTER TABLE odcs ADD COLUMN total_ports INTEGER DEFAULT 24");
+  }
+
+  // ODP optical columns
+  const odpCols2 = db.prepare("PRAGMA table_info(odps)").all();
+  if (!odpCols2.some(c => c.name === 'odc_out_port')) {
+    db.exec("ALTER TABLE odps ADD COLUMN odc_out_port INTEGER DEFAULT NULL");
+  }
+  if (!odpCols2.some(c => c.name === 'input_power_dbm')) {
+    db.exec("ALTER TABLE odps ADD COLUMN input_power_dbm REAL DEFAULT NULL");
+  }
+  if (!odpCols2.some(c => c.name === 'output_power_dbm')) {
+    db.exec("ALTER TABLE odps ADD COLUMN output_power_dbm REAL DEFAULT NULL");
+  }
+  if (!odpCols2.some(c => c.name === 'splitter_ratio')) {
+    db.exec("ALTER TABLE odps ADD COLUMN splitter_ratio TEXT DEFAULT '1:8'");
+  }
+
+  // Customer optical columns
+  const custCols = db.prepare("PRAGMA table_info(customers)").all();
+  if (!custCols.some(c => c.name === 'odp_port_number')) {
+    db.exec("ALTER TABLE customers ADD COLUMN odp_port_number INTEGER DEFAULT NULL");
+  }
+  if (!custCols.some(c => c.name === 'optical_rx_power')) {
+    db.exec("ALTER TABLE customers ADD COLUMN optical_rx_power REAL DEFAULT NULL");
+  }
+  if (!custCols.some(c => c.name === 'optical_status')) {
+    db.exec("ALTER TABLE customers ADD COLUMN optical_status TEXT DEFAULT 'normal'");
+  }
+  if (!custCols.some(c => c.name === 'optical_last_sync')) {
+    db.exec("ALTER TABLE customers ADD COLUMN optical_last_sync DATETIME DEFAULT NULL");
+  }
+
+  // Optical power measurement audit trail & history table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS optical_power_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      target_type TEXT NOT NULL,
+      target_id INTEGER NOT NULL,
+      target_name TEXT DEFAULT '',
+      target_port TEXT DEFAULT '',
+      measured_power_dbm REAL NOT NULL,
+      reference_loss_db REAL DEFAULT 0,
+      measured_by TEXT NOT NULL,
+      notes TEXT DEFAULT '',
+      created_at DATETIME DEFAULT (NOW_LOCAL())
+    );
+    CREATE INDEX IF NOT EXISTS idx_optical_target ON optical_power_history(target_type, target_id);
+  `);
+} catch (e) {
+  console.error('Failed to migrate optical infrastructure columns:', e);
+}
+
 module.exports = db;
 module.exports.getAppSetting = getAppSetting;
 module.exports.saveAppSetting = saveAppSetting;

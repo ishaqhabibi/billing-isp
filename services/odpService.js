@@ -38,41 +38,85 @@ function getOdpById(id) {
 }
 
 function createOdp(data) {
+  const inputPwr = (data.input_power_dbm !== undefined && data.input_power_dbm !== '' && data.input_power_dbm !== null) ? parseFloat(data.input_power_dbm) : null;
+  const outputPwr = (data.output_power_dbm !== undefined && data.output_power_dbm !== '' && data.output_power_dbm !== null) ? parseFloat(data.output_power_dbm) : null;
+
   const stmt = db.prepare(`
-    INSERT INTO odps (name, olt_id, odc_id, parent_odp_id, pon_port, port_capacity, lat, lng, description)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO odps (name, olt_id, odc_id, parent_odp_id, pon_port, odc_out_port, input_power_dbm, output_power_dbm, splitter_ratio, port_capacity, lat, lng, description)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
-  return stmt.run(
+  const info = stmt.run(
     String(data.name || '').trim(),
     data.olt_id ? parseInt(data.olt_id) : null,
     data.odc_id ? parseInt(data.odc_id) : null,
     data.parent_odp_id ? parseInt(data.parent_odp_id) : null,
     String(data.pon_port || '').trim(),
+    data.odc_out_port ? parseInt(data.odc_out_port) : null,
+    inputPwr,
+    outputPwr,
+    String(data.splitter_ratio || '1:8').trim(),
     data.port_capacity !== undefined && data.port_capacity !== null ? parseInt(data.port_capacity) : 16,
     String(data.lat || '').trim(),
     String(data.lng || '').trim(),
     String(data.description || '').trim()
   );
+
+  if (outputPwr !== null) {
+    try {
+      db.prepare(`
+        INSERT INTO optical_power_history (target_type, target_id, target_name, target_port, measured_power_dbm, measured_by, notes)
+        VALUES ('odp', ?, ?, 'Output ODP', ?, ?, 'Initial measurement ODP')
+      `).run(info.lastInsertRowid, String(data.name || '').trim(), outputPwr, data.measured_by || 'Admin');
+    } catch (e) {}
+  }
+
+  return info;
 }
 
 function updateOdp(id, data) {
+  const inputPwr = (data.input_power_dbm !== undefined && data.input_power_dbm !== '' && data.input_power_dbm !== null) ? parseFloat(data.input_power_dbm) : null;
+  const outputPwr = (data.output_power_dbm !== undefined && data.output_power_dbm !== '' && data.output_power_dbm !== null) ? parseFloat(data.output_power_dbm) : null;
+  const current = getOdpById(id);
+
   const stmt = db.prepare(`
     UPDATE odps 
-    SET name = ?, olt_id = ?, odc_id = ?, parent_odp_id = ?, pon_port = ?, port_capacity = ?, lat = ?, lng = ?, description = ?
+    SET name = ?, olt_id = ?, odc_id = ?, parent_odp_id = ?, pon_port = ?, odc_out_port = ?, input_power_dbm = ?, output_power_dbm = ?, splitter_ratio = ?, port_capacity = ?, lat = ?, lng = ?, description = ?
     WHERE id = ?
   `);
-  return stmt.run(
+  const res = stmt.run(
     String(data.name || '').trim(),
     data.olt_id ? parseInt(data.olt_id) : null,
     data.odc_id ? parseInt(data.odc_id) : null,
     data.parent_odp_id ? parseInt(data.parent_odp_id) : null,
     String(data.pon_port || '').trim(),
+    data.odc_out_port ? parseInt(data.odc_out_port) : null,
+    inputPwr,
+    outputPwr,
+    String(data.splitter_ratio || '1:8').trim(),
     data.port_capacity !== undefined && data.port_capacity !== null ? parseInt(data.port_capacity) : 16,
     String(data.lat || '').trim(),
     String(data.lng || '').trim(),
     String(data.description || '').trim(),
     id
   );
+
+  if (outputPwr !== null && (!current || current.output_power_dbm !== outputPwr)) {
+    try {
+      db.prepare(`
+        INSERT INTO optical_power_history (target_type, target_id, target_name, target_port, measured_power_dbm, reference_loss_db, measured_by, notes)
+        VALUES ('odp', ?, ?, 'Output ODP', ?, ?, ?, ?)
+      `).run(
+        id,
+        String(data.name || '').trim(),
+        outputPwr,
+        current && current.output_power_dbm != null ? parseFloat((outputPwr - current.output_power_dbm).toFixed(2)) : 0,
+        data.measured_by || 'Admin',
+        data.notes || 'Update redaman ODP'
+      );
+    } catch (e) {}
+  }
+
+  return res;
 }
 
 function getOdpRelations(id) {

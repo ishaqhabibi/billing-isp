@@ -6,18 +6,336 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="/css/admin.css?v=2.6">
   <style>
-    /* Responsive Mobile CSS */
+    /* ── STAT CARDS ENHANCEMENT ── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .sc-clickable {
+      cursor: pointer;
+      position: relative;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid var(--border);
+    }
+    .sc-clickable:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+    .stat-card-active {
+      border-color: var(--primary) !important;
+      box-shadow: 0 0 0 2px var(--pdim), 0 6px 20px rgba(0, 82, 204, 0.25) !important;
+      background: linear-gradient(180deg, var(--bg2) 0%, rgba(99, 102, 241, 0.05) 100%);
+    }
+
+    /* ── TOOLBAR & FILTER BAR ── */
+    .pkg-toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      padding: 16px 18px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 18px;
+    }
+    .pkg-toolbar-left {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      flex: 1;
+      min-width: 280px;
+    }
+    .pkg-toolbar-right {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .sinput-box {
+      position: relative;
+      min-width: 220px;
+      flex: 1;
+      max-width: 340px;
+    }
+    .sinput-box i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+      font-size: 14px;
+    }
+    .sinput-box input {
+      padding-left: 36px;
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding-top: 8px;
+      padding-bottom: 8px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .sinput-box input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--pdim);
+    }
+
+    /* ── BADGES & PILLS ── */
+    .badge-router {
+      background: rgba(14, 165, 233, 0.12);
+      color: #0284c7;
+      border: 1px solid rgba(14, 165, 233, 0.25);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .badge-billing {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .badge-speed-down {
+      background: rgba(59, 130, 246, 0.12);
+      color: #3b82f6;
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      font-weight: 700;
+    }
+    .badge-speed-up {
+      background: rgba(168, 85, 247, 0.12);
+      color: #a855f7;
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      font-weight: 700;
+    }
+    .badge-upto {
+      background: rgba(16, 185, 129, 0.12);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      font-size: 9.5px;
+      padding: 1px 5px;
+      font-weight: 700;
+      border-radius: 4px;
+    }
+    .badge-promo {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(239, 68, 68, 0.18));
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      font-weight: 700;
+      font-size: 10px;
+    }
+    .badge-tax {
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--primary);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      font-size: 9px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-top: 2px;
+    }
+    .badge-fup {
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      font-size: 9.5px;
+      padding: 2px 6px;
+      border-radius: 5px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .badge-night {
+      background: rgba(168, 85, 247, 0.12);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      font-size: 9.5px;
+      padding: 2px 6px;
+      border-radius: 5px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    /* ── QUICK STATUS TOGGLE SWITCH ── */
+    .status-toggle-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+      cursor: pointer;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle-slider {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--border);
+      border-radius: 20px;
+      transition: 0.25s;
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #ffffff;
+      border-radius: 50%;
+      transition: 0.25s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .toggle-switch input:checked + .toggle-slider {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(16px);
+    }
+    .toggle-label {
+      font-size: 11.5px;
+      font-weight: 600;
+      user-select: none;
+    }
+
+    /* ── MODAL TAB SYSTEM ── */
+    .mo-tabs {
+      display: flex;
+      gap: 6px;
+      padding: 10px 18px 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg3);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .mo-tab-btn {
+      background: none;
+      border: none;
+      padding: 9px 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .mo-tab-btn:hover {
+      color: var(--text);
+    }
+    .mo-tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background: var(--bg2);
+      border-radius: 8px 8px 0 0;
+    }
+    .mo-tab-content {
+      display: none;
+      animation: fadeInTab 0.2s ease-in-out;
+    }
+    .mo-tab-content.active {
+      display: block;
+    }
+    @keyframes fadeInTab {
+      from { opacity: 0; transform: translateY(3px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── CARD SECTIONS INSIDE MODAL ── */
+    .form-section-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+    .form-section-title {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── TOAST NOTIFICATION ── */
+    #pkgToast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 18px;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      display: none;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      animation: slideInToast 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes slideInToast {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .spin {
+      animation: spinAnim 0.8s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spinAnim {
+      100% { transform: rotate(360deg); }
+    }
+
+    /* ── RESPONSIVE TWEAKS ── */
+    @media (max-width: 992px) {
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
     @media (max-width: 768px) {
-      .card-hd { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
-      .card-hd > div { flex-wrap: wrap !important; width: 100% !important; justify-content: stretch !important; }
-      .card-hd select { width: 100% !important; }
-      .card-hd .btn { flex: 1 1 auto; justify-content: center; }
-      .mo .mb { width: 95vw !important; max-width: 95vw !important; margin: 10px auto !important; padding: 14px !important; border-radius: 14px !important; }
-      .mo .mbody { max-height: 72vh !important; padding-right: 4px !important; }
-      .form-row { flex-direction: column !important; gap: 8px !important; }
-      .form-row > .fg { width: 100% !important; max-width: 100% !important; margin-bottom: 6px !important; }
-      .mf { flex-wrap: wrap !important; gap: 8px !important; }
-      .mf button, .mf a { flex: 1 1 100% !important; text-align: center !important; justify-content: center !important; }
+      .stat-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .pkg-toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
+      .pkg-toolbar-left { flex-direction: column; align-items: stretch; }
+      .pkg-toolbar-right { width: 100%; justify-content: stretch; }
+      .pkg-toolbar-right .btn { width: 100%; justify-content: center; }
+      .sinput-box { max-width: none; width: 100%; }
+      .mo .mb { width: 95vw !important; max-width: 95vw !important; margin: 10px auto !important; }
+      .mo-tabs { padding: 8px 10px 0; }
+      .mo-tab-btn { padding: 8px 10px; font-size: 11.5px; }
+    }
+    @media (max-width: 576px) {
+      .stat-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -25,12 +343,16 @@
 <%- include('partials/sidebar', { activePage: 'packages', company }) %>
 <div class="mw">
   <div class="topbar">
-    <div class="tb-title"><button class="hb-menu" onclick="toggleSidebar()"><i class="bi bi-list"></i></button><i class="bi bi-box-seam"></i> <%= t('admin.packages.title', 'Paket Internet') %></div>
+    <div class="tb-title">
+      <button class="hb-menu" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+      <i class="bi bi-box-seam"></i> <%= t('admin.packages.title', 'Paket Internet') %>
+    </div>
     <div class="tb-right">
       <span class="adm-badge"><i class="bi bi-person-fill"></i> <%= (typeof session !== 'undefined' && session && session.isCashier) ? t('admin.role.cashier', 'Kasir') : t('admin.role.admin', 'Admin') %></span>
-      <a href="/admin/logout" class="btn btn-g btn-sm"><i class="bi bi-box-arrow-left"></i></a>
+      <a href="/admin/logout" class="btn btn-g btn-sm" title="Keluar"><i class="bi bi-box-arrow-left"></i></a>
     </div>
   </div>
+
   <div class="page">
 
     <% if (msg) { %>
@@ -39,87 +361,223 @@
     </div>
     <% } %>
 
+    <!-- ══════════════════════════════════════════════════════════════
+         STAT KPI CARDS
+         ══════════════════════════════════════════════════════════════ -->
+    <% 
+      const totalPackages = packages.length;
+      const activePackages = packages.filter(p => p.is_active).length;
+      const inactivePackages = totalPackages - activePackages;
+      const totalSubscribers = packages.reduce((acc, p) => acc + (p.customer_count || 0), 0);
+    %>
+    <div class="stat-grid">
+      <div class="sc p sc-clickable stat-card-active" id="sc_all" onclick="filterByStatCard('')" title="Tampilkan Semua Paket">
+        <i class="bi bi-box-seam sc-icon"></i>
+        <div class="sc-label">Total Paket</div>
+        <div class="sc-val"><%= totalPackages %></div>
+        <div class="sc-sub"><i class="bi bi-check-circle me-1"></i> Terkonfigurasi di sistem</div>
+      </div>
+      <div class="sc s sc-clickable" id="sc_active" onclick="filterByStatCard('active')" title="Filter Hanya Paket Aktif">
+        <i class="bi bi-check-circle sc-icon" style="color:var(--success)"></i>
+        <div class="sc-label" style="color:var(--success)">Paket Aktif</div>
+        <div class="sc-val" style="color:var(--success)"><%= activePackages %></div>
+        <div class="sc-sub">Tampil di portal pelanggan</div>
+      </div>
+      <div class="sc w sc-clickable" id="sc_inactive" onclick="filterByStatCard('inactive')" title="Filter Hanya Paket Nonaktif">
+        <i class="bi bi-eye-slash sc-icon" style="color:var(--warning)"></i>
+        <div class="sc-label" style="color:var(--warning)">Paket Nonaktif</div>
+        <div class="sc-val" style="color:var(--warning)"><%= inactivePackages %></div>
+        <div class="sc-sub">Disembunyikan / Draft</div>
+      </div>
+      <div class="sc i sc-clickable" id="sc_customers" onclick="window.location.href='/admin/customers'" title="Lihat Daftar Semua Pelanggan">
+        <i class="bi bi-people sc-icon" style="color:var(--info)"></i>
+        <div class="sc-label" style="color:var(--info)">Pelanggan Terhubung</div>
+        <div class="sc-val" style="color:var(--info)"><%= totalSubscribers %></div>
+        <div class="sc-sub"><i class="bi bi-arrow-right me-1"></i> Total langganan aktif</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         FILTER & ACTION TOOLBAR
+         ══════════════════════════════════════════════════════════════ -->
+    <div class="pkg-toolbar">
+      <div class="pkg-toolbar-left">
+        <div class="sinput-box">
+          <i class="bi bi-search"></i>
+          <input type="text" id="pkgSearch" placeholder="Cari nama paket, deskripsi..." oninput="filterTable()">
+        </div>
+        <select class="fs" id="filterStatus" style="width:140px" onchange="filterTable()">
+          <option value="">Semua Status</option>
+          <option value="active">🟢 Aktif</option>
+          <option value="inactive">⚪ Nonaktif</option>
+        </select>
+        <select class="fs" id="filterBilling" style="width:150px" onchange="filterTable()">
+          <option value="">Semua Billing</option>
+          <option value="postpaid">Pascabayar</option>
+          <option value="prepaid">Prabayar</option>
+        </select>
+        <% if (typeof routers !== 'undefined' && routers && routers.length > 0) { %>
+        <select class="fs" id="filterRouter" style="width:170px" onchange="window.location.href='/admin/set-active-router?router_id=' + this.value">
+          <option value="all" <%= (!selectedRouterId) ? 'selected' : '' %>>🌐 Semua Router</option>
+          <% routers.forEach(r => { %>
+            <option value="<%= r.id %>" <%= (selectedRouterId === r.id) ? 'selected' : '' %>>🔌 <%= r.name %></option>
+          <% }) %>
+        </select>
+        <% } %>
+      </div>
+      <div class="pkg-toolbar-right">
+        <button class="btn btn-p" onclick="openAddModal()"><i class="bi bi-plus-lg"></i> <%= t('admin.packages.add', 'Tambah Paket') %></button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         PACKAGES DATA TABLE
+         ══════════════════════════════════════════════════════════════ -->
     <div class="card">
       <div class="card-hd">
-        <h6><i class="bi bi-box-seam"></i> <%= t('admin.packages.list', 'Daftar Paket') %> (<%= packages.length %>)</h6>
-        <div style="display:flex;align-items:center;gap:10px">
-          <% if (typeof routers !== 'undefined' && routers && routers.length > 0) { %>
-          <select class="fs" style="width:160px" onchange="window.location.href='/admin/set-active-router?router_id=' + this.value">
-            <option value="all" <%= (!selectedRouterId) ? 'selected' : '' %>>🌐 Semua Router</option>
-            <% routers.forEach(r => { %>
-              <option value="<%= r.id %>" <%= (selectedRouterId === r.id) ? 'selected' : '' %>>🔌 <%= r.name %></option>
-            <% }) %>
-          </select>
-          <% } %>
-          <button class="btn btn-p btn-sm" onclick="openModal('addModal')"><i class="bi bi-plus-lg"></i> <%= t('admin.packages.add', 'Tambah Paket') %></button>
+        <h6><i class="bi bi-box-seam"></i> <%= t('admin.packages.list', 'Daftar Paket Internet') %> (<span id="visiblePkgCount"><%= packages.length %></span>)</h6>
+        <div style="font-size:12px;color:var(--muted)">
+          <i class="bi bi-info-circle me-1"></i> Data disinkronkan otomatis dengan form pendaftaran &amp; portal pelanggan
         </div>
       </div>
       <div class="tbl-wrap">
-        <table class="dtbl">
+        <table class="dtbl" id="pkgTable">
           <thead>
             <tr>
-              <th>#</th>
-              <th><%= t('admin.packages.table.name', 'Nama Paket') %></th>
-              <th><%= t('admin.packages.table.price_month', 'Harga / Bulan') %></th>
-              <th>Promo / Prorata</th>
-              <th><%= t('admin.packages.table.speed', 'Kecepatan') %></th>
+              <th style="width:40px">#</th>
+              <th><%= t('admin.packages.table.name', 'Nama Paket &amp; Router') %></th>
+              <th><%= t('admin.packages.table.price_month', 'Harga / Biaya') %></th>
+              <th>Promo &amp; Prorata</th>
+              <th><%= t('admin.packages.table.speed', 'Bandwidth Kecepatan') %></th>
               <th><%= t('admin.packages.table.description', 'Deskripsi') %></th>
-              <th><%= t('admin.packages.table.customers', 'Pelanggan') %></th>
-              <th><%= t('admin.packages.table.status', 'Status') %></th>
-              <th><%= t('common.actions', 'Aksi') %></th>
+              <th class="text-center"><%= t('admin.packages.table.customers', 'Pelanggan') %></th>
+              <th class="text-center"><%= t('admin.packages.table.status', 'Status') %></th>
+              <th style="width:110px;text-align:right"><%= t('common.actions', 'Aksi') %></th>
             </tr>
           </thead>
           <tbody>
-          <% if (packages.length===0) { %>
-            <tr><td colspan="9" class="text-center text-muted" style="padding:32px"><%= t('admin.packages.empty', 'Belum ada paket. Tambah paket pertama!') %></td></tr>
+          <% if (packages.length === 0) { %>
+            <tr id="emptyRow"><td colspan="9" class="text-center text-muted" style="padding:36px"><i class="bi bi-inbox fs-2 d-block mb-2"></i><%= t('admin.packages.empty', 'Belum ada paket internet. Klik tombol "+ Tambah Paket" untuk memulai!') %></td></tr>
           <% } %>
-          <% packages.forEach((p,i)=>{ %>
-            <tr>
-              <td class="text-muted"><%= i+1 %></td>
+          <% packages.forEach((p, i) => { %>
+            <tr class="pkg-row" 
+                data-id="<%= p.id %>"
+                data-name="<%= (p.name || '').toLowerCase() %>" 
+                data-desc="<%= (p.description || '').toLowerCase() %>"
+                data-status="<%= p.is_active ? 'active' : 'inactive' %>"
+                data-billing="<%= p.billing_type === 'prepaid' ? 'prepaid' : 'postpaid' %>"
+                data-router="<%= p.router_id || '' %>">
+              <td class="text-muted"><%= i + 1 %></td>
+              
+              <!-- Nama Paket & Router -->
               <td class="fw6">
-                <div><%= p.name %></div>
-                <div style="margin-top:3px">
-                  <% if (p.billing_type === 'prepaid') { %>
-                    <span class="badge bs" style="font-size:10px;padding:2px 6px;font-weight:700;"><i class="bi bi-clock-history"></i> Prabayar (<%= p.duration_days || 30 %> Hari)</span>
+                <div style="font-size:14px;color:var(--text);display:flex;align-items:center;gap:6px">
+                  <span><%= p.name %></span>
+                  <% if (p.router_name) { %>
+                    <span class="badge-router" title="Terikat ke Router <%= p.router_name %>"><i class="bi bi-router"></i> <%= p.router_name %></span>
                   <% } else { %>
-                    <span class="badge bp" style="font-size:10px;padding:2px 6px;font-weight:600;"><i class="bi bi-calendar-check"></i> Pascabayar</span>
+                    <span class="badge-router" style="background:rgba(255,255,255,0.06);color:var(--muted);border-color:var(--border);" title="Berlaku untuk semua router"><i class="bi bi-globe"></i> Global</span>
+                  <% } %>
+                </div>
+                <div style="margin-top:4px">
+                  <% if (p.billing_type === 'prepaid') { %>
+                    <span class="badge bs badge-billing"><i class="bi bi-clock-history"></i> Prabayar (<%= p.duration_days || 30 %> Hari)</span>
+                  <% } else { %>
+                    <span class="badge bp badge-billing"><i class="bi bi-calendar-check"></i> Pascabayar</span>
                   <% } %>
                 </div>
               </td>
+
+              <!-- Harga & Pajak -->
               <td class="fw6" style="color:var(--success)">
-                Rp <%= p.price.toLocaleString('id-ID') %>
-                <% if (p.use_ppn) { %><br><span class="badge bp" style="font-size:9px;padding:2px 4px;margin-top:2px;display:inline-block">+ PPN <%= p.ppn_percentage %>%</span><% } %>
-                <% if (p.use_uso) { %><br><span class="badge bm" style="font-size:9px;padding:2px 4px;margin-top:2px;display:inline-block">+ USO <%= p.uso_percentage %>%</span><% } %>
+                <div style="font-size:14px">Rp <%= p.price.toLocaleString('id-ID') %></div>
+                <div>
+                  <% if (p.use_ppn) { %>
+                    <span class="badge-tax"><i class="bi bi-receipt"></i> + PPN <%= p.ppn_percentage %>%</span>
+                  <% } else { %>
+                    <span class="badge-tax" style="color:var(--muted)"><i class="bi bi-check2"></i> Include PPN</span>
+                  <% } %>
+                  <% if (p.use_uso) { %>
+                    <span class="badge-tax" style="color:#c084fc;border-color:rgba(192,132,252,0.3)"><i class="bi bi-shield-shaded"></i> + USO <%= p.uso_percentage %>%</span>
+                  <% } %>
+                </div>
               </td>
-              <td style="font-size:11px;max-width:160px">
+
+              <!-- Promo & Prorata -->
+              <td style="font-size:11.5px;max-width:160px">
                 <% if (p.promo_cycles > 0 && p.promo_price != null && p.promo_price !== '') { %>
-                  <span class="badge bp">Promo</span> Rp <%= Number(p.promo_price).toLocaleString('id-ID') %> × <%= p.promo_cycles %> bln
-                <% } else { %><span class="text-muted">—</span><% } %>
-                <% if (p.prorate_first_invoice) { %><br><span class="badge bs" style="margin-top:4px;display:inline-block">Prorata 1×</span><% } %>
+                  <span class="badge badge-promo"><i class="bi bi-tag-fill me-1"></i>Promo</span> 
+                  <strong>Rp <%= Number(p.promo_price).toLocaleString('id-ID') %></strong>
+                  <div style="color:var(--muted);font-size:10px;margin-top:2px;">Berlaku <%= p.promo_cycles %> siklus</div>
+                <% } else { %>
+                  <span class="text-muted">—</span>
+                <% } %>
+                <% if (p.prorate_first_invoice) { %>
+                  <div style="margin-top:3px;"><span class="badge bs" style="font-size:9.5px;"><i class="bi bi-pie-chart"></i> Prorata 1×</span></div>
+                <% } %>
               </td>
+
+              <!-- Bandwidth Kecepatan -->
               <td>
                 <% if (p.speed_down) { %>
-                  <div style="white-space:nowrap;font-weight:700;">
-                    <span class="badge bp"><i class="bi bi-download"></i> <%= (p.speed_down/1000).toFixed(0) %> Mbps</span>
-                    <% if (p.speed_down_upto && p.speed_down_upto > p.speed_down) { %>
-                      <span class="badge bs" style="font-size:10px;padding:2px 5px;">UpTo <%= (p.speed_down_upto/1000).toFixed(0) %>M</span>
-                    <% } %>
+                  <div style="display:flex;flex-direction:column;gap:3px;">
+                    <div style="white-space:nowrap;">
+                      <span class="badge badge-speed-down"><i class="bi bi-download"></i> <%= (p.speed_down/1000).toFixed(0) %> Mbps</span>
+                      <% if (p.speed_down_upto && p.speed_down_upto > p.speed_down) { %>
+                        <span class="badge-upto">Up to <%= (p.speed_down_upto/1000).toFixed(0) %>M</span>
+                      <% } %>
+                    </div>
+                    <div style="white-space:nowrap;">
+                      <span class="badge badge-speed-up"><i class="bi bi-upload"></i> <%= (p.speed_up/1000).toFixed(0) %> Mbps</span>
+                      <% if (p.speed_up_upto && p.speed_up_upto > p.speed_up) { %>
+                        <span class="badge-upto">Up to <%= (p.speed_up_upto/1000).toFixed(0) %>M</span>
+                      <% } %>
+                    </div>
                   </div>
-                  <div style="white-space:nowrap;font-weight:700;margin-top:4px;">
-                    <span class="badge bm"><i class="bi bi-upload"></i> <%= (p.speed_up/1000).toFixed(0) %> Mbps</span>
-                    <% if (p.speed_up_upto && p.speed_up_upto > p.speed_up) { %>
-                      <span class="badge bs" style="font-size:10px;padding:2px 5px;">UpTo <%= (p.speed_up_upto/1000).toFixed(0) %>M</span>
-                    <% } %>
-                  </div>
-                <% } else { %><span class="text-muted">-</span><% } %>
+                <% } else { %>
+                  <span class="text-muted">-</span>
+                <% } %>
+                <!-- FUP & Night Badges -->
+                <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">
+                  <% if (p.use_fup && p.fup_limit_gb > 0) { %>
+                    <span class="badge-fup" title="FUP: Kuota <%= p.fup_limit_gb %> GB, Speed setelah FUP <%= (p.fup_speed_down/1000).toFixed(0) %> Mbps"><i class="bi bi-speedometer2"></i> <%= p.fup_limit_gb %>GB</span>
+                  <% } %>
+                  <% if (p.use_night_speed && p.night_speed_down > 0) { %>
+                    <span class="badge-night" title="Jam Kalong Malam: <%= (p.night_speed_down/1000).toFixed(0) %>M"><i class="bi bi-moon-stars"></i> Malam</span>
+                  <% } %>
+                </div>
               </td>
-              <td style="color:var(--muted);font-size:12px"><%= p.description||'-' %></td>
-              <td class="text-center"><span class="badge bm"><%= p.customer_count %> <%= t('admin.packages.customers_suffix', 'pelanggan') %></span></td>
-              <td><% if(p.is_active){%><span class="badge bs"><%= t('common.active', 'Aktif') %></span><%}else{%><span class="badge bd"><%= t('common.inactive', 'Nonaktif') %></span><%}%></td>
-              <td>
-                <button class="btn btn-g btn-icon btn-sm" data-idx="<%= i %>" onclick="editPkg(+this.dataset.idx)"><i class="bi bi-pencil"></i></button>
-                <form method="POST" action="/admin/packages/<%= p.id %>/delete" style="display:inline" onsubmit="return confirm('<%= t('admin.packages.confirm.delete', 'Hapus paket ini? Pelanggan yang menggunakan paket ini akan kehilangan referensi paket.') %>')">
-                  <button class="btn btn-d btn-icon btn-sm"><i class="bi bi-trash"></i></button>
+
+              <!-- Deskripsi -->
+              <td style="color:var(--muted);font-size:12px;max-width:180px;white-space:normal;"><%= p.description || '-' %></td>
+
+              <!-- Pelanggan Terdaftar -->
+              <td class="text-center">
+                <a href="/admin/customers?package_id=<%= p.id %>" class="badge bm" style="text-decoration:none;cursor:pointer;padding:4px 8px;font-size:11.5px;" title="Klik untuk melihat pelanggan paket ini">
+                  <i class="bi bi-people-fill text-primary me-1"></i> <%= p.customer_count || 0 %>
+                </a>
+              </td>
+
+              <!-- Quick Status Toggle Switch -->
+              <td class="text-center">
+                <div class="status-toggle-wrap">
+                  <label class="toggle-switch" title="Klik untuk Mengubah Status Paket">
+                    <input type="checkbox" id="toggle_status_<%= p.id %>" <%= p.is_active ? 'checked' : '' %> onchange="togglePackageStatus(<%= p.id %>, this)">
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <span class="toggle-label" id="status_label_<%= p.id %>" style="color:<%= p.is_active ? 'var(--success)' : 'var(--muted)' %>">
+                    <%= p.is_active ? t('common.active', 'Aktif') : t('common.inactive', 'Nonaktif') %>
+                  </span>
+                </div>
+              </td>
+
+              <!-- Aksi -->
+              <td style="text-align:right;white-space:nowrap">
+                <button class="btn btn-g btn-icon btn-sm" data-idx="<%= i %>" onclick="editPkg(+this.dataset.idx)" title="Edit Paket"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-g btn-icon btn-sm" data-idx="<%= i %>" onclick="clonePkg(+this.dataset.idx)" title="Kloning / Duplikat Paket Ini"><i class="bi bi-copy"></i></button>
+                <button class="btn btn-g btn-icon btn-sm" onclick="pushPkgToMikrotik(<%= p.id %>, '<%= p.name.replace(/'/g, "\\'") %>', this)" title="Auto-Push / Sync Profile ke MikroTik"><i class="bi bi-router text-primary"></i></button>
+                <form method="POST" action="/admin/packages/<%= p.id %>/delete" style="display:inline" onsubmit="return confirmDeletePkg('<%= p.name.replace(/'/g, "\\'") %>', <%= p.customer_count || 0 %>)">
+                  <button class="btn btn-d btn-icon btn-sm" title="Hapus Paket"><i class="bi bi-trash"></i></button>
                 </form>
               </td>
             </tr>
@@ -131,361 +589,592 @@
   </div>
 </div>
 
-<!-- Modal Tambah -->
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL TAMBAH PAKET (MODERN TABBED)
+     ══════════════════════════════════════════════════════════════ -->
 <div class="mo" id="addModal">
-  <div class="mb" style="max-width:680px;">
-    <div class="mh"><span class="mt"><i class="bi bi-plus-square"></i> <%= t('admin.packages.add', 'Tambah Paket') %></span><button class="mc" onclick="closeModal('addModal')">&times;</button></div>
-    <form method="POST" action="/admin/packages">
-      <div class="mbody" style="max-height:70vh; overflow-y:auto; padding-right:6px;">
-        <div class="fg">
-          <label class="fl"><%= t('admin.packages.form.name_profile', 'Nama Paket (Profile MikroTik)') %> *</label>
-          <div style="display:flex;gap:8px">
-            <select class="fs" id="add_profile_select" style="max-width:200px" onchange="document.getElementById('add_name').value=this.value">
-              <option value=""><%= t('admin.packages.form.pick_from_mikrotik', '-- Pilih dari MikroTik --') %></option>
-            </select>
-            <input class="fc" name="name" id="add_name" required placeholder="<%= t('admin.packages.form.type_manual', 'Atau ketik manual...') %>">
-          </div>
-        </div>
+  <div class="mb" style="max-width:720px;border-radius:14px;overflow:hidden;">
+    <div class="mh">
+      <span class="mt" style="font-size:15px;display:flex;align-items:center;gap:8px;">
+        <i class="bi bi-plus-circle text-primary"></i> <%= t('admin.packages.add', 'Tambah Paket Internet Baru') %>
+      </span>
+      <button class="mc" onclick="closeModal('addModal')">&times;</button>
+    </div>
+
+    <!-- Nav Tabs -->
+    <div class="mo-tabs">
+      <button type="button" class="mo-tab-btn active" onclick="switchAddTab('add_tab_general', this)">
+        <i class="bi bi-card-text"></i> 1. Informasi &amp; Tarif
+      </button>
+      <button type="button" class="mo-tab-btn" onclick="switchAddTab('add_tab_speed', this)">
+        <i class="bi bi-speedometer2"></i> 2. Bandwidth Kecepatan
+      </button>
+      <button type="button" class="mo-tab-btn" onclick="switchAddTab('add_tab_billing', this)">
+        <i class="bi bi-calendar3"></i> 3. Billing &amp; Promo
+      </button>
+      <button type="button" class="mo-tab-btn" onclick="switchAddTab('add_tab_advanced', this)">
+        <i class="bi bi-sliders"></i> 4. Pajak &amp; FUP
+      </button>
+    </div>
+
+    <form method="POST" action="/admin/packages" id="addForm">
+      <div class="mbody" style="max-height:68vh; overflow-y:auto; padding:18px;">
         
-        <div class="form-row">
-          <div class="fg"><label class="fl"><%= t('admin.packages.form.price_month', 'Harga / Bulan (Rp)') %> *</label><input class="fc" name="price" type="number" min="0" required placeholder="150000"></div>
-          <div class="fg"><label class="fl"><%= t('admin.packages.form.status', 'Status') %></label>
-            <select class="fs" name="is_active"><option value="1"><%= t('common.active', 'Aktif') %></option><option value="0"><%= t('common.inactive', 'Nonaktif') %></option></select>
+        <!-- TAB 1: INFORMASI & TARIF -->
+        <div class="mo-tab-content active" id="add_tab_general">
+          <div class="fg">
+            <label class="fl"><%= t('admin.packages.form.name_profile', 'Nama Paket') %> *</label>
+            <div style="display:flex;gap:8px">
+              <select class="fs" id="add_profile_select" style="max-width:210px" onchange="document.getElementById('add_name').value=this.value">
+                <option value=""><%= t('admin.packages.form.pick_from_mikrotik', '-- Pilih dari MikroTik --') %></option>
+              </select>
+              <input class="fc" name="name" id="add_name" required placeholder="<%= t('admin.packages.form.type_manual', 'Atau ketik nama paket manual...') %>">
+            </div>
+            <small class="text-muted" style="font-size:11px;display:block;margin-top:3px;">
+              💡 <em>Jika menggunakan MikroTik PPP/Hotspot, samakan dengan nama PPP Profile Anda.</em>
+            </small>
+          </div>
+
+          <div class="form-row">
+            <div class="fg">
+              <label class="fl">Router MikroTik (Opsional)</label>
+              <select class="fs" name="router_id" id="add_router_id">
+                <option value="">🌐 Berlaku Semua Router (Global)</option>
+                <% if (typeof routers !== 'undefined' && routers) { %>
+                  <% routers.forEach(r => { %>
+                    <option value="<%= r.id %>" <%= (selectedRouterId === r.id) ? 'selected' : '' %>>🔌 <%= r.name %></option>
+                  <% }) %>
+                <% } %>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="fl"><%= t('admin.packages.form.status', 'Status Paket') %></label>
+              <select class="fs" name="is_active" id="add_is_active">
+                <option value="1">🟢 <%= t('common.active', 'Aktif (Tampil di Landing Page & Pendaftaran)') %></option>
+                <option value="0">⚪ <%= t('common.inactive', 'Nonaktif (Draft / Sembunyikan)') %></option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="fg">
+              <label class="fl"><%= t('admin.packages.form.price_month', 'Harga Pokok Berlangganan (Rp)') %> *</label>
+              <div style="position:relative">
+                <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:600;font-size:13px">Rp</span>
+                <input class="fc" name="price" id="add_price" type="number" min="0" required placeholder="150000" style="padding-left:36px;font-weight:700">
+              </div>
+            </div>
+            <div class="fg">
+              <label class="fl">Deskripsi Singkat</label>
+              <input class="fc" name="description" id="add_description" placeholder="Contoh: Cocok untuk 3-5 gadget, streaming 4K & game">
+            </div>
           </div>
         </div>
 
-        <!-- Tipe Billing: Pascabayar vs Prabayar -->
-        <div class="form-row" style="background:rgba(99,102,241,0.05);padding:12px 14px;border-radius:10px;margin-top:10px;border:1px solid rgba(99,102,241,0.15);">
-          <div class="fg">
-            <label class="fl"><i class="bi bi-credit-card-2-front text-primary me-1"></i> Tipe Penagihan / Billing *</label>
-            <select class="fs" name="billing_type" id="add_billing_type" onchange="toggleAddBillingType(this.value)">
-              <option value="postpaid" selected>Pascabayar (Kalender / Jatuh Tempo Tetap)</option>
-              <option value="prepaid">Prabayar (Masa Aktif Bergulir)</option>
-            </select>
+        <!-- TAB 2: BANDWIDTH KECEPATAN -->
+        <div class="mo-tab-content" id="add_tab_speed">
+          <div class="form-section-card" style="border-left:3px solid #3b82f6;">
+            <div class="form-section-title" style="color:#3b82f6;">
+              <i class="bi bi-speedometer2"></i> Kecepatan Utama (Dedicated Base Bandwidth)
+            </div>
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl" style="color:var(--primary);font-weight:700;"><i class="bi bi-download"></i> Kecepatan Download (Mbps) *</label>
+                <input class="fc" name="speed_down" id="add_down" type="number" step="any" min="0" placeholder="Contoh: 20" required>
+              </div>
+              <div class="fg">
+                <label class="fl" style="color:var(--info);font-weight:700;"><i class="bi bi-upload"></i> Kecepatan Upload (Mbps) *</label>
+                <input class="fc" name="speed_up" id="add_up" type="number" step="any" min="0" placeholder="Contoh: 10" required>
+              </div>
+            </div>
+            <small class="text-muted" style="font-size:11px">Kecepatan dasar yang diterima pelanggan secara konsisten.</small>
           </div>
-          <div class="fg" id="add_duration_days_fg" style="display:none">
-            <label class="fl"><i class="bi bi-clock-history text-warning me-1"></i> Durasi Masa Aktif (Hari) *</label>
-            <input class="fc" name="duration_days" id="add_duration_days" type="number" min="1" value="30" placeholder="30">
+
+          <div class="form-section-card" style="border-left:3px solid #10b981;">
+            <div class="form-section-title" style="color:#10b981;">
+              <i class="bi bi-lightning-charge"></i> Fitur Burst UpTo / Max Rate (Opsional)
+            </div>
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Download UpTo (Mbps)</label>
+                <input class="fc" name="speed_down_upto" id="add_down_upto" type="number" step="any" min="0" placeholder="Kosongkan jika flat (mis: 30)">
+              </div>
+              <div class="fg">
+                <label class="fl">Upload UpTo (Mbps)</label>
+                <input class="fc" name="speed_up_upto" id="add_up_upto" type="number" step="any" min="0" placeholder="Kosongkan jika flat (mis: 15)">
+              </div>
+            </div>
             <small class="text-muted" style="font-size:11px;display:block;margin-top:2px;">
-              Pelanggan aktif selama X hari sejak aktivasi / pembayaran.
+              Bila diisi, paket akan tampil sebagai: <strong>20 Mbps (Up to 30 Mbps)</strong> di invoice &amp; landing page.
+            </small>
+          </div>
+
+          <div style="background: rgba(14,165,233,0.06); padding: 12px 14px; border-radius: 10px; margin-top: 10px; border: 1px dashed rgba(14,165,233,0.3);">
+            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; cursor:pointer; margin:0;">
+              <input type="checkbox" name="auto_push_mikrotik" id="add_auto_push" value="1" checked>
+              <i class="bi bi-cloud-arrow-up text-primary"></i>
+              Auto-Push PPP Profile ke Router MikroTik
+            </label>
+            <small class="text-muted" style="font-size:11px; display:block; margin-top:4px; margin-left:24px;">
+              Otomatis membuat / memperbarui <code>/ppp/profile</code> di router MikroTik dengan rate-limit sesuai kecepatan di atas.
             </small>
           </div>
         </div>
 
-        <!-- Kecepatan Berdampingan (Download & Upload) -->
-        <div class="form-row" style="background:rgba(59,130,246,0.04);padding:12px 14px;border-radius:10px;margin-top:10px;border:1px solid rgba(59,130,246,0.12);">
-          <div class="fg">
-            <label class="fl" style="color:var(--primary);font-weight:700;"><i class="bi bi-download"></i> Kecepatan Download (Mbps) *</label>
-            <input class="fc" name="speed_down" id="add_down" type="number" step="any" min="0" placeholder="Contoh: 10" required>
-          </div>
-          <div class="fg">
-            <label class="fl" style="color:var(--info);font-weight:700;"><i class="bi bi-upload"></i> Kecepatan Upload (Mbps) *</label>
-            <input class="fc" name="speed_up" id="add_up" type="number" step="any" min="0" placeholder="Contoh: 5" required>
-          </div>
-        </div>
-
-        <!-- Kecepatan UpTo / Maximum Burst Rate (Opsional Manual) -->
-        <div style="background:rgba(16,185,129,0.04);padding:12px 14px;border-radius:10px;margin-top:10px;border:1px dashed rgba(16,185,129,0.25);">
-          <div class="fw6" style="font-size:12px;margin-bottom:8px;color:var(--success)"><i class="bi bi-speedometer2"></i> Fitur Kecepatan UpTo / Max Rate (Opsional)</div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl">Download UpTo (Mbps)</label>
-              <input class="fc" name="speed_down_upto" id="add_down_upto" type="number" step="any" min="0" placeholder="Kosongkan jika tanpa UpTo (mis: 20)">
+        <!-- TAB 3: BILLING & PROMO -->
+        <div class="mo-tab-content" id="add_tab_billing">
+          <div class="form-section-card" style="border-left:3px solid #6366f1;">
+            <div class="form-section-title" style="color:#6366f1;">
+              <i class="bi bi-credit-card-2-front"></i> Model Penagihan
             </div>
-            <div class="fg">
-              <label class="fl">Upload UpTo (Mbps)</label>
-              <input class="fc" name="speed_up_upto" id="add_up_upto" type="number" step="any" min="0" placeholder="Kosongkan jika tanpa UpTo (mis: 10)">
-            </div>
-          </div>
-          <small class="text-muted" style="font-size:11px;display:block;margin-top:2px;">
-            Bila diisi, paket akan tampil sebagai: <strong>10 Mbps (Up to 20 Mbps)</strong> di invoice & portal pelanggan.
-          </small>
-        </div>
-        <div style="background: rgba(34,197,94,0.06); padding: 12px 14px; border-radius: 10px; margin-top: 10px;">
-          <div class="fw6" style="font-size:12px;margin-bottom:8px;color:var(--success)"><i class="bi bi-percent"></i> Promo & prorata tagihan</div>
-          <div class="form-row">
-            <div class="fg"><label class="fl">Harga promo (Rp / siklus)</label><input class="fc" name="promo_price" type="number" min="0" placeholder="Opsional, mis. 99000"></div>
-            <div class="fg"><label class="fl">Jumlah bulan promo</label><input class="fc" name="promo_cycles" type="number" min="0" value="0" placeholder="0 = tanpa promo"></div>
-          </div>
-          <div class="flex ai-c" style="gap:8px;margin-top:4px">
-            <input type="checkbox" name="prorate_first_invoice" id="add_prorate" value="1">
-            <label for="add_prorate" style="margin:0;font-size:12px">Prorata tagihan <strong>pertama</strong> jika pasang di tengah bulan (proporsi sisa hari, perlu tanggal pasang di data pelanggan)</label>
-          </div>
-        </div>
-        
-        <div style="background: rgba(99,102,241,0.06); padding: 12px 14px; border-radius: 10px; margin-top: 10px;">
-          <div class="fw6" style="font-size:12px;margin-bottom:4px;color:var(--primary)"><i class="bi bi-calculator"></i> Pengaturan Pajak & Regulasi (PPN & USO)</div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.4;">
-            💡 <em>Jika PPN tidak dicentang, harga paket otomatis dianggap sudah <strong>Termasuk PPN (Include Tax)</strong> dan dipisahkan DPP & PPN di invoice. Jika dicentang, PPN akan ditambahkan di atas harga paket.</em>
-          </div>
-          <div class="form-row" style="margin-bottom: 8px;">
-            <div class="fg">
-              <label style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; margin-top: 26px;">
-                <input type="checkbox" name="use_ppn" id="add_use_ppn" value="1">
-                Aktifkan PPN
-              </label>
-            </div>
-            <div class="fg">
-              <label class="fl">Persentase PPN (%)</label>
-              <input class="fc" name="ppn_percentage" type="number" step="any" min="0" value="11.0">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="fg">
-              <label style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; margin-top: 26px;">
-                <input type="checkbox" name="use_uso" id="add_use_uso" value="1">
-                Aktifkan ULO/USO
-              </label>
-            </div>
-            <div class="fg">
-              <label class="fl">Persentase ULO/USO (%)</label>
-              <input class="fc" name="uso_percentage" type="number" step="any" min="0" value="1.75">
-            </div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="fg"><label class="fl"><%= t('admin.packages.form.speed_up', 'Kecepatan Upload (Mbps)') %></label><input class="fc" name="speed_up" type="number" step="any" min="0" placeholder="5"></div>
-          <div class="fg"><label class="fl"><%= t('admin.packages.form.status', 'Status') %></label>
-            <select class="fs" name="is_active"><option value="1"><%= t('common.active', 'Aktif') %></option><option value="0"><%= t('common.inactive', 'Nonaktif') %></option></select>
-          </div>
-        </div>
-        <div class="fg"><label class="fl"><%= t('admin.packages.form.description', 'Deskripsi') %></label><textarea class="fc" name="description" placeholder="<%= t('admin.packages.form.optional', 'Opsional...') %>"></textarea></div>
-        
-        <!-- Dynamic Speed & FUP Section -->
-        <div style="background: rgba(0,0,0,0.02); padding: 15px; border-radius: 12px; margin-top: 15px;">
-          <div class="flex ai-c mb8" style="gap:10px">
-            <input type="checkbox" name="use_night_speed" id="add_use_night" value="1" onchange="toggleAddNight()">
-            <h6 style="font-size:12px; margin: 0; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px;"><i class="bi bi-clock"></i> Aktifkan Jam Kalong</h6>
-          </div>
-          <div id="add_night_fields" style="display:none">
-            <div class="fg">
-              <label class="fl">Nama Profile Malam (MikroTik)</label>
-              <div style="display:flex;gap:8px">
-                <select class="fs" id="add_night_profile_select" style="max-width:200px" onchange="document.getElementById('add_night_profile_input').value=this.value">
-                  <option value="">-- Pilih Profile --</option>
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Tipe Penagihan *</label>
+                <select class="fs" name="billing_type" id="add_billing_type" onchange="toggleAddBillingType(this.value)">
+                  <option value="postpaid" selected>Pascabayar (Jatuh tempo tanggal tetap per bulan)</option>
+                  <option value="prepaid">Prabayar (Masa aktif bergulir X hari sejak bayar)</option>
                 </select>
-                <input class="fc" name="night_profile_name" id="add_night_profile_input" placeholder="Atau ketik manual...">
+              </div>
+              <div class="fg" id="add_duration_days_fg" style="display:none">
+                <label class="fl">Masa Aktif Prabayar (Hari) *</label>
+                <input class="fc" name="duration_days" id="add_duration_days" type="number" min="1" value="30" placeholder="30">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section-card" style="border-left:3px solid #f59e0b;">
+            <div class="form-section-title" style="color:#f59e0b;">
+              <i class="bi bi-percent"></i> Promo &amp; Prorata Awal
+            </div>
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Harga Promo (Rp / siklus)</label>
+                <input class="fc" name="promo_price" id="add_promo_price" type="number" min="0" placeholder="Kosongkan bila tanpa diskon">
+              </div>
+              <div class="fg">
+                <label class="fl">Jumlah Bulan Promo</label>
+                <input class="fc" name="promo_cycles" id="add_promo_cycles" type="number" min="0" value="0" placeholder="0 = tanpa batas promo">
+              </div>
+            </div>
+            <div class="flex ai-c" style="gap:8px;margin-top:8px">
+              <input type="checkbox" name="prorate_first_invoice" id="add_prorate" value="1">
+              <label for="add_prorate" style="margin:0;font-size:12px;cursor:pointer">
+                <strong>Prorata tagihan pertama</strong> jika pelanggan dipasang di tengah bulan (sesuai sisa hari).
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: PAJAK & FUP / JAM KALONG -->
+        <div class="mo-tab-content" id="add_tab_advanced">
+          <!-- Pajak Section -->
+          <div class="form-section-card" style="border-left:3px solid #06b6d4;">
+            <div class="form-section-title" style="color:#06b6d4;">
+              <i class="bi bi-receipt"></i> Pajak &amp; Regulasi (PPN &amp; USO)
+            </div>
+            <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px;">
+              💡 <em>Jika PPN tidak dicentang, harga otomatis dianggap <strong>Sudah Termasuk PPN (Include)</strong>. Jika dicentang, PPN ditambahkan di atas harga paket.</em>
+            </div>
+            <div class="form-row">
+              <div class="fg">
+                <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;margin-top:20px;cursor:pointer">
+                  <input type="checkbox" name="use_ppn" id="add_use_ppn" value="1">
+                  Aktifkan PPN Tambahan
+                </label>
+              </div>
+              <div class="fg">
+                <label class="fl">Persentase PPN (%)</label>
+                <input class="fc" name="ppn_percentage" id="add_ppn_percentage" type="number" step="any" min="0" value="11.0">
               </div>
             </div>
             <div class="form-row">
-              <div class="fg"><label class="fl">Download Malam (Mbps)</label><input class="fc" name="night_speed_down" type="number" step="any" min="0" placeholder="20"></div>
-              <div class="fg"><label class="fl">Upload Malam (Mbps)</label><input class="fc" name="night_speed_up" type="number" step="any" min="0" placeholder="10"></div>
-            </div>
-            <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">Sistem akan ganti profile ppp pelanggan ke profile ini pada jam 00:00 - 06:00.</div>
-          </div>
-          
-          <hr style="opacity:0.1; margin: 15px 0;">
-
-          <div class="flex ai-c mb8" style="gap:10px">
-            <input type="checkbox" name="use_fup" id="add_use_fup" value="1" onchange="toggleAddFup()">
-            <h6 style="font-size:12px; margin: 0; color: var(--danger); text-transform: uppercase; letter-spacing: 0.5px;"><i class="bi bi-speedometer2"></i> Aktifkan FUP</h6>
-          </div>
-          <div id="add_fup_fields" style="display:none">
-            <div class="fg">
-              <label class="fl">Nama Profile FUP (MikroTik)</label>
-              <div style="display:flex;gap:8px">
-                <select class="fs" id="add_fup_profile_select" style="max-width:200px" onchange="document.getElementById('add_fup_profile_input').value=this.value">
-                  <option value="">-- Pilih Profile --</option>
-                </select>
-                <input class="fc" name="fup_profile_name" id="add_fup_profile_input" placeholder="Atau ketik manual...">
+              <div class="fg">
+                <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;margin-top:20px;cursor:pointer">
+                  <input type="checkbox" name="use_uso" id="add_use_uso" value="1">
+                  Aktifkan ULO/USO
+                </label>
+              </div>
+              <div class="fg">
+                <label class="fl">Persentase ULO/USO (%)</label>
+                <input class="fc" name="uso_percentage" id="add_uso_percentage" type="number" step="any" min="0" value="1.75">
               </div>
             </div>
-            <div class="form-row">
-              <div class="fg"><label class="fl">Batas Kuota (GB)</label><input class="fc" name="fup_limit_gb" type="number" step="any" min="0" placeholder="300"></div>
-              <div class="fg"><label class="fl">Speed Setelah FUP (Mbps)</label><input class="fc" name="fup_speed_down" type="number" step="any" min="0" placeholder="2"></div>
+          </div>
+
+          <!-- Jam Kalong Malam -->
+          <div class="form-section-card" style="border-left:3px solid #a855f7;">
+            <div class="flex ai-c" style="gap:10px;margin-bottom:8px">
+              <input type="checkbox" name="use_night_speed" id="add_use_night" value="1" onchange="toggleAddNight()">
+              <label for="add_use_night" class="form-section-title" style="margin:0;color:#a855f7;cursor:pointer">
+                <i class="bi bi-moon-stars"></i> Bonus Jam Kalong (Malam Hari 00:00 - 06:00)
+              </label>
+            </div>
+            <div id="add_night_fields" style="display:none;margin-top:10px">
+              <div class="fg">
+                <label class="fl">Nama Profile Malam (MikroTik)</label>
+                <div style="display:flex;gap:8px">
+                  <select class="fs" id="add_night_profile_select" style="max-width:210px" onchange="document.getElementById('add_night_profile_input').value=this.value">
+                    <option value="">-- Pilih Profile --</option>
+                  </select>
+                  <input class="fc" name="night_profile_name" id="add_night_profile_input" placeholder="Atau ketik manual...">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="fg"><label class="fl">Download Malam (Mbps)</label><input class="fc" name="night_speed_down" id="add_night_speed_down" type="number" step="any" min="0" placeholder="Contoh: 50"></div>
+                <div class="fg"><label class="fl">Upload Malam (Mbps)</label><input class="fc" name="night_speed_up" id="add_night_speed_up" type="number" step="any" min="0" placeholder="Contoh: 25"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FUP Policy -->
+          <div class="form-section-card" style="border-left:3px solid #ef4444;">
+            <div class="flex ai-c" style="gap:10px;margin-bottom:8px">
+              <input type="checkbox" name="use_fup" id="add_use_fup" value="1" onchange="toggleAddFup()">
+              <label for="add_use_fup" class="form-section-title" style="margin:0;color:#ef4444;cursor:pointer">
+                <i class="bi bi-speedometer2"></i> Kebijakan Batas Kuota Wajar (FUP)
+              </label>
+            </div>
+            <div id="add_fup_fields" style="display:none;margin-top:10px">
+              <div class="fg">
+                <label class="fl">Nama Profile FUP (MikroTik)</label>
+                <div style="display:flex;gap:8px">
+                  <select class="fs" id="add_fup_profile_select" style="max-width:210px" onchange="document.getElementById('add_fup_profile_input').value=this.value">
+                    <option value="">-- Pilih Profile --</option>
+                  </select>
+                  <input class="fc" name="fup_profile_name" id="add_fup_profile_input" placeholder="Atau ketik manual...">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="fg"><label class="fl">Batas Kuota Bulanan (GB)</label><input class="fc" name="fup_limit_gb" id="add_fup_limit_gb" type="number" step="any" min="0" placeholder="Contoh: 300"></div>
+                <div class="fg"><label class="fl">Speed Pasca FUP (Mbps)</label><input class="fc" name="fup_speed_down" id="add_fup_speed_down" type="number" step="any" min="0" placeholder="Contoh: 2"></div>
+              </div>
             </div>
           </div>
         </div>
+
       </div>
       <div class="mf">
         <button type="button" class="btn btn-g" onclick="closeModal('addModal')"><%= t('common.cancel', 'Batal') %></button>
-        <button type="submit" class="btn btn-p"><i class="bi bi-check-lg"></i> <%= t('common.save', 'Simpan') %></button>
+        <button type="submit" class="btn btn-p"><i class="bi bi-check-lg"></i> <%= t('common.save', 'Simpan Paket') %></button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- Modal Edit -->
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL EDIT PAKET (MODERN TABBED)
+     ══════════════════════════════════════════════════════════════ -->
 <div class="mo" id="editModal">
-  <div class="mb" style="max-width:680px;">
-    <div class="mh"><span class="mt"><i class="bi bi-pencil"></i> <%= t('admin.packages.edit', 'Edit Paket') %></span><button class="mc" onclick="closeModal('editModal')">&times;</button></div>
+  <div class="mb" style="max-width:720px;border-radius:14px;overflow:hidden;">
+    <div class="mh">
+      <span class="mt" style="font-size:15px;display:flex;align-items:center;gap:8px;">
+        <i class="bi bi-pencil-square text-primary"></i> <%= t('admin.packages.edit', 'Edit Paket Internet') %>
+      </span>
+      <button class="mc" onclick="closeModal('editModal')">&times;</button>
+    </div>
+
+    <!-- Nav Tabs Edit -->
+    <div class="mo-tabs">
+      <button type="button" class="mo-tab-btn active" onclick="switchEditTab('edit_tab_general', this)">
+        <i class="bi bi-card-text"></i> 1. Informasi &amp; Tarif
+      </button>
+      <button type="button" class="mo-tab-btn" onclick="switchEditTab('edit_tab_speed', this)">
+        <i class="bi bi-speedometer2"></i> 2. Bandwidth Kecepatan
+      </button>
+      <button type="button" class="mo-tab-btn" onclick="switchEditTab('edit_tab_billing', this)">
+        <i class="bi bi-calendar3"></i> 3. Billing &amp; Promo
+      </button>
+      <button type="button" class="mo-tab-btn" onclick="switchEditTab('edit_tab_advanced', this)">
+        <i class="bi bi-sliders"></i> 4. Pajak &amp; FUP
+      </button>
+    </div>
+
     <form method="POST" id="editForm">
-      <div class="mbody" style="max-height:70vh; overflow-y:auto; padding-right:6px;">
-        <div class="fg">
-          <label class="fl"><%= t('admin.packages.form.name_profile', 'Nama Paket (Profile MikroTik)') %> *</label>
-          <div style="display:flex;gap:8px">
-            <select class="fs" id="e_profile_select" style="max-width:200px" onchange="document.getElementById('e_name').value=this.value">
-              <option value=""><%= t('admin.packages.form.pick_from_mikrotik', '-- Pilih dari MikroTik --') %></option>
-            </select>
-            <input class="fc" name="name" id="e_name" required>
+      <div class="mbody" style="max-height:68vh; overflow-y:auto; padding:18px;">
+        
+        <!-- TAB 1: INFORMASI & TARIF (EDIT) -->
+        <div class="mo-tab-content active" id="edit_tab_general">
+          <div class="fg">
+            <label class="fl"><%= t('admin.packages.form.name_profile', 'Nama Paket') %> *</label>
+            <div style="display:flex;gap:8px">
+              <select class="fs" id="e_profile_select" style="max-width:210px" onchange="document.getElementById('e_name').value=this.value">
+                <option value=""><%= t('admin.packages.form.pick_from_mikrotik', '-- Pilih dari MikroTik --') %></option>
+              </select>
+              <input class="fc" name="name" id="e_name" required>
+            </div>
           </div>
-        </div>
-        <div class="form-row">
-          <div class="fg"><label class="fl"><%= t('admin.packages.form.price_month', 'Harga / Bulan (Rp)') %> *</label><input class="fc" name="price" id="e_price" type="number" min="0" required></div>
-          <div class="fg"><label class="fl"><%= t('admin.packages.form.status', 'Status') %></label>
-            <select class="fs" name="is_active" id="e_active"><option value="1"><%= t('common.active', 'Aktif') %></option><option value="0"><%= t('common.inactive', 'Nonaktif') %></option></select>
+
+          <div class="form-row">
+            <div class="fg">
+              <label class="fl">Router MikroTik (Opsional)</label>
+              <select class="fs" name="router_id" id="e_router_id">
+                <option value="">🌐 Berlaku Semua Router (Global)</option>
+                <% if (typeof routers !== 'undefined' && routers) { %>
+                  <% routers.forEach(r => { %>
+                    <option value="<%= r.id %>">🔌 <%= r.name %></option>
+                  <% }) %>
+                <% } %>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="fl"><%= t('admin.packages.form.status', 'Status Paket') %></label>
+              <select class="fs" name="is_active" id="e_active">
+                <option value="1">🟢 <%= t('common.active', 'Aktif') %></option>
+                <option value="0">⚪ <%= t('common.inactive', 'Nonaktif') %></option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="fg">
+              <label class="fl"><%= t('admin.packages.form.price_month', 'Harga Pokok Berlangganan (Rp)') %> *</label>
+              <div style="position:relative">
+                <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:600;font-size:13px">Rp</span>
+                <input class="fc" name="price" id="e_price" type="number" min="0" required style="padding-left:36px;font-weight:700">
+              </div>
+            </div>
+            <div class="fg">
+              <label class="fl">Deskripsi Singkat</label>
+              <input class="fc" name="description" id="e_desc">
+            </div>
           </div>
         </div>
 
-        <!-- Tipe Billing: Pascabayar vs Prabayar (Edit) -->
-        <div class="form-row" style="background:rgba(99,102,241,0.05);padding:12px 14px;border-radius:10px;margin-top:10px;border:1px solid rgba(99,102,241,0.15);">
-          <div class="fg">
-            <label class="fl"><i class="bi bi-credit-card-2-front text-primary me-1"></i> Tipe Penagihan / Billing *</label>
-            <select class="fs" name="billing_type" id="e_billing_type" onchange="toggleEditBillingType(this.value)">
-              <option value="postpaid">Pascabayar (Kalender / Jatuh Tempo Tetap)</option>
-              <option value="prepaid">Prabayar (Masa Aktif Bergulir)</option>
-            </select>
+        <!-- TAB 2: BANDWIDTH KECEPATAN (EDIT) -->
+        <div class="mo-tab-content" id="edit_tab_speed">
+          <div class="form-section-card" style="border-left:3px solid #3b82f6;">
+            <div class="form-section-title" style="color:#3b82f6;">
+              <i class="bi bi-speedometer2"></i> Kecepatan Utama (Dedicated Base Bandwidth)
+            </div>
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl" style="color:var(--primary);font-weight:700;"><i class="bi bi-download"></i> Kecepatan Download (Mbps) *</label>
+                <input class="fc" name="speed_down" id="e_down" type="number" step="any" min="0" required>
+              </div>
+              <div class="fg">
+                <label class="fl" style="color:var(--info);font-weight:700;"><i class="bi bi-upload"></i> Kecepatan Upload (Mbps) *</label>
+                <input class="fc" name="speed_up" id="e_up" type="number" step="any" min="0" required>
+              </div>
+            </div>
           </div>
-          <div class="fg" id="e_duration_days_fg" style="display:none">
-            <label class="fl"><i class="bi bi-clock-history text-warning me-1"></i> Durasi Masa Aktif (Hari) *</label>
-            <input class="fc" name="duration_days" id="e_duration_days" type="number" min="1" value="30" placeholder="30">
-            <small class="text-muted" style="font-size:11px;display:block;margin-top:2px;">
-              Pelanggan aktif selama X hari sejak aktivasi / pembayaran.
+
+          <div class="form-section-card" style="border-left:3px solid #10b981;">
+            <div class="form-section-title" style="color:#10b981;">
+              <i class="bi bi-lightning-charge"></i> Fitur Burst UpTo / Max Rate (Opsional)
+            </div>
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Download UpTo (Mbps)</label>
+                <input class="fc" name="speed_down_upto" id="e_down_upto" type="number" step="any" min="0" placeholder="Kosongkan bila flat">
+              </div>
+              <div class="fg">
+                <label class="fl">Upload UpTo (Mbps)</label>
+                <input class="fc" name="speed_up_upto" id="e_up_upto" type="number" step="any" min="0" placeholder="Kosongkan bila flat">
+              </div>
+            </div>
+          </div>
+
+          <div style="background: rgba(14,165,233,0.06); padding: 12px 14px; border-radius: 10px; margin-top: 10px; border: 1px dashed rgba(14,165,233,0.3);">
+            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; cursor:pointer; margin:0;">
+              <input type="checkbox" name="auto_push_mikrotik" id="edit_auto_push" value="1" checked>
+              <i class="bi bi-cloud-arrow-up text-primary"></i>
+              Auto-Push PPP Profile ke Router MikroTik saat disimpan
+            </label>
+            <small class="text-muted" style="font-size:11px; display:block; margin-top:4px; margin-left:24px;">
+              Otomatis memperbarui <code>/ppp/profile</code> di router MikroTik dengan rate-limit baru.
             </small>
           </div>
         </div>
 
-        <!-- Kecepatan Berdampingan (Download & Upload - Edit) -->
-        <div class="form-row" style="background:rgba(59,130,246,0.04);padding:12px 14px;border-radius:10px;margin-top:10px;border:1px solid rgba(59,130,246,0.12);">
-          <div class="fg">
-            <label class="fl" style="color:var(--primary);font-weight:700;"><i class="bi bi-download"></i> Kecepatan Download (Mbps) *</label>
-            <input class="fc" name="speed_down" id="e_down" type="number" step="any" min="0" required>
-          </div>
-          <div class="fg">
-            <label class="fl" style="color:var(--info);font-weight:700;"><i class="bi bi-upload"></i> Kecepatan Upload (Mbps) *</label>
-            <input class="fc" name="speed_up" id="e_up" type="number" step="any" min="0" required>
-          </div>
-        </div>
-
-        <!-- Kecepatan UpTo (Batas Maksimum - Edit) -->
-        <div style="background:rgba(16,185,129,0.04);padding:12px 14px;border-radius:10px;margin-top:10px;border:1px dashed rgba(16,185,129,0.25);">
-          <div class="fw6" style="font-size:12px;margin-bottom:8px;color:var(--success)"><i class="bi bi-speedometer2"></i> Fitur Kecepatan UpTo / Max Rate (Opsional)</div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl">Download UpTo (Mbps)</label>
-              <input class="fc" name="speed_down_upto" id="e_down_upto" type="number" step="any" min="0" placeholder="Kosongkan jika tanpa UpTo (mis: 20)">
+        <!-- TAB 3: BILLING & PROMO (EDIT) -->
+        <div class="mo-tab-content" id="edit_tab_billing">
+          <div class="form-section-card" style="border-left:3px solid #6366f1;">
+            <div class="form-section-title" style="color:#6366f1;">
+              <i class="bi bi-credit-card-2-front"></i> Model Penagihan
             </div>
-            <div class="fg">
-              <label class="fl">Upload UpTo (Mbps)</label>
-              <input class="fc" name="speed_up_upto" id="e_up_upto" type="number" step="any" min="0" placeholder="Kosongkan jika tanpa UpTo (mis: 10)">
-            </div>
-          </div>
-          <small class="text-muted" style="font-size:11px;display:block;margin-top:2px;">
-            Bila diisi, paket akan tampil sebagai: <strong>10 Mbps (Up to 20 Mbps)</strong> di invoice & portal pelanggan.
-          </small>
-        </div>
-
-        <div style="background: rgba(34,197,94,0.06); padding: 12px 14px; border-radius: 10px; margin-top: 10px;">
-          <div class="fw6" style="font-size:12px;margin-bottom:8px;color:var(--success)"><i class="bi bi-percent"></i> Promo & prorata tagihan</div>
-          <div class="form-row">
-            <div class="fg"><label class="fl">Harga promo (Rp / siklus)</label><input class="fc" name="promo_price" id="e_promo_price" type="number" min="0" placeholder="Kosong = tanpa harga promo"></div>
-            <div class="fg"><label class="fl">Jumlah bulan promo</label><input class="fc" name="promo_cycles" id="e_promo_cycles" type="number" min="0" value="0"></div>
-          </div>
-          <div class="flex ai-c" style="gap:8px;margin-top:4px">
-            <input type="checkbox" name="prorate_first_invoice" id="e_prorate" value="1">
-            <label for="e_prorate" style="margin:0;font-size:12px">Prorata tagihan pertama (tanggal pasang = bulan tagihan)</label>
-          </div>
-        </div>
-        
-        <div style="background: rgba(99,102,241,0.06); padding: 12px 14px; border-radius: 10px; margin-top: 10px;">
-          <div class="fw6" style="font-size:12px;margin-bottom:4px;color:var(--primary)"><i class="bi bi-calculator"></i> Pengaturan Pajak & Regulasi (PPN & USO)</div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.4;">
-            💡 <em>Jika PPN tidak dicentang, harga paket otomatis dianggap sudah <strong>Termasuk PPN (Include Tax)</strong> dan dipisahkan DPP & PPN di invoice. Jika dicentang, PPN akan ditambahkan di atas harga paket.</em>
-          </div>
-          <div class="form-row" style="margin-bottom: 8px;">
-            <div class="fg">
-              <label style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; margin-top: 26px;">
-                <input type="checkbox" name="use_ppn" id="e_use_ppn" value="1">
-                Aktifkan PPN
-              </label>
-            </div>
-            <div class="fg">
-              <label class="fl">Persentase PPN (%)</label>
-              <input class="fc" name="ppn_percentage" id="e_ppn_percentage" type="number" step="any" min="0">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="fg">
-              <label style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; margin-top: 26px;">
-                <input type="checkbox" name="use_uso" id="e_use_uso" value="1">
-                Aktifkan ULO/USO
-              </label>
-            </div>
-            <div class="fg">
-              <label class="fl">Persentase ULO/USO (%)</label>
-              <input class="fc" name="uso_percentage" id="e_uso_percentage" type="number" step="any" min="0">
-            </div>
-          </div>
-        </div>
-
-        <div class="fg" style="margin-top:10px;"><label class="fl"><%= t('admin.packages.form.description', 'Deskripsi') %></label><textarea class="fc" name="description" id="e_desc"></textarea></div>
-
-        <!-- Dynamic Speed & FUP Section (Edit) -->
-        <div style="background: rgba(0,0,0,0.02); padding: 15px; border-radius: 12px; margin-top: 15px;">
-          <div class="flex ai-c mb8" style="gap:10px">
-            <input type="checkbox" name="use_night_speed" id="e_use_night" value="1" onchange="toggleEditNight()">
-            <h6 style="font-size:12px; margin: 0; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px;"><i class="bi bi-clock"></i> Aktifkan Jam Kalong</h6>
-          </div>
-          <div id="e_night_fields" style="display:none">
-            <div class="fg">
-              <label class="fl">Nama Profile Malam (MikroTik)</label>
-              <div style="display:flex;gap:8px">
-                <select class="fs" id="e_night_profile_select" style="max-width:200px" onchange="document.getElementById('e_night_profile').value=this.value">
-                  <option value="">-- Pilih Profile --</option>
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Tipe Penagihan *</label>
+                <select class="fs" name="billing_type" id="e_billing_type" onchange="toggleEditBillingType(this.value)">
+                  <option value="postpaid">Pascabayar (Jatuh tempo tanggal tetap per bulan)</option>
+                  <option value="prepaid">Prabayar (Masa aktif bergulir X hari sejak bayar)</option>
                 </select>
-                <input class="fc" name="night_profile_name" id="e_night_profile">
+              </div>
+              <div class="fg" id="e_duration_days_fg" style="display:none">
+                <label class="fl">Masa Aktif Prabayar (Hari) *</label>
+                <input class="fc" name="duration_days" id="e_duration_days" type="number" min="1" value="30">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section-card" style="border-left:3px solid #f59e0b;">
+            <div class="form-section-title" style="color:#f59e0b;">
+              <i class="bi bi-percent"></i> Promo &amp; Prorata Awal
+            </div>
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Harga Promo (Rp / siklus)</label>
+                <input class="fc" name="promo_price" id="e_promo_price" type="number" min="0" placeholder="Kosong = tanpa diskon">
+              </div>
+              <div class="fg">
+                <label class="fl">Jumlah Bulan Promo</label>
+                <input class="fc" name="promo_cycles" id="e_promo_cycles" type="number" min="0" value="0">
+              </div>
+            </div>
+            <div class="flex ai-c" style="gap:8px;margin-top:8px">
+              <input type="checkbox" name="prorate_first_invoice" id="e_prorate" value="1">
+              <label for="e_prorate" style="margin:0;font-size:12px;cursor:pointer">
+                <strong>Prorata tagihan pertama</strong> (hitung sisa hari aktif bulan pasang)
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: PAJAK & FUP / JAM KALONG (EDIT) -->
+        <div class="mo-tab-content" id="edit_tab_advanced">
+          <!-- Pajak Section -->
+          <div class="form-section-card" style="border-left:3px solid #06b6d4;">
+            <div class="form-section-title" style="color:#06b6d4;">
+              <i class="bi bi-receipt"></i> Pajak &amp; Regulasi (PPN &amp; USO)
+            </div>
+            <div class="form-row">
+              <div class="fg">
+                <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;margin-top:20px;cursor:pointer">
+                  <input type="checkbox" name="use_ppn" id="e_use_ppn" value="1">
+                  Aktifkan PPN Tambahan
+                </label>
+              </div>
+              <div class="fg">
+                <label class="fl">Persentase PPN (%)</label>
+                <input class="fc" name="ppn_percentage" id="e_ppn_percentage" type="number" step="any" min="0">
               </div>
             </div>
             <div class="form-row">
-              <div class="fg"><label class="fl">Download Malam (Mbps)</label><input class="fc" name="night_speed_down" id="e_night_down" type="number" step="any" min="0"></div>
-              <div class="fg"><label class="fl">Upload Malam (Mbps)</label><input class="fc" name="night_speed_up" id="e_night_up" type="number" step="any" min="0"></div>
-            </div>
-          </div>
-          
-          <hr style="opacity:0.1; margin: 15px 0;">
-
-          <div class="flex ai-c mb8" style="gap:10px">
-            <input type="checkbox" name="use_fup" id="e_use_fup" value="1" onchange="toggleEditFup()">
-            <h6 style="font-size:12px; margin: 0; color: var(--danger); text-transform: uppercase; letter-spacing: 0.5px;"><i class="bi bi-speedometer2"></i> Aktifkan FUP</h6>
-          </div>
-          <div id="e_fup_fields" style="display:none">
-            <div class="fg">
-              <label class="fl">Nama Profile FUP (MikroTik)</label>
-              <div style="display:flex;gap:8px">
-                <select class="fs" id="e_fup_profile_select" style="max-width:200px" onchange="document.getElementById('e_fup_profile').value=this.value">
-                  <option value="">-- Pilih Profile --</option>
-                </select>
-                <input class="fc" name="fup_profile_name" id="e_fup_profile">
+              <div class="fg">
+                <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;margin-top:20px;cursor:pointer">
+                  <input type="checkbox" name="use_uso" id="e_use_uso" value="1">
+                  Aktifkan ULO/USO
+                </label>
+              </div>
+              <div class="fg">
+                <label class="fl">Persentase ULO/USO (%)</label>
+                <input class="fc" name="uso_percentage" id="e_uso_percentage" type="number" step="any" min="0">
               </div>
             </div>
-            <div class="form-row">
-              <div class="fg"><label class="fl">Batas Kuota (GB)</label><input class="fc" name="fup_limit_gb" id="e_fup_limit" type="number" step="any" min="0"></div>
-              <div class="fg"><label class="fl">Speed Setelah FUP (Mbps)</label><input class="fc" name="fup_speed_down" id="e_fup_speed" type="number" step="any" min="0"></div>
+          </div>
+
+          <!-- Jam Kalong Malam -->
+          <div class="form-section-card" style="border-left:3px solid #a855f7;">
+            <div class="flex ai-c" style="gap:10px;margin-bottom:8px">
+              <input type="checkbox" name="use_night_speed" id="e_use_night" value="1" onchange="toggleEditNight()">
+              <label for="e_use_night" class="form-section-title" style="margin:0;color:#a855f7;cursor:pointer">
+                <i class="bi bi-moon-stars"></i> Bonus Jam Kalong (Malam Hari 00:00 - 06:00)
+              </label>
+            </div>
+            <div id="e_night_fields" style="display:none;margin-top:10px">
+              <div class="fg">
+                <label class="fl">Nama Profile Malam (MikroTik)</label>
+                <div style="display:flex;gap:8px">
+                  <select class="fs" id="e_night_profile_select" style="max-width:210px" onchange="document.getElementById('e_night_profile').value=this.value">
+                    <option value="">-- Pilih Profile --</option>
+                  </select>
+                  <input class="fc" name="night_profile_name" id="e_night_profile">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="fg"><label class="fl">Download Malam (Mbps)</label><input class="fc" name="night_speed_down" id="e_night_down" type="number" step="any" min="0"></div>
+                <div class="fg"><label class="fl">Upload Malam (Mbps)</label><input class="fc" name="night_speed_up" id="e_night_up" type="number" step="any" min="0"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FUP Policy -->
+          <div class="form-section-card" style="border-left:3px solid #ef4444;">
+            <div class="flex ai-c" style="gap:10px;margin-bottom:8px">
+              <input type="checkbox" name="use_fup" id="e_use_fup" value="1" onchange="toggleEditFup()">
+              <label for="e_use_fup" class="form-section-title" style="margin:0;color:#ef4444;cursor:pointer">
+                <i class="bi bi-speedometer2"></i> Kebijakan Batas Kuota Wajar (FUP)
+              </label>
+            </div>
+            <div id="e_fup_fields" style="display:none;margin-top:10px">
+              <div class="fg">
+                <label class="fl">Nama Profile FUP (MikroTik)</label>
+                <div style="display:flex;gap:8px">
+                  <select class="fs" id="e_fup_profile_select" style="max-width:210px" onchange="document.getElementById('e_fup_profile').value=this.value">
+                    <option value="">-- Pilih Profile --</option>
+                  </select>
+                  <input class="fc" name="fup_profile_name" id="e_fup_profile">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="fg"><label class="fl">Batas Kuota Bulanan (GB)</label><input class="fc" name="fup_limit_gb" id="e_fup_limit" type="number" step="any" min="0"></div>
+                <div class="fg"><label class="fl">Speed Pasca FUP (Mbps)</label><input class="fc" name="fup_speed_down" id="e_fup_speed" type="number" step="any" min="0"></div>
+              </div>
             </div>
           </div>
         </div>
+
       </div>
       <div class="mf">
         <button type="button" class="btn btn-g" onclick="closeModal('editModal')"><%= t('common.cancel', 'Batal') %></button>
-        <button type="submit" class="btn btn-p"><i class="bi bi-check-lg"></i> <%= t('admin.packages.update', 'Update') %></button>
+        <button type="submit" class="btn btn-p"><i class="bi bi-check-lg"></i> <%= t('admin.packages.update', 'Perbarui Paket') %></button>
       </div>
     </form>
   </div>
 </div>
+
+<!-- Floating Toast Element -->
+<div id="pkgToast"><i class="bi bi-info-circle-fill text-primary"></i> <span id="pkgToastText"></span></div>
 
 <script type="application/json" id="packages-data"><%- JSON.stringify(packages) %></script>
 <script>
 const packagesData = JSON.parse(document.getElementById('packages-data').textContent);
-function openModal(id){document.getElementById(id).classList.add('show')}
-function closeModal(id){document.getElementById(id).classList.remove('show')}
-document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show')}));
+
+function showToast(text, iconClass = 'bi-check-circle-fill text-success') {
+  const toast = document.getElementById('pkgToast');
+  const toastText = document.getElementById('pkgToastText');
+  toast.innerHTML = `<i class="bi ${iconClass}"></i> <span>${text}</span>`;
+  toast.style.display = 'flex';
+  setTimeout(() => { toast.style.display = 'none'; }, 3200);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.mo').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); }));
+
+function openAddModal() {
+  document.getElementById('addForm').reset();
+  document.getElementById('add_billing_type').value = 'postpaid';
+  toggleAddBillingType('postpaid');
+  toggleAddNight();
+  toggleAddFup();
+  switchAddTab('add_tab_general', document.querySelector('#addModal .mo-tab-btn'));
+  openModal('addModal');
+}
+
+// Tab Switching
+function switchAddTab(tabId, btn) {
+  document.querySelectorAll('#addModal .mo-tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#addModal .mo-tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+
+function switchEditTab(tabId, btn) {
+  document.querySelectorAll('#editModal .mo-tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#editModal .mo-tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+
+// Edit Package Pre-fill
 function editPkg(idx) {
   const p = packagesData[idx];
   if (!p) return;
-  document.getElementById('editForm').action='/admin/packages/'+p.id+'/update';
-  document.getElementById('e_name').value=p.name||'';
-  document.getElementById('e_price').value=p.price||0;
+  document.getElementById('editForm').action = '/admin/packages/' + p.id + '/update';
+  document.getElementById('e_name').value = p.name || '';
+  document.getElementById('e_router_id').value = p.router_id || '';
+  document.getElementById('e_price').value = p.price || 0;
   document.getElementById('e_promo_price').value = (p.promo_price != null && p.promo_price !== '') ? p.promo_price : '';
   document.getElementById('e_promo_cycles').value = p.promo_cycles != null ? p.promo_cycles : 0;
   document.getElementById('e_prorate').checked = !!p.prorate_first_invoice;
@@ -493,31 +1182,112 @@ function editPkg(idx) {
   document.getElementById('e_ppn_percentage').value = p.ppn_percentage != null ? p.ppn_percentage : 11.0;
   document.getElementById('e_use_uso').checked = !!p.use_uso;
   document.getElementById('e_uso_percentage').value = p.uso_percentage != null ? p.uso_percentage : 1.75;
-  document.getElementById('e_down').value=p.speed_down ? (p.speed_down/1000) : 0;
-  document.getElementById('e_up').value=p.speed_up ? (p.speed_up/1000) : 0;
-  document.getElementById('e_down_upto').value=p.speed_down_upto ? (p.speed_down_upto/1000) : '';
-  document.getElementById('e_up_upto').value=p.speed_up_upto ? (p.speed_up_upto/1000) : '';
-  document.getElementById('e_night_down').value=p.night_speed_down ? (p.night_speed_down/1000) : 0;
-  document.getElementById('e_night_up').value=p.night_speed_up ? (p.night_speed_up/1000) : 0;
-  document.getElementById('e_night_profile').value=p.night_profile_name || '';
+  document.getElementById('e_down').value = p.speed_down ? (p.speed_down/1000) : 0;
+  document.getElementById('e_up').value = p.speed_up ? (p.speed_up/1000) : 0;
+  document.getElementById('e_down_upto').value = p.speed_down_upto ? (p.speed_down_upto/1000) : '';
+  document.getElementById('e_up_upto').value = p.speed_up_upto ? (p.speed_up_upto/1000) : '';
+  document.getElementById('e_night_down').value = p.night_speed_down ? (p.night_speed_down/1000) : 0;
+  document.getElementById('e_night_up').value = p.night_speed_up ? (p.night_speed_up/1000) : 0;
+  document.getElementById('e_night_profile').value = p.night_profile_name || '';
   document.getElementById('e_use_night').checked = !!p.use_night_speed;
   document.getElementById('e_night_fields').style.display = p.use_night_speed ? 'block' : 'none';
 
-  document.getElementById('e_fup_limit').value=p.fup_limit_gb || 0;
-  document.getElementById('e_fup_speed').value=p.fup_speed_down ? (p.fup_speed_down/1000) : 0;
-  document.getElementById('e_fup_profile').value=p.fup_profile_name || '';
+  document.getElementById('e_fup_limit').value = p.fup_limit_gb || 0;
+  document.getElementById('e_fup_speed').value = p.fup_speed_down ? (p.fup_speed_down/1000) : 0;
+  document.getElementById('e_fup_profile').value = p.fup_profile_name || '';
   document.getElementById('e_use_fup').checked = !!p.use_fup;
   document.getElementById('e_fup_fields').style.display = p.use_fup ? 'block' : 'none';
 
-  document.getElementById('e_active').value=p.is_active?'1':'0';
-  document.getElementById('e_desc').value=p.description||'';
+  document.getElementById('e_active').value = p.is_active ? '1' : '0';
+  document.getElementById('e_desc').value = p.description || '';
   
   const isPrepaid = p.billing_type === 'prepaid';
   document.getElementById('e_billing_type').value = isPrepaid ? 'prepaid' : 'postpaid';
   document.getElementById('e_duration_days').value = p.duration_days || 30;
   document.getElementById('e_duration_days_fg').style.display = isPrepaid ? 'block' : 'none';
 
+  switchEditTab('edit_tab_general', document.querySelector('#editModal .mo-tab-btn'));
   openModal('editModal');
+}
+
+// Clone / Duplicate Package
+function clonePkg(idx) {
+  const p = packagesData[idx];
+  if (!p) return;
+  document.getElementById('addForm').reset();
+  document.getElementById('add_name').value = (p.name || '') + ' (Kloning)';
+  document.getElementById('add_router_id').value = p.router_id || '';
+  document.getElementById('add_price').value = p.price || 0;
+  document.getElementById('add_description').value = p.description || '';
+  document.getElementById('add_down').value = p.speed_down ? (p.speed_down/1000) : 0;
+  document.getElementById('add_up').value = p.speed_up ? (p.speed_up/1000) : 0;
+  document.getElementById('add_down_upto').value = p.speed_down_upto ? (p.speed_down_upto/1000) : '';
+  document.getElementById('add_up_upto').value = p.speed_up_upto ? (p.speed_up_upto/1000) : '';
+  
+  const isPrepaid = p.billing_type === 'prepaid';
+  document.getElementById('add_billing_type').value = isPrepaid ? 'prepaid' : 'postpaid';
+  document.getElementById('add_duration_days').value = p.duration_days || 30;
+  document.getElementById('add_duration_days_fg').style.display = isPrepaid ? 'block' : 'none';
+
+  document.getElementById('add_promo_price').value = (p.promo_price != null && p.promo_price !== '') ? p.promo_price : '';
+  document.getElementById('add_promo_cycles').value = p.promo_cycles != null ? p.promo_cycles : 0;
+  document.getElementById('add_prorate').checked = !!p.prorate_first_invoice;
+
+  document.getElementById('add_use_ppn').checked = !!p.use_ppn;
+  document.getElementById('add_ppn_percentage').value = p.ppn_percentage != null ? p.ppn_percentage : 11.0;
+  document.getElementById('add_use_uso').checked = !!p.use_uso;
+  document.getElementById('add_uso_percentage').value = p.uso_percentage != null ? p.uso_percentage : 1.75;
+
+  document.getElementById('add_use_night').checked = !!p.use_night_speed;
+  document.getElementById('add_night_speed_down').value = p.night_speed_down ? (p.night_speed_down/1000) : 0;
+  document.getElementById('add_night_speed_up').value = p.night_speed_up ? (p.night_speed_up/1000) : 0;
+  document.getElementById('add_night_profile_input').value = p.night_profile_name || '';
+  toggleAddNight();
+
+  document.getElementById('add_use_fup').checked = !!p.use_fup;
+  document.getElementById('add_fup_limit_gb').value = p.fup_limit_gb || 0;
+  document.getElementById('add_fup_speed_down').value = p.fup_speed_down ? (p.fup_speed_down/1000) : 0;
+  document.getElementById('add_fup_profile_input').value = p.fup_profile_name || '';
+  toggleAddFup();
+
+  switchAddTab('add_tab_general', document.querySelector('#addModal .mo-tab-btn'));
+  openModal('addModal');
+  showToast(`Data paket "${p.name}" berhasil dikloning. Silakan sesuaikan dan simpan.`, 'bi-copy text-info');
+}
+
+// Quick AJAX Status Toggle
+async function togglePackageStatus(pkgId, checkbox) {
+  const label = document.getElementById('status_label_' + pkgId);
+  const row = checkbox.closest('.pkg-row');
+  try {
+    const res = await fetch(`/admin/packages/${pkgId}/toggle-status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const isActive = !!data.is_active;
+      checkbox.checked = isActive;
+      label.textContent = isActive ? 'Aktif' : 'Nonaktif';
+      label.style.color = isActive ? 'var(--success)' : 'var(--muted)';
+      if (row) row.dataset.status = isActive ? 'active' : 'inactive';
+      showToast(`Status paket berhasil diubah ke ${isActive ? 'Aktif' : 'Nonaktif'}.`);
+    } else {
+      checkbox.checked = !checkbox.checked;
+      showToast('Gagal mengubah status: ' + (data.error || 'Unknown error'), 'bi-exclamation-triangle-fill text-danger');
+    }
+  } catch (err) {
+    checkbox.checked = !checkbox.checked;
+    showToast('Terjadi kesalahan jaringan.', 'bi-exclamation-triangle-fill text-danger');
+  }
+}
+
+// Delete Confirmation with Customer Warning
+function confirmDeletePkg(name, customerCount) {
+  if (customerCount > 0) {
+    return confirm(`⚠️ PERINGATAN: Paket "${name}" saat ini sedang digunakan oleh ${customerCount} pelanggan aktif!\n\nJika dihapus, pelanggan tersebut akan kehilangan referensi paket internet mereka.\n\nApakah Anda benar-benar yakin ingin menghapus paket ini?`);
+  }
+  return confirm(`Hapus paket internet "${name}"?`);
 }
 
 function toggleAddBillingType(val) {
@@ -530,7 +1300,90 @@ function toggleAddNight() { document.getElementById('add_night_fields').style.di
 function toggleAddFup() { document.getElementById('add_fup_fields').style.display = document.getElementById('add_use_fup').checked ? 'block' : 'none'; }
 function toggleEditNight() { document.getElementById('e_night_fields').style.display = document.getElementById('e_use_night').checked ? 'block' : 'none'; }
 function toggleEditFup() { document.getElementById('e_fup_fields').style.display = document.getElementById('e_use_fup').checked ? 'block' : 'none'; }
-setTimeout(()=>document.querySelectorAll('.alert').forEach(a=>a.style.display='none'),4000);
+
+// Filter Table Logic
+function filterTable() {
+  const query = (document.getElementById('pkgSearch').value || '').toLowerCase().trim();
+  const statusFilter = document.getElementById('filterStatus').value;
+  const billingFilter = document.getElementById('filterBilling').value;
+
+  const rows = document.querySelectorAll('.pkg-row');
+  let visibleCount = 0;
+
+  rows.forEach(r => {
+    const name = r.dataset.name || '';
+    const desc = r.dataset.desc || '';
+    const status = r.dataset.status || '';
+    const billing = r.dataset.billing || '';
+
+    const matchQuery = !query || name.includes(query) || desc.includes(query);
+    const matchStatus = !statusFilter || status === statusFilter;
+    const matchBilling = !billingFilter || billing === billingFilter;
+
+    if (matchQuery && matchStatus && matchBilling) {
+      r.style.display = '';
+      visibleCount++;
+    } else {
+      r.style.display = 'none';
+    }
+  });
+
+  const countEl = document.getElementById('visiblePkgCount');
+  if (countEl) countEl.textContent = visibleCount;
+}
+
+function filterByStatCard(status) {
+  document.querySelectorAll('.stat-grid .sc').forEach(c => c.classList.remove('stat-card-active'));
+  if (status === 'active') {
+    document.getElementById('sc_active').classList.add('stat-card-active');
+    document.getElementById('filterStatus').value = 'active';
+  } else if (status === 'inactive') {
+    document.getElementById('sc_inactive').classList.add('stat-card-active');
+    document.getElementById('filterStatus').value = 'inactive';
+  } else {
+    document.getElementById('sc_all').classList.add('stat-card-active');
+    document.getElementById('filterStatus').value = '';
+  }
+  filterTable();
+}
+
+// Auto-Push PPP Profile ke Router MikroTik
+async function pushPkgToMikrotik(pkgId, pkgName, btn) {
+  const origHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat spin text-primary"></i>';
+  }
+  showToast(`Sedang melakukan sinkronisasi profile "${pkgName}" ke MikroTik...`, 'bi-arrow-repeat spin text-primary');
+  try {
+    const res = await fetch(`/admin/packages/${pkgId}/push-mikrotik`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const successes = (data.results || []).filter(r => r.action !== 'failed');
+      const fails = (data.results || []).filter(r => r.action === 'failed');
+      if (successes.length > 0) {
+        const routerNames = successes.map(s => s.routerName).join(', ');
+        showToast(`Profile "${pkgName}" (${data.rateLimit}) berhasil di-push ke MikroTik (${routerNames})!`, 'bi-check-circle-fill text-success');
+      } else if (fails.length > 0) {
+        showToast(`Sinkronisasi gagal ke router ${fails[0].routerName}: ${fails[0].error}`, 'bi-exclamation-triangle-fill text-danger');
+      } else {
+        showToast(data.message || 'Tidak ada router aktif untuk disinkronkan.', 'bi-info-circle text-info');
+      }
+    } else {
+      showToast('Gagal push ke MikroTik: ' + (data.error || 'Terjadi kesalahan'), 'bi-exclamation-triangle-fill text-danger');
+    }
+  } catch (err) {
+    showToast('Terjadi kesalahan jaringan: ' + err.message, 'bi-exclamation-triangle-fill text-danger');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+    }
+  }
+}
 
 // Load MikroTik profiles into select dropdowns
 async function loadProfiles() {
@@ -548,8 +1401,8 @@ async function loadProfiles() {
 
     profiles.forEach(p => {
       const opt = `<option value="${p.name}">${p.name}</option>`;
-      selAdd.innerHTML += opt;
-      selEdit.innerHTML += opt;
+      if (selAdd) selAdd.innerHTML += opt;
+      if (selEdit) selEdit.innerHTML += opt;
       if (selAddNight) selAddNight.innerHTML += opt;
       if (selAddFup) selAddFup.innerHTML += opt;
       if (selEditNight) selEditNight.innerHTML += opt;
@@ -560,6 +1413,8 @@ async function loadProfiles() {
   }
 }
 loadProfiles();
+
+setTimeout(() => document.querySelectorAll('.alert').forEach(a => a.style.display = 'none'), 4000);
 </script>
 </body>
 </html>

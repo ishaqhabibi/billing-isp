@@ -2092,6 +2092,130 @@ async function getBackup(routerId = null) {
   }
 }
 
+// ─── AUTO-PUSH PPP PROFILES UNTUK PAKET INTERNET ─────────────────────────────
+function formatMikrotikRateLimit(downKbps, upKbps, downUptoKbps = 0, upUptoKbps = 0) {
+  const toRateStr = (k) => {
+    const val = Number(k) || 0;
+    if (val <= 0) return '0';
+    if (val >= 1000 && val % 1000 === 0) return `${val / 1000}M`;
+    return `${val}k`;
+  };
+
+  const rx = toRateStr(upKbps);
+  const tx = toRateStr(downKbps);
+  const baseRate = `${rx}/${tx}`;
+
+  const hasBurst = (Number(downUptoKbps) > Number(downKbps)) || (Number(upUptoKbps) > Number(upKbps));
+  if (hasBurst) {
+    const burstRx = toRateStr(Number(upUptoKbps) > Number(upKbps) ? upUptoKbps : upKbps);
+    const burstTx = toRateStr(Number(downUptoKbps) > Number(downKbps) ? downUptoKbps : downKbps);
+    return `${baseRate} ${burstRx}/${burstTx} ${baseRate} 16/16`;
+  }
+  return baseRate;
+}
+
+async function pushPackageProfileToMikrotik(pkg, targetRouterId = null) {
+  if (!pkg || !pkg.name) throw new Error('Data paket tidak valid');
+
+  const rateLimit = formatMikrotikRateLimit(pkg.speed_down, pkg.speed_up, pkg.speed_down_upto, pkg.speed_up_upto);
+  
+  let routersToPush = [];
+  if (targetRouterId) {
+    const r = getRouterById(targetRouterId);
+    if (r) routersToPush.push(r);
+  } else if (pkg.router_id) {
+    const r = getRouterById(pkg.router_id);
+    if (r) routersToPush.push(r);
+  } else {
+    routersToPush = getAllRouters().filter(r => r.is_active === 1 || r.is_active === '1' || r.is_active === true);
+  }
+
+  if (routersToPush.length === 0) {
+    return { ok: true, message: 'Tidak ada router aktif untuk disinkronkan', results: [] };
+  }
+
+  const results = [];
+
+  for (const router of routersToPush) {
+    let conn = null;
+    try {
+      conn = await getConnection(router.id);
+      const menu = conn.client.menu('/ppp/profile');
+      const rows = await menu.get();
+      const list = Array.isArray(rows) ? rows : [];
+
+      // 1. Profil Utama Paket
+      const profileName = String(pkg.name).trim();
+      const prof = list.find(r => String(r.name || '').trim() === profileName);
+      const profileData = {
+        name: profileName,
+        'rate-limit': rateLimit
+      };
+      if (pkg.description) {
+        profileData.comment = String(pkg.description).slice(0, 100);
+      }
+
+      if (prof) {
+        const id = prof['.id'] || prof.id;
+        await menu.set(profileData, id);
+        results.push({ routerId: router.id, routerName: router.name, profile: profileName, action: 'updated', rateLimit });
+      } else {
+        await menu.add(profileData);
+        results.push({ routerId: router.id, routerName: router.name, profile: profileName, action: 'created', rateLimit });
+      }
+
+      // 2. Profil Jam Kalong (Malam) bila aktif
+      if (pkg.use_night_speed && pkg.night_profile_name && (pkg.night_speed_down || pkg.night_speed_up)) {
+        const nightRate = formatMikrotikRateLimit(pkg.night_speed_down, pkg.night_speed_up);
+        const nightName = String(pkg.night_profile_name).trim();
+        const nightProf = list.find(r => String(r.name || '').trim() === nightName);
+        const nightData = {
+          name: nightName,
+          'rate-limit': nightRate,
+          comment: `Night Speed Profile (${profileName})`
+        };
+        if (nightProf) {
+          const nid = nightProf['.id'] || nightProf.id;
+          await menu.set(nightData, nid);
+          results.push({ routerId: router.id, routerName: router.name, profile: nightName, action: 'updated', rateLimit: nightRate });
+        } else {
+          await menu.add(nightData);
+          results.push({ routerId: router.id, routerName: router.name, profile: nightName, action: 'created', rateLimit: nightRate });
+        }
+      }
+
+      // 3. Profil FUP bila aktif
+      if (pkg.use_fup && pkg.fup_profile_name && pkg.fup_speed_down) {
+        const fupRate = formatMikrotikRateLimit(pkg.fup_speed_down, Math.min(pkg.speed_up || 1000, pkg.fup_speed_down));
+        const fupName = String(pkg.fup_profile_name).trim();
+        const fupProf = list.find(r => String(r.name || '').trim() === fupName);
+        const fupData = {
+          name: fupName,
+          'rate-limit': fupRate,
+          comment: `FUP Throttle Profile (${profileName})`
+        };
+        if (fupProf) {
+          const fid = fupProf['.id'] || fupProf.id;
+          await menu.set(fupData, fid);
+          results.push({ routerId: router.id, routerName: router.name, profile: fupName, action: 'updated', rateLimit: fupRate });
+        } else {
+          await menu.add(fupData);
+          results.push({ routerId: router.id, routerName: router.name, profile: fupName, action: 'created', rateLimit: fupRate });
+        }
+      }
+
+      listCache.delete(cacheKey(router.id, 'pppoeProfiles'));
+    } catch (err) {
+      logger.warn(`[MikroTik] Push PPP profile error for router ${router.name}: ${err.message}`);
+      results.push({ routerId: router.id, routerName: router.name, profile: pkg.name, action: 'failed', error: err.message });
+    } finally {
+      if (conn && conn.api) conn.api.close();
+    }
+  }
+
+  return { ok: true, results, rateLimit };
+}
+
 module.exports = {
   checkConnection,
   getConnection,
@@ -2141,5 +2265,7 @@ module.exports = {
   generateIsolirPortalScript,
   manageStaticIp,
   removeStaticIp,
-  setProfileMikhmonScript
+  setProfileMikhmonScript,
+  formatMikrotikRateLimit,
+  pushPackageProfileToMikrotik
 };

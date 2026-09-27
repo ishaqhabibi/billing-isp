@@ -84,6 +84,7 @@
     .pb-amber{background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.25)}
     .pb-rose{background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.25)}
     .pb-blue{background:rgba(0,82,204,0.12);color:#38bdf8;border:1px solid rgba(56,189,248,0.25)}
+    .pb-slate{background:rgba(148,163,184,0.12);color:#94a3b8;border:1px solid rgba(148,163,184,0.25)}
 
     /* UTILITY QUICK LAUNCH BAR */
     .utility-bar{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
@@ -139,17 +140,43 @@
               <i class="bi bi-clock"></i> Server: <strong style="color:var(--text);"><%= (new Date()).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: (typeof settings !== 'undefined' && settings.timezone) ? settings.timezone : 'Asia/Jakarta' }) %></strong>
             </div>
             <span>•</span>
-            <div class="dash-meta-item">
-              <i class="bi bi-hdd-network" style="color:var(--info);"></i> Gateway: 
+            <div class="dash-meta-item" id="header-gateway-item">
+              <span id="header-router-dot" class="dot <%= (typeof systemHealth !== 'undefined' && systemHealth?.mikrotik?.connected) ? 'dot-on' : 'dot-off' %>"></span> Gateway: 
               <% if (typeof routers !== 'undefined' && routers && routers.length > 0) { %>
-                <strong style="color:var(--success);"><%= routers[0].name || 'Mikrotik Gateway' %></strong> (<%= routers[0].host || 'Aktif' %>)
+                <strong id="header-router-name" style="color:var(--text);"><%= routers[0].name || 'Mikrotik' %></strong>
+                <span id="header-router-host" style="color:var(--muted); font-size:11px;">(<%= routers[0].host %>)</span>
               <% } else { %>
-                <strong style="color:var(--success);">Mikrotik Gateway</strong>
+                <strong id="header-router-name" style="color:var(--muted);">Belum Ada Router</strong>
+                <span id="header-router-host" style="color:var(--muted); font-size:11px;">(-)</span>
+              <% } %>
+              <% if (typeof systemHealth !== 'undefined' && systemHealth?.mikrotik) { %>
+                <% if (systemHealth.mikrotik.connected) { %>
+                  <span id="header-router-badge" class="badge bs" style="font-size:10px; padding:1px 6px;">Terhubung</span>
+                <% } else if (systemHealth.mikrotik.configured) { %>
+                  <span id="header-router-badge" class="badge bd" style="font-size:10px; padding:1px 6px;" title="<%= systemHealth.mikrotik.message %>">Terputus</span>
+                <% } else { %>
+                  <span id="header-router-badge" class="badge bw" style="font-size:10px; padding:1px 6px;">Belum Diatur</span>
+                <% } %>
+              <% } else { %>
+                <span id="header-router-badge" class="badge bd" style="font-size:10px; padding:1px 6px;">Memeriksa...</span>
               <% } %>
             </div>
             <span>•</span>
-            <div class="dash-meta-item">
-              <span class="live-dot"></span> TR-069 Sync: <strong id="header-sync-time" style="color:var(--text);">-</strong>
+            <div class="dash-meta-item" id="header-tr069-item">
+              <span id="header-tr069-dot" class="dot <%= (typeof systemHealth !== 'undefined' && systemHealth?.genieacs?.connected) ? 'dot-on' : 'dot-off' %>"></span> TR-069: 
+              <% if (typeof systemHealth !== 'undefined' && systemHealth?.genieacs) { %>
+                <% if (systemHealth.genieacs.connected) { %>
+                  <span id="header-tr069-badge" class="badge bs" style="font-size:10px; padding:1px 6px;"><%= systemHealth.genieacs.deviceCount > 0 ? 'Aktif' : 'Online (0 ONU)' %></span>
+                <% } else if (systemHealth.genieacs.configured) { %>
+                  <span id="header-tr069-badge" class="badge bd" style="font-size:10px; padding:1px 6px;" title="<%= systemHealth.genieacs.message %>"><%= (systemHealth.genieacs.mode === 'builtin' && systemHealth.genieacs.deviceCount === 0) ? 'Belum Ada ONU' : 'Terputus' %></span>
+                <% } else { %>
+                  <span id="header-tr069-badge" class="badge bw" style="font-size:10px; padding:1px 6px;">Belum Diatur</span>
+                <% } %>
+              <% } else { %>
+                <span id="header-tr069-badge" class="badge bd" style="font-size:10px; padding:1px 6px;">Memeriksa...</span>
+              <% } %>
+              <span style="font-size:11px; color:var(--muted); margin-left:4px;">Sync:</span>
+              <strong id="header-sync-time" style="color:var(--muted); font-size:11px;">-</strong>
             </div>
           </div>
         </div>
@@ -335,10 +362,20 @@
                     <i class="bi bi-hdd-network text-primary" style="font-size:15px;"></i>
                     <div>
                       <div style="font-weight:600; color:var(--text);">Router Gateway Core</div>
-                      <div style="font-size:10px; color:var(--muted);"><%= (typeof routers !== 'undefined' && routers && routers.length > 0) ? (routers[0].host + ' • ' + (routers[0].name || 'Mikrotik')) : 'Koneksi API Mikrotik Siap' %></div>
+                      <div id="dash-router-subtext" style="font-size:10px; color:var(--muted);"><%= (typeof routers !== 'undefined' && routers && routers.length > 0) ? (routers[0].host + ' • ' + (routers[0].name || 'Mikrotik')) : 'Belum ada router dikonfigurasi' %></div>
                     </div>
                   </div>
-                  <span class="pill-badge pb-emerald">Terhubung</span>
+                  <% if (typeof systemHealth !== 'undefined' && systemHealth?.mikrotik) { %>
+                    <% if (systemHealth.mikrotik.connected) { %>
+                      <span id="dash-router-badge" class="pill-badge pb-emerald">Terhubung</span>
+                    <% } else if (systemHealth.mikrotik.configured) { %>
+                      <span id="dash-router-badge" class="pill-badge pb-rose" title="<%= systemHealth.mikrotik.message %>">Terputus</span>
+                    <% } else { %>
+                      <span id="dash-router-badge" class="pill-badge pb-amber">Belum Diatur</span>
+                    <% } %>
+                  <% } else { %>
+                    <span id="dash-router-badge" class="pill-badge pb-slate">Memeriksa...</span>
+                  <% } %>
                 </div>
               </div>
             </div>
@@ -845,20 +882,18 @@ async function loadStats() {
     const online  = d.online  || 0;
     const offline = d.offline || 0;
     const warning = d.warning || 0;
-    const pct     = total > 0 ? Math.round(online / total * 100) : (offline === 0 ? 100 : 0);
+    const pct     = total > 0 ? Math.round(online / total * 100) : 0;
 
     // Dashboard Executive KPIs
     const elKpiOnline = document.getElementById('kpi-onu-online');
     const elKpiOffline = document.getElementById('kpi-onu-offline');
     const elKpiWarning = document.getElementById('kpi-onu-warning');
     const elAttnOff = document.getElementById('attn-offline-count');
-    const elSyncTime = document.getElementById('header-sync-time');
 
     if (elKpiOnline) elKpiOnline.textContent = online;
     if (elKpiOffline) elKpiOffline.textContent = offline;
     if (elKpiWarning) elKpiWarning.textContent = warning;
     if (elAttnOff) elAttnOff.textContent = offline;
-    if (elSyncTime) elSyncTime.textContent = new Date().toLocaleTimeString('id-ID', { timeZone: '<%= (typeof settings !== "undefined" && settings.timezone) ? settings.timezone : "Asia/Jakarta" %>' });
 
     // Dashboard legacy IDs
     const stTot = document.getElementById('stat-total');
@@ -897,20 +932,37 @@ async function loadStats() {
 // ── DONUT CHART ────────────────────────────────────────────────
 function updateDonut(online, offline) {
   const ctx = document.getElementById('donutChart');
-  if (donutChart) { donutChart.data.datasets[0].data = [online, offline]; donutChart.update(); return; }
+  if (!ctx) return;
+  const hasData = (online + offline) > 0;
+  const data = hasData ? [online, offline] : [1];
+  const bg = hasData ? ['#3fb950', '#f85149'] : ['rgba(148, 163, 184, 0.15)'];
+
+  if (donutChart) {
+    donutChart.data.datasets[0].data = data;
+    donutChart.data.datasets[0].backgroundColor = bg;
+    donutChart.update();
+    return;
+  }
   donutChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
       datasets: [{
-        data: [online, offline],
-        backgroundColor: ['#3fb950', '#f85149'],
+        data: data,
+        backgroundColor: bg,
         borderWidth: 0,
-        hoverOffset: 4
+        hoverOffset: hasData ? 4 : 0
       }]
     },
     options: {
       cutout: '72%',
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.raw } } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => hasData ? (ctx.label + ': ' + ctx.raw) : 'Belum ada data ONU'
+          }
+        }
+      },
       animation: { animateRotate: true, duration: 600 }
     }
   });
@@ -1091,14 +1143,16 @@ async function loadDevices() {
       if (elRxWarnBar) elRxWarnBar.style.width = Math.round((rxWarn / totalRx) * 100) + '%';
       if (elRxCritBar) elRxCritBar.style.width = Math.round((rxCrit / totalRx) * 100) + '%';
     } else {
-      if (elRxIdeal) elRxIdeal.textContent = 'Normal';
+      if (elRxIdeal) elRxIdeal.textContent = '0 ONU';
       if (elRxWarn) elRxWarn.textContent = '0 ONU';
       if (elRxCrit) elRxCrit.textContent = '0 ONU';
-      if (elRxIdealBar) elRxIdealBar.style.width = '100%';
+      if (elRxIdealBar) elRxIdealBar.style.width = '0%';
+      if (elRxWarnBar) elRxWarnBar.style.width = '0%';
+      if (elRxCritBar) elRxCritBar.style.width = '0%';
     }
 
     // Update offline list on dashboard
-    renderOfflineList(devicesData.filter(d => d.status === 'offline').slice(0, 5));
+    renderOfflineList(devicesData.filter(d => d.status === 'offline').slice(0, 5), devicesData.length);
     // AUTO-REFRESH DISABLED: scheduleFastRefreshIfNeeded() is intentionally removed
     // Dashboard will not auto-refresh during sync operations
 
@@ -1110,11 +1164,15 @@ async function loadDevices() {
 }
 
 // ── OFFLINE LIST (dashboard) ───────────────────────────────────
-function renderOfflineList(offlineDevices) {
+function renderOfflineList(offlineDevices, totalDevices = 0) {
   const el = document.getElementById('offline-list');
   if (!el) return;
+  if (!totalDevices || totalDevices === 0) {
+    el.innerHTML = '<div style="padding:28px 16px; text-align:center; color:var(--muted); font-size:12px;"><i class="bi bi-hdd-network" style="font-size:24px; display:block; margin-bottom:6px; opacity:0.5;"></i> Belum ada perangkat ONU yang terdeteksi / GenieACS belum terhubung.</div>';
+    return;
+  }
   if (!offlineDevices || offlineDevices.length === 0) {
-    el.innerHTML = '<div style="padding:28px 16px; text-align:center; color:var(--success); font-size:12px;"><i class="bi bi-shield-check" style="font-size:24px; display:block; margin-bottom:6px;"></i> Semua ONU saat ini dalam kondisi Online &amp; Terhubung!</div>';
+    el.innerHTML = '<div style="padding:28px 16px; text-align:center; color:var(--success); font-size:12px;"><i class="bi bi-shield-check" style="font-size:24px; display:block; margin-bottom:6px;"></i> Semua ONU (' + totalDevices + ' perangkat) saat ini dalam kondisi Online &amp; Terhubung!</div>';
     return;
   }
   el.innerHTML = '<div class="stream-list">' + offlineDevices.slice(0, 5).map(d => {
@@ -1352,35 +1410,104 @@ function showToast(msg, type = 's') {
   setTimeout(() => { if(t.parentElement) t.style.animation = 'slideOutRight .3s ease forwards'; setTimeout(() => t.remove(), 300); }, 5000);
 }
 
-// ── REFRESH ALL ────────────────────────────────────────────────
-// DEPRECATED: This function is kept for backward compatibility but is disabled
-// Use manualRefreshAll() for user-initiated refreshes only
-function refreshAll() {
-  // INTENTIONALLY DISABLED - Auto-refresh has been turned off
-  // This function will only be called when user manually clicks "Refresh" button
-  loadStats();
-  loadDevices();
+// ── SYSTEM HEALTH CHECK (MikroTik & GenieACS Real Status) ──────
+async function checkSystemHealth(force = false) {
+  try {
+    const res = await fetch('/admin/api/system-health' + (force ? '?force=1' : ''));
+    if (!res.ok) return;
+    const data = await res.json();
+
+    // 1. Update MikroTik Gateway Status
+    const mt = data.mikrotik || {};
+    const routerNameEl = document.getElementById('header-router-name');
+    const routerHostEl = document.getElementById('header-router-host');
+    const routerBadgeEl = document.getElementById('header-router-badge');
+    const routerDotEl = document.getElementById('header-router-dot');
+    const dashRouterBadge = document.getElementById('dash-router-badge');
+    const dashRouterSubtext = document.getElementById('dash-router-subtext');
+
+    if (routerNameEl && mt.name && mt.name !== '-') routerNameEl.textContent = mt.name;
+    if (routerHostEl && mt.host && mt.host !== '-') routerHostEl.textContent = '(' + mt.host + ')';
+    if (dashRouterSubtext && mt.host && mt.host !== '-') {
+      dashRouterSubtext.textContent = mt.host + ' • ' + (mt.name || 'Mikrotik');
+    }
+
+    if (!mt.configured) {
+      if (routerDotEl) routerDotEl.className = 'dot dot-off';
+      if (routerBadgeEl) { routerBadgeEl.className = 'badge bw'; routerBadgeEl.textContent = 'Belum Diatur'; routerBadgeEl.title = mt.message || ''; }
+      if (dashRouterBadge) { dashRouterBadge.className = 'pill-badge pb-amber'; dashRouterBadge.textContent = 'Belum Diatur'; dashRouterBadge.title = mt.message || ''; }
+    } else if (mt.connected) {
+      if (routerDotEl) routerDotEl.className = 'dot dot-on';
+      if (routerBadgeEl) { routerBadgeEl.className = 'badge bs'; routerBadgeEl.textContent = 'Terhubung'; routerBadgeEl.title = 'Terhubung ke router API'; }
+      if (dashRouterBadge) { dashRouterBadge.className = 'pill-badge pb-emerald'; dashRouterBadge.textContent = 'Terhubung'; dashRouterBadge.title = 'Terhubung ke router API'; }
+    } else {
+      if (routerDotEl) routerDotEl.className = 'dot dot-off';
+      if (routerBadgeEl) { routerBadgeEl.className = 'badge bd'; routerBadgeEl.textContent = 'Terputus'; routerBadgeEl.title = mt.message || 'Koneksi gagal'; }
+      if (dashRouterBadge) { dashRouterBadge.className = 'pill-badge pb-rose'; dashRouterBadge.textContent = 'Terputus'; dashRouterBadge.title = mt.message || 'Koneksi gagal'; }
+    }
+
+    // 2. Update GenieACS TR-069 Status
+    const acs = data.genieacs || {};
+    const tr069DotEl = document.getElementById('header-tr069-dot');
+    const tr069BadgeEl = document.getElementById('header-tr069-badge');
+    const tr069SyncEl = document.getElementById('header-sync-time');
+
+    if (!acs.configured) {
+      if (tr069DotEl) tr069DotEl.className = 'dot dot-off';
+      if (tr069BadgeEl) { tr069BadgeEl.className = 'badge bw'; tr069BadgeEl.textContent = 'Belum Diatur'; tr069BadgeEl.title = acs.message || ''; }
+      if (tr069SyncEl) { tr069SyncEl.textContent = '-'; tr069SyncEl.style.color = 'var(--muted)'; }
+    } else if (acs.connected) {
+      if (tr069DotEl) tr069DotEl.className = 'live-dot';
+      if (tr069BadgeEl) {
+        tr069BadgeEl.className = 'badge bs';
+        tr069BadgeEl.textContent = acs.deviceCount > 0 ? 'Aktif' : 'Online (0 ONU)';
+        tr069BadgeEl.title = acs.message || '';
+      }
+      if (tr069SyncEl && acs.lastSync) {
+        tr069SyncEl.textContent = new Date(acs.lastSync).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        tr069SyncEl.style.color = 'var(--text)';
+      }
+    } else {
+      if (tr069DotEl) tr069DotEl.className = 'dot dot-off';
+      if (tr069BadgeEl) {
+        tr069BadgeEl.className = 'badge bd';
+        tr069BadgeEl.textContent = (acs.mode === 'builtin' && acs.deviceCount === 0) ? 'Belum Ada ONU' : 'Terputus';
+        tr069BadgeEl.title = acs.message || 'GenieACS tidak terhubung';
+      }
+      if (tr069SyncEl) { tr069SyncEl.textContent = '-'; tr069SyncEl.style.color = 'var(--muted)'; }
+    }
+  } catch (err) {
+    console.error('Check system health error:', err);
+  }
 }
 
-// This is the proper function to call for auto-refresh (which is now disabled)
+// ── REFRESH ALL ────────────────────────────────────────────────
+async function refreshAll() {
+  const icon = document.getElementById('dash-refresh-icon');
+  if (icon) icon.classList.add('spin');
+  try {
+    await Promise.all([
+      checkSystemHealth(true),
+      loadStats(),
+      loadDevices()
+    ]);
+  } finally {
+    if (icon) setTimeout(() => icon.classList.remove('spin'), 600);
+  }
+}
+
 function manualRefreshAll() {
-  loadStats();
-  loadDevices();
+  refreshAll();
 }
 
 function scheduleFastRefreshIfNeeded() {
-  // Auto-refresh during sync disabled to prevent continuous polling
   if (fastRefreshTimer) {
     clearTimeout(fastRefreshTimer);
     fastRefreshTimer = null;
   }
-  // Commented out: Previously would auto-refresh every 5s when devices were syncing
-  // if (!Array.isArray(devicesData) || !devicesData.some(d => d.syncInProgress)) return;
-  // fastRefreshTimer = setTimeout(() => {
-  //   refreshAll();
-  // }, 5000);
 }
 
+checkSystemHealth();
 loadStats();
 loadDevices();
 // Auto-refresh disabled: Dashboard akan hanya refresh saat halaman pertama kali dibuka atau saat admin click tombol Refresh

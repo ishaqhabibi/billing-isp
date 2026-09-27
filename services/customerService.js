@@ -457,6 +457,7 @@ function createPackage(data) {
   const routerId = data.router_id ? parseInt(data.router_id, 10) : null;
   const billingType = (data.billing_type === 'prepaid') ? 'prepaid' : 'postpaid';
   const durationDays = Math.max(1, parseInt(data.duration_days, 10) || 30);
+  const isActive = (data.is_active === '0' || data.is_active === 0) ? 0 : 1;
 
   return db.prepare(`
     INSERT INTO packages (
@@ -464,17 +465,17 @@ function createPackage(data) {
       speed_down, speed_up, speed_down_upto, speed_up_upto,
       use_night_speed, night_profile_name, night_speed_down, night_speed_up, 
       use_fup, fup_profile_name, fup_limit_gb, fup_speed_down, 
-      description,
+      description, is_active,
       billing_type, duration_days,
       use_ppn, ppn_percentage, use_uso, uso_percentage, router_id
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     data.name, parseInt(data.price) || 0, promoPrice, promoCycles, prorateFirst,
     down, up, down_upto, up_upto,
     data.use_night_speed ? 1 : 0, data.night_profile_name || null, n_down, n_up,
     data.use_fup ? 1 : 0, data.fup_profile_name || null, f_limit, f_down,
-    data.description || '',
+    data.description || '', isActive,
     billingType, durationDays,
     usePpn, ppnPercentage, useUso, usoPercentage, routerId
   );

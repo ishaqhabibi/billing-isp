@@ -603,6 +603,10 @@
         <i class="bi bi-wifi"></i> Sesi Aktif RADIUS
         <span class="seg-count" id="badge-online-count"><%= onlineSessions.length %></span>
       </button>
+      <button type="button" class="seg-btn" id="tab-btn-users" onclick="switchTab('users')">
+        <i class="bi bi-people-fill"></i> Database Akun RADIUS
+        <span class="seg-count" id="badge-users-count"><%= typeof radiusUsers !== 'undefined' ? radiusUsers.length : 0 %></span>
+      </button>
       <button type="button" class="seg-btn" id="tab-btn-settings" onclick="switchTab('settings')">
         <i class="bi bi-sliders"></i> Pengaturan RADIUS
       </button>
@@ -1311,6 +1315,245 @@
           </div>
         </div>
       </div>
+    <!-- TAB 5: DATABASE AKUN RADIUS (USER CREDENTIALS & PROFILES) -->
+    <div id="tab-content-users" class="tab-pane" style="display:none;">
+      <div class="card-modern mb16">
+        <div class="card-modern-hd">
+          <div class="card-modern-title">
+            <i class="bi bi-people-fill text-primary"></i> Database Akun RADIUS (User Credentials &amp; Profiles)
+            <span class="badge" style="background:rgba(99,102,241,0.12);color:var(--primary);font-size:11px;" id="users-badge-indicator">
+              <span id="users-counter-label"><%= typeof radiusUsers !== 'undefined' ? radiusUsers.length : 0 %> Akun Terdaftar</span>
+            </span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <a href="/admin/customers" class="btn btn-g btn-sm" style="text-decoration:none;" title="Kelola Pelanggan Lengkap">
+              <i class="bi bi-people"></i> Buka Menu Pelanggan
+            </a>
+            <button type="button" class="btn btn-p btn-sm" onclick="exportRadiusUsersCsv()" title="Export CSV Akun RADIUS">
+              <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="table-toolbar">
+          <div class="search-filter-wrap">
+            <div class="search-input-box">
+              <i class="bi bi-search search-icon"></i>
+              <input type="text" id="radiusUserSearchInput" placeholder="Cari username, nama pelanggan, IP statis, paket..." oninput="filterRadiusUsersTable()" autocomplete="off">
+              <button type="button" class="btn-clear-search" id="radiusUserClearSearch" onclick="clearRadiusUserSearch()">&times;</button>
+            </div>
+            
+            <!-- Filter Status Akun -->
+            <div style="min-width:140px;">
+              <select id="radiusUserStatusFilter" class="fs" style="padding:6px 12px;font-size:12px;height:auto;background:var(--bg3);border-color:var(--border);" onchange="filterRadiusUsersTable()">
+                <option value="">Semua Status Layanan</option>
+                <option value="active">Layanan Aktif</option>
+                <option value="isolated">Terisolir</option>
+              </select>
+            </div>
+
+            <!-- Filter Mode Autentikasi -->
+            <div style="min-width:160px;">
+              <select id="radiusUserModeFilter" class="fs" style="padding:6px 12px;font-size:12px;height:auto;background:var(--bg3);border-color:var(--border);" onchange="filterRadiusUsersTable()">
+                <option value="">Semua Mode Autentikasi</option>
+                <option value="radius">Full RADIUS (is_radius = 1)</option>
+                <option value="mikrotik">MikroTik Local (is_radius = 0)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;">
+            <span>Menampilkan:</span>
+            <strong id="filteredUserCount" style="color:var(--text);"><%= typeof radiusUsers !== 'undefined' ? radiusUsers.length : 0 %></strong> akun
+          </div>
+        </div>
+
+        <div class="card-bd" style="padding:0;">
+          <div class="tbl-wrap">
+            <table class="dtbl" id="radiusUsersTable">
+              <thead>
+                <tr>
+                  <th style="width:40px;">#</th>
+                  <th>Username PPPoE &amp; Pelanggan</th>
+                  <th>Password / Secret</th>
+                  <th>Paket &amp; Rate-Limit Bandwidth</th>
+                  <th>Alokasi IP Address</th>
+                  <th>Mode Autentikasi</th>
+                  <th>Status Layanan</th>
+                  <th>Sesi Live</th>
+                  <th style="width:120px;text-align:right;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="radiusUsersTableBody">
+                <% if (typeof radiusUsers !== 'undefined' && radiusUsers && radiusUsers.length > 0) { %>
+                  <% 
+                    const onlineUserMap = {};
+                    if (onlineSessions && onlineSessions.length > 0) {
+                      onlineSessions.forEach(s => {
+                        if (s.username) onlineUserMap[String(s.username).toLowerCase()] = s;
+                      });
+                    }
+                  %>
+                  <% radiusUsers.forEach((u, idx) => { %>
+                    <%
+                      const uName = (u.pppoe_username || u.phone || '').trim();
+                      const isOnline = !!onlineUserMap[uName.toLowerCase()];
+                      const onlineSess = onlineUserMap[uName.toLowerCase()];
+                      const sUp = u.speed_up ? (u.speed_up >= 1000 ? Math.round(u.speed_up/1000) + 'M' : u.speed_up + 'k') : '0k';
+                      const sDown = u.speed_down ? (u.speed_down >= 1000 ? Math.round(u.speed_down/1000) + 'M' : u.speed_down + 'k') : '0k';
+                      const rateLimitStr = `${sUp} / ${sDown}`;
+                      const isFullRadius = Boolean(u.is_radius);
+                      const isAct = u.status === 'active';
+                      const safeName = (u.name || '').replace(/'/g, "\\'");
+                    %>
+                    <tr class="radius-user-row"
+                        data-username="<%= uName.toLowerCase() %>"
+                        data-name="<%= (u.name || '').toLowerCase() %>"
+                        data-custcode="<%= (u.customer_code || '').toLowerCase() %>"
+                        data-ip="<%= (u.static_ip || '').toLowerCase() %>"
+                        data-pkg="<%= (u.package_name || '').toLowerCase() %>"
+                        data-status="<%= u.status || 'active' %>"
+                        data-mode="<%= isFullRadius ? 'radius' : 'mikrotik' %>">
+                      <td style="color:var(--muted);font-size:11px;font-family:monospace;"><%= idx + 1 %></td>
+                      
+                      <!-- Username & Customer Info -->
+                      <td>
+                        <div style="font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;">
+                          <span class="font-monospace" style="font-size:13px;color:#38bdf8;"><%= uName %></span>
+                          <button type="button" class="btn-copy-sm" onclick="copyText('<%= uName %>', this)" title="Salin Username PPPoE">
+                            <i class="bi bi-copy"></i>
+                          </button>
+                        </div>
+                        <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">
+                          <strong style="color:var(--text);"><%= u.name %></strong>
+                          <% if (u.customer_code) { %>
+                            <span style="font-family:monospace;font-size:10.5px;color:var(--primary);margin-left:4px;">(<%= u.customer_code %>)</span>
+                          <% } %>
+                        </div>
+                        <% if (u.phone) { %>
+                          <div style="font-size:10.5px;color:var(--muted);margin-top:1px;">
+                            <i class="bi bi-whatsapp" style="color:#10b981;font-size:10px;"></i> <%= u.phone %>
+                          </div>
+                        <% } %>
+                      </td>
+
+                      <!-- Password / Secret with Peek & Copy -->
+                      <td>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                          <span class="font-monospace radius-pass-display" id="pass-display-<%= u.id %>" data-pass="<%= u.pppoe_password || '' %>" style="font-size:12px;letter-spacing:1px;color:var(--text);">
+                            <%= u.pppoe_password ? '••••••••' : '(Kosong)' %>
+                          </span>
+                          <% if (u.pppoe_password) { %>
+                            <button type="button" class="btn-copy-sm" onclick="togglePeekUserPass(<%= u.id %>, this)" title="Intip / Sembunyikan Password">
+                              <i class="bi bi-eye"></i>
+                            </button>
+                            <button type="button" class="btn-copy-sm" onclick="copyText('<%= u.pppoe_password %>', this)" title="Salin Password">
+                              <i class="bi bi-copy"></i>
+                            </button>
+                          <% } %>
+                        </div>
+                      </td>
+
+                      <!-- Paket & Rate Limit -->
+                      <td>
+                        <div style="font-weight:700;color:var(--text);font-size:12.5px;">
+                          <%= u.package_name || 'Tanpa Paket' %>
+                        </div>
+                        <div style="font-size:11px;color:var(--muted);font-family:monospace;margin-top:2px;">
+                          <i class="bi bi-speedometer2" style="color:var(--primary);font-size:11px;"></i> Rate: <strong><%= rateLimitStr %></strong>
+                        </div>
+                      </td>
+
+                      <!-- Alokasi IP -->
+                      <td>
+                        <% if (u.static_ip) { %>
+                          <span class="badge bp font-monospace" style="font-size:11px;">
+                            <i class="bi bi-pin-angle-fill me-1"></i> <%= u.static_ip %>
+                          </span>
+                        <% } else { %>
+                          <span class="badge" style="background:var(--bg3);color:var(--muted);border:1px solid var(--border);font-size:10.5px;">
+                            Dinamis (Pool)
+                          </span>
+                        <% } %>
+                      </td>
+
+                      <!-- Mode Autentikasi -->
+                      <td>
+                        <% if (isFullRadius) { %>
+                          <span class="badge bs" style="cursor:pointer;padding:4px 8px;font-size:11px;" id="badge-mode-<%= u.id %>" onclick="quickToggleRadiusMode(<%= u.id %>, this)" title="Mode Full RADIUS aktif. Klik untuk ubah ke MikroTik Secret">
+                            <i class="bi bi-broadcast me-1"></i> Full RADIUS
+                          </span>
+                        <% } else { %>
+                          <span class="badge bw" style="cursor:pointer;padding:4px 8px;font-size:11px;" id="badge-mode-<%= u.id %>" onclick="quickToggleRadiusMode(<%= u.id %>, this)" title="Mode MikroTik Secret aktif. Klik untuk ubah ke Full RADIUS">
+                            <i class="bi bi-router me-1"></i> MikroTik Local
+                          </span>
+                        <% } %>
+                      </td>
+
+                      <!-- Status Layanan -->
+                      <td>
+                        <% if (isAct) { %>
+                          <span class="badge bs" style="font-size:10.5px;">
+                            <i class="bi bi-check-circle-fill me-1"></i> Aktif
+                          </span>
+                        <% } else { %>
+                          <span class="badge bd" style="font-size:10.5px;" title="Terisolir - RADIUS akan inject Mikrotik-Group isolir">
+                            <i class="bi bi-shield-x me-1"></i> Terisolir
+                          </span>
+                        <% } %>
+                      </td>
+
+                      <!-- Sesi Live -->
+                      <td>
+                        <% if (isOnline) { %>
+                          <div style="display:flex;flex-direction:column;gap:2px;">
+                            <span class="badge bs" style="font-size:10.5px;">
+                              <span class="live-dot" style="width:5px;height:5px;background:#fff;display:inline-block;border-radius:50%;margin-right:3px;"></span> Online
+                            </span>
+                            <span style="font-family:monospace;font-size:10px;color:#10b981;">
+                              <%= onlineSess.framed_ip || '-' %>
+                            </span>
+                          </div>
+                        <% } else { %>
+                          <span class="badge" style="background:var(--bg3);color:var(--muted);font-size:10.5px;">Offline</span>
+                        <% } %>
+                      </td>
+
+                      <!-- Aksi -->
+                      <td style="text-align:right;white-space:nowrap;">
+                        <!-- Ubah Password Cepat Modal -->
+                        <button type="button" class="btn btn-g btn-sm" onclick="openQuickPasswordModal(<%= u.id %>, '<%= uName %>', '<%= safeName %>')" title="Ubah Password PPPoE Cepat">
+                          <i class="bi bi-key-fill text-warning"></i>
+                        </button>
+
+                        <!-- Buka Detail Pelanggan -->
+                        <a href="/admin/customers?search=<%= encodeURIComponent(u.customer_code || uName) %>" class="btn btn-p btn-sm" title="Buka Detail di Data Pelanggan" target="_blank">
+                          <i class="bi bi-person-gear"></i>
+                        </a>
+
+                        <!-- Kick jika sedang online -->
+                        <% if (isOnline && onlineSess) { %>
+                          <button type="button" class="btn btn-d btn-sm" onclick="kickRadiusUser('<%= uName %>', '<%= onlineSess.session_id || '' %>', '<%= onlineSess.nas_ip || '' %>')" title="Putuskan Sesi Online Sekarang">
+                            <i class="bi bi-lightning-charge-fill"></i>
+                          </button>
+                        <% } %>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="9" class="text-center text-muted" style="padding:32px;">
+                      <i class="bi bi-people" style="font-size:32px;opacity:0.4;display:block;margin-bottom:8px;"></i>
+                      Belum ada akun pelanggan dengan username PPPoE yang terdaftar.
+                    </td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Toast Notification Container -->
@@ -1395,6 +1638,46 @@
   </div>
 </div>
 
+<!-- MODAL QUICK PASSWORD RADIUS USER -->
+<div class="mo" id="quickPassModal">
+  <div class="mb" style="max-width: 440px;">
+    <div class="mh">
+      <div class="mt"><i class="bi bi-key-fill text-warning me-2"></i> Ubah Password PPPoE Cepat</div>
+      <button type="button" class="mc" onclick="closeModal('quickPassModal')">&times;</button>
+    </div>
+    <form id="quickPassForm" onsubmit="submitQuickPassword(event)">
+      <input type="hidden" name="id" id="quick_pass_customer_id">
+      <div class="mbody">
+        <div style="padding: 10px 14px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; margin-bottom: 16px; font-size: 13px;">
+          <div style="font-weight: 700; color: var(--text);" id="quick_pass_customer_name">-</div>
+          <div style="font-family: monospace; color: #38bdf8; font-size: 12px; margin-top: 2px;">
+            Username: <span id="quick_pass_pppoe_username" style="font-weight: bold;">-</span>
+          </div>
+        </div>
+
+        <div class="fg">
+          <label class="fl">Password / Secret PPPoE Baru <span style="color:var(--danger);">*</span></label>
+          <div style="position: relative;">
+            <input type="text" name="pppoe_password" id="quick_pass_input" class="fc font-monospace" placeholder="Masukkan password baru..." required autocomplete="off" style="padding-right: 80px;">
+            <button type="button" class="btn btn-g btn-sm" onclick="generateRandomPass('quick_pass_input')" style="position: absolute; right: 4px; top: 4px; bottom: 4px; padding: 0 10px; font-size: 11px;" title="Buat password acak">
+              <i class="bi bi-shuffle"></i> Acak
+            </button>
+          </div>
+          <small style="color: var(--muted); font-size: 11px; margin-top: 4px; display: block;">
+            Password ini akan langsung tersinkronisasi ke database RADIUS.
+          </small>
+        </div>
+      </div>
+      <div class="mf">
+        <button type="button" class="btn btn-g" onclick="closeModal('quickPassModal')">Batal</button>
+        <button type="submit" class="btn btn-p" id="quickPassSubmitBtn">
+          <i class="bi bi-check-lg"></i> Simpan Password
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
   function switchTab(tabId) {
     document.querySelectorAll('.mtab, .seg-btn').forEach(b => b.classList.remove('active'));
@@ -1416,11 +1699,11 @@
   document.addEventListener('DOMContentLoaded', () => {
     let initialTab = 'online';
     const hash = window.location.hash.replace('#', '');
-    if (hash && ['online', 'settings', 'nas', 'accounting'].includes(hash)) {
+    if (hash && ['online', 'settings', 'nas', 'accounting', 'users'].includes(hash)) {
       initialTab = hash;
     } else {
       const savedTab = localStorage.getItem('radius_active_tab');
-      if (savedTab && ['online', 'settings', 'nas', 'accounting'].includes(savedTab)) {
+      if (savedTab && ['online', 'settings', 'nas', 'accounting', 'users'].includes(savedTab)) {
         initialTab = savedTab;
       }
     }
@@ -1428,6 +1711,7 @@
 
     // Initial table filter check
     filterRadiusOnlineTable();
+    filterRadiusUsersTable();
 
     // Start auto-refresh by default if checked
     const autoBox = document.getElementById('autoRefreshOnline');
@@ -1873,6 +2157,239 @@
     link.click();
     document.body.removeChild(link);
     showToast('s', 'File CSV log accounting berhasil diunduh.');
+  }
+
+  // ─── RADIUS USER DATABASE LOGIC (TAB USERS) ───
+  function filterRadiusUsersTable() {
+    const q = (document.getElementById('radiusUserSearchInput')?.value || '').toLowerCase().trim();
+    const statusFilter = (document.getElementById('radiusUserStatusFilter')?.value || '').trim();
+    const modeFilter = (document.getElementById('radiusUserModeFilter')?.value || '').trim();
+    const clearBtn = document.getElementById('radiusUserClearSearch');
+    if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
+    const rows = document.querySelectorAll('.radius-user-row');
+    let visibleCount = 0;
+
+    rows.forEach(r => {
+      const username = r.getAttribute('data-username') || '';
+      const name = r.getAttribute('data-name') || '';
+      const custcode = r.getAttribute('data-custcode') || '';
+      const ip = r.getAttribute('data-ip') || '';
+      const pkg = r.getAttribute('data-pkg') || '';
+      const status = r.getAttribute('data-status') || '';
+      const mode = r.getAttribute('data-mode') || '';
+
+      const matchQ = !q || username.includes(q) || name.includes(q) || custcode.includes(q) || ip.includes(q) || pkg.includes(q);
+      const matchStatus = !statusFilter || (statusFilter === 'active' ? (status === 'active') : (status !== 'active'));
+      const matchMode = !modeFilter || mode === modeFilter;
+
+      if (matchQ && matchStatus && matchMode) {
+        r.style.display = '';
+        visibleCount++;
+      } else {
+        r.style.display = 'none';
+      }
+    });
+
+    const countEl = document.getElementById('filteredUserCount');
+    if (countEl) countEl.textContent = visibleCount;
+  }
+
+  function clearRadiusUserSearch() {
+    const input = document.getElementById('radiusUserSearchInput');
+    const statusFilter = document.getElementById('radiusUserStatusFilter');
+    const modeFilter = document.getElementById('radiusUserModeFilter');
+    if (input) input.value = '';
+    if (statusFilter) statusFilter.value = '';
+    if (modeFilter) modeFilter.value = '';
+    filterRadiusUsersTable();
+    if (input) input.focus();
+  }
+
+  function togglePeekUserPass(id, btn) {
+    const displayEl = document.getElementById('pass-display-' + id);
+    if (!displayEl) return;
+    const pass = displayEl.getAttribute('data-pass') || '';
+    if (!pass) return;
+
+    const isMasked = displayEl.textContent.trim() === '••••••••';
+    if (isMasked) {
+      displayEl.textContent = pass;
+      displayEl.style.color = '#38bdf8';
+      if (btn) btn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+    } else {
+      displayEl.textContent = '••••••••';
+      displayEl.style.color = 'var(--text)';
+      if (btn) btn.innerHTML = '<i class="bi bi-eye"></i>';
+    }
+  }
+
+  async function quickToggleRadiusMode(id, badgeEl) {
+    if (!id || !badgeEl) return;
+    const isCurrentlyRadius = badgeEl.classList.contains('bs');
+    const nextModeName = isCurrentlyRadius ? 'MikroTik Secret (Local)' : 'Full RADIUS';
+    if (!confirm(`Ubah mode autentikasi pelanggan ini menjadi "${nextModeName}"?`)) return;
+
+    const originalText = badgeEl.innerHTML;
+    badgeEl.innerHTML = '<i class="bi bi-arrow-clockwise spin me-1"></i> Menyimpan...';
+    badgeEl.style.pointerEvents = 'none';
+
+    try {
+      const res = await fetch('/admin/radius/user/toggle-mode', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ id })
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (res.ok && data && data.success) {
+        showToast('s', data.message);
+        const row = badgeEl.closest('.radius-user-row');
+        if (data.is_radius) {
+          badgeEl.className = 'badge bs';
+          badgeEl.innerHTML = '<i class="bi bi-broadcast me-1"></i> Full RADIUS';
+          badgeEl.title = 'Mode Full RADIUS aktif. Klik untuk ubah ke MikroTik Secret';
+          if (row) row.setAttribute('data-mode', 'radius');
+        } else {
+          badgeEl.className = 'badge bw';
+          badgeEl.innerHTML = '<i class="bi bi-router me-1"></i> MikroTik Local';
+          badgeEl.title = 'Mode MikroTik Secret aktif. Klik untuk ubah ke Full RADIUS';
+          if (row) row.setAttribute('data-mode', 'mikrotik');
+        }
+      } else {
+        showToast('d', (data && data.message) || 'Gagal mengubah mode autentikasi.');
+        badgeEl.innerHTML = originalText;
+      }
+    } catch (err) {
+      showToast('d', 'Gagal koneksi: ' + err.message);
+      badgeEl.innerHTML = originalText;
+    } finally {
+      badgeEl.style.pointerEvents = '';
+    }
+  }
+
+  function openQuickPasswordModal(id, pppoe, name) {
+    document.getElementById('quick_pass_customer_id').value = id;
+    document.getElementById('quick_pass_customer_name').textContent = name || 'Pelanggan #' + id;
+    document.getElementById('quick_pass_pppoe_username').textContent = pppoe || '-';
+    const input = document.getElementById('quick_pass_input');
+    if (input) {
+      input.value = '';
+      setTimeout(() => input.focus(), 150);
+    }
+    showModal('quickPassModal');
+  }
+
+  function generateRandomPass(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    input.value = result;
+    input.focus();
+  }
+
+  async function submitQuickPassword(e) {
+    e.preventDefault();
+    const id = document.getElementById('quick_pass_customer_id').value;
+    const pppoe_password = (document.getElementById('quick_pass_input').value || '').trim();
+    const submitBtn = document.getElementById('quickPassSubmitBtn');
+
+    if (!id || !pppoe_password) {
+      showToast('d', 'Password PPPoE wajib diisi.');
+      return;
+    }
+
+    const origBtnHtml = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-arrow-clockwise spin me-1"></i> Menyimpan...';
+
+    try {
+      const res = await fetch('/admin/radius/user/update-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ id, pppoe_password })
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (res.ok && data && data.success) {
+        showToast('s', data.message || 'Password PPPoE berhasil diperbarui.');
+        
+        // Update display text and data-pass attribute
+        const displayEl = document.getElementById('pass-display-' + id);
+        if (displayEl) {
+          displayEl.setAttribute('data-pass', pppoe_password);
+          if (displayEl.textContent.trim() !== '••••••••') {
+            displayEl.textContent = pppoe_password;
+          }
+        }
+        closeModal('quickPassModal');
+      } else {
+        showToast('d', (data && data.message) || 'Gagal mengubah password.');
+      }
+    } catch (err) {
+      showToast('d', 'Gagal koneksi: ' + err.message);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = origBtnHtml;
+    }
+  }
+
+  function kickRadiusUser(username, sessionId, nasIp) {
+    disconnectRadiusSession(username, sessionId, nasIp, null);
+  }
+
+  function exportRadiusUsersCsv() {
+    const rows = document.querySelectorAll('.radius-user-row');
+    if (!rows.length) {
+      showToast('d', 'Tidak ada data akun yang dapat diexport.');
+      return;
+    }
+
+    const csvRows = [];
+    csvRows.push(['No', 'Username PPPoE', 'Nama Pelanggan', 'No HP / WhatsApp', 'Paket', 'Rate Limit', 'Alokasi IP', 'Mode Autentikasi', 'Status Layanan'].join(','));
+
+    let count = 0;
+    rows.forEach(r => {
+      if (r.style.display !== 'none') {
+        count++;
+        const cols = r.querySelectorAll('td');
+        const username = (r.getAttribute('data-username') || '').replace(/"/g, '""');
+        const name = (r.getAttribute('data-name') || '').replace(/"/g, '""');
+        const custCode = (r.getAttribute('data-custcode') || '').replace(/"/g, '""');
+        const phone = (cols[1]?.querySelector('.bi-whatsapp')?.parentElement?.textContent || '').trim().replace(/"/g, '""');
+        const pkg = (r.getAttribute('data-pkg') || '').replace(/"/g, '""');
+        const rateLimit = (cols[3]?.querySelector('strong')?.textContent || '').trim().replace(/"/g, '""');
+        const ip = (cols[4]?.textContent || '').trim().replace(/"/g, '""');
+        const mode = r.getAttribute('data-mode') === 'radius' ? 'Full RADIUS' : 'MikroTik Local';
+        const status = r.getAttribute('data-status') === 'active' ? 'Aktif' : 'Terisolir';
+
+        csvRows.push([count, `"${username}"`, `"${name} (${custCode})"`, `"${phone}"`, `"${pkg}"`, `"${rateLimit}"`, `"${ip}"`, `"${mode}"`, `"${status}"`].join(','));
+      }
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csvRows.join('\n'));
+    const link = document.createElement('a');
+    const dateStr = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', csvContent);
+    link.setAttribute('download', `radius_user_database_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('s', `${count} akun database RADIUS berhasil diexport ke CSV.`);
   }
 
   // ─── UTILITIES & MODALS ───

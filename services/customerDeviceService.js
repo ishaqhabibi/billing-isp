@@ -136,12 +136,33 @@ const parameterPaths = {
     'Device.WiFi.SSID.1.SSID',
     'Device.WiFi.SSID.2.SSID'
   ],
+  ssid24: [
+    'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
+    'Device.WiFi.SSID.1.SSID'
+  ],
+  ssid5: [
+    'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID',
+    'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID',
+    'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.SSID',
+    'Device.WiFi.SSID.2.SSID'
+  ],
   wifiPassword: [
     'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase',
     'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase',
     'Device.WiFi.AccessPoint.1.Security.KeyPassphrase',
     'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.KeyPassphrase',
     'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.PreSharedKey.1.KeyPassphrase'
+  ],
+  wifiPassword24: [
+    'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase',
+    'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase',
+    'Device.WiFi.AccessPoint.1.Security.KeyPassphrase'
+  ],
+  wifiPassword5: [
+    'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.KeyPassphrase',
+    'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.PreSharedKey.1.KeyPassphrase',
+    'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.KeyPassphrase',
+    'Device.WiFi.AccessPoint.2.Security.KeyPassphrase'
   ],
   rxPower: [
     'VirtualParameters.RXPower',
@@ -756,13 +777,28 @@ function mapDeviceData(device, tag, isPppoeActive = false) {
   const wifiPassword = getParameterWithPaths(device, parameterPaths.wifiPassword);
   const model = productClass;
 
+  const ssid24Val = getParameterWithPaths(device, parameterPaths.ssid24);
+  const ssid5Val = getParameterWithPaths(device, parameterPaths.ssid5);
+  const wifiPassword24Val = getParameterWithPaths(device, parameterPaths.wifiPassword24);
+  const wifiPassword5Val = getParameterWithPaths(device, parameterPaths.wifiPassword5);
+
+  const ssid24 = (ssid24Val && ssid24Val !== 'N/A' && ssid24Val !== '-') ? ssid24Val : (ssidDisplay !== '-' ? ssidDisplay : '-');
+  const ssid5 = (ssid5Val && ssid5Val !== 'N/A' && ssid5Val !== '-') ? ssid5Val : (ssid24 !== '-' ? `${ssid24}-5G` : '');
+  const wifiPassword24 = (wifiPassword24Val && wifiPassword24Val !== 'N/A') ? wifiPassword24Val : (wifiPassword === 'N/A' ? '' : wifiPassword);
+  const wifiPassword5 = (wifiPassword5Val && wifiPassword5Val !== 'N/A') ? wifiPassword5Val : wifiPassword24;
+
   let lokasi = device?._tags || '-';
   if (Array.isArray(lokasi)) lokasi = lokasi.join(', ');
 
   return {
     phone: tag,
     ssid: ssidDisplay,
+    ssid24: ssid24,
+    ssid5: ssid5,
     wifiPassword: wifiPassword === 'N/A' ? '' : wifiPassword,
+    wifiPassword24: wifiPassword24,
+    wifiPassword5: wifiPassword5,
+    isDualBand: true,
     status,
     lastInform,
     lastInformRaw: lastInformRaw || '',
@@ -813,7 +849,12 @@ function fallbackCustomer(tag) {
   return {
     phone: tag,
     ssid: '-',
+    ssid24: '-',
+    ssid5: '',
     wifiPassword: '',
+    wifiPassword24: '',
+    wifiPassword5: '',
+    isDualBand: true,
     status: 'Tidak ditemukan',
     lastInform: '-',
     lastInformAgo: '-',
@@ -838,7 +879,7 @@ function fallbackCustomer(tag) {
   };
 }
 
-async function updateSSID(tag, newSSID, actor = null) {
+async function updateSSID(tag, newSSID, actor = null, band = 'all') {
   try {
     const device = await resolveDeviceToken(tag);
     if (!device) return false;
@@ -852,44 +893,66 @@ async function updateSSID(tag, newSSID, actor = null) {
     const tasksUrl = `/devices/${deviceId}/tasks`;
 
     const parameterValues = [];
+    const targetBand = String(band || 'all').toLowerCase();
     
     // Check supported paths in DB
     const db = require('../config/database');
     const row = db.prepare('SELECT params FROM acs_devices WHERE id = ?').get(device._id);
     const flatParams = row && row.params ? JSON.parse(row.params) : null;
     
+    const shouldUpdate24 = targetBand === 'all' || targetBand === '2.4' || targetBand === '2.4ghz';
+    const shouldUpdate5 = targetBand === 'all' || targetBand === '5' || targetBand === '5ghz';
+
     if (flatParams) {
-      // SSID 2.4G paths
-      const paths24G = [
-        'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
-        'Device.WiFi.SSID.1.SSID'
-      ];
-      paths24G.forEach(p => {
-        if (flatParams[p] !== undefined) {
-          parameterValues.push([p, newSSID, 'xsd:string']);
-        }
-      });
-      
-      // SSID 5G paths
-      const paths5G = [
-        'Device.WiFi.SSID.2.SSID'
-      ];
-      for (const idx of [5, 6, 7, 8]) {
-        paths5G.push(`InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.SSID`);
+      if (shouldUpdate24) {
+        // SSID 2.4G paths
+        const paths24G = [
+          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
+          'Device.WiFi.SSID.1.SSID'
+        ];
+        paths24G.forEach(p => {
+          if (flatParams[p] !== undefined) {
+            parameterValues.push([p, newSSID, 'xsd:string']);
+          }
+        });
       }
-      paths5G.forEach(p => {
-        if (flatParams[p] !== undefined) {
-          parameterValues.push([p, `${newSSID}-5G`, 'xsd:string']);
+      
+      if (shouldUpdate5) {
+        // SSID 5G paths
+        const ssid5Name = (targetBand === '5' || targetBand === '5ghz') 
+          ? newSSID 
+          : (newSSID.toLowerCase().endsWith('-5g') ? newSSID : `${newSSID}-5G`);
+        const paths5G = [
+          'Device.WiFi.SSID.2.SSID'
+        ];
+        for (const idx of [5, 6, 7, 8, 2]) {
+          paths5G.push(`InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.SSID`);
         }
-      });
+        paths5G.forEach(p => {
+          if (flatParams[p] !== undefined) {
+            parameterValues.push([p, ssid5Name, 'xsd:string']);
+          }
+        });
+      }
     }
     
     // Fallback if no parameters match or device not bootstrapped yet
     if (parameterValues.length === 0) {
-      parameterValues.push(
-        ['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID', newSSID, 'xsd:string'],
-        ['Device.WiFi.SSID.1.SSID', newSSID, 'xsd:string']
-      );
+      if (shouldUpdate24) {
+        parameterValues.push(
+          ['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID', newSSID, 'xsd:string'],
+          ['Device.WiFi.SSID.1.SSID', newSSID, 'xsd:string']
+        );
+      }
+      if (shouldUpdate5) {
+        const ssid5Name = (targetBand === '5' || targetBand === '5ghz') 
+          ? newSSID 
+          : (newSSID.toLowerCase().endsWith('-5g') ? newSSID : `${newSSID}-5G`);
+        parameterValues.push(
+          ['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID', ssid5Name, 'xsd:string'],
+          ['Device.WiFi.SSID.2.SSID', ssid5Name, 'xsd:string']
+        );
+      }
     }
 
     let ok = false;
@@ -907,19 +970,16 @@ async function updateSSID(tag, newSSID, actor = null) {
     try {
       await instance.post(tasksUrl, { name: 'refreshObject', objectName: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration' }, { timeout: 15000 });
     } catch (e) {}
-    // Skip Device.WiFi.SSID refresh karena tidak semua ONU support (CIOT tidak support)
 
     // Trigger inform untuk force ONU komunikasi dengan ACS
     if (ok) {
       try {
         await instance.post(tasksUrl, { name: 'inform' }, { timeout: 15000 });
-        logger.info(`[updateSSID] Inform task triggered untuk ${tag}`);
+        logger.info(`[updateSSID] Inform task triggered untuk ${tag} (band: ${targetBand})`);
       } catch (e) {
         logger.warn(`[updateSSID] Failed to trigger inform: ${e.message}`);
       }
-      
-      // Wait untuk ACS mendapat data terbaru dari ONU (jangan terlalu lama, cukup 3 detik)
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
     // Catat audit trail jika berhasil
@@ -933,7 +993,8 @@ async function updateSSID(tag, newSSID, actor = null) {
         actor_name: actor.name || null,
         details: {
           oldSSID: device._id || 'unknown',
-          newSSID: newSSID
+          newSSID: newSSID,
+          band: targetBand
         },
         ip_address: actor.ip || null,
         user_agent: actor.userAgent || null
@@ -946,7 +1007,7 @@ async function updateSSID(tag, newSSID, actor = null) {
   }
 }
 
-async function updatePassword(tag, newPassword, actor = null) {
+async function updatePassword(tag, newPassword, actor = null, band = 'all') {
   try {
     const pwRaw = String(newPassword ?? '');
     const pw = pwRaw.replace(/[\r\n\t]+/g, '').trim();
@@ -968,9 +1029,12 @@ async function updatePassword(tag, newPassword, actor = null) {
     const instance = genieacsApi.createAxiosInstance(server);
     const tasksUrl = `/devices/${deviceId}/tasks`;
 
-    logger.info(`[updatePassword] Setting password for device ${deviceId}, tag ${tag}`);
+    logger.info(`[updatePassword] Setting password for device ${deviceId}, tag ${tag}, band ${band}`);
 
     const parameterValues = [];
+    const targetBand = String(band || 'all').toLowerCase();
+    const shouldUpdate24 = targetBand === 'all' || targetBand === '2.4' || targetBand === '2.4ghz';
+    const shouldUpdate5 = targetBand === 'all' || targetBand === '5' || targetBand === '5ghz';
     
     // Check supported paths in DB
     const db = require('../config/database');
@@ -978,47 +1042,59 @@ async function updatePassword(tag, newPassword, actor = null) {
     const flatParams = row && row.params ? JSON.parse(row.params) : null;
     
     if (flatParams) {
-      // 2.4G password paths
-      const paths24G = [
-        'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase',
-        'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase',
-        'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.PreSharedKey',
-        'Device.WiFi.AccessPoint.1.Security.KeyPassphrase',
-        'Device.WiFi.AccessPoint.1.Security.PreSharedKey'
-      ];
-      paths24G.forEach(p => {
-        if (flatParams[p] !== undefined) {
-          parameterValues.push([p, pw, 'xsd:string']);
-        }
-      });
-      
-      // 5G password paths
-      const paths5G = [
-        'Device.WiFi.AccessPoint.2.Security.KeyPassphrase',
-        'Device.WiFi.AccessPoint.2.Security.PreSharedKey'
-      ];
-      for (const idx of [5, 6, 7, 8]) {
-        paths5G.push(
-          `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.KeyPassphrase`,
-          `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.PreSharedKey.1.KeyPassphrase`,
-          `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.PreSharedKey.1.PreSharedKey`
-        );
+      if (shouldUpdate24) {
+        // 2.4G password paths
+        const paths24G = [
+          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase',
+          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase',
+          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.PreSharedKey',
+          'Device.WiFi.AccessPoint.1.Security.KeyPassphrase',
+          'Device.WiFi.AccessPoint.1.Security.PreSharedKey'
+        ];
+        paths24G.forEach(p => {
+          if (flatParams[p] !== undefined) {
+            parameterValues.push([p, pw, 'xsd:string']);
+          }
+        });
       }
-      paths5G.forEach(p => {
-        if (flatParams[p] !== undefined) {
-          parameterValues.push([p, pw, 'xsd:string']);
+      
+      if (shouldUpdate5) {
+        // 5G password paths
+        const paths5G = [
+          'Device.WiFi.AccessPoint.2.Security.KeyPassphrase',
+          'Device.WiFi.AccessPoint.2.Security.PreSharedKey'
+        ];
+        for (const idx of [5, 6, 7, 8, 2]) {
+          paths5G.push(
+            `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.KeyPassphrase`,
+            `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.PreSharedKey.1.KeyPassphrase`,
+            `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.PreSharedKey.1.PreSharedKey`
+          );
         }
-      });
+        paths5G.forEach(p => {
+          if (flatParams[p] !== undefined) {
+            parameterValues.push([p, pw, 'xsd:string']);
+          }
+        });
+      }
     }
     
     // Fallback if no parameters match or device not bootstrapped yet
     if (parameterValues.length === 0) {
-      parameterValues.push(
-        ['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase', pw, 'xsd:string'],
-        ['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase', pw, 'xsd:string'],
-        ['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.PreSharedKey', pw, 'xsd:string'],
-        ['Device.WiFi.AccessPoint.1.Security.KeyPassphrase', pw, 'xsd:string']
-      );
+      if (shouldUpdate24) {
+        parameterValues.push(
+          ['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase', pw, 'xsd:string'],
+          ['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase', pw, 'xsd:string'],
+          ['Device.WiFi.AccessPoint.1.Security.KeyPassphrase', pw, 'xsd:string']
+        );
+      }
+      if (shouldUpdate5) {
+        parameterValues.push(
+          ['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.KeyPassphrase', pw, 'xsd:string'],
+          ['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.PreSharedKey.1.KeyPassphrase', pw, 'xsd:string'],
+          ['Device.WiFi.AccessPoint.2.Security.KeyPassphrase', pw, 'xsd:string']
+        );
+      }
     }
 
     let ok = false;
@@ -1032,11 +1108,10 @@ async function updatePassword(tag, newPassword, actor = null) {
       logger.error(`[updatePassword] Failed to set password: ${e.message}`);
     }
 
-    // Refresh object - only refresh InternetGatewayDevice path yang lebih universal
+    // Refresh object
     try {
       await instance.post(tasksUrl, { name: 'refreshObject', objectName: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration' }, { timeout: 15000 });
     } catch (e) {}
-    // Skip Device.WiFi.AccessPoint refresh karena tidak semua ONU support (CIOT tidak support)
 
     // Catat audit trail jika berhasil
     if (ok && actor) {
@@ -1048,7 +1123,8 @@ async function updatePassword(tag, newPassword, actor = null) {
         actor_id: actor.id || null,
         actor_name: actor.name || null,
         details: {
-          device_id: deviceId
+          deviceId: device._id,
+          band: targetBand
         },
         ip_address: actor.ip || null,
         user_agent: actor.userAgent || null

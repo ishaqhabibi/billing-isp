@@ -16,12 +16,7 @@ body {
 .btn-primary:hover {
   background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%);
 }
-img[alt="Logo"] {
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  padding: 8px;
-}
+
 
 /* Style untuk judul Portal Pelanggan */
 .login-header h4 {
