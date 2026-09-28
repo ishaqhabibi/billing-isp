@@ -686,7 +686,8 @@ router.post('/olts/:id/onu/:index/reboot', requireAdminSession, restrictToAdmin,
     await oltSvc.rebootOnu(req.params.id, req.params.index);
     res.json({ success: true, message: 'Perintah reboot berhasil dikirim.' });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    const errorMsg = (e && typeof e === 'object' && e.message) ? e.message : (typeof e === 'string' ? e : JSON.stringify(e));
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -697,7 +698,8 @@ router.post('/olts/:id/onu/:index/rename', requireAdminSession, restrictToAdmin,
     await oltSvc.renameOnu(req.params.id, req.params.index, name);
     res.json({ success: true, message: 'Nama ONU berhasil diubah.' });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    const errorMsg = (e && typeof e === 'object' && e.message) ? e.message : (typeof e === 'string' ? e : JSON.stringify(e));
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 

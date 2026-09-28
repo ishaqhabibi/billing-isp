@@ -1255,10 +1255,85 @@
   </div>
 </div>
 
-<!-- Copied Toast -->
-<div id="copiedToast" class="copied-toast">
-  <i class="bi bi-check-circle-fill me-1"></i> SN berhasil disalin ke clipboard!
+<!-- Modal Konfirmasi Reboot ONU (Themed) -->
+<div class="mo" id="rebootOnuModal">
+  <div class="mb" style="max-width: 440px;">
+    <div class="mh">
+      <span class="mt text-danger"><i class="bi bi-arrow-clockwise me-2"></i> Konfirmasi Reboot ONU</span>
+      <button type="button" class="mc" onclick="closeModal('rebootOnuModal')">&times;</button>
+    </div>
+    <div class="mbody" style="padding: 18px 20px;">
+      <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; display: flex; gap: 12px; align-items: flex-start;">
+        <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 20px; line-height: 1; flex-shrink: 0; margin-top: 1px;"></i>
+        <div style="font-size: 12.5px; color: var(--text); line-height: 1.5;">
+          Perangkat modem pelanggan akan dimatikan dan dinyalakan ulang (reboot). Koneksi internet pelanggan akan terputus sementara selama 1-2 menit. Lanjutkan?
+        </div>
+      </div>
+      <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: var(--muted);">Nama ONU:</span>
+          <strong id="rebootModalOnuName" style="color: var(--text); font-size: 13.5px;">-</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: var(--muted);">Port / ID:</span>
+          <span id="rebootModalOnuId" class="sn-code" style="font-size: 12px;">-</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--muted);">Serial Number:</span>
+          <span id="rebootModalOnuSn" class="sn-code" style="color: var(--primary); font-size: 12px;">-</span>
+        </div>
+      </div>
+    </div>
+    <div class="mf" style="display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--border);">
+      <button type="button" class="btn btn-g btn-sm" onclick="closeModal('rebootOnuModal')">Batal</button>
+      <button type="button" class="btn btn-danger btn-sm" id="btnExecuteReboot" onclick="confirmExecuteReboot()" style="background: #ef4444; border-color: #ef4444; color: #fff; padding: 6px 16px;">
+        <i class="bi bi-arrow-clockwise"></i> Reboot Sekarang
+      </button>
+    </div>
+  </div>
 </div>
+
+<!-- Modal Ubah Nama ONU (Themed) -->
+<div class="mo" id="renameOnuModal">
+  <div class="mb" style="max-width: 440px;">
+    <div class="mh">
+      <span class="mt text-primary"><i class="bi bi-pencil-square me-2"></i> Ubah Nama ONU / Pelanggan</span>
+      <button type="button" class="mc" onclick="closeModal('renameOnuModal')">&times;</button>
+    </div>
+    <form id="renameOnuForm" onsubmit="submitRenameOnu(event)">
+      <div class="mbody" style="padding: 18px 20px;">
+        <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; font-size: 12.5px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="color: var(--muted);">Port / ID:</span>
+            <strong id="renameModalOnuId" style="color: var(--text); margin-left: 4px;">-</strong>
+          </div>
+          <div>
+            <span style="color: var(--muted);">SN:</span>
+            <span id="renameModalOnuSn" class="sn-code" style="color: var(--primary); margin-left: 4px; font-size: 11px;">-</span>
+          </div>
+        </div>
+        <div class="fg" style="margin-bottom: 0;">
+          <label class="fl">Nama Baru Perangkat ONU</label>
+          <input type="text" class="fc" id="renameModalInput" placeholder="Contoh: ONT04/001 atau Nama Pelanggan" required autocomplete="off">
+          <div style="font-size: 11px; color: var(--muted); margin-top: 5px;">Nama ini akan disimpan ke OLT sebagai deskripsi/identitas ONU.</div>
+        </div>
+      </div>
+      <div class="mf" style="display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--border);">
+        <button type="button" class="btn btn-g btn-sm" onclick="closeModal('renameOnuModal')">Batal</button>
+        <button type="submit" class="btn btn-p btn-sm" id="btnExecuteRename" style="padding: 6px 16px;">
+          <i class="bi bi-check2"></i> Simpan Nama
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Toast Notifikasi Global OLT -->
+<div id="oltCustomToast" class="copied-toast">
+  <span id="oltCustomToastContent"><i class="bi bi-check-circle-fill me-1"></i> Notifikasi</span>
+</div>
+
+<div id="copiedToast" class="copied-toast" style="display:none;"></div>
 
 <div id="olt-data-store" data-olts='<%- JSON.stringify(olts || []) %>' style="display:none;"></div>
 
@@ -1542,10 +1617,10 @@ function renderOnuTable() {
             <button class="btn btn-sm btn-outline-primary py-1 px-2" onclick="configureWanPrompt('${targetOltId}', '${onu.index}', '${onu.name || ''}', '${onu.sn || ''}')" style="font-size: 11.5px; border-radius:7px;">
               <i class="bi bi-globe"></i> WAN
             </button>
-            <button class="btn-act btn-rename" onclick="renameOnuPrompt('${targetOltId}', '${onu.index}', '${onu.name || ''}')" title="${I18N.renameTitle}">
+            <button class="btn-act btn-rename" onclick="renameOnuPrompt('${targetOltId}', '${onu.index}', '${(onu.name || '').replace(/'/g, "\\'")}', '${onu.sn || ''}')" title="${I18N.renameTitle}">
               <i class="bi bi-pencil-square"></i>
             </button>
-            <button class="btn-act btn-reboot" onclick="rebootOnu('${targetOltId}', '${onu.index}')" title="${I18N.rebootTitle}">
+            <button class="btn-act btn-reboot" onclick="rebootOnu('${targetOltId}', '${onu.index}', '${(onu.name || '').replace(/'/g, "\\'")}', '${onu.sn || ''}')" title="${I18N.rebootTitle}">
               <i class="bi bi-arrow-clockwise"></i>
             </button>
           </div>
@@ -1867,9 +1942,74 @@ function exportOnuCsv() {
   document.body.removeChild(link);
 }
 
-async function renameOnuPrompt(oltId, index, oldName) {
-  const newName = prompt(I18N.renamePrompt, oldName);
-  if (!newName || newName === oldName) return;
+// --- Custom Toast Notifikasi OLT ---
+function showOltToast(message, type = 'success') {
+  const toast = document.getElementById('oltCustomToast');
+  const content = document.getElementById('oltCustomToastContent');
+  if (!toast || !content) return;
+
+  let icon = 'bi-check-circle-fill';
+  let bg = '#10b981';
+  if (type === 'error') {
+    icon = 'bi-x-circle-fill';
+    bg = '#ef4444';
+  } else if (type === 'warning') {
+    icon = 'bi-exclamation-triangle-fill';
+    bg = '#f59e0b';
+  }
+
+  toast.style.background = bg;
+  content.innerHTML = `<i class="bi ${icon} me-1"></i> ${message}`;
+  toast.style.display = 'block';
+
+  if (window._oltToastTimer) clearTimeout(window._oltToastTimer);
+  window._oltToastTimer = setTimeout(() => {
+    toast.style.display = 'none';
+  }, 3500);
+}
+
+// --- Custom Modal Ubah Nama ONU ---
+let pendingRenameTarget = null;
+function renameOnuPrompt(oltId, index, oldName, sn) {
+  pendingRenameTarget = { oltId, index, oldName };
+  const idEl = document.getElementById('renameModalOnuId');
+  const snEl = document.getElementById('renameModalOnuSn');
+  const input = document.getElementById('renameModalInput');
+  if (idEl) idEl.textContent = index || '-';
+  if (snEl) snEl.textContent = sn || '-';
+  if (input) {
+    input.value = oldName || '';
+    setTimeout(() => { input.focus(); input.select(); }, 150);
+  }
+  const btn = document.getElementById('btnExecuteRename');
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-check2"></i> Simpan Nama';
+  }
+  openModal('renameOnuModal');
+}
+
+async function submitRenameOnu(event) {
+  if (event) event.preventDefault();
+  if (!pendingRenameTarget) return;
+  const { oltId, index, oldName } = pendingRenameTarget;
+  const input = document.getElementById('renameModalInput');
+  const newName = input ? input.value.trim() : '';
+  if (!newName) {
+    showOltToast('Nama ONU tidak boleh kosong', 'warning');
+    return;
+  }
+  if (newName === oldName) {
+    closeModal('renameOnuModal');
+    return;
+  }
+
+  const btn = document.getElementById('btnExecuteRename');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Menyimpan...';
+  }
+
   try {
     const res = await fetch(`/admin/olts/${oltId}/onu/${index}/rename`, {
       method: 'POST',
@@ -1877,17 +2017,71 @@ async function renameOnuPrompt(oltId, index, oldName) {
       body: new URLSearchParams({ name: newName })
     });
     const data = await res.json();
-    if (data.success) { refreshCurrentOlt(); } else { alert(I18N.failedPrefix + data.error); }
-  } catch (e) { alert(I18N.errorPrefix + e.message); }
+    closeModal('renameOnuModal');
+    if (data.success) {
+      showOltToast(data.message || 'Nama ONU berhasil diubah.', 'success');
+      refreshCurrentOlt();
+    } else {
+      const errText = (typeof data.error === 'object') ? (data.error?.message || JSON.stringify(data.error)) : (data.error || 'Gagal mengubah nama ONU.');
+      showOltToast(I18N.failedPrefix + errText, 'error');
+    }
+  } catch (e) {
+    closeModal('renameOnuModal');
+    showOltToast(I18N.errorPrefix + e.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-check2"></i> Simpan Nama';
+    }
+  }
 }
 
-async function rebootOnu(oltId, index) {
-  if (!confirm(I18N.confirmReboot)) return;
+// --- Custom Modal Konfirmasi Reboot ONU ---
+let pendingRebootTarget = null;
+function rebootOnu(oltId, index, name, sn) {
+  pendingRebootTarget = { oltId, index, name, sn };
+  const nameEl = document.getElementById('rebootModalOnuName');
+  const idEl = document.getElementById('rebootModalOnuId');
+  const snEl = document.getElementById('rebootModalOnuSn');
+  if (nameEl) nameEl.textContent = name || '-';
+  if (idEl) idEl.textContent = index || '-';
+  if (snEl) snEl.textContent = sn || '-';
+  const btn = document.getElementById('btnExecuteReboot');
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Reboot Sekarang';
+  }
+  openModal('rebootOnuModal');
+}
+
+async function confirmExecuteReboot() {
+  if (!pendingRebootTarget) return;
+  const { oltId, index } = pendingRebootTarget;
+  const btn = document.getElementById('btnExecuteReboot');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Mengirim...';
+  }
   try {
     const res = await fetch(`/admin/olts/${oltId}/onu/${index}/reboot`, { method: 'POST' });
     const data = await res.json();
-    if (data.success) { alert(I18N.rebootSent); } else { alert(I18N.failedPrefix + data.error); }
-  } catch (e) { alert(I18N.errorPrefix + e.message); }
+    closeModal('rebootOnuModal');
+    if (data.success) {
+      showOltToast(data.message || I18N.rebootSent, 'success');
+      setTimeout(refreshCurrentOlt, 1500);
+    } else {
+      const errText = (typeof data.error === 'object') ? (data.error?.message || JSON.stringify(data.error)) : (data.error || 'Gagal mengirim perintah reboot.');
+      showOltToast(I18N.failedPrefix + errText, 'error');
+    }
+  } catch (e) {
+    closeModal('rebootOnuModal');
+    showOltToast(I18N.errorPrefix + e.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Reboot Sekarang';
+    }
+  }
 }
 
 async function authorizeOnuPrompt(oltId, index, sn) {

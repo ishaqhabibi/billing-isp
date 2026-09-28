@@ -2404,6 +2404,39 @@ async function rebootOnu(oltId, index) {
     return await onuProvisionSvc.rebootONU(oltConfig, olt.brand, parsed);
   }
 
+  // Handle HSGQ GPON / EPON via Telnet
+  if (brand.includes('hsqg') || brand.includes('hsgq')) {
+    let port = 1;
+    let onuId = 0;
+    if (String(index).includes('/')) {
+      const parts = String(index).split('/');
+      port = parseInt(parts[0], 10);
+      onuId = parseInt(parts[1], 10);
+    } else {
+      onuId = parseInt(index, 10);
+    }
+
+    const cmds = [
+      'enable',
+      'configure',
+      `interface gpon 0/${port}`,
+      `ont reset ${onuId}`,
+      `ont reboot ${onuId}`,
+      `exit`,
+      `ont reset ${port} ${onuId}`,
+      `exit`
+    ];
+
+    try {
+      const out = await telnetLoginAndRun(olt.host, olt.web_user, olt.web_password, cmds, telnetOptsFromOlt(olt));
+      logger.info(`[HSGQ Reboot Output] ${out}`);
+      return { success: true, message: 'Perintah reboot berhasil dikirim ke HSGQ OLT.' };
+    } catch(err) {
+      logger.error(`[HSGQ Reboot Error] ${err.message}`);
+      throw new Error(`Gagal mengirim perintah reboot via Telnet: ${err.message}`);
+    }
+  }
+
   const community = olt.snmp_community || 'public';
   const session = snmp.createSession(olt.host, community, { port: olt.snmp_port || 161, version: snmp.Version2c });
   const oid = `1.3.6.1.4.1.25355.3.2.6.3.2.1.40.${index}`;
@@ -2435,6 +2468,40 @@ async function renameOnu(oltId, index, newName) {
     const parsed = decodeOltSnmpIndex(olt.brand, index);
     parsed.newName = newName;
     return await onuProvisionSvc.renameONU(oltConfig, olt.brand, parsed);
+  }
+
+  // Handle HSGQ GPON / EPON via Telnet
+  if (brand.includes('hsqg') || brand.includes('hsgq')) {
+    let port = 1;
+    let onuId = 0;
+    if (String(index).includes('/')) {
+      const parts = String(index).split('/');
+      port = parseInt(parts[0], 10);
+      onuId = parseInt(parts[1], 10);
+    } else {
+      onuId = parseInt(index, 10);
+    }
+
+    const cleanName = String(newName).replace(/[\r\n\t"']/g, '').trim();
+    const cmds = [
+      'enable',
+      'configure',
+      `interface gpon 0/${port}`,
+      `ont name ${onuId} "${cleanName}"`,
+      `ont description ${onuId} "${cleanName}"`,
+      `exit`,
+      `write`,
+      `exit`
+    ];
+
+    try {
+      const out = await telnetLoginAndRun(olt.host, olt.web_user, olt.web_password, cmds, telnetOptsFromOlt(olt));
+      logger.info(`[HSGQ Rename Output] ${out}`);
+      return { success: true, message: 'Nama ONU berhasil diubah di HSGQ OLT.' };
+    } catch(err) {
+      logger.error(`[HSGQ Rename Error] ${err.message}`);
+      throw new Error(`Gagal mengubah nama ONU: ${err.message}`);
+    }
   }
 
   const community = olt.snmp_community || 'public';
