@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title><%= t('admin.nav.olt_management', 'Manajemen OLT') %> | <%= company %></title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/css/admin.css?v=2.6">
+  <link rel="stylesheet" href="/css/admin.css?v=2.7">
   <style>
     /* ── DASHBOARD & TELEMETRY STYLING ── */
     .olt-dashboard { display: flex; flex-direction: column; gap: 20px; }
@@ -884,6 +884,7 @@
     </div>
     <% } %>
   </div>
+  <%- include('partials/footer') %>
 </div>
 
 <!-- Modal Manage OLTs (Table List) -->
@@ -1021,6 +1022,16 @@
           <label class="fl">API Base URL (go-api-c320 ZTE)</label>
           <input type="url" name="api_base_url" class="fc" placeholder="http://10.0.0.5:8081 (kosongkan jika tidak ada)">
         </div>
+        <div class="form-row">
+          <div class="fg">
+            <label class="fl"><i class="bi bi-geo-alt text-primary"></i> Latitude (Titik Peta ODN)</label>
+            <input type="text" name="lat" class="fc" placeholder="-6.xxx (Opsional)">
+          </div>
+          <div class="fg">
+            <label class="fl"><i class="bi bi-geo-alt text-primary"></i> Longitude (Titik Peta ODN)</label>
+            <input type="text" name="lng" class="fc" placeholder="106.xxx (Opsional)">
+          </div>
+        </div>
         <div class="fg">
           <label class="fl"><%= t('admin.olts.form.description', 'Deskripsi / Lokasi') %></label>
           <textarea name="description" class="fc" rows="2" placeholder="Lokasi rack OLT, POP atau catatan NOC..."></textarea>
@@ -1100,6 +1111,16 @@
         <div class="fg">
           <label class="fl">API Base URL (go-api-c320 ZTE)</label>
           <input type="url" name="api_base_url" id="e_api_base_url" class="fc" placeholder="http://IP:8081">
+        </div>
+        <div class="form-row">
+          <div class="fg">
+            <label class="fl"><i class="bi bi-geo-alt text-primary"></i> Latitude (Titik Peta ODN)</label>
+            <input type="text" name="lat" id="e_lat" class="fc" placeholder="-6.xxx (Opsional)">
+          </div>
+          <div class="fg">
+            <label class="fl"><i class="bi bi-geo-alt text-primary"></i> Longitude (Titik Peta ODN)</label>
+            <input type="text" name="lng" id="e_lng" class="fc" placeholder="106.xxx (Opsional)">
+          </div>
         </div>
         <div class="fg">
           <label class="fl"><%= t('admin.olts.form.description', 'Deskripsi / Lokasi') %></label>
@@ -1287,6 +1308,8 @@ function editOlt(id) {
   document.getElementById('e_enable_password').value = '';
   document.getElementById('e_api_base_url').value = olt.api_base_url || '';
   document.getElementById('e_description').value = olt.description || '';
+  document.getElementById('e_lat').value = olt.lat || '';
+  document.getElementById('e_lng').value = olt.lng || '';
   document.getElementById('e_is_active').value = olt.is_active ? '1' : '0';
   closeModal('manageOltsModal');
   openModal('editOltModal');

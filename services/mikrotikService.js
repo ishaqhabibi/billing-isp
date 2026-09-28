@@ -807,79 +807,96 @@ async function getActivePppoeSessionsMap() {
   return sessionsMap;
 }
 
-let activeSessionsMapCache = { ts: 0, data: new Map() };
+let activeSessionsMapCache = { ts: 0, data: new Map(), isFetching: false };
+
+function getCachedActiveSessionsMap() {
+  return activeSessionsMapCache.data || new Map();
+}
+
+function isSessionsCacheStale(maxAgeMs = 15000) {
+  return !activeSessionsMapCache.data || (Date.now() - activeSessionsMapCache.ts) > maxAgeMs;
+}
 
 async function getAllActiveSessionsMap(forceRefresh = false) {
   const now = Date.now();
-  if (!forceRefresh && activeSessionsMapCache.data && (now - activeSessionsMapCache.ts) < 3000 && activeSessionsMapCache.data.size > 0) {
+  if (!forceRefresh && activeSessionsMapCache.data && (now - activeSessionsMapCache.ts) < 15000) {
     return activeSessionsMapCache.data;
   }
 
-  const routers = getAllRouters().filter(r => r.is_active === 1 || r.is_active === '1' || r.is_active === true);
-  const sessionsMap = new Map();
-
-  const withTimeout = (promise, ms = 4000) => {
-    return Promise.race([
-      promise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
-    ]).catch(() => []);
-  };
-
-  await Promise.all(routers.map(async (r) => {
-    try {
-      const pppoeActives = await withTimeout(getPppoeActive(r.id), 4000);
-      if (Array.isArray(pppoeActives)) {
-        for (const s of pppoeActives) {
-          if (s && (s.name || s.user)) {
-            const username = String(s.name || s.user).trim().toLowerCase();
-            const bIn = Number(s['bytes-in'] || s['bytesIn'] || s['bytes_in'] || s['rx-byte'] || s['rx_byte'] || s['bytes-in-count'] || 0);
-            const bOut = Number(s['bytes-out'] || s['bytesOut'] || s['bytes_out'] || s['tx-byte'] || s['tx_byte'] || s['bytes-out-count'] || 0);
-            sessionsMap.set(username, {
-              username: s.name || s.user,
-              ip: s.address || s['address'] || '-',
-              uptime: s.uptime || s['uptime'] || '-',
-              callerId: s['caller-id'] || s['callerId'] || s['mac-address'] || '',
-              bytesIn: bIn,
-              bytesOut: bOut,
-              type: 'pppoe',
-              routerId: r.id,
-              routerName: r.name
-            });
-          }
-        }
-      }
-    } catch (err) {}
-
-    try {
-      const hsActives = await withTimeout(getHotspotActive(r.id), 4000);
-      if (Array.isArray(hsActives)) {
-        for (const s of hsActives) {
-          if (s && (s.user || s.name)) {
-            const username = String(s.user || s.name).trim().toLowerCase();
-            const bIn = Number(s['bytes-in'] || s['bytesIn'] || s['bytes_in'] || s['rx-byte'] || s['rx_byte'] || s['bytes-in-count'] || 0);
-            const bOut = Number(s['bytes-out'] || s['bytesOut'] || s['bytes_out'] || s['tx-byte'] || s['tx_byte'] || s['bytes-out-count'] || 0);
-            sessionsMap.set(username, {
-              username: s.user || s.name,
-              ip: s.address || s['address'] || '-',
-              uptime: s.uptime || s['uptime'] || '-',
-              callerId: s['mac-address'] || s['macAddress'] || s['caller-id'] || '',
-              bytesIn: bIn,
-              bytesOut: bOut,
-              type: 'hotspot',
-              routerId: r.id,
-              routerName: r.name
-            });
-          }
-        }
-      }
-    } catch (err) {}
-  }));
-
-  if (sessionsMap.size > 0 || !activeSessionsMapCache.data || activeSessionsMapCache.data.size === 0) {
-    activeSessionsMapCache = { ts: now, data: sessionsMap };
-    return sessionsMap;
+  // Prevent multiple concurrent fetches to MikroTik
+  if (activeSessionsMapCache.isFetching) {
+    return activeSessionsMapCache.data || new Map();
   }
-  return activeSessionsMapCache.data;
+
+  activeSessionsMapCache.isFetching = true;
+
+  try {
+    const routers = getAllRouters().filter(r => r.is_active === 1 || r.is_active === '1' || r.is_active === true);
+    const sessionsMap = new Map();
+
+    const withTimeout = (promise, ms = 3000) => {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
+      ]).catch(() => []);
+    };
+
+    await Promise.all(routers.map(async (r) => {
+      try {
+        const pppoeActives = await withTimeout(getPppoeActive(r.id), 3000);
+        if (Array.isArray(pppoeActives)) {
+          for (const s of pppoeActives) {
+            if (s && (s.name || s.user)) {
+              const username = String(s.name || s.user).trim().toLowerCase();
+              const bIn = Number(s['bytes-in'] || s['bytesIn'] || s['bytes_in'] || s['rx-byte'] || s['rx_byte'] || s['bytes-in-count'] || 0);
+              const bOut = Number(s['bytes-out'] || s['bytesOut'] || s['bytes_out'] || s['tx-byte'] || s['tx_byte'] || s['bytes-out-count'] || 0);
+              sessionsMap.set(username, {
+                username: s.name || s.user,
+                ip: s.address || s['address'] || '-',
+                uptime: s.uptime || s['uptime'] || '-',
+                callerId: s['caller-id'] || s['callerId'] || s['mac-address'] || '',
+                bytesIn: bIn,
+                bytesOut: bOut,
+                type: 'pppoe',
+                routerId: r.id,
+                routerName: r.name
+              });
+            }
+          }
+        }
+      } catch (err) {}
+
+      try {
+        const hsActives = await withTimeout(getHotspotActive(r.id), 3000);
+        if (Array.isArray(hsActives)) {
+          for (const s of hsActives) {
+            if (s && (s.user || s.name)) {
+              const username = String(s.user || s.name).trim().toLowerCase();
+              const bIn = Number(s['bytes-in'] || s['bytesIn'] || s['bytes_in'] || s['rx-byte'] || s['rx_byte'] || s['bytes-in-count'] || 0);
+              const bOut = Number(s['bytes-out'] || s['bytesOut'] || s['bytes_out'] || s['tx-byte'] || s['tx_byte'] || s['bytes-out-count'] || 0);
+              sessionsMap.set(username, {
+                username: s.user || s.name,
+                ip: s.address || s['address'] || '-',
+                uptime: s.uptime || s['uptime'] || '-',
+                callerId: s['mac-address'] || s['macAddress'] || s['caller-id'] || '',
+                bytesIn: bIn,
+                bytesOut: bOut,
+                type: 'hotspot',
+                routerId: r.id,
+                routerName: r.name
+              });
+            }
+          }
+        }
+      } catch (err) {}
+    }));
+
+    activeSessionsMapCache.ts = Date.now();
+    activeSessionsMapCache.data = sessionsMap;
+    return sessionsMap;
+  } finally {
+    activeSessionsMapCache.isFetching = false;
+  }
 }
 
 
@@ -2238,6 +2255,8 @@ module.exports = {
   getPppoeActive,
   getActivePppoeSessionsMap,
   getAllActiveSessionsMap,
+  getCachedActiveSessionsMap,
+  isSessionsCacheStale,
   getHotspotActive,
   getIpPools,
   addPppoeProfile,

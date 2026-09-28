@@ -25,8 +25,7 @@ const logger = winston.createLogger({
   ]
 });
 
-const dbPath = path.join(__dirname, '../database/billing.db');
-const db = new Database(dbPath);
+const db = require('../config/database');
 
 /**
  * Profil SNMP per brand OLT
@@ -350,8 +349,8 @@ function createOlt(data) {
   const apiBase = String(data.api_base_url || '').trim();
   const telnetPort = parseInt(data.telnet_port, 10);
   const stmt = db.prepare(`
-    INSERT INTO olts (name, host, snmp_community, snmp_port, brand, description, is_active, web_user, web_password, api_base_url, telnet_port, enable_password)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO olts (name, host, snmp_community, snmp_port, brand, description, is_active, web_user, web_password, api_base_url, telnet_port, enable_password, lat, lng)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   return stmt.run(
     data.name,
@@ -365,7 +364,9 @@ function createOlt(data) {
     data.web_password || '',
     apiBase || null,
     Number.isFinite(telnetPort) && telnetPort > 0 ? telnetPort : 23,
-    data.enable_password != null && String(data.enable_password).length ? String(data.enable_password) : null
+    data.enable_password != null && String(data.enable_password).length ? String(data.enable_password) : null,
+    String(data.lat || '').trim(),
+    String(data.lng || '').trim()
   );
 }
 
@@ -383,9 +384,12 @@ function updateOlt(id, data) {
     ? String(data.web_password).trim()
     : ((prev && prev.web_password) || '');
 
+  const lat = data.lat !== undefined ? String(data.lat || '').trim() : (prev ? prev.lat : '');
+  const lng = data.lng !== undefined ? String(data.lng || '').trim() : (prev ? prev.lng : '');
+
   const stmt = db.prepare(`
     UPDATE olts 
-    SET name = ?, host = ?, snmp_community = ?, snmp_port = ?, brand = ?, description = ?, is_active = ?, web_user = ?, web_password = ?, api_base_url = ?, telnet_port = ?, enable_password = ?
+    SET name = ?, host = ?, snmp_community = ?, snmp_port = ?, brand = ?, description = ?, is_active = ?, web_user = ?, web_password = ?, api_base_url = ?, telnet_port = ?, enable_password = ?, lat = ?, lng = ?
     WHERE id = ?
   `);
   return stmt.run(
@@ -401,6 +405,16 @@ function updateOlt(id, data) {
     apiBase || null,
     Number.isFinite(telnetPort) && telnetPort > 0 ? telnetPort : 23,
     enablePass,
+    lat,
+    lng,
+    id
+  );
+}
+
+function updateOltCoordinates(id, lat, lng) {
+  return db.prepare('UPDATE olts SET lat = ?, lng = ? WHERE id = ?').run(
+    String(lat || '').trim(),
+    String(lng || '').trim(),
     id
   );
 }
@@ -2511,6 +2525,6 @@ async function configureWanViaAcs(sn, data) {
  }
 
 module.exports = {
-  getAllOlts, getActiveOlts, getOltById, createOlt, updateOlt, deleteOlt, getOltStats, getAllOltsStats, rebootOnu, renameOnu, authorizeOnu,
+  getAllOlts, getActiveOlts, getOltById, createOlt, updateOlt, updateOltCoordinates, deleteOlt, getOltStats, getAllOltsStats, rebootOnu, renameOnu, authorizeOnu,
   configureOnuWan, configureZteWanViaGoApi, configureWanViaAcs, testOltSnmp
 };

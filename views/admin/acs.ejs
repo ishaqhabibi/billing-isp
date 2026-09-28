@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>GenieACS Pro | <%= company %></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="/css/admin.css?v=2.6">
+    <link rel="stylesheet" href="/css/admin.css?v=2.7">
     <style>
         /* ── PAGE LAYOUT & HEADER ── */
         .acs-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
@@ -610,6 +610,7 @@
             &copy; <%= new Date().getFullYear() %> <%= (typeof settings !== 'undefined' ? settings.company_header : 'ALIJAYA NET') %> &bull; GenieACS Pro Provisioning Engine v2.6
         </footer>
     </div>
+  <%- include('partials/footer') %>
 </div>
 
 <!-- ========================================== -->

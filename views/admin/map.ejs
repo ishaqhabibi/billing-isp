@@ -4,7 +4,7 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title><%= title %> | <%= company %></title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/css/admin.css?v=2.6">
+  <link rel="stylesheet" href="/css/admin.css?v=2.7">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.Editable/1.2.0/Leaflet.Editable.js"></script>
@@ -424,6 +424,68 @@
       display: none !important;
     }
 
+    /* OLT Marker Node (Central Office / Server Room) */
+    .olt-marker-node {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+    .olt-marker-node:hover {
+      z-index: 9999 !important;
+      transform: scale(1.3);
+    }
+    .olt-marker-pin {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #ffffff;
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border: 2.5px solid #ffffff;
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.45), 0 4px 12px rgba(0,0,0,0.5);
+      flex-shrink: 0;
+      z-index: 3;
+    }
+    .olt-marker-label {
+      position: absolute;
+      top: 38px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+      text-align: center;
+      white-space: nowrap;
+      z-index: 2;
+    }
+    .olt-marker-name {
+      font-weight: 900;
+      font-size: 11.5px;
+      color: #38bdf8;
+      text-shadow: 
+        -1.5px -1.5px 0 #0f172a,  
+         1.5px -1.5px 0 #0f172a,
+        -1.5px  1.5px 0 #0f172a,
+         1.5px  1.5px 0 #0f172a,
+         0 2px 5px rgba(0,0,0,0.95);
+      letter-spacing: 0.3px;
+      line-height: 1.1;
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: inline-block;
+    }
+    .hide-marker-labels .olt-marker-label {
+      display: none !important;
+    }
+
     /* Pulse Highlight on Focus */
     @keyframes focusPulse {
       0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.9), 0 0 20px rgba(59, 130, 246, 0.9); }
@@ -432,10 +494,32 @@
     }
     .marker-pulse-highlight .onu-marker-pin,
     .marker-pulse-highlight .odp-marker-pin,
-    .marker-pulse-highlight .odc-marker-pin {
+    .marker-pulse-highlight .odc-marker-pin,
+    .marker-pulse-highlight .olt-marker-pin {
       animation: focusPulse 0.8s ease-out 3;
       transform: scale(1.3);
       transition: transform 0.3s ease;
+    }
+
+    /* Backbone Feeder Cable Animation (OLT ➔ ODC) */
+    @keyframes fiberFlowBackbone {
+      from { stroke-dashoffset: 28; }
+      to { stroke-dashoffset: 0; }
+    }
+    .flowing-line-backbone {
+      stroke-linecap: round !important;
+      stroke-dasharray: 6, 8 !important;
+      animation: fiberFlowBackbone 1.2s linear infinite !important;
+      filter: drop-shadow(0 0 6px rgba(14, 165, 233, 0.85));
+    }
+
+    .odn-empty-box {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1.5px dashed #f59e0b;
+      border-radius: 12px;
+      padding: 24px 20px;
+      text-align: center;
+      margin: 12px 0 16px 0;
     }
 
     /* Popups */
@@ -725,8 +809,9 @@
       <button class="btn btn-sm" id="btnSyncGenieacs" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; border: 1px solid #0284c7; font-weight: 700;" onclick="triggerGenieacsOpticalSync()" title="Sinkronisasi redaman Rx dari GenieACS TR-069">
         <i class="bi bi-broadcast-pin"></i> 📡 Sync Redaman GenieACS
       </button>
-      <button class="btn btn-sm" style="background:#8b5cf6; border:1px solid #7c3aed; color:#fff;" onclick="openModal('addOdcModal')"><i class="bi bi-diagram-3-fill"></i> Tambah ODC</button>
-      <button class="btn btn-p btn-sm" onclick="openModal('addOdpModal')"><i class="bi bi-box-seam-fill"></i> <%= t('admin.map.add_odp', 'Tambah ODP') %></button>
+      <button class="btn btn-sm" style="background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #0284c7; color:#fff; font-weight: 700;" onclick="openAddOltModal()"><i class="bi bi-hdd-rack-fill"></i> Tambah OLT</button>
+      <button class="btn btn-sm" style="background:#8b5cf6; border:1px solid #7c3aed; color:#fff;" onclick="openAddOdcModal()"><i class="bi bi-diagram-3-fill"></i> Tambah ODC</button>
+      <button class="btn btn-p btn-sm" onclick="openAddOdpModal()"><i class="bi bi-box-seam-fill"></i> <%= t('admin.map.add_odp', 'Tambah ODP') %></button>
     </div>
   </div>
 
@@ -752,10 +837,10 @@
         </div>
       </div>
       <div class="msc">
-        <div class="msc-icon" style="background: rgba(139,92,246,0.15); color: #8b5cf6;"><i class="bi bi-diagram-3-fill"></i></div>
+        <div class="msc-icon" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9;"><i class="bi bi-diagram-3-fill"></i></div>
         <div class="msc-info">
-          <div class="val" style="color: #8b5cf6;"><%= (typeof odcs !== 'undefined' && odcs ? odcs.length : 0) %> ODC / <%= odps.length %> ODP</div>
-          <div class="lbl">Infrastruktur Distribusi</div>
+          <div class="val" style="color: #0ea5e9;"><%= (typeof olts !== 'undefined' && olts ? olts.length : 0) %> OLT • <%= (typeof odcs !== 'undefined' && odcs ? odcs.length : 0) %> ODC • <%= odps.length %> ODP</div>
+          <div class="lbl">Topologi ODN Jaringan</div>
         </div>
       </div>
       <div class="msc">
@@ -766,6 +851,20 @@
         </div>
       </div>
     </div>
+
+    <!-- Banner Peringatan OLT Belum Berkoordinat -->
+    <% const unlocatedOlts = (typeof olts !== 'undefined' && olts) ? olts.filter(o => !o.lat || !o.lng) : []; %>
+    <% if (unlocatedOlts.length > 0) { %>
+      <div class="alert alert-w" style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; border-radius:12px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.35);">
+        <div style="font-size:13px; color:var(--text);">
+          <i class="bi bi-geo-alt-fill text-warning me-2" style="font-size:16px;"></i>
+          <strong>Pemberitahuan ODN:</strong> Terdapat <%= unlocatedOlts.length %> perangkat OLT yang belum memiliki titik lokasi di peta: <strong><%= unlocatedOlts.map(o => o.name).join(', ') %></strong>.
+        </div>
+        <button type="button" class="btn btn-sm btn-warning" onclick="openSetOltLocationModal('<%= unlocatedOlts[0].id %>', '<%= unlocatedOlts[0].name.replace(/'/g, "\\'") %>')">
+          <i class="bi bi-pin-map-fill me-1"></i> Tentukan Lokasi OLT
+        </button>
+      </div>
+    <% } %>
 
     <!-- Map Search & Layer Controls Toolbar -->
     <div class="map-toolbar">
@@ -794,6 +893,9 @@
       <div class="map-filter-group">
         <button type="button" class="map-pill-btn active" id="pillEntAll" onclick="setEntityFilter('all')" title="Tampilkan semua entitas">
           <i class="bi bi-grid-fill"></i> Semua
+        </button>
+        <button type="button" class="map-pill-btn" id="pillEntOlt" onclick="setEntityFilter('olt')" title="Hanya OLT">
+          <i class="bi bi-hdd-rack-fill" style="color: #0ea5e9;"></i> OLT (<%= (typeof olts !== 'undefined' && olts) ? olts.length : 0 %>)
         </button>
         <button type="button" class="map-pill-btn" id="pillEntOdc" onclick="setEntityFilter('odc')" title="Hanya ODC">
           <i class="bi bi-diagram-3-fill" style="color: #a855f7;"></i> ODC (<%= (typeof odcs !== 'undefined' && odcs) ? odcs.length : 0 %>)
@@ -835,6 +937,11 @@
           <i class="bi bi-router-fill"></i>
           <span>Daftar ONU Pelanggan</span>
           <span class="tab-badge"><%= customers.length %></span>
+        </button>
+        <button type="button" class="tab-btn" onclick="switchDataTab('olt-tab', this)">
+          <i class="bi bi-hdd-rack-fill" style="color: #0ea5e9;"></i>
+          <span>Daftar OLT (Central)</span>
+          <span class="tab-badge"><%= (typeof olts !== 'undefined' && olts) ? olts.length : 0 %></span>
         </button>
         <button type="button" class="tab-btn" onclick="switchDataTab('odp-tab', this)">
           <i class="bi bi-box-seam-fill"></i>
@@ -1122,9 +1229,98 @@
           </table>
         </div>
       </div>
+
+      <!-- TAB 4: PERANGKAT OLT PUSAT -->
+      <div id="olt-tab" class="tab-content">
+        <div class="panel-filter-bar">
+          <div style="display: flex; gap: 8px; flex: 1; max-width: 450px;">
+            <input 
+              id="oltTableSearch" 
+              class="table-search-input" 
+              style="width: 100%;"
+              type="text" 
+              placeholder="Cari nama OLT, IP / Host, Brand..."
+            >
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn btn-sm btn-p" onclick="openAddOltModal()">
+              <i class="bi bi-plus-circle me-1"></i> Tambah OLT
+            </button>
+            <a href="/admin/olts" class="btn btn-sm btn-g">
+              <i class="bi bi-gear me-1"></i> Manajemen OLT
+            </a>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Nama OLT</th>
+                <th>Host / IP</th>
+                <th>Brand / Vendor</th>
+                <th>SNMP Port</th>
+                <th>Status</th>
+                <th>Koordinat GPS</th>
+                <th>ODC Terhubung</th>
+                <th style="text-align: right; width: 160px;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="oltsTbody">
+              <% if (typeof olts !== 'undefined' && olts && olts.length > 0) { %>
+                <% olts.forEach(o => { 
+                    const hasGps = Boolean(o.lat && o.lng);
+                    const odcCount = (typeof odcs !== 'undefined' && odcs) ? odcs.filter(c => c.olt_id == o.id).length : 0;
+                %>
+                  <tr data-id="<%= o.id %>" data-name="<%= (o.name || '').toLowerCase() %>" data-host="<%= (o.host || '').toLowerCase() %>">
+                    <td>
+                      <div style="font-weight: 800; color: var(--text);"><%= o.name %></div>
+                      <div style="font-size: 11px; color: var(--muted);"><%= o.description || 'Sentral NOC' %></div>
+                    </td>
+                    <td><code style="color: #0284c7; font-weight: 700;"><%= o.host %></code></td>
+                    <td><span class="badge" style="background: rgba(2, 132, 199, 0.15); color: #0284c7;"><%= (o.brand || 'ZTE').toUpperCase() %></span></td>
+                    <td><code><%= o.snmp_port || 161 %></code></td>
+                    <td>
+                      <span class="badge <%= o.is_active ? 'bs' : 'bd' %>">
+                        <%= o.is_active ? 'Aktif' : 'Nonaktif' %>
+                      </span>
+                    </td>
+                    <td>
+                      <% if (hasGps) { %>
+                        <span style="font-size: 11px; font-family: monospace; color: var(--text); font-weight: 700;">
+                          <%= Number(o.lat).toFixed(5) %>, <%= Number(o.lng).toFixed(5) %>
+                        </span>
+                      <% } else { %>
+                        <span class="badge bg-secondary" style="font-size: 10.5px;"><i class="bi bi-exclamation-triangle"></i> Belum ada lokasi</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <span class="badge" style="background:#8b5cf6; color:#fff; padding:2px 8px; border-radius:4px; font-size:11px;">
+                        <%= odcCount %> ODC
+                      </span>
+                    </td>
+                    <td style="text-align: right;">
+                      <div style="display: inline-flex; gap: 4px;">
+                        <% if (hasGps) { %>
+                          <button type="button" class="btn btn-sm btn-g" onclick="focusOlt(<%= Number(o.id) %>)" title="Fokus di Peta"><i class="bi bi-geo-alt"></i></button>
+                        <% } %>
+                        <button type="button" class="btn btn-sm btn-warning" onclick="openSetOltLocationModal(<%= Number(o.id) %>, '<%= (o.name || '').replace(/'/g, "\\'") %>', '<%= o.lat || '' %>', '<%= o.lng || '' %>')" title="Tentukan / Ubah Titik Lokasi Peta"><i class="bi bi-pin-map"></i></button>
+                        <a href="/admin/olts" class="btn btn-sm btn-p" title="Buka Detail OLT"><i class="bi bi-arrow-up-right-square"></i></a>
+                      </div>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr><td colspan="8" style="padding: 16px; text-align: center; color: var(--muted);">Belum ada data OLT terdaftar. Silakan klik tombol "Tambah OLT".</td></tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
   </div>
+  <%- include('partials/footer') %>
 </div>
 
 <!-- Modal Tambah ODC -->
@@ -1136,21 +1332,34 @@
         <button type="button" class="mc" onclick="closeModal('addOdcModal')">&times;</button>
       </div>
       <div class="mbody">
-        <div class="fg">
-          <label class="fl">Nama ODC</label>
-          <input type="text" name="name" class="fc" placeholder="Contoh: ODC-WILAYAH-01" required>
-        </div>
-        <% if (typeof olts !== 'undefined' && olts && olts.length > 0) { %>
+        <% const hasOlts = (typeof olts !== 'undefined' && olts && olts.length > 0); %>
+        <% if (!hasOlts) { %>
+          <div class="odn-empty-box">
+            <div style="width: 54px; height: 54px; border-radius: 50%; background: rgba(245,158,11,0.2); color: #f59e0b; display: inline-flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 12px;">
+              <i class="bi bi-hdd-rack"></i>
+            </div>
+            <h4 style="font-weight: 800; color: var(--text); margin-bottom: 8px;">Perangkat OLT Belum Tersedia!</h4>
+            <p style="font-size: 13px; color: var(--muted); max-width: 440px; margin: 0 auto 16px auto; line-height: 1.5;">
+              Dalam hierarki topologi ODN (Optical Distribution Network), kabinet <strong>ODC wajib terhubung ke perangkat OLT</strong> sebagai sumber feeder utama. Anda harus mendaftarkan OLT terlebih dahulu sebelum membuat ODC.
+            </p>
+            <button type="button" class="btn btn-p" onclick="closeModal('addOdcModal'); openAddOltModal();">
+              <i class="bi bi-plus-circle me-1"></i> Tambah OLT Sekarang
+            </button>
+          </div>
+        <% } else { %>
           <div class="fg">
-            <label class="fl">OLT Induk (Opsional)</label>
-            <select name="olt_id" class="fc">
-              <option value="">-- Tidak Terhubung ke OLT Tertentu --</option>
+            <label class="fl">Nama ODC <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="fc" placeholder="Contoh: ODC-WILAYAH-01" required>
+          </div>
+          <div class="fg">
+            <label class="fl"><i class="bi bi-hdd-rack text-primary me-1"></i> OLT Induk <span class="text-danger">*</span></label>
+            <select name="olt_id" class="fc" required>
+              <option value="" disabled selected>-- Pilih OLT Induk (Wajib) --</option>
               <% olts.forEach(olt => { %>
-                <option value="<%= olt.id %>"><%= olt.name %> (<%= olt.ip_address || olt.brand %>)</option>
+                <option value="<%= olt.id %>"><%= olt.name %> (<%= olt.host || olt.brand %>)</option>
               <% }) %>
             </select>
           </div>
-        <% } %>
 
         <div class="form-row">
           <div class="fg">
@@ -1201,8 +1410,11 @@
       </div>
       <div class="mf">
         <button type="button" class="btn btn-g" onclick="closeModal('addOdcModal')"><%= t('common.cancel', 'Batal') %></button>
-        <button type="submit" class="btn" style="background:#8b5cf6; border:1px solid #7c3aed; color:#fff;">Simpan ODC</button>
+        <% if (hasOlts) { %>
+          <button type="submit" class="btn" style="background:#8b5cf6; border:1px solid #7c3aed; color:#fff;">Simpan ODC</button>
+        <% } %>
       </div>
+      <% } %>
     </form>
   </div>
 </div>
@@ -1220,17 +1432,17 @@
           <label class="fl">Nama ODC</label>
           <input type="text" name="name" id="e_odc_name" class="fc" required>
         </div>
-        <% if (typeof olts !== 'undefined' && olts && olts.length > 0) { %>
-          <div class="fg">
-            <label class="fl">OLT Induk (Opsional)</label>
-            <select name="olt_id" id="e_odc_olt_id" class="fc">
-              <option value="">-- Tidak Terhubung ke OLT Tertentu --</option>
-              <% olts.forEach(olt => { %>
-                <option value="<%= olt.id %>"><%= olt.name %> (<%= olt.ip_address || olt.brand %>)</option>
-              <% }) %>
+        <div class="fg">
+            <label class="fl"><i class="bi bi-hdd-rack text-primary me-1"></i> OLT Induk <span class="text-danger">*</span></label>
+            <select name="olt_id" id="e_odc_olt_id" class="fc" required>
+              <option value="" disabled>-- Pilih OLT Induk (Wajib) --</option>
+              <% if (typeof olts !== 'undefined' && olts) { %>
+                <% olts.forEach(olt => { %>
+                  <option value="<%= olt.id %>"><%= olt.name %> (<%= olt.host || olt.brand %>)</option>
+                <% }) %>
+              <% } %>
             </select>
           </div>
-        <% } %>
 
         <div class="form-row">
           <div class="fg">
@@ -1292,32 +1504,48 @@
     <form action="/admin/odps" method="POST">
       <div class="mh"><span class="mt"><%= t('admin.map.add_modal.title', 'Tambah ODP Baru') %></span><button type="button" class="mc" onclick="closeModal('addOdpModal')">&times;</button></div>
       <div class="mbody">
-        <div class="fg"><label class="fl"><%= t('admin.map.form.name', 'Nama ODP') %></label><input type="text" name="name" class="fc" placeholder="<%= t('admin.map.form.name_placeholder', 'Contoh: ODP-A-01') %>" required></div>
-        
-        <div class="form-row">
-          <div class="fg">
-            <label class="fl"><i class="bi bi-diagram-3-fill" style="color:#8b5cf6;"></i> Sambung ke ODC Induk</label>
-            <select name="odc_id" id="new_odp_odc_id" class="fc">
-              <option value="">-- Tanpa ODC (Langsung) --</option>
-              <% if (typeof odcs !== 'undefined' && odcs) { %>
-                <% odcs.forEach(c => { %>
-                  <option value="<%= c.id %>"><%= c.name %></option>
-                <% }) %>
-              <% } %>
-            </select>
+        <% const hasOdcs = (typeof odcs !== 'undefined' && odcs && odcs.length > 0); %>
+        <% const hasOdps = (typeof odps !== 'undefined' && odps && odps.length > 0); %>
+        <% if (!hasOdcs && !hasOdps) { %>
+          <div class="odn-empty-box">
+            <div style="width: 54px; height: 54px; border-radius: 50%; background: rgba(139,92,246,0.2); color: #8b5cf6; display: inline-flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 12px;">
+              <i class="bi bi-diagram-3-fill"></i>
+            </div>
+            <h4 style="font-weight: 800; color: var(--text); margin-bottom: 8px;">ODC Belum Tersedia!</h4>
+            <p style="font-size: 13px; color: var(--muted); max-width: 440px; margin: 0 auto 16px auto; line-height: 1.5;">
+              Dalam hierarki jaringan ODN, setiap kotak <strong>ODP (Optical Distribution Point)</strong> wajib terhubung ke <strong>ODC Induk</strong> sebagai titik distribusi feeder serat optik. Harap buat ODC terlebih dahulu sebelum membuat ODP.
+            </p>
+            <button type="button" class="btn" style="background:#8b5cf6; color:#fff;" onclick="closeModal('addOdpModal'); openAddOdcModal();">
+              <i class="bi bi-plus-circle me-1"></i> Buat ODC Sekarang
+            </button>
           </div>
-          <div class="fg">
-            <label class="fl"><i class="bi bi-box-seam-fill text-warning"></i> Sambung ke ODP Induk (Kaskade)</label>
-            <select name="parent_odp_id" id="new_odp_parent_id" class="fc">
-              <option value="">-- Bukan Sub-ODP (Utama) --</option>
-              <% if (typeof odps !== 'undefined' && odps) { %>
-                <% odps.forEach(op => { %>
-                  <option value="<%= op.id %>"><%= op.name %></option>
-                <% }) %>
-              <% } %>
-            </select>
+        <% } else { %>
+          <div class="fg"><label class="fl"><%= t('admin.map.form.name', 'Nama ODP') %> <span class="text-danger">*</span></label><input type="text" name="name" class="fc" placeholder="<%= t('admin.map.form.name_placeholder', 'Contoh: ODP-A-01') %>" required></div>
+          
+          <div class="form-row">
+            <div class="fg">
+              <label class="fl"><i class="bi bi-diagram-3-fill" style="color:#8b5cf6;"></i> Sambung ke ODC Induk <span class="text-danger">*</span></label>
+              <select name="odc_id" id="new_odp_odc_id" class="fc" required onchange="handleOdpHierarchyChange('new')">
+                <option value="" disabled selected>-- Pilih ODC Induk (Wajib) --</option>
+                <% if (typeof odcs !== 'undefined' && odcs) { %>
+                  <% odcs.forEach(c => { %>
+                    <option value="<%= c.id %>"><%= c.name %></option>
+                  <% }) %>
+                <% } %>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="fl"><i class="bi bi-box-seam-fill text-warning"></i> Atau Kaskade dari ODP Induk (Opsional)</label>
+              <select name="parent_odp_id" id="new_odp_parent_id" class="fc" onchange="handleOdpHierarchyChange('new')">
+                <option value="">-- Bukan Sub-ODP (Langsung dari ODC) --</option>
+                <% if (typeof odps !== 'undefined' && odps) { %>
+                  <% odps.forEach(op => { %>
+                    <option value="<%= op.id %>"><%= op.name %></option>
+                  <% }) %>
+                <% } %>
+              </select>
+            </div>
           </div>
-        </div>
 
         <div class="form-row">
           <div class="fg">
@@ -1367,8 +1595,11 @@
       </div>
       <div class="mf">
         <button type="button" class="btn btn-g" onclick="closeModal('addOdpModal')"><%= t('common.cancel', 'Batal') %></button>
-        <button type="submit" class="btn btn-p"><%= t('admin.map.add_modal.save', 'Simpan ODP') %></button>
+        <% if (hasOdcs || hasOdps) { %>
+          <button type="submit" class="btn btn-p"><%= t('admin.map.add_modal.save', 'Simpan ODP') %></button>
+        <% } %>
       </div>
+      <% } %>
     </form>
   </div>
 </div>
@@ -1384,8 +1615,8 @@
         <div class="form-row">
           <div class="fg">
             <label class="fl"><i class="bi bi-diagram-3-fill" style="color:#8b5cf6;"></i> Sambung ke ODC Induk</label>
-            <select name="odc_id" id="e_odp_odc_id" class="fc">
-              <option value="">-- Tanpa ODC (Langsung) --</option>
+            <select name="odc_id" id="e_odp_odc_id" class="fc" required onchange="handleOdpHierarchyChange('edit')">
+              <option value="" disabled>-- Pilih ODC Induk (Wajib) --</option>
               <% if (typeof odcs !== 'undefined' && odcs) { %>
                 <% odcs.forEach(c => { %>
                   <option value="<%= c.id %>"><%= c.name %></option>
@@ -1697,6 +1928,111 @@
   </div>
 </div>
 
+<!-- Modal Tambah OLT (Central Office / POP) -->
+<div class="mo" id="addOltModal">
+  <div class="mb" style="max-width: 620px;">
+    <form action="/admin/olts" method="POST">
+      <input type="hidden" name="redirect_to" value="/admin/map">
+      <div class="mh">
+        <span class="mt"><i class="bi bi-hdd-rack-fill" style="color: #0ea5e9;"></i> Tambah OLT Baru (Central Office)</span>
+        <button type="button" class="mc" onclick="closeModal('addOltModal')">&times;</button>
+      </div>
+      <div class="mbody">
+        <div class="fg">
+          <label class="fl">Nama Perangkat OLT <span class="text-danger">*</span></label>
+          <input type="text" name="name" class="fc" placeholder="Contoh: OLT-PUSAT-NOC" required>
+        </div>
+        <div class="form-row">
+          <div class="fg">
+            <label class="fl">IP Address / Host <span class="text-danger">*</span></label>
+            <input type="text" name="host" class="fc" placeholder="192.168.1.10" required>
+          </div>
+          <div class="fg">
+            <label class="fl">Port SNMP</label>
+            <input type="number" name="snmp_port" class="fc" value="161">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="fg">
+            <label class="fl">Brand / Vendor OLT</label>
+            <select name="brand" class="fs">
+              <option value="zte">ZTE (C300 / C320 / C600)</option>
+              <option value="huawei">Huawei (MA5600 / MA5800)</option>
+              <option value="vsol">V-SOL (V1600 / V2400 EPON/GPON)</option>
+              <option value="fiberhome">FiberHome (AN5516)</option>
+              <option value="cdata">C-DATA (FD1600 / FD1800)</option>
+              <option value="hioso" selected>HIOSO (EPON / GPON)</option>
+              <option value="hsgq">HSGQ (EPON / GPON)</option>
+              <option value="bdcom">BDCOM (EPON / GPON)</option>
+              <option value="generic">Generic / Lainnya</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label class="fl">SNMP Community</label>
+            <input type="text" name="snmp_community" class="fc" value="public">
+          </div>
+        </div>
+
+        <label class="fl"><i class="bi bi-pin-map text-primary"></i> Tentukan Titik Lokasi OLT di Peta</label>
+        <div id="olt-picker-map" style="height: 220px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--border);"></div>
+
+        <div class="form-row">
+          <div class="fg">
+            <label class="fl">Latitude (Peta)</label>
+            <input type="text" name="lat" id="new_olt_lat" class="fc" placeholder="-6.xxx">
+          </div>
+          <div class="fg">
+            <label class="fl">Longitude (Peta)</label>
+            <input type="text" name="lng" id="new_olt_lng" class="fc" placeholder="106.xxx">
+          </div>
+        </div>
+        <p class="text-muted" style="font-size: 11px;">*Tips: Klik atau geser marker biru pada peta untuk menentukan lokasi server / NOC OLT</p>
+
+        <div class="fg">
+          <label class="fl">Deskripsi / Ruangan Server</label>
+          <textarea name="description" class="fc" rows="2" placeholder="Catatan letak rack server atau POP NOC..."></textarea>
+        </div>
+      </div>
+      <div class="mf">
+        <button type="button" class="btn btn-g" onclick="closeModal('addOltModal')">Batal</button>
+        <button type="submit" class="btn btn-p" style="background:#0284c7; border:1px solid #0369a1; color:#fff;">Simpan OLT</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Set Koordinat OLT -->
+<div class="mo" id="setOltLocationModal">
+  <div class="mb" style="max-width: 600px;">
+    <form id="setOltLocationForm" onsubmit="saveOltLocationAjax(event)">
+      <input type="hidden" id="set_olt_id" value="">
+      <div class="mh">
+        <span class="mt"><i class="bi bi-pin-map-fill" style="color: #0ea5e9;"></i> Tentukan Lokasi OLT: <span id="set_olt_name_title"></span></span>
+        <button type="button" class="mc" onclick="closeModal('setOltLocationModal')">&times;</button>
+      </div>
+      <div class="mbody">
+        <p style="font-size:12px; color:var(--muted); margin-bottom:8px;">Klik pada peta untuk menempatkan titik koordinat OLT. Kabel Backbone feeder ke seluruh ODC yang terhubung akan otomatis ditarik dari titik ini.</p>
+        <div id="set-olt-picker-map" style="height: 280px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--border);"></div>
+        <div class="form-row">
+          <div class="fg">
+            <label class="fl">Latitude</label>
+            <input type="text" id="set_olt_lat" class="fc" required>
+          </div>
+          <div class="fg">
+            <label class="fl">Longitude</label>
+            <input type="text" id="set_olt_lng" class="fc" required>
+          </div>
+        </div>
+      </div>
+      <div class="mf">
+        <button type="button" class="btn btn-g" onclick="closeModal('setOltLocationModal')">Batal</button>
+        <button type="submit" class="btn btn-p" id="btnSaveOltLoc">Simpan Lokasi OLT</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script id="olts-data" type="application/json"><%- JSON.stringify(typeof olts !== 'undefined' ? olts : []).replace(/<\/script/g, '<\\/script').replace(/<!--/g, '<\\!--') %></script>
 <script id="settings-data" type="application/json"><%- JSON.stringify(settings) %></script>
 <script id="customers-data" type="application/json"><%- JSON.stringify(customers).replace(/<\/script/g, '<\\/script').replace(/<!--/g, '<\\!--') %></script>
 <script id="odps-data" type="application/json"><%- JSON.stringify(odps).replace(/<\/script/g, '<\\/script').replace(/<!--/g, '<\\!--') %></script>
@@ -1770,20 +2106,78 @@
   let customers = [];
   let odps = [];
   let odcs = [];
+  let olts = [];
   try {
     customers = JSON.parse(document.getElementById('customers-data').textContent || '[]');
     odps = JSON.parse(document.getElementById('odps-data').textContent || '[]');
     odcs = JSON.parse(document.getElementById('odcs-data').textContent || '[]');
+    olts = JSON.parse(document.getElementById('olts-data').textContent || '[]');
   } catch (e) {
     console.error("Data mapping error:", e);
   }
 
   // Registries for quick search, focus, and filtering
+  const oltMap = {}; // oltId -> { marker, data, coord }
   const odcMap = {}; // odcId -> { marker, data, coord }
   const odpMap = {}; // odpId -> { marker, data, coord }
   const customerMap = {}; // custId -> { marker, data, polyline }
+  const oltPolylineList = []; // Backbone Feeder cables OLT ➔ ODC: { oltId, odcId, line }
   const odcPolylineList = []; // Feeder cables ODC ➔ ODP: { odcId, odpId, line }
   const odpCascadeLineList = []; // Daisy-chain Parent ODP ➔ Sub ODP: { parentId, childId, line }
+
+  // 0. Render OLT Markers (Central Office / Server Room - Cyan Node)
+  olts.forEach(olt => {
+    if (olt.lat && olt.lng) {
+      const lat = parseFloat(olt.lat);
+      const lng = parseFloat(olt.lng);
+
+      const oltIcon = L.divIcon({
+        className: 'custom-onu-icon',
+        html: `
+          <div class="olt-marker-node" id="olt-node-${olt.id}">
+            <div class="olt-marker-pin" title="${escapeHtml(olt.name)} (OLT Pusat)">
+              <i class="bi bi-hdd-rack-fill"></i>
+            </div>
+            <div class="olt-marker-label">
+              <span class="olt-marker-name">${escapeHtml(olt.name)}</span>
+            </div>
+          </div>
+        `,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
+      });
+
+      const marker = L.marker([lat, lng], { icon: oltIcon }).addTo(map);
+      const connectedOdcs = odcs.filter(c => c.olt_id == olt.id);
+
+      marker.bindPopup(`
+        <div class="popup-content">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:6px;">
+            <div style="width:34px; height:34px; border-radius:8px; background:rgba(2,132,199,0.18); color:#0284c7; display:flex; align-items:center; justify-content:center; font-size:18px;">
+              <i class="bi bi-hdd-rack-fill"></i>
+            </div>
+            <div>
+              <div style="font-weight:900; font-size:14px; color:var(--text); line-height:1.2;">${escapeHtml(olt.name)}</div>
+              <div style="font-size:11px; font-weight:700; color:#0284c7;">PERANGKAT OLT PUSAT (NOC)</div>
+            </div>
+          </div>
+          <div style="font-size:12px; margin-bottom:4px;"><strong>IP / Host:</strong> <code style="color:#0284c7; font-weight:700;">${escapeHtml(olt.host || '-')}</code></div>
+          <div style="font-size:12px; margin-bottom:4px;"><strong>Brand / Vendor:</strong> <span class="badge" style="background:rgba(2,132,199,0.15); color:#0284c7;">${escapeHtml((olt.brand || 'ZTE').toUpperCase())}</span></div>
+          <div style="font-size:12px; margin-bottom:4px;"><strong>Status:</strong> <span class="badge ${olt.is_active ? 'bs' : 'bd'}">${olt.is_active ? 'Aktif' : 'Nonaktif'}</span></div>
+          <div style="font-size:12px; margin-bottom:4px;"><strong>ODC Terhubung:</strong> <span class="badge" style="background:#8b5cf6; color:#fff; padding:2px 6px; border-radius:4px; font-size:11px;">${connectedOdcs.length} ODC</span></div>
+          ${olt.description ? `<div style="font-size:12px; margin-bottom:4px;"><strong>${I18N.popupDescription}:</strong> ${escapeHtml(olt.description)}</div>` : ''}
+          <div style="font-size:11.5px; font-family:monospace; margin-bottom:8px; color:var(--muted);"><strong>${I18N.popupLocation}:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
+          <div class="popup-actions" style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
+            <button class="btn btn-sm btn-g" onclick="focusOlt(${olt.id})"><i class="bi bi-geo-alt me-1"></i>Fokus</button>
+            <button class="btn btn-sm btn-warning" onclick="openSetOltLocationModal(${olt.id}, '${escapeHtml(olt.name)}', '${lat}', '${lng}')"><i class="bi bi-pin-map me-1"></i>Ubah Lokasi</button>
+            <a href="/admin/olts" class="btn btn-sm btn-p"><i class="bi bi-gear me-1"></i>Manajemen OLT</a>
+          </div>
+        </div>
+      `);
+
+      oltMap[olt.id] = { marker, data: olt, coord: [lat, lng] };
+    }
+  });
 
   // 1. Render ODC Markers (Optical Distribution Cabinet - Purple node)
   odcs.forEach(odc => {
@@ -1902,6 +2296,25 @@
         data: odp,
         coord: [lat, lng]
       };
+    }
+  });
+
+  // 2.5 Connect Cables: OLT ➔ ODC (Backbone Feeder Cable - Cyan)
+  odcs.forEach(odc => {
+    if (odc.lat && odc.lng && odc.olt_id && oltMap[odc.olt_id]) {
+      const oltEntry = oltMap[odc.olt_id];
+      const odcCoord = [parseFloat(odc.lat), parseFloat(odc.lng)];
+
+      const backboneLine = L.polyline([oltEntry.coord, odcCoord], {
+        color: '#0284c7',
+        weight: 4.5,
+        opacity: 0.9,
+        dashArray: '8, 6',
+        className: 'flowing-line-backbone'
+      }).addTo(map);
+
+      backboneLine.bindTooltip(`Kabel Backbone Feeder: OLT (${escapeHtml(oltEntry.data.name)}) ➔ ODC (${escapeHtml(odc.name)})${odc.pon_port ? ' [Port: ' + escapeHtml(odc.pon_port) + ']' : ''}`, { sticky: true });
+      oltPolylineList.push({ oltId: odc.olt_id, odcId: odc.id, line: backboneLine });
     }
   });
 
@@ -2146,7 +2559,17 @@
       );
     });
 
+    const matchedOlts = olts.filter(o => {
+      return (
+        String(o.name || '').toLowerCase().includes(q) ||
+        String(o.host || '').toLowerCase().includes(q) ||
+        String(o.brand || '').toLowerCase().includes(q) ||
+        String(o.description || '').toLowerCase().includes(q)
+      );
+    });
+
     currentSearchResults = [
+      ...matchedOlts.slice(0, 5).map(o => ({ type: 'olt', data: o })),
       ...matchedCustomers.map(c => ({ type: 'customer', data: c })),
       ...matchedOdps.map(o => ({ type: 'odp', data: o })),
       ...matchedOdcs.map(c => ({ type: 'odc', data: c }))
@@ -2165,7 +2588,24 @@
     } else {
       let html = '';
       currentSearchResults.slice(0, 30).forEach((item, index) => {
-        if (item.type === 'customer') {
+        if (item.type === 'olt') {
+        const o = item.data;
+        const hasGps = Boolean(o.lat && o.lng);
+        itemEl.innerHTML = `
+          <div class="ms-icon" style="background: rgba(2, 132, 199, 0.18); color: #0284c7;">
+            <i class="bi bi-hdd-rack-fill"></i>
+          </div>
+          <div class="ms-info">
+            <div class="ms-title">${highlightMatch(o.name, q)} <span class="badge" style="background:#0284c7; color:#fff; font-size:10px; margin-left:4px;">OLT PUSAT</span></div>
+            <div class="ms-sub">
+              <span><i class="bi bi-hdd-network"></i> ${highlightMatch(o.host || '-', q)}</span>
+              <span><i class="bi bi-cpu"></i> ${escapeHtml(o.brand || 'ZTE')}</span>
+              ${!hasGps ? '<span class="text-warning"><i class="bi bi-exclamation-triangle"></i> Belum ada GPS</span>' : ''}
+            </div>
+          </div>
+          <div class="ms-type" style="color: #0284c7;">OLT</div>
+        `;
+      } else if (item.type === 'customer') {
           const c = item.data;
           const isActive = c.status === 'active';
           const hasGps = Boolean(c.lat && c.lng);
@@ -2250,6 +2690,8 @@
       focusOdp(item.data.id);
     } else if (item.type === 'odc') {
       focusOdc(item.data.id);
+    } else if (item.type === 'olt') {
+      focusOlt(item.data.id);
     }
   }
 
@@ -2351,6 +2793,29 @@
     }, 800);
   }
 
+  function focusOlt(id) {
+    const entry = oltMap[id];
+    if (!entry) {
+      const o = olts.find(x => x.id == id);
+      if (o && (!o.lat || !o.lng)) {
+        openSetOltLocationModal(o.id, o.name);
+      }
+      return;
+    }
+
+    const { marker, coord } = entry;
+    map.flyTo(coord, 18, { duration: 1 });
+
+    setTimeout(() => {
+      marker.openPopup();
+      const node = document.getElementById(`olt-node-${id}`);
+      if (node) {
+        node.classList.add('marker-pulse-highlight');
+        setTimeout(() => node.classList.remove('marker-pulse-highlight'), 2500);
+      }
+    }, 800);
+  }
+
   function focusOdc(id) {
     const entry = odcMap[id];
     if (!entry) return;
@@ -2384,6 +2849,7 @@
   function setEntityFilter(type) {
     filterEntity = type;
     document.getElementById('pillEntAll').classList.toggle('active', type === 'all');
+    document.getElementById('pillEntOlt')?.classList.toggle('active', type === 'olt');
     document.getElementById('pillEntOdc').classList.toggle('active', type === 'odc');
     document.getElementById('pillEntOdp').classList.toggle('active', type === 'odp');
     document.getElementById('pillEntCust').classList.toggle('active', type === 'customer');
@@ -2402,6 +2868,26 @@
   }
 
   function applyMapFilters() {
+    // 0. OLT Markers
+    const showOlt = (filterEntity === 'all' || filterEntity === 'olt');
+    Object.values(oltMap).forEach(e => {
+      if (showOlt) {
+        if (!map.hasLayer(e.marker)) map.addLayer(e.marker);
+      } else {
+        if (map.hasLayer(e.marker)) map.removeLayer(e.marker);
+      }
+    });
+
+    // 0.5 Backbone Feeder Cables (OLT ➔ ODC)
+    oltPolylineList.forEach(item => {
+      const visible = showOlt || (filterEntity === 'all' || filterEntity === 'odc');
+      if (visible) {
+        if (!map.hasLayer(item.line)) map.addLayer(item.line);
+      } else {
+        if (map.hasLayer(item.line)) map.removeLayer(item.line);
+      }
+    });
+
     // 1. ODC Markers
     const showOdc = (filterEntity === 'all' || filterEntity === 'odc');
     Object.values(odcMap).forEach(e => {
@@ -2480,6 +2966,9 @@
 
   function fitAllMarkers() {
     const allLayers = [];
+    Object.values(oltMap).forEach(e => {
+      if (map.hasLayer(e.marker)) allLayers.push(e.marker);
+    });
     Object.values(odcMap).forEach(e => {
       if (map.hasLayer(e.marker)) allLayers.push(e.marker);
     });
@@ -2543,6 +3032,169 @@
   if (custTableSearch) {
     custTableSearch.addEventListener('input', filterCustomerTable);
   }
+
+  // ─── ODN TOPOLOGY MODAL HELPERS ──────────────────────────────────────────
+  function openAddOltModal() {
+    openModal('addOltModal');
+    setTimeout(initOltPickerMap, 300);
+  }
+
+  function openAddOdcModal() {
+    openModal('addOdcModal');
+    if (typeof hasOlts !== 'undefined' ? hasOlts : (olts && olts.length > 0)) {
+      setTimeout(initOdcPickerMap, 300);
+    }
+  }
+
+  function openAddOdpModal() {
+    openModal('addOdpModal');
+    if ((typeof hasOdcs !== 'undefined' ? hasOdcs : (odcs && odcs.length > 0)) || (typeof hasOdps !== 'undefined' ? hasOdps : (odps && odps.length > 0))) {
+      setTimeout(initPickerMap, 300);
+    }
+  }
+
+  function handleOdpHierarchyChange(mode) {
+    const prefix = mode === 'new' ? 'new_odp_' : 'e_odp_';
+    const odcSelect = document.getElementById(prefix + 'odc_id');
+    const parentSelect = document.getElementById(prefix + 'parent_id');
+    
+    if (parentSelect && parentSelect.value) {
+      if (odcSelect) odcSelect.required = false;
+    } else {
+      if (odcSelect) odcSelect.required = true;
+    }
+  }
+
+  // OLT Picker Map for addOltModal
+  let oltPickerMap = null;
+  let oltPickerMarker = null;
+
+  function initOltPickerMap() {
+    if (oltPickerMap) {
+      oltPickerMap.invalidateSize();
+      return;
+    }
+    const container = document.getElementById('olt-picker-map');
+    if (!container) return;
+
+    oltPickerMap = L.map('olt-picker-map').setView([officeCoords.lat, officeCoords.lng], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(oltPickerMap);
+
+    oltPickerMarker = L.marker([officeCoords.lat, officeCoords.lng], { draggable: true }).addTo(oltPickerMap);
+
+    const updateInputs = (lat, lng) => {
+      document.getElementById('new_olt_lat').value = lat.toFixed(6);
+      document.getElementById('new_olt_lng').value = lng.toFixed(6);
+    };
+
+    updateInputs(officeCoords.lat, officeCoords.lng);
+
+    oltPickerMarker.on('dragend', (e) => {
+      const pos = e.target.getLatLng();
+      updateInputs(pos.lat, pos.lng);
+    });
+
+    oltPickerMap.on('click', (e) => {
+      oltPickerMarker.setLatLng(e.latlng);
+      updateInputs(e.latlng.lat, e.latlng.lng);
+    });
+  }
+
+  // Set OLT Location Modal & AJAX save
+  let setOltPickerMap = null;
+  let setOltPickerMarker = null;
+
+  function openSetOltLocationModal(oltId, oltName, curLat, curLng) {
+    document.getElementById('set_olt_id').value = oltId;
+    document.getElementById('set_olt_name_title').textContent = oltName || 'OLT';
+    
+    const lat = parseFloat(curLat) || officeCoords.lat;
+    const lng = parseFloat(curLng) || officeCoords.lng;
+
+    document.getElementById('set_olt_lat').value = lat.toFixed(6);
+    document.getElementById('set_olt_lng').value = lng.toFixed(6);
+
+    openModal('setOltLocationModal');
+
+    setTimeout(() => {
+      if (setOltPickerMap) {
+        setOltPickerMap.invalidateSize();
+        setOltPickerMap.setView([lat, lng], 15);
+        setOltPickerMarker.setLatLng([lat, lng]);
+      } else {
+        const container = document.getElementById('set-olt-picker-map');
+        if (!container) return;
+        setOltPickerMap = L.map('set-olt-picker-map').setView([lat, lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(setOltPickerMap);
+        setOltPickerMarker = L.marker([lat, lng], { draggable: true }).addTo(setOltPickerMap);
+
+        const updateInputs = (l, g) => {
+          document.getElementById('set_olt_lat').value = l.toFixed(6);
+          document.getElementById('set_olt_lng').value = g.toFixed(6);
+        };
+
+        setOltPickerMarker.on('dragend', (e) => {
+          const pos = e.target.getLatLng();
+          updateInputs(pos.lat, pos.lng);
+        });
+
+        setOltPickerMap.on('click', (e) => {
+          setOltPickerMarker.setLatLng(e.latlng);
+          updateInputs(e.latlng.lat, e.latlng.lng);
+        });
+      }
+    }, 300);
+  }
+
+  async function saveOltLocationAjax(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveOltLoc');
+    const oltId = document.getElementById('set_olt_id').value;
+    const lat = document.getElementById('set_olt_lat').value;
+    const lng = document.getElementById('set_olt_lng').value;
+
+    if (!oltId || !lat || !lng) {
+      alert('Harap tentukan koordinat lokasi terlebih dahulu.');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+
+    try {
+      const res = await fetch(`/admin/api/olts/${oltId}/coordinates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat, lng })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Gagal menyimpan lokasi OLT');
+
+      // Refresh halaman peta agar seluruh relasi kabel backbone OLT ➔ ODC ditarik sempurna
+      window.location.reload();
+    } catch(err) {
+      alert('Error: ' + err.message);
+      btn.disabled = false;
+      btn.innerHTML = 'Simpan Lokasi OLT';
+    }
+  }
+
+  // Filter OLT Table Search
+  (function bindOltSearch() {
+    const input = document.getElementById('oltTableSearch');
+    const tbody = document.getElementById('oltsTbody');
+    if (!input || !tbody) return;
+
+    input.addEventListener('input', () => {
+      const q = (input.value || '').trim().toLowerCase();
+      const rows = tbody.querySelectorAll('tr[data-id]');
+      rows.forEach(r => {
+        const name = r.getAttribute('data-name') || '';
+        const host = r.getAttribute('data-host') || '';
+        r.style.display = (!q || name.includes(q) || host.includes(q)) ? '' : 'none';
+      });
+    });
+  })();
 
   // Filter ODP Table
   (function bindOdpSearch() {

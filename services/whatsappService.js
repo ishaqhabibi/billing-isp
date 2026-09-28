@@ -227,9 +227,37 @@ function formatPaymentSuccessMessage({
   return rendered;
 }
 
+/**
+ * Kirim file dokumen PDF Invoice ke WhatsApp pelanggan
+ */
+async function sendInvoicePdfWhatsApp(toPhone, invoice, customer, settings = {}) {
+  try {
+    if (!toPhone) return false;
+    const pdfSvc = require('./pdfInvoiceService');
+    const pdfBuffer = await pdfSvc.generateInvoicePdfBuffer(invoice, customer, settings);
+    if (!pdfBuffer || !pdfBuffer.length) {
+      logger.warn(`[WhatsApp] Buffer PDF kosong untuk invoice #${invoice?.id}`);
+      return false;
+    }
+
+    const { sendWADocument } = await import('./whatsappBot.mjs');
+    const invIdStr = String(invoice?.id || '0').padStart(4, '0');
+    const periodStr = invoice?.period_month && invoice?.period_year ? `${invoice.period_month}_${invoice.period_year}` : 'tagihan';
+    const filename = `Invoice-${invIdStr}-${periodStr}.pdf`;
+    const caption = `📄 *BUKTI PEMBAYARAN LUNAS (INVOICE #${invoice?.id})*\nTerima kasih, pembayaran Anda telah berhasil diverifikasi oleh sistem.\n_${settings.company_header || 'Internet Service Provider'}_`;
+
+    logger.info(`[WhatsApp] Mengirim file PDF invoice #${invoice?.id} ke ${toPhone}`);
+    return await sendWADocument(toPhone, pdfBuffer, filename, caption);
+  } catch (err) {
+    logger.error(`[WhatsApp] Gagal kirim dokumen PDF invoice #${invoice?.id}: ${err.message}`);
+    return false;
+  }
+}
+
 module.exports = {
   sendWhatsAppMessage,
   sendWA: sendWhatsAppMessage, // Alias untuk kompatibilitas fungsi lama
+  sendInvoicePdfWhatsApp,
   getChatHistory,
   getRecentConversations,
   getIndonesianMonthName,

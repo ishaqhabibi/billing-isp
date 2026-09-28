@@ -1,0 +1,19 @@
+<!-- views/admin/partials/footer.ejs -->
+<footer class="admin-footer" style="margin-top:auto; padding:14px 24px; background:var(--bg2, #1e293b); border-top:1px solid var(--border, rgba(255,255,255,0.08)); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:12px; color:var(--muted, #94a3b8); z-index:10; width:100%; box-sizing:border-box;">
+  <div class="admin-footer-left" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+    <span>&copy; <%= new Date().getFullYear() %> <strong style="color:var(--text, #f1f5f9); font-weight:600;"><%= (typeof settings !== 'undefined' && settings.company_header) ? settings.company_header : ((typeof company !== 'undefined' && company) ? company : 'BIONFIBER NETWORK') %></strong></span>
+    <% if (typeof settings !== 'undefined' && settings.footer_info) { %>
+      <span class="d-none d-sm-inline" style="opacity:0.4;">&bull;</span>
+      <span class="admin-footer-tagline" style="color:var(--muted, #94a3b8);"><%= settings.footer_info %></span>
+    <% } %>
+    <span class="d-none d-md-inline" style="opacity:0.4;">&bull;</span>
+    <span class="d-none d-md-inline">All rights reserved.</span>
+  </div>
+  <div class="admin-footer-right" style="display:flex; align-items:center; gap:12px;">
+    <a href="/admin/update" class="admin-footer-ver" title="Status Versi Server (version.txt) &amp; Cek Update GitHub" style="display:inline-flex; align-items:center; gap:6px; padding:3px 9px; background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.25); color:var(--primary, #3b82f6); border-radius:6px; font-family:monospace; font-size:11.5px; font-weight:600; text-decoration:none; transition:all 0.15s ease;">
+      <i class="bi bi-tag-fill" style="font-size:10px;"></i>
+      <span>v<%= (typeof appVersion !== 'undefined' && appVersion) ? appVersion : '4.8.1-R17' %></span>
+    </a>
+  </div>
+</footer>
+

@@ -38,6 +38,27 @@ function getOdpById(id) {
 }
 
 function createOdp(data) {
+  const odcId = data.odc_id ? parseInt(data.odc_id) : null;
+  const parentOdpId = data.parent_odp_id ? parseInt(data.parent_odp_id) : null;
+
+  if (!odcId && !parentOdpId) {
+    throw new Error('ODC Induk wajib dipilih! Dalam struktur jaringan ODN, setiap ODP harus terhubung ke ODC atau ODP Kaskade.');
+  }
+
+  let finalOdcId = odcId;
+  let finalOltId = data.olt_id ? parseInt(data.olt_id) : null;
+
+  if (odcId) {
+    const odc = db.prepare('SELECT id, name, olt_id FROM odcs WHERE id = ?').get(odcId);
+    if (!odc) throw new Error('ODC Induk yang dipilih tidak valid atau belum terdaftar.');
+    if (!finalOltId && odc.olt_id) finalOltId = odc.olt_id;
+  } else if (parentOdpId) {
+    const parent = db.prepare('SELECT id, name, odc_id, olt_id FROM odps WHERE id = ?').get(parentOdpId);
+    if (!parent) throw new Error('ODP Induk Kaskade tidak valid atau belum terdaftar.');
+    if (!finalOdcId && parent.odc_id) finalOdcId = parent.odc_id;
+    if (!finalOltId && parent.olt_id) finalOltId = parent.olt_id;
+  }
+
   const inputPwr = (data.input_power_dbm !== undefined && data.input_power_dbm !== '' && data.input_power_dbm !== null) ? parseFloat(data.input_power_dbm) : null;
   const outputPwr = (data.output_power_dbm !== undefined && data.output_power_dbm !== '' && data.output_power_dbm !== null) ? parseFloat(data.output_power_dbm) : null;
 
@@ -47,9 +68,9 @@ function createOdp(data) {
   `);
   const info = stmt.run(
     String(data.name || '').trim(),
-    data.olt_id ? parseInt(data.olt_id) : null,
-    data.odc_id ? parseInt(data.odc_id) : null,
-    data.parent_odp_id ? parseInt(data.parent_odp_id) : null,
+    finalOltId,
+    finalOdcId,
+    parentOdpId,
     String(data.pon_port || '').trim(),
     data.odc_out_port ? parseInt(data.odc_out_port) : null,
     inputPwr,
@@ -74,6 +95,27 @@ function createOdp(data) {
 }
 
 function updateOdp(id, data) {
+  const odcId = data.odc_id ? parseInt(data.odc_id) : null;
+  const parentOdpId = data.parent_odp_id ? parseInt(data.parent_odp_id) : null;
+
+  if (!odcId && !parentOdpId) {
+    throw new Error('ODC Induk wajib dipilih! Setiap ODP harus terhubung ke ODC atau ODP Kaskade.');
+  }
+
+  let finalOdcId = odcId;
+  let finalOltId = data.olt_id ? parseInt(data.olt_id) : null;
+
+  if (odcId) {
+    const odc = db.prepare('SELECT id, name, olt_id FROM odcs WHERE id = ?').get(odcId);
+    if (!odc) throw new Error('ODC Induk yang dipilih tidak valid atau belum terdaftar.');
+    if (!finalOltId && odc.olt_id) finalOltId = odc.olt_id;
+  } else if (parentOdpId) {
+    const parent = db.prepare('SELECT id, name, odc_id, olt_id FROM odps WHERE id = ?').get(parentOdpId);
+    if (!parent) throw new Error('ODP Induk Kaskade tidak valid atau belum terdaftar.');
+    if (!finalOdcId && parent.odc_id) finalOdcId = parent.odc_id;
+    if (!finalOltId && parent.olt_id) finalOltId = parent.olt_id;
+  }
+
   const inputPwr = (data.input_power_dbm !== undefined && data.input_power_dbm !== '' && data.input_power_dbm !== null) ? parseFloat(data.input_power_dbm) : null;
   const outputPwr = (data.output_power_dbm !== undefined && data.output_power_dbm !== '' && data.output_power_dbm !== null) ? parseFloat(data.output_power_dbm) : null;
   const current = getOdpById(id);
@@ -85,9 +127,9 @@ function updateOdp(id, data) {
   `);
   const res = stmt.run(
     String(data.name || '').trim(),
-    data.olt_id ? parseInt(data.olt_id) : null,
-    data.odc_id ? parseInt(data.odc_id) : null,
-    data.parent_odp_id ? parseInt(data.parent_odp_id) : null,
+    finalOltId,
+    finalOdcId,
+    parentOdpId,
     String(data.pon_port || '').trim(),
     data.odc_out_port ? parseInt(data.odc_out_port) : null,
     inputPwr,

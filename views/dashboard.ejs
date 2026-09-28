@@ -856,7 +856,7 @@
             </div>
             <div>
               <div class="badge bg-warning text-dark fw-bold" style="font-size:9px;">TAGIHAN BELUM DIBAYAR</div>
-              <div class="small text-muted" style="font-size:11px;">Jatuh tempo <%= (profile && profile.due_date) ? profile.due_date : 20 %> tiap bulan</div>
+              <div class="small text-muted" style="font-size:11px;">Jatuh tempo <%= (settings && settings.due_date_day) ? settings.due_date_day : 20 %> tiap bulan</div>
             </div>
           </div>
         </div>
@@ -885,7 +885,7 @@
               <div class="badge bg-success text-white fw-bold mb-1" style="font-size:9px;">SEMUA TAGIHAN LUNAS</div>
               <h5 class="fw-bold mb-0" style="font-size:15px; color:var(--isp-text-heading);">Layanan Lancar & Aktif</h5>
               <div class="small text-muted" style="font-size:11px; margin-top:2px;">
-                Tagihan berikutnya jatuh tempo tgl <%= (profile && profile.due_date) ? profile.due_date : 20 %> bulan depan.
+                Tagihan berikutnya jatuh tempo tgl <%= (settings && settings.due_date_day) ? settings.due_date_day : 20 %> bulan depan.
               </div>
             </div>
           </div>
@@ -1273,6 +1273,17 @@
           </a>
         </div>
       </section>
+
+      <!-- CUSTOMER PORTAL FOOTER -->
+      <footer class="customer-app-footer text-center py-4 my-2 text-muted small" style="font-size:11.5px; opacity:0.8; border-top:1px solid var(--isp-border);">
+        <div>&copy; <%= new Date().getFullYear() %> <strong><%= (typeof settings !== 'undefined' && settings.company_header) ? settings.company_header : 'BIONFIBER NETWORK' %></strong></div>
+        <div class="mt-1">
+          <% if (typeof settings !== 'undefined' && settings.footer_info) { %>
+            <span><%= settings.footer_info %></span> &bull; 
+          <% } %>
+          <span class="badge" style="background:rgba(255,255,255,0.08); font-family:monospace; color:var(--isp-text-muted);">v<%= (typeof appVersion !== 'undefined' && appVersion) ? appVersion : '4.8.1-R17' %></span>
+        </div>
+      </footer>
     </div>
 
   </div> <!-- END .android-app-shell -->

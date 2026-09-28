@@ -87,9 +87,11 @@ function generateInvoicePdfBuffer(invoice, customer, settings = {}) {
 
       // Formatting dates
       const issueDateStr = formatIndoDate(invoice.created_at || invoice.created_date || new Date());
+      const dueDay = parseInt(settings.due_date_day || 20, 10);
+      const computedDueDateStr = `${dueDay} ${mFull[periodMonthIdx] || mShort[periodMonthIdx]} ${invoice.period_year || year}`;
       const paidDateStr = isPaid && invoice.paid_at 
         ? formatIndoDate(invoice.paid_at) 
-        : (invoice.due_date ? formatIndoDate(invoice.due_date) : '-');
+        : (invoice.due_date ? formatIndoDate(invoice.due_date) : computedDueDateStr);
 
       // Payment method (NO "Kasir: Admin")
       let paymentMethodStr = 'QRIS / Transfer Bank';

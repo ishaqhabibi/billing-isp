@@ -3648,6 +3648,12 @@ router.post('/payment/callback', express.json({
           });
 
           await sendWA(customer.phone, formattedMsg);
+
+          // Kirim dokumen PDF Invoice otomatis jika diaktifkan di pengaturan
+          const sendPdf = settings.whatsapp_send_pdf_invoice === true || settings.whatsapp_send_pdf_invoice === 'true' || settings.whatsapp_send_pdf_invoice === 1;
+          if (sendPdf && typeof whatsappService.sendInvoicePdfWhatsApp === 'function') {
+            await whatsappService.sendInvoicePdfWhatsApp(customer.phone, checkInv, customer, settings);
+          }
         } catch (waErr) {
           logger.error(`[Webhook] Gagal kirim notif WA: ${waErr.message}`);
         }

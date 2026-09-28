@@ -813,6 +813,8 @@ try { db.exec("ALTER TABLE olts ADD COLUMN web_password TEXT DEFAULT 'admin'"); 
 try { db.exec("ALTER TABLE olts ADD COLUMN api_base_url TEXT"); } catch (e) {}
 try { db.exec("ALTER TABLE olts ADD COLUMN telnet_port INTEGER DEFAULT 23"); } catch (e) {}
 try { db.exec("ALTER TABLE olts ADD COLUMN enable_password TEXT"); } catch (e) {}
+try { db.exec("ALTER TABLE olts ADD COLUMN lat TEXT DEFAULT ''"); } catch (e) {}
+try { db.exec("ALTER TABLE olts ADD COLUMN lng TEXT DEFAULT ''"); } catch (e) {}
 
 try { db.exec("ALTER TABLE voucher_batches ADD COLUMN updated_at DATETIME DEFAULT (NOW_LOCAL())"); } catch (e) {}
 try { db.exec("ALTER TABLE vouchers ADD COLUMN last_seen_comment TEXT DEFAULT ''"); } catch (e) {}

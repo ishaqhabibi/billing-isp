@@ -18,6 +18,7 @@ const mikrotikService = require('./services/mikrotikService');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { scheduleAutoBackup } = require('./services/backupService');
 const SqliteSessionStore = require('./services/sqliteSessionStore');
+const { getAppVersion } = require('./services/versionService');
 
 // Prefer IPv4 to avoid AggregateError (IPv6 timeouts) on some servers
 if (dns.setDefaultResultOrder) {
@@ -152,6 +153,7 @@ app.use((req, res, next) => {
   res.locals.formatTimeLocal = formatTimeLocal;
   res.locals.parseDateInTimezone = parseDateInTimezone;
   res.locals.getNowLocal = getNowLocal;
+  res.locals.appVersion = getAppVersion();
   next();
 });
 
@@ -163,8 +165,8 @@ app.get('/lang/:lang', (req, res) => {
   return res.redirect('/');
 });
 
-// Konstanta
-const VERSION = '2.0.0';
+// Konstanta Versi Sistem
+const VERSION = getAppVersion();
 
 const insertWebhookPaymentNotif = db.prepare(`
   INSERT INTO webhook_payment_notifs (service, content, parsed_amount, parsed_ok, ip, user_agent)
@@ -587,6 +589,13 @@ async function trySendWaPaymentSuccess(settings, invoiceId, methodLabel) {
 
     logger.info(`[WEBHOOK][payment-notif] Sending WA success notif to ${phone} inv=${invoiceId} method=${metode}`);
     await sendWA(phone, msg);
+
+    // Kirim file dokumen PDF Invoice otomatis jika diaktifkan di pengaturan
+    const sendPdf = settings.whatsapp_send_pdf_invoice === true || settings.whatsapp_send_pdf_invoice === 'true' || settings.whatsapp_send_pdf_invoice === 1;
+    if (sendPdf && typeof whatsappService.sendInvoicePdfWhatsApp === 'function') {
+      const customer = customerSvc.getCustomerById(inv.customer_id);
+      await whatsappService.sendInvoicePdfWhatsApp(phone, inv, customer, settings);
+    }
   } catch (e) {
     logger.error(`[WEBHOOK][payment-notif] WA success notif failed: ${e?.message || e}`);
   }

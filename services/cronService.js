@@ -75,7 +75,13 @@ function startCronJobs() {
   cron.schedule('0 2 * * *', async () => {
     const now = new Date();
     const today = now.getDate();
-    logger.info(`[CRON] Menjalankan pengecekan isolir otomatis harian (Tanggal ${today})`);
+    const curMonth = now.getMonth() + 1;
+    const curYear = now.getFullYear();
+    const isolirMode = getSetting('isolir_mode', 'next_month');
+    const defaultIsolirDay = parseInt(getSetting('isolir_day', 1), 10) || 1;
+    const defaultDueDay = parseInt(getSetting('due_date_day', 20), 10) || 20;
+
+    logger.info(`[CRON] Menjalankan pengecekan isolir otomatis harian (Tgl ${today}, Periode ${curMonth}/${curYear}, Mode: ${isolirMode}, DefIsolir: ${defaultIsolirDay})`);
 
     let isolatedCount = 0;
     const BATCH_SIZE = 100;
@@ -113,11 +119,50 @@ function startCronJobs() {
             }
           }
         } else {
-          const customerIsolirDay = c.isolate_day || 10;
-          const unpaidCount = db.prepare('SELECT COUNT(*) as cnt FROM invoices WHERE customer_id=? AND status=?').get(c.id, 'unpaid')?.cnt || 0;
-          if (today >= customerIsolirDay && unpaidCount > 0) {
+          // PASCABAYAR
+          const customerIsolirDay = c.isolate_day != null ? parseInt(c.isolate_day, 10) : defaultIsolirDay;
+
+          // Ambil semua tagihan yang belum lunas (unpaid) untuk pelanggan ini
+          const unpaidInvoices = db.prepare(
+            'SELECT id, period_month, period_year, amount FROM invoices WHERE customer_id = ? AND status = ?'
+          ).all(c.id, 'unpaid');
+
+          if (unpaidInvoices.length === 0) continue;
+
+          // Cek apakah ada tunggakan periode sebelumnya (bulan lalu atau lebih lama)
+          const hasOverduePrevious = unpaidInvoices.some(inv => 
+            (inv.period_year < curYear) || (inv.period_year === curYear && inv.period_month < curMonth)
+          );
+
+          // Cek apakah ada tagihan bulan berjalan
+          const hasCurrentMonthUnpaid = unpaidInvoices.some(inv => 
+            inv.period_year === curYear && inv.period_month === curMonth
+          );
+
+          let shouldIsolate = false;
+
+          if (isolirMode === 'next_month') {
+            // Mode Rekomendasi (Jatuh tempo tgl 20, isolir tgl 1 bulan berikutnya):
+            // Pelanggan HANYA diisolir jika memiliki tagihan tertunggak dari periode sebelumnya (bulan lalu)
+            // DAN tanggal hari ini sudah mencapai tanggal isolir (misal tgl >= 1).
+            // Tagihan bulan berjalan yang baru terbit tgl 1 TIDAK akan langsung mengisolir pelanggan!
+            if (hasOverduePrevious && today >= customerIsolirDay) {
+              shouldIsolate = true;
+            }
+          } else {
+            // Mode Same Month (Ketat):
+            // Jika ada tunggakan lama -> isolir saat today >= customerIsolirDay
+            // ATAU jika hanya tagihan bulan ini tapi today >= customerIsolirDay -> isolir
+            if (hasOverduePrevious && today >= customerIsolirDay) {
+              shouldIsolate = true;
+            } else if (hasCurrentMonthUnpaid && today >= customerIsolirDay) {
+              shouldIsolate = true;
+            }
+          }
+
+          if (shouldIsolate) {
             try {
-              logger.info(`[CRON] Isolir otomatis PASCABAYAR: ${c.name} (${c.pppoe_username || c.hotspot_username || '-'}) - Tgl Isolir: ${customerIsolirDay}`);
+              logger.info(`[CRON] Isolir otomatis PASCABAYAR: ${c.name} (${c.pppoe_username || c.hotspot_username || '-'}) - Tgl Isolir: ${customerIsolirDay}, Tunggakan: ${unpaidInvoices.length} tagihan`);
               await customerSvc.suspendCustomer(c.id);
               isolatedCount++;
             } catch (err) {
@@ -239,9 +284,15 @@ function startCronJobs() {
       } else {
         const unpaidCount = Number(c.unpaid_count || 0) || 0;
         if (unpaidCount > 0) {
-          const dueDay = Number(c.isolate_day || 0) || Number(getSetting('isolir_day', 10) || 10) || 10;
-          const remind1 = dueDay - 1;
-          shouldSend = (remind1 >= 1 && day === remind1);
+          const globalDueDay = Number(getSetting('due_date_day', 20) || 20);
+          const customerIsolirDay = Number(c.isolate_day != null ? c.isolate_day : getSetting('isolir_day', 1) || 1);
+
+          // Cek tanggal akhir bulan ini untuk H-1 isolir (jika isolir tgl 1)
+          const daysInMonth = new Date(year, month, 0).getDate();
+          const isBeforeIsolir = (customerIsolirDay === 1 && day === daysInMonth) || (customerIsolirDay > 1 && day === (customerIsolirDay - 1));
+
+          // Kirim pengingat pada H-3, H-1, Hari H Jatuh Tempo, atau H-1 Sebelum Isolir
+          shouldSend = (day === (globalDueDay - 3)) || (day === (globalDueDay - 1)) || (day === globalDueDay) || isBeforeIsolir;
         }
       }
 

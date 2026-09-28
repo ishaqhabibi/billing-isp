@@ -1862,9 +1862,12 @@
       <div class="footer-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
         <div>
           &copy; <%= new Date().getFullYear() %> <strong><%= settings.company_header || 'Internet Fiber' %></strong>. All rights reserved.
+          <% if (settings.footer_info) { %>
+            &bull; <span style="opacity:0.8;"><%= settings.footer_info %></span>
+          <% } %>
         </div>
         <div class="small" style="color: var(--text-sub);">
-          Portal Pelanggan Internet v2.0
+          Portal Pelanggan Internet <span class="badge" style="background:rgba(255,255,255,0.1); font-family:monospace;">v<%= (typeof appVersion !== 'undefined' && appVersion) ? appVersion : '4.8.1-R17' %></span>
         </div>
       </div>
     </div>

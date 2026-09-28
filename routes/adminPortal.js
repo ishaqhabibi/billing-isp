@@ -17,6 +17,7 @@ const oltSvc = require('../services/oltService');
 const odpSvc = require('../services/odpService');
 const odcSvc = require('../services/odcService');
 const opticalSvc = require('../services/opticalService');
+const { getAppVersion } = require('../services/versionService');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -327,7 +328,23 @@ async function sendPaymentSuccessWA(customerPhone, customerName, periodText, amo
       customTemplate: template
     });
 
-    return await trySendWhatsappPayment(customerPhone, formattedMsg);
+    const sent = await trySendWhatsappPayment(customerPhone, formattedMsg);
+
+    // Kirim dokumen PDF Invoice otomatis jika diaktifkan di pengaturan
+    const sendPdf = settings.whatsapp_send_pdf_invoice === true || settings.whatsapp_send_pdf_invoice === 'true' || settings.whatsapp_send_pdf_invoice === 1;
+    if (sendPdf && extraOpts.invoiceId) {
+      try {
+        const inv = billingSvc.getInvoiceById(extraOpts.invoiceId);
+        if (inv) {
+          const customer = customerSvc.getCustomerById(inv.customer_id);
+          await whatsappService.sendInvoicePdfWhatsApp(customerPhone, inv, customer, settings);
+        }
+      } catch (pdfErr) {
+        logger.error(`[Admin] Gagal kirim PDF invoice via WA: ${pdfErr.message}`);
+      }
+    }
+
+    return sent;
   } catch (e) {
     return false;
   }
@@ -583,6 +600,7 @@ router.use((req, res, next) => {
   res.locals.parseDateInTimezone = parseDateInTimezone;
   res.locals.getNowLocal = getNowLocal;
   res.locals.getCurrentTimeInfo = getCurrentTimeInfo;
+  res.locals.appVersion = getAppVersion();
   next();
 });
 
@@ -708,33 +726,51 @@ router.post('/olts/:id/onu/configure-wan', requireAdminSession, restrictToAdmin,
 });
 
 router.post('/olts', requireAdminSession, restrictToAdmin, express.urlencoded({ extended: true }), (req, res) => {
+  const redirectUrl = req.body.redirect_to || req.query.redirect || '/admin/olts';
   try {
     oltSvc.createOlt(req.body);
     req.session._msg = { type: 'success', text: 'OLT berhasil ditambahkan.' };
   } catch (e) {
     req.session._msg = { type: 'error', text: 'Gagal: ' + e.message };
   }
-  res.redirect('/admin/olts');
+  res.redirect(redirectUrl);
 });
 
 router.post('/olts/:id/update', requireAdminSession, restrictToAdmin, express.urlencoded({ extended: true }), (req, res) => {
+  const redirectUrl = req.body.redirect_to || req.query.redirect || '/admin/olts';
   try {
     oltSvc.updateOlt(req.params.id, req.body);
     req.session._msg = { type: 'success', text: 'OLT berhasil diperbarui.' };
   } catch (e) {
     req.session._msg = { type: 'error', text: 'Gagal: ' + e.message };
   }
-  res.redirect('/admin/olts');
+  res.redirect(redirectUrl);
 });
 
 router.post('/olts/:id/delete', requireAdminSession, restrictToAdmin, (req, res) => {
+  const redirectUrl = req.body.redirect_to || req.query.redirect || '/admin/olts';
   try {
+    const odcCount = db.prepare('SELECT COUNT(*) as cnt FROM odcs WHERE olt_id = ?').get(req.params.id);
+    if (odcCount && odcCount.cnt > 0) {
+      throw new Error(`Tidak dapat menghapus OLT karena masih ada ${odcCount.cnt} ODC yang terhubung. Pindahkan atau hapus ODC terlebih dahulu.`);
+    }
     oltSvc.deleteOlt(req.params.id);
     req.session._msg = { type: 'success', text: 'OLT berhasil dihapus.' };
   } catch (e) {
     req.session._msg = { type: 'error', text: 'Gagal: ' + e.message };
   }
-  res.redirect('/admin/olts');
+  res.redirect(redirectUrl);
+});
+
+router.post('/api/olts/:id/coordinates', requireAdminSession, restrictToAdmin, express.json(), (req, res) => {
+  try {
+    const { lat, lng } = req.body;
+    if (!lat || !lng) throw new Error('Koordinat Latitude dan Longitude wajib diisi.');
+    oltSvc.updateOltCoordinates(req.params.id, lat, lng);
+    res.json({ ok: true, message: 'Koordinat OLT berhasil diperbarui.' });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // ─── ODP & MAP MANAGEMENT ───────────────────────────────────────────────────
@@ -1990,11 +2026,11 @@ router.get('/customers', requireAdminSession, requireSidebarMenuAccess('customer
   const areas = customerSvc.getAllCustomerAreas();
   const masterAreas = areaSvc.getAllAreas();
 
-  let activeSessionsMap = new Map();
-  try {
-    activeSessionsMap = await mikrotikService.getAllActiveSessionsMap();
-  } catch (e) {
-    logger.warn('[Customers] Failed to fetch active sessions map:', e.message);
+  // Gunakan cache sesi aktif agar render halaman pelanggan berlangsung instan (0ms delay).
+  // Live sessions terkini otomatis di-update di background via AJAX (/admin/api/customers/live-sessions).
+  const activeSessionsMap = mikrotikService.getCachedActiveSessionsMap();
+  if (mikrotikService.isSessionsCacheStale(15000)) {
+    mikrotikService.getAllActiveSessionsMap().catch(() => {});
   }
 
   res.render('admin/customers', {
@@ -4699,6 +4735,12 @@ router.post('/settings', requireAdminSession, express.urlencoded({ extended: tru
     newSettings.telegram_enabled = (newSettings.telegram_enabled === 'true');
     newSettings.auto_backup_enabled = (newSettings.auto_backup_enabled === 'true');
     newSettings.use_builtin_acs = (newSettings.use_builtin_acs === 'true' || newSettings.use_builtin_acs === true);
+    newSettings.whatsapp_send_pdf_invoice = (newSettings.whatsapp_send_pdf_invoice === 'true' || newSettings.whatsapp_send_pdf_invoice === true);
+
+    // Billing Due Date & Isolir Policy
+    if (newSettings.due_date_day !== undefined) newSettings.due_date_day = Math.min(31, Math.max(1, parseInt(newSettings.due_date_day) || 20));
+    if (newSettings.isolir_day !== undefined) newSettings.isolir_day = Math.min(31, Math.max(1, parseInt(newSettings.isolir_day) || 1));
+    if (newSettings.isolir_mode) newSettings.isolir_mode = String(newSettings.isolir_mode).trim();
 
     // Multi-Router Mode settings
     if (!newSettings.multi_router_mode) newSettings.multi_router_mode = 'disabled';
@@ -4743,6 +4785,28 @@ router.post('/settings', requireAdminSession, express.urlencoded({ extended: tru
   }
   const tabHash = (req.body && req.body._active_tab) ? ('#' + req.body._active_tab) : '';
   res.redirect('/admin/settings' + tabHash);
+});
+
+router.post('/settings/apply-isolir-to-all', requireAdminSession, restrictToAdmin, express.json(), async (req, res) => {
+  try {
+    const rawDay = req.body.isolir_day !== undefined ? req.body.isolir_day : getSetting('isolir_day', 1);
+    const isolirDay = Math.min(31, Math.max(1, parseInt(rawDay, 10) || 1));
+    const result = db.prepare('UPDATE customers SET isolate_day = ?').run(isolirDay);
+    logger.info(`[Settings] Berhasil menerapkan tanggal isolir = ${isolirDay} ke ${result.changes} pelanggan.`);
+
+    if (req.xhr || req.headers.accept?.includes('json')) {
+      return res.json({ success: true, message: `Berhasil menerapkan Tanggal Isolir (${isolirDay}) ke seluruh ${result.changes} pelanggan.` });
+    }
+    req.session._msg = { type: 'success', text: `Berhasil menerapkan Tanggal Isolir (${isolirDay}) ke seluruh ${result.changes} pelanggan.` };
+    res.redirect('/admin/settings#general');
+  } catch (err) {
+    logger.error('Error applying isolir to all:', err);
+    if (req.xhr || req.headers.accept?.includes('json')) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
+    req.session._msg = { type: 'danger', text: 'Gagal menerapkan ke semua pelanggan: ' + err.message };
+    res.redirect('/admin/settings#general');
+  }
 });
 
 // ─── BACKUP & RECOVERY ──────────────────────────────────────────────────────

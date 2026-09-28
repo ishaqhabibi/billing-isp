@@ -27,6 +27,15 @@ function getOdcById(id) {
 }
 
 function createOdc(data) {
+  if (!data.olt_id || String(data.olt_id).trim() === '') {
+    throw new Error('OLT Induk wajib dipilih! Dalam struktur jaringan ODN, setiap ODC harus terhubung ke perangkat OLT.');
+  }
+  const oltId = parseInt(data.olt_id);
+  const olt = db.prepare('SELECT id, name FROM olts WHERE id = ?').get(oltId);
+  if (!olt) {
+    throw new Error('OLT yang dipilih tidak valid atau belum terdaftar.');
+  }
+
   const inputPwr = (data.input_power_dbm !== undefined && data.input_power_dbm !== '' && data.input_power_dbm !== null) ? parseFloat(data.input_power_dbm) : null;
   const outputPwr = (data.output_power_dbm !== undefined && data.output_power_dbm !== '' && data.output_power_dbm !== null) ? parseFloat(data.output_power_dbm) : null;
   const stmt = db.prepare(`
@@ -35,7 +44,7 @@ function createOdc(data) {
   `);
   const info = stmt.run(
     String(data.name || '').trim(),
-    data.olt_id ? parseInt(data.olt_id) : null,
+    oltId,
     String(data.pon_port || '').trim(),
     inputPwr,
     outputPwr,
@@ -59,6 +68,15 @@ function createOdc(data) {
 }
 
 function updateOdc(id, data) {
+  if (!data.olt_id || String(data.olt_id).trim() === '') {
+    throw new Error('OLT Induk wajib dipilih! Setiap ODC harus terhubung ke OLT.');
+  }
+  const oltId = parseInt(data.olt_id);
+  const olt = db.prepare('SELECT id, name FROM olts WHERE id = ?').get(oltId);
+  if (!olt) {
+    throw new Error('OLT yang dipilih tidak valid atau belum terdaftar.');
+  }
+
   const inputPwr = (data.input_power_dbm !== undefined && data.input_power_dbm !== '' && data.input_power_dbm !== null) ? parseFloat(data.input_power_dbm) : null;
   const outputPwr = (data.output_power_dbm !== undefined && data.output_power_dbm !== '' && data.output_power_dbm !== null) ? parseFloat(data.output_power_dbm) : null;
   const current = getOdcById(id);
@@ -70,7 +88,7 @@ function updateOdc(id, data) {
   `);
   const res = stmt.run(
     String(data.name || '').trim(),
-    data.olt_id ? parseInt(data.olt_id) : null,
+    oltId,
     String(data.pon_port || '').trim(),
     inputPwr,
     outputPwr,

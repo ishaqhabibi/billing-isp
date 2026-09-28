@@ -644,7 +644,7 @@
           </div>
           <div class="summary-item">
             <span class="label"><%= isPaid ? 'Tanggal Bayar' : 'Jatuh Tempo' %></span>
-            <span class="value"><%= isPaid && invoice.paid_at ? formatDateLocal(invoice.paid_at) : (invoice.due_date ? formatDateLocal(invoice.due_date) : '-') %></span>
+            <span class="value"><%= isPaid && invoice.paid_at ? formatDateLocal(invoice.paid_at) : (invoice.due_date ? formatDateLocal(invoice.due_date) : `${settings.due_date_day || 20} ${periodStr}`) %></span>
           </div>
           <div class="summary-item" style="margin-top:4px;">
             <span class="label">Metode Bayar</span>

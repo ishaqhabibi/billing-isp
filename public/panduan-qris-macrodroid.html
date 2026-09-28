@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panduan Pembayaran QRIS Dinamis & Webhook MacroDroid | Billing ISP</title>
+  <link rel="icon" href="/img/logo.png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-light: #3b82f6;
+      --primary-dark: #1d4ed8;
+      --secondary: #0ea5e9;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bg: #0b1120;
+      --surface: #1e293b;
+      --surface-card: rgba(30, 41, 59, 0.85);
+      --border: rgba(148, 163, 184, 0.15);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      line-height: 1.7;
+      padding-bottom: 80px;
+      margin: 0;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.18) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(14, 165, 233, 0.15) 0px, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Header Navbar */
+    .top-nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(11, 17, 32, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+    }
+
+    /* Hero Banner */
+    .hero {
+      padding: 48px 0 32px;
+      text-align: center;
+      position: relative;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(37, 99, 235, 0.15);
+      border: 1px solid rgba(37, 99, 235, 0.35);
+      color: #60a5fa;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 720px;
+      margin: 0 auto 24px;
+    }
+
+    /* Action bar */
+    .action-bar {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 30px;
+    }
+
+    /* TOC Sidebar & Main Container */
+    .guide-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      backdrop-filter: blur(8px);
+      margin-bottom: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .guide-card h2 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #ffffff;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 800;
+      font-size: 14px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
+    }
+
+    /* TOC List */
+    .toc-card {
+      position: sticky;
+      top: 80px;
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+    }
+    .toc-link {
+      display: block;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      margin-bottom: 4px;
+    }
+    .toc-link:hover, .toc-link.active {
+      color: #fff;
+      background: rgba(37, 99, 235, 0.2);
+      transform: translateX(4px);
+    }
+
+    /* Flow Diagrams */
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+    .flow-step {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      position: relative;
+    }
+    .flow-step .num {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--primary-light);
+    }
+    .flow-step .icon {
+      font-size: 26px;
+      margin-bottom: 8px;
+      color: var(--secondary);
+    }
+    .flow-step h6 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .flow-step p {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* Callout Alerts */
+    .callout {
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin: 20px 0;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      font-size: 13.5px;
+    }
+    .callout-info {
+      background: rgba(14, 165, 233, 0.1);
+      border: 1px solid rgba(14, 165, 233, 0.25);
+      color: #bae6fd;
+    }
+    .callout-warning {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      color: #fde68a;
+    }
+    .callout-success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: #a7f3d0;
+    }
+    .callout-danger {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #fecaca;
+    }
+    .callout i {
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Code Block Box */
+    .code-box {
+      background: #090d16;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 16px 0;
+    }
+    .code-box-header {
+      background: rgba(255, 255, 255, 0.04);
+      padding: 8px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .code-box pre {
+      margin: 0;
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #e2e8f0;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .btn-copy {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    .btn-copy:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* Comparison Table */
+    .custom-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      margin: 20px 0;
+      font-size: 13.5px;
+    }
+    .custom-table th {
+      background: rgba(15, 23, 42, 0.8);
+      padding: 12px 16px;
+      font-weight: 700;
+      color: #fff;
+      border-bottom: 1px solid var(--border);
+    }
+    .custom-table td {
+      padding: 12px 16px;
+      background: rgba(30, 41, 59, 0.5);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+      color: var(--text-muted);
+    }
+    .custom-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        background-image: none !important;
+        padding-bottom: 0 !important;
+      }
+      .top-nav, .action-bar, .toc-col, .btn-copy, #copyToast {
+        display: none !important;
+      }
+      .guide-card {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+        margin-bottom: 20px;
+        padding: 20px;
+      }
+      .guide-card h2 {
+        color: #0f172a !important;
+        border-bottom: 2px solid #0f172a !important;
+      }
+      .flow-step {
+        background: #f8fafc !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+      }
+      .flow-step h6, .flow-step p {
+        color: #0f172a !important;
+      }
+      .code-box {
+        background: #f1f5f9 !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+      .code-box pre {
+        color: #0f172a !important;
+      }
+      .callout {
+        border-width: 1px !important;
+        color: #0f172a !important;
+      }
+      .hero h1 {
+        color: #0f172a !important;
+        -webkit-text-fill-color: initial !important;
+        background: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP NAVBAR -->
+  <header class="top-nav">
+    <div class="container d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-3">
+        <a href="/admin/settings#payment" class="btn btn-sm btn-outline-light d-inline-flex align-items-center gap-2" style="border-radius:8px;">
+          <i class="bi bi-arrow-left"></i> Kembali ke Pengaturan
+        </a>
+        <span class="d-none d-md-inline text-muted" style="font-size:13px;">| Panduan Billing ISP</span>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2" onclick="window.print()">
+          <i class="bi bi-printer"></i> Cetak / Simpan PDF
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge">
+        <i class="bi bi-shield-check"></i> Panduan Resmi Integrasi Tanpa Gateway Pihak Ke-3
+      </div>
+      <h1>Panduan Setup Pembayaran Otomatis QRIS & MacroDroid</h1>
+      <p>
+        Verifikasi pembayaran real-time 100% otomatis, tanpa biaya langganan bulanan gateway. Dilengkapi kode unik 3 digit, un-isolir router otomatis, dan kirim file Invoice PDF resmi langsung ke WhatsApp pelanggan.
+      </p>
+
+      <div class="action-bar">
+        <a href="#bab1" class="btn btn-sm btn-outline-info rounded-pill px-3">1. Konsep & Alur Kerja</a>
+        <a href="#bab2" class="btn btn-sm btn-outline-info rounded-pill px-3">2. Upload QRIS Anda</a>
+        <a href="#bab3" class="btn btn-sm btn-outline-info rounded-pill px-3">3. Konfigurasi MacroDroid</a>
+        <a href="#bab4" class="btn btn-sm btn-outline-info rounded-pill px-3">4. Invoice PDF WhatsApp</a>
+        <a href="#bab5" class="btn btn-sm btn-outline-info rounded-pill px-3">5. Simulasi & Testing</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <div class="container">
+    <div class="row g-4">
+      
+      <!-- TOC SIDEBAR -->
+      <div class="col-lg-3 d-none d-lg-block toc-col">
+        <div class="toc-card">
+          <div class="fw-bold mb-3 text-white" style="font-size:14px; letter-spacing:0.5px;">
+            <i class="bi bi-list-nested me-1 text-primary"></i> DAFTAR ISI
+          </div>
+          <a href="#bab1" class="toc-link">1. Cara Kerja & Arsitektur</a>
+          <a href="#bab2" class="toc-link">2. Cara Ganti QRIS Sendiri</a>
+          <a href="#bab3" class="toc-link">3. Setup Aplikasi MacroDroid</a>
+          <a href="#bab4" class="toc-link">4. Pengiriman Struk PDF WA</a>
+          <a href="#bab5" class="toc-link">5. Uji Coba & Log Webhook</a>
+          <a href="#bab6" class="toc-link">6. Tanya Jawab (FAQ) & Tips</a>
+
+          <hr style="border-color: var(--border); margin: 16px 0;">
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.5;">
+            <i class="bi bi-info-circle text-info me-1"></i> Simpan halaman ini sebagai acuan teknis tim Anda kapan saja.
+          </div>
+        </div>
+      </div>
+
+      <!-- ARTICLES -->
+      <div class="col-lg-9">
+
+        <!-- BAB 1: KONSEP & CARA KERJA -->
+        <div class="guide-card" id="bab1">
+          <h2><span class="step-badge">1</span> Bagaimana Sistem Verifikasi Otomatis Ini Bekerja?</h2>
+          <p>
+            Biasanya, integrasi QRIS otomatis membutuhkan akun agregator payment gateway (seperti Midtrans, Xendit, Tripay) yang memotong biaya admin per transaksi (Rp 750 - Rp 2.500 atau 0.7%) dan pencairan dana H+1.
+          </p>
+          <p>
+            Dengan sistem <strong>QRIS Dinamis + Webhook MacroDroid</strong>, uang pembayaran dari pelanggan <strong>langsung masuk ke rekening bank / e-wallet Anda detik itu juga</strong> tanpa potongan sepeser pun.
+          </p>
+
+          <div class="flow-grid">
+            <div class="flow-step">
+              <span class="num">01</span>
+              <div class="icon"><i class="bi bi-receipt"></i></div>
+              <h6>Pelanggan Cek Tagihan</h6>
+              <p>Tagihan Rp 100.000 otomatis diberi kode unik 3 digit, misal menjadi <strong>Rp 100.090</strong>.</p>
+            </div>
+            <div class="flow-step">
+              <span class="num">02</span>
+              <div class="icon"><i class="bi bi-qr-code-scan"></i></div>
+              <h6>Scan QRIS Dinamis</h6>
+              <p>QRIS mengunci nominal Rp 100.090 (Tag EMVCo 54). Pelanggan tinggal klik konfirmasi bayar di m-Banking.</p>
+            </div>
+            <div class="flow-step">
+              <span class="num">03</span>
+              <div class="icon"><i class="bi bi-bell"></i></div>
+              <h6>Notifikasi HP Masuk</h6>
+              <p>DANA/BCA mengirim notifikasi: <em>"Berhasil menerima uang Rp 100.090"</em> ke HP Admin.</p>
+            </div>
+            <div class="flow-step">
+              <span class="num">04</span>
+              <div class="icon"><i class="bi bi-cpu"></i></div>
+              <h6>MacroDroid -> Webhook</h6>
+              <p>MacroDroid menangkap teks notifikasi & menembakkan HTTP POST ke server billing ISP secara instan.</p>
+            </div>
+            <div class="flow-step">
+              <span class="num">05</span>
+              <div class="icon"><i class="bi bi-check2-circle text-success"></i></div>
+              <h6>Lunas & Kirim PDF</h6>
+              <p>Billing mencocokkan nominal, tagihan otomatis <strong>PAID</strong>, un-isolir Mikrotik, dan kirim Struk PDF via WA.</p>
+            </div>
+          </div>
+
+          <div class="callout callout-info">
+            <i class="bi bi-lightbulb-fill"></i>
+            <div>
+              <strong>Mengapa Perlu Kode Unik 3 Digit (1 - 999)?</strong><br>
+              Jika ada 2 pelanggan yang sama-sama berlangganan paket 100rb dan membayar di jam yang sama, kode unik (misal: Pelanggan A bayar 100.045 dan Pelanggan B bayar 100.120) membuat server tahu dengan 100% presisi siapa yang baru saja membayar!
+            </div>
+          </div>
+        </div>
+
+        <!-- BAB 2: CARA GANTI QRIS SENDIRI -->
+        <div class="guide-card" id="bab2">
+          <h2><span class="step-badge">2</span> Cara Mengganti / Upload QRIS Anda Sendiri</h2>
+          <p>
+            Jika di sistem Anda masih terpasang QRIS bawaan / milik orang lain, Anda dapat menggantinya dengan QRIS toko / ISP Anda sendiri hanya dalam beberapa detik.
+          </p>
+
+          <h5 class="text-white mt-4 mb-2" style="font-size:15px; font-weight:700;">Langkah 1: Siapkan File Gambar QRIS Anda</h5>
+          <ul>
+            <li>Bisa menggunakan QRIS dari <strong>DANA Bisnis</strong>, <strong>BCA Merchant</strong>, <strong>QRIS Mandiri Livin Usaha</strong>, <strong>Nobu</strong>, <strong>GoPay Merchant</strong>, atau Bank apapun.</li>
+            <li>Pastikan foto/screenshot QRIS memiliki resolusi bersih, tidak terpotong, dan tidak buram. Format yang didukung: <code>.jpg</code>, <code>.png</code>, atau <code>.webp</code>.</li>
+          </ul>
+
+          <h5 class="text-white mt-4 mb-2" style="font-size:15px; font-weight:700;">Langkah 2: Upload di Menu Pengaturan Billing</h5>
+          <ol>
+            <li>Buka browser dan login ke Admin Portal: <code>/admin/settings#payment</code>.</li>
+            <li>Gulir ke kartu <strong>"QRIS Statis & Dinamis (Semi-Otomatis)"</strong>.</li>
+            <li>Pada bagian <strong>Upload File Gambar QRIS</strong>, klik tombol <strong>Choose File / Pilih File</strong> dan pilih gambar QRIS Anda.</li>
+            <li>Klik tombol biru <strong>Upload</strong>.</li>
+          </ol>
+
+          <div class="callout callout-success">
+            <i class="bi bi-magic"></i>
+            <div>
+              <strong>Ekstraksi String EMVCo Otomatis:</strong><br>
+              Saat Anda mengklik Upload, mesin decoder di sistem akan memindai barcode QRIS secara otomatis dan mengisi kolom <strong>QRIS Static Payload</strong> (string berawalan <code>000201...</code>). Anda tidak perlu mengetik payload manual!
+            </div>
+          </div>
+
+          <h5 class="text-white mt-4 mb-2" style="font-size:15px; font-weight:700;">Langkah 3: Periksa dengan Fitur "Preview QRIS"</h5>
+          <p>
+            Setelah halaman me-refresh, thumbnail QRIS akan muncul di sebelah kanan form upload.
+          </p>
+          <ul>
+            <li><strong>Klik pada gambar thumbnail QRIS</strong> tersebut untuk membuka jendela popup / preview ukuran penuh.</li>
+            <li>Sistem akan otomatis mengekstrak dan menampilkan <strong>Nama Merchant</strong> (Tag 59) dan <strong>Kota</strong> (Tag 60).</li>
+            <li>Pastikan Nama Merchant yang tertera sudah sesuai dengan nama usaha atau nama e-wallet Anda.</li>
+            <li>Klik <strong>Simpan Pengaturan</strong> di bawah halaman untuk memastikan seluruh konfigurasi tersimpan ke database.</li>
+          </ul>
+        </div>
+
+        <!-- BAB 3: SETUP MACRODROID DI HP ANDROID -->
+        <div class="guide-card" id="bab3">
+          <h2><span class="step-badge">3</span> Panduan Setup Aplikasi MacroDroid di Smartphone</h2>
+          <p>
+            MacroDroid adalah aplikasi otomatisasi Android yang bertugas membaca notifikasi uang masuk dari aplikasi bank/e-wallet Anda dan mengirimkannya ke webhook Billing ISP.
+          </p>
+
+          <div class="callout callout-warning">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div>
+              <strong>Penting: Pengaturan Izin di HP Android</strong><br>
+              1. Buka <strong>Pengaturan HP &gt; Aplikasi &gt; MacroDroid</strong>.<br>
+              2. Aktifkan <strong>Izin Akses Notifikasi (Notification Access)</strong>.<br>
+              3. Matikan <strong>Penghemat Baterai (Battery Optimization &gt; Pilih "Don't Optimize" / "Unrestricted")</strong>.<br>
+              4. (Untuk Xiaomi/Oppo/Vivo/Realme): Aktifkan <strong>Auto-start</strong> dan kunci aplikasi MacroDroid di recent apps agar tidak ditutup oleh sistem Android saat layar mati.
+            </div>
+          </div>
+
+          <h5 class="text-white mt-4 mb-2" style="font-size:15px; font-weight:700;">Langkah-Langkah Membuat Macro Baru:</h5>
+
+          <div style="border-left: 3px solid var(--primary); padding-left: 18px; margin: 16px 0;">
+            <div class="fw-bold text-white mb-1"><i class="bi bi-plus-circle text-danger me-1"></i> A. Konfigurasi Trigger (Pemicu Notifikasi)</div>
+            <ol style="color: var(--text-muted); font-size: 13.5px;">
+              <li>Buka aplikasi MacroDroid &gt; Tap <strong>Add Macro</strong>.</li>
+              <li>Pada bagian <strong>Triggers</strong> (kotak merah), tap tombol <strong>+ (Tambah)</strong>.</li>
+              <li>Pilih kategori: <strong>Device Events</strong> &gt; <strong>Notification</strong> &gt; <strong>Notification Received</strong>.</li>
+              <li>Pilih opsi <strong>Select Applications</strong> &gt; Klik OK &gt; Centang aplikasi e-wallet Anda (Contoh: <strong>DANA</strong>, <strong>BCA mobile</strong>, <strong>Livin' by Mandiri</strong>, dll).</li>
+              <li>Pada kolom <em>Text Content</em>, pilih <strong>Any Content</strong> (atau masukkan kata kunci seperti <code>menerima uang</code> jika hanya ingin menangkap notif saldo masuk).</li>
+              <li>Tap OK untuk menyimpan Trigger.</li>
+            </ol>
+          </div>
+
+          <div style="border-left: 3px solid var(--secondary); padding-left: 18px; margin: 20px 0;">
+            <div class="fw-bold text-white mb-1"><i class="bi bi-send text-primary me-1"></i> B. Konfigurasi Action (Pengiriman HTTP POST Webhook)</div>
+            <ol style="color: var(--text-muted); font-size: 13.5px;">
+              <li>Pada bagian <strong>Actions</strong> (kotak biru), tap tombol <strong>+ (Tambah)</strong>.</li>
+              <li>Pilih kategori: <strong>Connectivity</strong> &gt; <strong>HTTP Request</strong>.</li>
+              <li>Atur parameter HTTP Request sebagai berikut:
+                <ul class="my-2">
+                  <li><strong>Request Method:</strong> Pilih <code>POST</code></li>
+                  <li><strong>URL:</strong> Masukkan URL Webhook dari tab Pengaturan Billing Anda:</li>
+                </ul>
+              </li>
+            </ol>
+
+            <div class="code-box">
+              <div class="code-box-header">
+                <span>FORMAT URL WEBHOOK</span>
+                <button type="button" class="btn-copy" onclick="copySnippet('urlWebhookSnippet')">
+                  <i class="bi bi-clipboard"></i> Salin
+                </button>
+              </div>
+              <pre id="urlWebhookSnippet">https://domain-billing-anda.com/api/webhook/v1/payment-notif?secret_key=YOUR_WEBHOOK_SECRET</pre>
+            </div>
+
+            <ol start="4" style="color: var(--text-muted); font-size: 13.5px;">
+              <li><strong>Content Type:</strong> Pilih <code>application/json</code></li>
+              <li><strong>Request Body (Raw Text):</strong> Salin dan tempel JSON payload di bawah ini persis apa adanya:</li>
+            </ol>
+
+            <div class="code-box">
+              <div class="code-box-header">
+                <span>BODY JSON MACRODROID (Gunakan variabel bawaan MacroDroid)</span>
+                <button type="button" class="btn-copy" onclick="copySnippet('jsonBodySnippet')">
+                  <i class="bi bi-clipboard"></i> Salin JSON
+                </button>
+              </div>
+              <pre id="jsonBodySnippet">{
+  "service": "[not_app_name]",
+  "title": "[not_title]",
+  "content": "[not_body]",
+  "time": "[not_time]"
+}</pre>
+            </div>
+            
+            <p style="font-size:12px; color:var(--text-muted); margin-top:6px;">
+              <em>Catatan: Kode <code>[not_app_name]</code>, <code>[not_title]</code>, dan <code>[not_body]</code> adalah Magic Text MacroDroid yang otomatis diisi dengan nama aplikasi dan teks notifikasi saldo masuk.</em>
+            </p>
+          </div>
+
+          <div style="border-left: 3px solid var(--success); padding-left: 18px; margin: 16px 0;">
+            <div class="fw-bold text-white mb-1"><i class="bi bi-check-circle text-success me-1"></i> C. Simpan & Aktifkan Macro</div>
+            <p style="color: var(--text-muted); font-size: 13.5px; margin: 0;">
+              Beri nama Macro Anda (misal: <em>"Webhook Pembayaran DANA ISP"</em>), lalu klik tombol Centang/Simpan di pojok kanan bawah. Pastikan toggle utama di halaman depan MacroDroid dalam status <strong>ON (Aktif)</strong>.
+            </p>
+          </div>
+        </div>
+
+        <!-- BAB 4: PENGIRIMAN STRUK PDF WA -->
+        <div class="guide-card" id="bab4">
+          <h2><span class="step-badge">4</span> Fitur Kirim Otomatis Invoice PDF via WhatsApp</h2>
+          <p>
+            Selain notifikasi teks biasa, sistem billing ini memiliki generator dokumen PDF resmi yang dilengkapi nomor invoice, nama pelanggan, detail paket internet, rincian nominal, tanggal bayar, dan cap stempel <strong>LUNAS</strong>.
+          </p>
+
+          <h5 class="text-white mt-3 mb-2" style="font-size:15px; font-weight:700;">Cara Mengaktifkan:</h5>
+          <ol>
+            <li>Buka <strong>Pengaturan</strong> &gt; Tab <strong>Pembayaran &amp; QRIS</strong>.</li>
+            <li>Lihat pada opsi: <strong>"Kirim File Dokumen PDF Saat Pembayaran Lunas"</strong>.</li>
+            <li>Pilih opsi: <strong>"✅ Aktif (Otomatis generate &amp; kirim file Invoice.pdf ke WhatsApp pelanggan)"</strong>.</li>
+            <li>Klik tombol <strong>Simpan Pengaturan</strong> di bawah.</li>
+          </ol>
+
+          <div class="callout callout-success">
+            <i class="bi bi-file-earmark-pdf-fill"></i>
+            <div>
+              <strong>Bagaimana Pelanggan Menerimanya?</strong><br>
+              Begitu notifikasi MacroDroid masuk dan nominal cocok, WhatsApp Gateway (Baileys / Fonnte) akan otomatis mengirimkan pesan konfirmasi beserta lampiran file <code>Invoice-INVxxxx.pdf</code> langsung ke nomor WhatsApp pelanggan dalam hitungan 2-5 detik!
+            </div>
+          </div>
+        </div>
+
+        <!-- BAB 5: SIMULASI & LOG WEBHOOK -->
+        <div class="guide-card" id="bab5">
+          <h2><span class="step-badge">5</span> Simulasi Testing & Membaca Log Webhook</h2>
+          <p>
+            Sebelum digunakan pelanggan secara massal, Anda bisa melakukan uji coba sendiri untuk memastikan webhook server merespons dengan benar.
+          </p>
+
+          <h5 class="text-white mt-3 mb-2" style="font-size:15px; font-weight:700;">A. Cara Melihat Log Transaksi Masuk:</h5>
+          <p>
+            Di halaman <strong>Pengaturan</strong> &gt; Tab <strong>Pembayaran &amp; QRIS</strong>, gulir ke bagian paling bawah ke tabel <strong>"Log Notifikasi Webhook E-Wallet"</strong>.
+          </p>
+          <ul>
+            <li>Setiap request dari MacroDroid akan dicatat di tabel ini lengkap dengan jam, nama aplikasi, teks mentah, nominal yang berhasil diekstrak, dan status pencocokan (MATCHED / UNMATCHED).</li>
+            <li>Jika status <strong>MATCHED</strong> berwarna hijau, berarti tagihan pelanggan berhasil dilunasi otomatis!</li>
+          </ul>
+
+          <h5 class="text-white mt-4 mb-2" style="font-size:15px; font-weight:700;">B. Simulasi Pengujian Manual Menggunakan cURL:</h5>
+          <p>
+            Anda dapat membuka Terminal / Command Prompt di komputer Anda dan menjalankan perintah cURL berikut (ganti nominal sesuai tagihan yang sedang pending di billing Anda):
+          </p>
+
+          <div class="code-box">
+            <div class="code-box-header">
+              <span>COMMAND TESTING CURL</span>
+              <button type="button" class="btn-copy" onclick="copySnippet('curlSnippet')">
+                <i class="bi bi-clipboard"></i> Salin
+              </button>
+            </div>
+            <pre id="curlSnippet">curl -X POST "https://domain-anda.com/api/webhook/v1/payment-notif" \
+  -H "Content-Type: application/json" \
+  -H "x-webhook-secret: YOUR_WEBHOOK_SECRET" \
+  -d '{
+    "service": "DANA",
+    "content": "Berhasil menerima uang Rp 100.090 dari Pelanggan Uji Coba",
+    "app": "id.dana"
+  }'</pre>
+          </div>
+        </div>
+
+        <!-- BAB 6: FAQ & PANDUAN PENCEGAHAN MASALAH -->
+        <div class="guide-card" id="bab6">
+          <h2><span class="step-badge">6</span> Tanya Jawab (FAQ) & Tips Keamanan</h2>
+
+          <div class="accordion accordion-flush" id="faqAccordion">
+            
+            <div class="accordion-item" style="background:transparent; border-bottom:1px solid var(--border);">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1" style="background:transparent; color:#fff; font-weight:600; font-size:14.5px;">
+                  1. Bagaimana jika pelanggan mentransfer tanpa kode unik (misal pas 100.000)?
+                </button>
+              </h2>
+              <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body" style="color:var(--text-muted); font-size:13.5px;">
+                  Jika pelanggan membayar via scan QRIS dinamis di layar, nominal sudah otomatis terkunci bersama kode unik sehingga mustahil salah ketik nominal. Jika pelanggan mentransfer manual via bank tanpa kode unik, pembayaran akan tetap tercatat di log webhook sebagai <em>UNMATCHED</em> (belum cocok). Admin cukup membuka menu <strong>Billing &gt; Pelanggan</strong> dan mengklik tombol "Tandai Lunas" manual.
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item" style="background:transparent; border-bottom:1px solid var(--border);">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2" style="background:transparent; color:#fff; font-weight:600; font-size:14.5px;">
+                  2. Apakah aman dari penipuan (fraud)? Bisakah orang memalsukan chat WhatsApp?
+                </button>
+              </h2>
+              <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body" style="color:var(--text-muted); font-size:13.5px;">
+                  <strong>Sangat aman.</strong> Sistem webhook billing ISP sudah dilengkapi proteksi ketat:
+                  <ul class="mt-2 mb-0">
+                    <li>Semua pesan dari aplikasi pesan instan (WhatsApp, Telegram, SMS pribadi) <strong>otomatis diblokir/diabaikan</strong> oleh sistem untuk mencegah pelanggan memanipulasi kata-kata.</li>
+                    <li>Request hanya diproses jika <code>secret_key</code> cocok dengan yang ada di server Anda.</li>
+                    <li>Sistem hanya membaca notifikasi resmi dari package name aplikasi perbankan terpercaya.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item" style="background:transparent; border-bottom:none;">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3" style="background:transparent; color:#fff; font-weight:600; font-size:14.5px;">
+                  3. Apa yang harus dilakukan jika HP MacroDroid kehabisan baterai atau mati?
+                </button>
+              </h2>
+              <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body" style="color:var(--text-muted); font-size:13.5px;">
+                  Sebaiknya gunakan 1 unit smartphone Android khusus di kantor (misal HP operasional kantor yang standby di-charge) yang terkoneksi Wi-Fi 24 jam. Jika HP sempat mati, saat HP dinyalakan kembali, riwayat mutasi di aplikasi e-wallet tetap aman dan admin bisa melakukan verifikasi manual jika ada tagihan yang belum ter-trigger.
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="text-center mt-4 pt-3 border-top" style="border-color:var(--border) !important;">
+            <a href="/admin/settings#payment" class="btn btn-primary px-4 py-2" style="border-radius:10px; font-weight:600;">
+              <i class="bi bi-gear-fill me-1"></i> Buka Pengaturan Pembayaran Sekarang
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION FOR COPY -->
+  <div id="copyToast" style="display:none; position:fixed; bottom:24px; right:24px; z-index:9999; background:#10b981; color:#fff; padding:10px 18px; border-radius:8px; font-size:13px; font-weight:600; box-shadow:0 10px 25px rgba(0,0,0,0.4);">
+    <i class="bi bi-check-circle-fill me-1"></i> Teks berhasil disalin ke papan klip!
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function copySnippet(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const text = el.innerText || el.textContent;
+      navigator.clipboard.writeText(text.trim()).then(() => {
+        showToast();
+      }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = text.trim();
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast();
+      });
+    }
+
+    function showToast() {
+      const toast = document.getElementById('copyToast');
+      if (!toast) return;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 2200);
+    }
+  </script>
+</body>
+</html>

@@ -126,11 +126,21 @@ const VALIDATION_RULES = {
     max: 65535,
     description: 'Port MikroTik'
   },
+  due_date_day: {
+    type: 'number',
+    min: 1,
+    max: 31,
+    description: 'Tanggal jatuh tempo default (1-31)'
+  },
   isolir_day: {
     type: 'number',
     min: 1,
-    max: 365,
-    description: 'Hari isolir (1-365)'
+    max: 31,
+    description: 'Tanggal isolir default (1-31)'
+  },
+  isolir_mode: {
+    type: 'string',
+    description: 'Mode isolir pascabayar (next_month atau same_month)'
   },
 
   // WhatsApp Configuration
@@ -147,6 +157,10 @@ const VALIDATION_RULES = {
     min: 10,
     max: 5000,
     description: 'Delay broadcast WhatsApp (ms)'
+  },
+  whatsapp_send_pdf_invoice: {
+    type: 'boolean',
+    description: 'Kirim file PDF invoice otomatis via WhatsApp saat pembayaran lunas'
   },
 
   // Telegram Configuration
