@@ -601,11 +601,22 @@ function queueBootstrapTasksIfNeeded(deviceId, currentParams) {
         groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase']);
         groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.PreSharedKey']);
         
-        // WLAN 5G (fails on 2.4G-only ONUs, but in its own task it doesn't affect 2.4G)
+        // WLAN 5G (Index 5 - ZTE, Huawei, standard multi-AP)
         groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID']);
         groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.KeyPassphrase']);
         groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.PreSharedKey.1.KeyPassphrase']);
         groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.PreSharedKey.1.PreSharedKey']);
+
+        // WLAN 5G (Index 2 - Fiberhome alternative dual-band mapping)
+        groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID']);
+        groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.KeyPassphrase']);
+        groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.PreSharedKey.1.KeyPassphrase']);
+        groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.PreSharedKey.1.PreSharedKey']);
+
+        // WLAN 5G (LANDevice 2 - Dual LANDevice architecture)
+        groups.push(['InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.SSID']);
+        groups.push(['InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.KeyPassphrase']);
+        groups.push(['InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase']);
         
         // WAN / PPPoE (Extended indexes to check common interfaces only)
         // CIOT ONU hanya support max 3 WAN connections, reduce loop dari 5 ke 3
@@ -682,14 +693,14 @@ function queueBootstrapTasksIfNeeded(deviceId, currentParams) {
         ).run(deviceId, JSON.stringify({ objectName }), now, now);
       }
 
-      // Queue task to configure Periodic Inform (300 seconds)
+      // Queue task to configure Periodic Inform (60 seconds for responsive sync)
       const informPvs = [];
       if (isTr181) {
         informPvs.push(['Device.ManagementServer.PeriodicInformEnable', 'true', 'xsd:boolean']);
-        informPvs.push(['Device.ManagementServer.PeriodicInformInterval', '300', 'xsd:unsignedInt']);
+        informPvs.push(['Device.ManagementServer.PeriodicInformInterval', '60', 'xsd:unsignedInt']);
       } else {
         informPvs.push(['InternetGatewayDevice.ManagementServer.PeriodicInformEnable', 'true', 'xsd:boolean']);
-        informPvs.push(['InternetGatewayDevice.ManagementServer.PeriodicInformInterval', '300', 'xsd:unsignedInt']);
+        informPvs.push(['InternetGatewayDevice.ManagementServer.PeriodicInformInterval', '60', 'xsd:unsignedInt']);
       }
       db.prepare(
         `INSERT INTO acs_tasks (device_id, name, payload, status, created_at, updated_at)

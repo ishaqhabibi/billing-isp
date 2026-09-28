@@ -892,106 +892,85 @@ async function updateSSID(tag, newSSID, actor = null, band = 'all') {
     const instance = genieacsApi.createAxiosInstance(server);
     const tasksUrl = `/devices/${deviceId}/tasks`;
 
-    const parameterValues = [];
     const targetBand = String(band || 'all').toLowerCase();
-    
+    const shouldUpdate24 = targetBand === 'all' || targetBand === '2.4' || targetBand === '2.4ghz';
+    const shouldUpdate5 = targetBand === 'all' || targetBand === '5' || targetBand === '5ghz';
+
     // Check supported paths in DB
     const db = require('../config/database');
     const row = db.prepare('SELECT params FROM acs_devices WHERE id = ?').get(device._id);
     const flatParams = row && row.params ? JSON.parse(row.params) : null;
-    
-    const shouldUpdate24 = targetBand === 'all' || targetBand === '2.4' || targetBand === '2.4ghz';
-    const shouldUpdate5 = targetBand === 'all' || targetBand === '5' || targetBand === '5ghz';
+    const isTr181 = flatParams 
+      ? Object.keys(flatParams).some(k => k.startsWith('Device.'))
+      : (device._deviceId?._ProductClass?.includes('TR181') || false);
 
-    if (flatParams) {
-      if (shouldUpdate24) {
-        // SSID 2.4G paths
-        const paths24G = [
-          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
-          'Device.WiFi.SSID.1.SSID'
-        ];
-        paths24G.forEach(p => {
-          if (flatParams[p] !== undefined) {
-            parameterValues.push([p, newSSID, 'xsd:string']);
-          }
-        });
-      }
-      
-      if (shouldUpdate5) {
-        // SSID 5G paths
-        const ssid5Name = (targetBand === '5' || targetBand === '5ghz') 
-          ? newSSID 
-          : (newSSID.toLowerCase().endsWith('-5g') ? newSSID : `${newSSID}-5G`);
-        const paths5G = [
-          'Device.WiFi.SSID.2.SSID'
-        ];
-        for (const idx of [5, 6, 7, 8, 2]) {
-          paths5G.push(`InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.SSID`);
-        }
-        paths5G.forEach(p => {
-          if (flatParams[p] !== undefined) {
-            parameterValues.push([p, ssid5Name, 'xsd:string']);
-          }
-        });
+    let ok = false;
+
+    // ── 2.4 GHz SSID ──
+    if (shouldUpdate24) {
+      const p24 = isTr181 
+        ? 'Device.WiFi.SSID.1.SSID'
+        : 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID';
+      try {
+        await instance.post(tasksUrl, {
+          name: 'setParameterValues',
+          parameterValues: [[p24, newSSID, 'xsd:string']]
+        }, { timeout: 10000 });
+        ok = true;
+      } catch (e) {
+        logger.error(`[updateSSID 2.4G] Error: ${e.message}`);
       }
     }
-    
-    // Fallback if no parameters match or device not bootstrapped yet
-    if (parameterValues.length === 0) {
-      const isTr181 = flatParams 
-        ? Object.keys(flatParams).some(k => k.startsWith('Device.'))
-        : (device._deviceId?._ProductClass?.includes('TR181') || false);
+
+    // ── 5 GHz SSID ──
+    if (shouldUpdate5) {
+      const ssid5Name = (targetBand === '5' || targetBand === '5ghz') 
+        ? newSSID 
+        : (newSSID.toLowerCase().endsWith('-5g') ? newSSID : `${newSSID}-5G`);
 
       if (isTr181) {
-        if (shouldUpdate24) {
-          parameterValues.push(['Device.WiFi.SSID.1.SSID', newSSID, 'xsd:string']);
-        }
-        if (shouldUpdate5) {
-          const ssid5Name = (targetBand === '5' || targetBand === '5ghz') 
-            ? newSSID 
-            : (newSSID.toLowerCase().endsWith('-5g') ? newSSID : `${newSSID}-5G`);
-          parameterValues.push(['Device.WiFi.SSID.2.SSID', ssid5Name, 'xsd:string']);
+        try {
+          await instance.post(tasksUrl, {
+            name: 'setParameterValues',
+            parameterValues: [['Device.WiFi.SSID.2.SSID', ssid5Name, 'xsd:string']]
+          }, { timeout: 10000 });
+          ok = true;
+        } catch (e) {
+          logger.error(`[updateSSID 5G TR-181] Error: ${e.message}`);
         }
       } else {
         // TR-098 (Fiberhome, ZTE, Huawei, etc.)
-        if (shouldUpdate24) {
-          parameterValues.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID', newSSID, 'xsd:string']);
-        }
-        if (shouldUpdate5) {
-          const ssid5Name = (targetBand === '5' || targetBand === '5ghz') 
-            ? newSSID 
-            : (newSSID.toLowerCase().endsWith('-5g') ? newSSID : `${newSSID}-5G`);
-          const idx5 = (flatParams && flatParams['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID'] !== undefined) ? 2 : 5;
-          parameterValues.push([`InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx5}.SSID`, ssid5Name, 'xsd:string']);
+        const candidates = [
+          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID',
+          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID',
+          'InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.SSID'
+        ];
+        const knownPath = candidates.find(c => flatParams && flatParams[c] !== undefined);
+
+        if (knownPath) {
+          try {
+            await instance.post(tasksUrl, {
+              name: 'setParameterValues',
+              parameterValues: [[knownPath, ssid5Name, 'xsd:string']]
+            }, { timeout: 10000 });
+            ok = true;
+          } catch (e) {
+            logger.error(`[updateSSID 5G] Error on ${knownPath}: ${e.message}`);
+          }
+        } else {
+          // If 5G path not yet discovered in DB, post individual tasks for all 3 candidate paths
+          // Whichever path matches the ONT hardware will succeed on the modem
+          for (const candPath of candidates) {
+            try {
+              await instance.post(tasksUrl, {
+                name: 'setParameterValues',
+                parameterValues: [[candPath, ssid5Name, 'xsd:string']]
+              }, { timeout: 10000 });
+              ok = true;
+            } catch (_) {}
+          }
         }
       }
-    }
-
-    let ok = false;
-    try {
-      await instance.post(tasksUrl, {
-        name: 'setParameterValues',
-        parameterValues: parameterValues
-      }, { timeout: 20000 });
-      ok = true;
-    } catch (e) {
-      logger.error(`[updateSSID] Failed to set SSID: ${e.message}`);
-    }
-
-    // Refresh objects untuk trigger inform dari ONU
-    try {
-      await instance.post(tasksUrl, { name: 'refreshObject', objectName: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration' }, { timeout: 15000 });
-    } catch (e) {}
-
-    // Trigger inform untuk force ONU komunikasi dengan ACS
-    if (ok) {
-      try {
-        await instance.post(tasksUrl, { name: 'inform' }, { timeout: 15000 });
-        logger.info(`[updateSSID] Inform task triggered untuk ${tag} (band: ${targetBand})`);
-      } catch (e) {
-        logger.warn(`[updateSSID] Failed to trigger inform: ${e.message}`);
-      }
-      await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
     // Catat audit trail jika berhasil
@@ -1015,6 +994,7 @@ async function updateSSID(tag, newSSID, actor = null, band = 'all') {
 
     return ok;
   } catch (e) {
+    logger.error(`[updateSSID] Exception: ${e.message}`);
     return false;
   }
 }
@@ -1043,7 +1023,6 @@ async function updatePassword(tag, newPassword, actor = null, band = 'all') {
 
     logger.info(`[updatePassword] Setting password for device ${deviceId}, tag ${tag}, band ${band}`);
 
-    const parameterValues = [];
     const targetBand = String(band || 'all').toLowerCase();
     const shouldUpdate24 = targetBand === 'all' || targetBand === '2.4' || targetBand === '2.4ghz';
     const shouldUpdate5 = targetBand === 'all' || targetBand === '5' || targetBand === '5ghz';
@@ -1056,85 +1035,87 @@ async function updatePassword(tag, newPassword, actor = null, band = 'all') {
       ? Object.keys(flatParams).some(k => k.startsWith('Device.'))
       : (device._deviceId?._ProductClass?.includes('TR181') || false);
     
-    if (flatParams) {
-      if (shouldUpdate24) {
-        // 2.4G password paths (pick first supported path to avoid 9005 collision)
-        const paths24G = isTr181
-          ? [
-              'Device.WiFi.AccessPoint.1.Security.KeyPassphrase',
-              'Device.WiFi.AccessPoint.1.Security.PreSharedKey'
-            ]
-          : [
-              'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase',
-              'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase',
-              'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.PreSharedKey'
-            ];
-        const validPath24 = paths24G.find(p => flatParams[p] !== undefined);
-        if (validPath24) {
-          parameterValues.push([validPath24, pw, 'xsd:string']);
+    let ok = false;
+
+    // ── 2.4 GHz Password ──
+    if (shouldUpdate24) {
+      if (isTr181) {
+        try {
+          await instance.post(tasksUrl, {
+            name: 'setParameterValues',
+            parameterValues: [['Device.WiFi.AccessPoint.1.Security.KeyPassphrase', pw, 'xsd:string']]
+          }, { timeout: 10000 });
+          ok = true;
+        } catch (_) {}
+      } else {
+        const paths24G = [
+          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase',
+          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase',
+          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.PreSharedKey'
+        ];
+        const known24 = paths24G.find(p => flatParams && flatParams[p] !== undefined);
+        const targetPath24 = known24 || 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase';
+        try {
+          await instance.post(tasksUrl, {
+            name: 'setParameterValues',
+            parameterValues: [[targetPath24, pw, 'xsd:string']]
+          }, { timeout: 10000 });
+          ok = true;
+        } catch (e) {
+          logger.error(`[updatePassword 2.4G] Error: ${e.message}`);
         }
       }
-      
-      if (shouldUpdate5) {
-        // 5G password paths (pick first supported path to avoid 9005 collision)
-        const paths5G = isTr181
-          ? [
-              'Device.WiFi.AccessPoint.2.Security.KeyPassphrase',
-              'Device.WiFi.AccessPoint.2.Security.PreSharedKey'
-            ]
-          : [];
-        if (!isTr181) {
-          for (const idx of [5, 2, 6, 7, 8]) {
-            paths5G.push(
-              `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.KeyPassphrase`,
-              `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.PreSharedKey.1.KeyPassphrase`,
-              `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.PreSharedKey.1.PreSharedKey`
-            );
+    }
+
+    // ── 5 GHz Password ──
+    if (shouldUpdate5) {
+      if (isTr181) {
+        try {
+          await instance.post(tasksUrl, {
+            name: 'setParameterValues',
+            parameterValues: [['Device.WiFi.AccessPoint.2.Security.KeyPassphrase', pw, 'xsd:string']]
+          }, { timeout: 10000 });
+          ok = true;
+        } catch (_) {}
+      } else {
+        const candidates5 = [
+          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.KeyPassphrase',
+          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.PreSharedKey.1.KeyPassphrase',
+          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.KeyPassphrase',
+          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.PreSharedKey.1.KeyPassphrase',
+          'InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.KeyPassphrase'
+        ];
+        const known5 = candidates5.find(p => flatParams && flatParams[p] !== undefined);
+
+        if (known5) {
+          try {
+            await instance.post(tasksUrl, {
+              name: 'setParameterValues',
+              parameterValues: [[known5, pw, 'xsd:string']]
+            }, { timeout: 10000 });
+            ok = true;
+          } catch (e) {
+            logger.error(`[updatePassword 5G] Error on ${known5}: ${e.message}`);
+          }
+        } else {
+          // Fallback: enqueue individual candidate tasks for Index 5, 2, and LANDevice 2
+          const fallbackCandidates = [
+            'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.KeyPassphrase',
+            'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.KeyPassphrase',
+            'InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.KeyPassphrase'
+          ];
+          for (const candPath of fallbackCandidates) {
+            try {
+              await instance.post(tasksUrl, {
+                name: 'setParameterValues',
+                parameterValues: [[candPath, pw, 'xsd:string']]
+              }, { timeout: 10000 });
+              ok = true;
+            } catch (_) {}
           }
         }
-        const validPath5 = paths5G.find(p => flatParams[p] !== undefined);
-        if (validPath5) {
-          parameterValues.push([validPath5, pw, 'xsd:string']);
-        }
       }
     }
-    
-    // Fallback if no parameters match or device not bootstrapped yet
-    if (parameterValues.length === 0) {
-      if (isTr181) {
-        if (shouldUpdate24) {
-          parameterValues.push(['Device.WiFi.AccessPoint.1.Security.KeyPassphrase', pw, 'xsd:string']);
-        }
-        if (shouldUpdate5) {
-          parameterValues.push(['Device.WiFi.AccessPoint.2.Security.KeyPassphrase', pw, 'xsd:string']);
-        }
-      } else {
-        // TR-098 (Fiberhome, ZTE, Huawei, etc.)
-        if (shouldUpdate24) {
-          parameterValues.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase', pw, 'xsd:string']);
-        }
-        if (shouldUpdate5) {
-          const idx5 = (flatParams && flatParams['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID'] !== undefined) ? 2 : 5;
-          parameterValues.push([`InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx5}.KeyPassphrase`, pw, 'xsd:string']);
-        }
-      }
-    }
-
-    let ok = false;
-    try {
-      await instance.post(tasksUrl, {
-        name: 'setParameterValues',
-        parameterValues: parameterValues
-      }, { timeout: 20000 });
-      ok = true;
-    } catch (e) {
-      logger.error(`[updatePassword] Failed to set password: ${e.message}`);
-    }
-
-    // Refresh object
-    try {
-      await instance.post(tasksUrl, { name: 'refreshObject', objectName: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration' }, { timeout: 15000 });
-    } catch (e) {}
 
     // Catat audit trail jika berhasil
     if (ok && actor) {

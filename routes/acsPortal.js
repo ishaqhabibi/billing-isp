@@ -1523,6 +1523,35 @@ router.get('/api/wifi-settings/:deviceId', requireAdmin, async (req, res) => {
     try {
         const { deviceId } = req.params;
         const { acsId } = req.query;
+
+        // ── 1. Check Builtin ACS first ──
+        const builtinDev = db.prepare('SELECT params FROM acs_devices WHERE id = ?').get(deviceId);
+        if (builtinDev || acsId === 'builtin') {
+            let params = {};
+            try { params = JSON.parse(builtinDev?.params || '{}'); } catch (_) {}
+            const bands = [];
+
+            // 2.4 GHz candidate
+            const s24 = params['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID'] 
+                     || params['Device.WiFi.SSID.1.SSID'];
+            if (s24) {
+                bands.push({ index: '1', ssid: s24, name: 'Wi-Fi 2.4GHz' });
+            }
+
+            // 5 GHz candidates (Index 5, Index 2, LANDevice 2, or TR-181)
+            const s5 = params['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID']
+                    || params['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID']
+                    || params['InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.SSID']
+                    || params['Device.WiFi.SSID.2.SSID'];
+            if (s5) {
+                const idx = params['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID'] ? '2' : '5';
+                bands.push({ index: idx, ssid: s5, name: 'Wi-Fi 5GHz' });
+            }
+
+            return res.json({ success: true, bands });
+        }
+
+        // ── 2. External GenieACS ──
         const servers = getACSServers(acsId);
         if (servers.length === 0) return res.status(404).json({ success: false, message: 'ACS Server not found' });
         

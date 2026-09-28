@@ -1070,9 +1070,19 @@ async function openAcsWifiModal(id, sn, currentSsid, custName, acsId) {
     document.getElementById('acs_wifi_device_id').value = id;
     document.getElementById('acs_wifi_acs_id').value = acsId || 'builtin';
     document.getElementById('acs_wifi_device_label').value = (custName && custName !== '-' ? (custName + ' — ') : '') + (sn || id);
-    document.getElementById('acs_wifi_new_ssid').value = (currentSsid && currentSsid !== '-' ? currentSsid : '');
+    
+    const initial24 = (currentSsid && currentSsid !== '-' ? currentSsid : '');
+    document.getElementById('acs_wifi_new_ssid').value = initial24;
     document.getElementById('acs_wifi_new_password').value = '';
-    document.getElementById('acs_wifi_new_ssid_5g').value = '';
+    
+    // Sensible default for 5G so it is never empty by accident
+    let default5g = '';
+    if (initial24) {
+        if (/5g/i.test(initial24)) default5g = initial24;
+        else if (/2\.?4g/i.test(initial24)) default5g = initial24.replace(/2\.?4g/i, '5G');
+        else default5g = initial24 + ' 5G';
+    }
+    document.getElementById('acs_wifi_new_ssid_5g').value = default5g;
     document.getElementById('acs_wifi_new_password_5g').value = '';
     
     const syncChk = document.getElementById('acs_wifi_sync_pass');
@@ -1080,6 +1090,7 @@ async function openAcsWifiModal(id, sn, currentSsid, custName, acsId) {
     
     const loading = document.getElementById('acs_wifi_loading');
     const container5g = document.getElementById('acs_wifi_5g_container');
+    if (container5g) container5g.style.display = 'block';
     if (loading) loading.style.display = 'block';
     
     openModal('acsWifiModal');
@@ -1089,18 +1100,13 @@ async function openAcsWifiModal(id, sn, currentSsid, custName, acsId) {
         const res = await fetch(`/admin/acs/api/wifi-settings/${encodeURIComponent(id)}?acsId=${encodeURIComponent(acsId || 'builtin')}`);
         const d = await res.json();
         if (d && d.success && Array.isArray(d.bands) && d.bands.length > 0) {
-            let found5g = false;
             d.bands.forEach(b => {
                 if (b.index === '1') {
                     if (b.ssid) document.getElementById('acs_wifi_new_ssid').value = b.ssid;
-                } else if (b.index === '5' || b.index === '2') {
-                    found5g = true;
+                } else if (b.index === '5' || b.index === '2' || b.index === 'landev2_1') {
                     if (b.ssid) document.getElementById('acs_wifi_new_ssid_5g').value = b.ssid;
                 }
             });
-            if (container5g) {
-                container5g.style.display = 'block';
-            }
         }
     } catch (e) {
         console.error('Gagal mengambil detail WiFi perangkat:', e);

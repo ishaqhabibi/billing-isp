@@ -5406,6 +5406,14 @@ router.post('/api/device/:tag/wifi', requireAdmin, express.json(), async (req, r
     let okCount = 0;
     let errors = [];
 
+    // Clean up any stale tasks in progress or pending to prioritize this Wi-Fi change
+    try {
+      const dev = await customerDevice.resolveDeviceToken(tag);
+      if (dev && dev._id) {
+        db.prepare("DELETE FROM acs_tasks WHERE device_id = ? AND (name IN ('inform', 'refreshObject') OR status = 'in_progress')").run(dev._id);
+      }
+    } catch (_) {}
+
     // 2.4 GHz
     if (s24) {
       const ok = await customerDevice.updateSSID(tag, s24, null, '2.4');
