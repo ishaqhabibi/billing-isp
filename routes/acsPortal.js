@@ -1532,23 +1532,45 @@ router.get('/api/wifi-settings/:deviceId', requireAdmin, async (req, res) => {
             const bands = [];
 
             // 2.4 GHz candidate
-            const s24 = params['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID'] 
+            const s24Path = params._wlan_24g_ssid_path 
+                         || 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID';
+            const s24 = params[s24Path] 
+                     || params['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID'] 
                      || params['Device.WiFi.SSID.1.SSID'];
             if (s24) {
-                bands.push({ index: '1', ssid: s24, name: 'Wi-Fi 2.4GHz' });
+                bands.push({ index: '1', ssid: s24, name: 'Wi-Fi 2.4GHz', path: s24Path });
             }
 
-            // 5 GHz candidates (Index 5, Index 2, LANDevice 2, or TR-181)
-            const s5 = params['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID']
-                    || params['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID']
-                    || params['InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.SSID']
-                    || params['Device.WiFi.SSID.2.SSID'];
+            // 5 GHz candidate
+            let s5Path = params._wlan_5g_ssid_path || null;
+            if (!s5Path) {
+                if (params['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID'] !== undefined) {
+                    s5Path = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID';
+                } else if (params['InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.SSID'] !== undefined) {
+                    s5Path = 'InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.SSID';
+                } else if (params['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID'] !== undefined && params['InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.SSID'] === undefined) {
+                    s5Path = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID';
+                } else if (params['Device.WiFi.SSID.2.SSID'] !== undefined) {
+                    s5Path = 'Device.WiFi.SSID.2.SSID';
+                }
+            }
+
+            const s5 = s5Path ? params[s5Path] : null;
             if (s5) {
-                const idx = params['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID'] ? '2' : '5';
-                bands.push({ index: idx, ssid: s5, name: 'Wi-Fi 5GHz' });
+                const idx = s5Path.includes('LANDevice.2') ? 'landev2_1' : (s5Path.includes('.2.SSID') ? '2' : '5');
+                bands.push({ index: idx, ssid: s5, name: 'Wi-Fi 5GHz', path: s5Path });
             }
 
-            return res.json({ success: true, bands });
+            // If 5G was not yet discovered, trigger discovery in background
+            if (!s5Path) {
+                try {
+                    const acsServer = require('../services/acsServerService');
+                    acsServer.queueWlanDiscoveryIfNeeded(deviceId, params);
+                    acsServer.triggerConnectionRequest(deviceId).catch(() => {});
+                } catch (_) {}
+            }
+
+            return res.json({ success: true, bands, detected5gPath: s5Path || null });
         }
 
         // ── 2. External GenieACS ──
@@ -1625,6 +1647,110 @@ router.post('/api/wifi/:deviceId', requireAdmin, express.json(), async (req, res
             message: success ? 'Pengaturan Wi-Fi berhasil diperbarui!' : (errors.join(', ') || 'Gagal memperbarui Wi-Fi'),
             error: errors.length > 0 ? errors.join(', ') : undefined
         });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// GET /admin/acs/api/device-diagnostics/:deviceId
+router.get('/api/device-diagnostics/:deviceId', requireAdmin, async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+        const dev = db.prepare('SELECT * FROM acs_devices WHERE id = ?').get(deviceId);
+        if (!dev) return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan di Builtin ACS' });
+
+        let params = {};
+        try { params = JSON.parse(dev.params || '{}'); } catch (_) {}
+
+        // Filter WLAN related parameters
+        const wlanParams = {};
+        for (const [k, v] of Object.entries(params)) {
+            if (k.includes('WLANConfiguration') || k.includes('WiFi') || k.includes('SSID') || k.startsWith('_wlan')) {
+                wlanParams[k] = v;
+            }
+        }
+
+        // Get last 15 tasks
+        const recentTasks = db.prepare(`
+            SELECT id, name, payload, status, result, updated_at
+            FROM acs_tasks
+            WHERE device_id = ?
+            ORDER BY id DESC
+            LIMIT 15
+        `).all(deviceId);
+
+        // Parse payloads and results safely for display
+        const formattedTasks = recentTasks.map(t => {
+            let parsedPayload = null;
+            let parsedResult = null;
+            try { parsedPayload = JSON.parse(t.payload || '{}'); } catch (_) {}
+            try { parsedResult = JSON.parse(t.result || '{}'); } catch (_) {}
+            return {
+                id: t.id,
+                name: t.name,
+                status: t.status,
+                payload: parsedPayload,
+                result: parsedResult,
+                updated_at: t.updated_at
+            };
+        });
+
+        const s5Path = params._wlan_5g_ssid_path 
+            || Object.keys(params).find(k => 
+                (k.includes('WLANConfiguration.5.') || k.includes('WiFi.SSID.2.') || (k.includes('LANDevice.2') && k.includes('WLANConfiguration'))) &&
+                k.endsWith('.SSID')
+            );
+
+        res.json({
+            success: true,
+            deviceId: dev.id,
+            sn: dev.serial_number,
+            model: dev.product_class,
+            manufacturer: dev.manufacturer,
+            ip_address: dev.ip_address,
+            last_inform: dev.last_inform,
+            detected5gPath: s5Path || null,
+            wlanParams,
+            recentTasks: formattedTasks
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// POST /admin/acs/api/discover-wlan/:deviceId
+router.post('/api/discover-wlan/:deviceId', requireAdmin, async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+        const dev = db.prepare('SELECT params FROM acs_devices WHERE id = ?').get(deviceId);
+        if (!dev) return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan di Builtin ACS' });
+
+        let params = {};
+        try { params = JSON.parse(dev.params || '{}'); } catch (_) {}
+
+        const acsServer = require('../services/acsServerService');
+        const now = new Date().toISOString();
+        const isTr181 = Object.keys(params).some(k => String(k).startsWith('Device.'));
+        const objPath = isTr181 ? 'Device.WiFi.' : 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.';
+
+        db.prepare(
+            `INSERT INTO acs_tasks (device_id, name, payload, status, created_at, updated_at)
+             VALUES (?, 'getParameterNames', ?, 'pending', ?, ?)`
+        ).run(deviceId, JSON.stringify({ objectName: objPath, nextLevel: 0 }), now, now);
+
+        if (!isTr181) {
+            db.prepare(
+                `INSERT INTO acs_tasks (device_id, name, payload, status, created_at, updated_at)
+                 VALUES (?, 'getParameterNames', ?, 'pending', ?, ?)`
+            ).run(deviceId, JSON.stringify({ objectName: 'InternetGatewayDevice.LANDevice.', nextLevel: 1 }), now, now);
+        }
+
+        // Trigger connection request asynchronously
+        try {
+            await acsServer.triggerConnectionRequest(deviceId);
+        } catch (_) {}
+
+        res.json({ success: true, message: 'Perintah deteksi Wi-Fi dikirim ke antrean modem!' });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }

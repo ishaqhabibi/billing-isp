@@ -712,6 +712,77 @@ function queueBootstrapTasksIfNeeded(deviceId, currentParams) {
   }
 }
 
+function detectWlanBandsFromNames(names) {
+  const wlanSsids = (names || []).filter(n => 
+    (n.includes('WLANConfiguration') || n.includes('WiFi.SSID')) && n.endsWith('.SSID')
+  );
+
+  let path24 = null;
+  let path5 = null;
+
+  if (wlanSsids.some(n => n.startsWith('Device.'))) {
+    path24 = wlanSsids.find(n => n.includes('.1.SSID')) || 'Device.WiFi.SSID.1.SSID';
+    path5 = wlanSsids.find(n => n.includes('.2.SSID')) || 'Device.WiFi.SSID.2.SSID';
+    return { path24, path5, type: 'TR-181' };
+  }
+
+  const instances = [];
+  for (const s of wlanSsids) {
+    const m = s.match(/WLANConfiguration\.(\d+)\.SSID/);
+    if (m) instances.push({ index: parseInt(m[1], 10), path: s });
+  }
+
+  const landev2 = wlanSsids.find(s => s.includes('LANDevice.2'));
+  if (landev2) {
+    path24 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID';
+    path5 = landev2;
+    return { path24, path5, type: 'TR-098-DualLANDevice' };
+  }
+
+  const has5 = instances.find(i => i.index === 5);
+  const has2 = instances.find(i => i.index === 2);
+  const has3 = instances.find(i => i.index === 3);
+
+  path24 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID';
+  if (has5) {
+    path5 = has5.path;
+  } else if (has2 && !has3) {
+    path5 = has2.path;
+  } else {
+    path5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID';
+  }
+
+  return { path24, path5, type: 'TR-098' };
+}
+
+function queueWlanDiscoveryIfNeeded(deviceId, currentParams) {
+  try {
+    const has5G = Object.keys(currentParams || {}).some(k => 
+      (k.includes('WLANConfiguration.5.') || 
+       k.includes('WiFi.SSID.2.') || 
+       k === '_wlan_5g_ssid_path' ||
+       (k.includes('LANDevice.2') && k.includes('WLANConfiguration'))) &&
+      (k.endsWith('.SSID') || k.endsWith('.KeyPassphrase') || k.endsWith('.PreSharedKey') || k.endsWith('.PreSharedKey.1.PreSharedKey'))
+    );
+
+    if (!has5G) {
+      const pending = db.prepare("SELECT COUNT(*) as c FROM acs_tasks WHERE device_id = ? AND name = 'getParameterNames' AND status IN ('pending', 'in_progress')").get(deviceId);
+      if (!pending || pending.c === 0) {
+        logger.info(`[ACS] Device ${deviceId} has no 5GHz WLAN parameters in DB. Queuing getParameterNames discovery.`);
+        const now = nowLocal();
+        const isTr181 = Object.keys(currentParams || {}).some(k => String(k).startsWith('Device.'));
+        const objPath = isTr181 ? 'Device.WiFi.' : 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.';
+        db.prepare(
+          `INSERT INTO acs_tasks (device_id, name, payload, status, created_at, updated_at)
+           VALUES (?, 'getParameterNames', ?, 'pending', ?, ?)`
+        ).run(deviceId, JSON.stringify({ objectName: objPath, nextLevel: 0 }), now, now);
+      }
+    }
+  } catch (err) {
+    logger.error(`[ACS] Error in queueWlanDiscoveryIfNeeded for ${deviceId}: ${err.message}`);
+  }
+}
+
 function queueRealtimeMonitoringTasks(deviceId, currentParams) {
   try {
     const pending = db.prepare("SELECT COUNT(*) as c FROM acs_tasks WHERE device_id = ? AND name IN ('getParameterValues','getParameterNames','refreshObject') AND status IN ('pending','in_progress')").get(deviceId);
@@ -1050,6 +1121,7 @@ function handleInform(body, session, sid, cpeIp, res) {
 
   // Queue bootstrap parameter fetch if needed
   queueBootstrapTasksIfNeeded(deviceId, mergedParams);
+  queueWlanDiscoveryIfNeeded(deviceId, mergedParams);
   queueRealtimeMonitoringTasks(deviceId, mergedParams);
 
   if (cpeIp) {
@@ -1207,54 +1279,84 @@ function handleGetParameterNamesResponse(body, session, sid, res) {
     completeTask(taskId, { names });
   }
 
-  if (taskId && session.deviceId && Array.isArray(names) && names.length > 0) {
+  if (session.deviceId && Array.isArray(names) && names.length > 0) {
     try {
-      const taskRow = db.prepare('SELECT name, payload FROM acs_tasks WHERE id = ?').get(taskId);
+      const now = nowLocal();
+      const taskRow = taskId ? db.prepare('SELECT name, payload FROM acs_tasks WHERE id = ?').get(taskId) : null;
       let objectName = '';
       if (taskRow && taskRow.payload) {
         try {
           const pl = JSON.parse(taskRow.payload || '{}');
-          objectName = String(pl.objectName || pl.object || '');
+          objectName = String(pl.objectName || pl.object || pl.parameterPath || '');
         } catch {}
       }
 
-      const wantedHostSuffixes = [
-        '.HostName',
-        '.IPAddress',
-        '.MACAddress',
-        '.InterfaceType',
-        '.Active',
-        '.LeaseTimeRemaining',
-        '.RemainingLeaseTime'
-      ];
-      const wantedAssocSuffixes = [
-        '.AssociatedDeviceMACAddress',
-        '.MACAddress',
-        '.IPAddress',
-        '.HostName',
-        '.DeviceName'
-      ];
-      let filtered = names;
-      const obj = String(objectName || '');
-      if (obj.includes('Hosts.Host')) {
-        filtered = names.filter(n => wantedHostSuffixes.some(s => String(n).endsWith(s)));
-      } else if (obj.includes('AssociatedDevice')) {
-        filtered = names.filter(n => wantedAssocSuffixes.some(s => String(n).endsWith(s)));
-      }
+      // Check if response contains WLANConfiguration or WiFi
+      const isWlan = objectName.includes('WLANConfiguration') || objectName.includes('WiFi') || names.some(n => n.includes('WLANConfiguration') || n.includes('WiFi.SSID'));
 
-      const max = 200;
-      if (filtered.length > max) filtered = filtered.slice(0, max);
+      if (isWlan) {
+        // Detect 2.4G & 5G bands
+        const detected = detectWlanBandsFromNames(names);
+        logger.info(`[ACS Discovery] Device ${session.deviceId} detected bands: 2.4G=${detected.path24}, 5G=${detected.path5}`);
 
-      if (filtered.length > 0) {
-        const now = nowLocal();
-        const payloadStr = JSON.stringify({ parameterNames: filtered });
-        db.prepare(
-          `INSERT INTO acs_tasks (device_id, name, payload, status, created_at, updated_at)
-           VALUES (?, 'getParameterValues', ?, 'pending', ?, ?)`
-        ).run(session.deviceId, payloadStr, now, now);
+        // Save detected paths into device params immediately
+        const pathsToMerge = {
+          _wlan_24g_ssid_path: detected.path24,
+          _wlan_5g_ssid_path: detected.path5,
+          _wlan_discovered_at: now
+        };
+        mergeDeviceParams(session.deviceId, pathsToMerge);
+
+        // Filter essential parameters to fetch their current values
+        const wantedWlanSuffixes = [
+          '.SSID',
+          '.KeyPassphrase',
+          '.PreSharedKey.1.KeyPassphrase',
+          '.PreSharedKey.1.PreSharedKey',
+          '.Enable',
+          '.RadioEnabled',
+          '.BeaconType',
+          '.Standard',
+          '.Channel'
+        ];
+        const wlanParamNames = names.filter(n => wantedWlanSuffixes.some(s => n.endsWith(s)));
+        logger.info(`[ACS Discovery] Queuing value queries for ${wlanParamNames.length} key WLAN parameters`);
+
+        // Queue in safe chunks of 4 to prevent ONT 9005 faults
+        const chunkSize = 4;
+        for (let i = 0; i < wlanParamNames.length; i += chunkSize) {
+          const chunk = wlanParamNames.slice(i, i + chunkSize);
+          db.prepare(
+            `INSERT INTO acs_tasks (device_id, name, payload, status, created_at, updated_at)
+             VALUES (?, 'getParameterValues', ?, 'pending', ?, ?)`
+          ).run(session.deviceId, JSON.stringify({ parameterNames: chunk }), now, now);
+        }
+      } else {
+        const wantedHostSuffixes = [
+          '.HostName', '.IPAddress', '.MACAddress', '.InterfaceType', '.Active', '.LeaseTimeRemaining', '.RemainingLeaseTime'
+        ];
+        const wantedAssocSuffixes = [
+          '.AssociatedDeviceMACAddress', '.MACAddress', '.IPAddress', '.HostName', '.DeviceName'
+        ];
+        let filtered = names;
+        const obj = String(objectName || '');
+        if (obj.includes('Hosts.Host')) {
+          filtered = names.filter(n => wantedHostSuffixes.some(s => String(n).endsWith(s)));
+        } else if (obj.includes('AssociatedDevice')) {
+          filtered = names.filter(n => wantedAssocSuffixes.some(s => String(n).endsWith(s)));
+        }
+
+        const max = 20;
+        for (let i = 0; i < filtered.length && i < 100; i += max) {
+          const chunk = filtered.slice(i, i + max);
+          db.prepare(
+            `INSERT INTO acs_tasks (device_id, name, payload, status, created_at, updated_at)
+             VALUES (?, 'getParameterValues', ?, 'pending', ?, ?)`
+          ).run(session.deviceId, JSON.stringify({ parameterNames: chunk }), now, now);
+        }
       }
     } catch (err) {
-      logger.error(`[ACS] Failed to enqueue getParameterValues after getParameterNames for ${session.deviceId}: ${err.message}`);
+      logger.error(`[ACS] Failed to process getParameterNames for ${session.deviceId}: ${err.message}`);
     }
   }
 
@@ -1659,4 +1761,6 @@ module.exports = {
   getBuiltinDevices,
   getBuiltinDevice,
   createBuiltinTask,
+  queueWlanDiscoveryIfNeeded,
+  detectWlanBandsFromNames,
 };

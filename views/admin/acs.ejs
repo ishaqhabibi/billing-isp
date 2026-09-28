@@ -925,6 +925,23 @@
           </div>
         </div>
 
+        <!-- Status & Log TR-069 Section -->
+        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase;">
+              <i class="bi bi-cpu me-1"></i> Status Parameter & Antrean TR-069
+            </span>
+            <button type="button" class="btn btn-sm" id="btn_detect_wlan" onclick="triggerWlanDiscovery()" style="font-size:11px; padding:2px 8px; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:6px; cursor:pointer;">
+              <i class="bi bi-search"></i> Deteksi Parameter Modem
+            </button>
+          </div>
+          <div id="acs_wifi_diag_status" style="font-size:11px; color:var(--muted);">
+            Memuat status parameter modem...
+          </div>
+          <div id="acs_wifi_task_logs" style="margin-top:8px; max-height:110px; overflow-y:auto; font-family:monospace; font-size:10px; display:none; background:var(--bg); padding:6px 8px; border-radius:6px; border:1px solid var(--border);">
+          </div>
+        </div>
+
         <div class="fg" style="margin-bottom:6px;">
           <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
             <input type="checkbox" id="acs_wifi_notify_wa" checked style="width:16px; height:16px;">
@@ -1095,6 +1112,9 @@ async function openAcsWifiModal(id, sn, currentSsid, custName, acsId) {
     
     openModal('acsWifiModal');
 
+    // Load diagnostics status & tasks
+    loadWifiDiagnostics(id);
+
     // Async fetch WLAN actual SSID names from modem
     try {
         const res = await fetch(`/admin/acs/api/wifi-settings/${encodeURIComponent(id)}?acsId=${encodeURIComponent(acsId || 'builtin')}`);
@@ -1112,6 +1132,124 @@ async function openAcsWifiModal(id, sn, currentSsid, custName, acsId) {
         console.error('Gagal mengambil detail WiFi perangkat:', e);
     } finally {
         if (loading) loading.style.display = 'none';
+    }
+}
+
+let wlanDiscoveryTimer = null;
+
+async function loadWifiDiagnostics(deviceId) {
+    const statusEl = document.getElementById('acs_wifi_diag_status');
+    const logsEl = document.getElementById('acs_wifi_task_logs');
+    if (!statusEl) return;
+
+    try {
+        const res = await fetch(`/admin/acs/api/device-diagnostics/${encodeURIComponent(deviceId)}`);
+        const data = await res.json();
+        if (data && data.success) {
+            let statusHtml = '';
+            if (data.detected5gPath) {
+                const shortPath = data.detected5gPath.split('.').slice(-2).join('.');
+                statusHtml = `<span style="color:#10b981; font-weight:700;"><i class="bi bi-check-circle-fill"></i> 2.4G & 5G Terdeteksi</span> &bull; <span style="color:var(--muted); font-size:11px;">Path 5G: <code>${shortPath}</code></span>`;
+            } else {
+                statusHtml = `<span style="color:#f59e0b; font-weight:700;"><i class="bi bi-exclamation-triangle-fill"></i> Jalur 5GHz Belum Terpetakan</span> &bull; <span style="font-size:11px; color:var(--muted);">Klik "Deteksi Parameter Modem" di samping untuk sinkronisasi otomatis.</span>`;
+            }
+
+            if (data.ip_address) {
+                statusHtml += ` <span class="badge" style="font-size:10px; background:var(--bg); color:var(--muted); margin-left:6px;">IP: ${data.ip_address}</span>`;
+            }
+            statusEl.innerHTML = statusHtml;
+
+            // Render last tasks
+            if (Array.isArray(data.recentTasks) && data.recentTasks.length > 0) {
+                logsEl.style.display = 'block';
+                logsEl.innerHTML = data.recentTasks.slice(0, 6).map(t => {
+                    let badge = '';
+                    if (t.status === 'completed') badge = '<span style="color:#10b981; font-weight:bold;">[SUKSES]</span>';
+                    else if (t.status === 'failed') {
+                        const fault = t.result?.faultCode ? `Fault ${t.result.faultCode}` : (t.result?.error || 'Gagal');
+                        badge = `<span style="color:#ef4444; font-weight:bold;">[GAGAL: ${fault}]</span>`;
+                    } else if (t.status === 'in_progress') badge = '<span style="color:#38bdf8; font-weight:bold;">[PROSES]</span>';
+                    else badge = '<span style="color:#f59e0b; font-weight:bold;">[ANTRE]</span>';
+
+                    let detail = t.name;
+                    if (t.payload) {
+                        if (t.payload.parameterValues && Array.isArray(t.payload.parameterValues)) {
+                            detail += ' ' + t.payload.parameterValues.map(p => `${p[0]?.split('.').pop()}=${p[1]}`).join(', ');
+                        } else if (t.payload.parameterNames && Array.isArray(t.payload.parameterNames)) {
+                            detail += ' ' + t.payload.parameterNames.map(p => p?.split('.').pop()).join(', ');
+                        } else if (t.payload.objectName) {
+                            detail += ' ' + t.payload.objectName;
+                        }
+                    }
+                    const time = (t.updated_at || '').slice(11, 19);
+                    return `<div style="padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.05);">${time} ${badge} ${detail}</div>`;
+                }).join('');
+            }
+        }
+    } catch (e) {
+        console.warn('Gagal memuat diagnostik WiFi:', e.message);
+    }
+}
+
+async function triggerWlanDiscovery() {
+    const deviceId = document.getElementById('acs_wifi_device_id').value;
+    const btn = document.getElementById('btn_detect_wlan');
+    const statusEl = document.getElementById('acs_wifi_diag_status');
+    if (!deviceId || !btn) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Mendeteksi...';
+    if (statusEl) statusEl.innerHTML = '<span style="color:#38bdf8;"><i class="bi bi-arrow-repeat spin"></i> Mengirim perintah deteksi parameter ke modem via TR-069...</span>';
+
+    try {
+        const res = await fetch(`/admin/acs/api/discover-wlan/${encodeURIComponent(deviceId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data && data.success) {
+            // Poll diagnostics every 2s for 16s
+            let attempts = 0;
+            if (wlanDiscoveryTimer) clearInterval(wlanDiscoveryTimer);
+            wlanDiscoveryTimer = setInterval(async () => {
+                attempts++;
+                await loadWifiDiagnostics(deviceId);
+                try {
+                    const r = await fetch(`/admin/acs/api/wifi-settings/${encodeURIComponent(deviceId)}?acsId=builtin`);
+                    const d = await r.json();
+                    if (d && d.success && Array.isArray(d.bands)) {
+                        d.bands.forEach(b => {
+                            if (b.index === '1' && b.ssid) document.getElementById('acs_wifi_new_ssid').value = b.ssid;
+                            else if ((b.index === '5' || b.index === '2' || b.index === 'landev2_1') && b.ssid) {
+                                document.getElementById('acs_wifi_new_ssid_5g').value = b.ssid;
+                            }
+                        });
+                        if (d.detected5gPath) {
+                            clearInterval(wlanDiscoveryTimer);
+                            wlanDiscoveryTimer = null;
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="bi bi-check-lg text-success"></i> Berhasil';
+                            setTimeout(() => { btn.innerHTML = '<i class="bi bi-search"></i> Deteksi Parameter Modem'; }, 3000);
+                        }
+                    }
+                } catch (_) {}
+
+                if (attempts >= 8) {
+                    clearInterval(wlanDiscoveryTimer);
+                    wlanDiscoveryTimer = null;
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-search"></i> Deteksi Parameter Modem';
+                }
+            }, 2000);
+        } else {
+            alert('Gagal: ' + (data.message || 'Terjadi kesalahan'));
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-search"></i> Deteksi Parameter Modem';
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-search"></i> Deteksi Parameter Modem';
     }
 }
 
