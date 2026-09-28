@@ -2008,10 +2008,10 @@ async function submitRenameOnu(event) {
   }
 
   try {
-    const res = await fetch(`/admin/olts/${oltId}/onu/${index}/rename`, {
+    const res = await fetch(`/admin/olts/${oltId}/onu/rename`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ name: newName })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index, name: newName })
     });
     const data = await res.json();
     closeModal('renameOnuModal');
@@ -2060,7 +2060,11 @@ async function confirmExecuteReboot() {
     btn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Mengirim...';
   }
   try {
-    const res = await fetch(`/admin/olts/${oltId}/onu/${index}/reboot`, { method: 'POST' });
+    const res = await fetch(`/admin/olts/${oltId}/onu/reboot`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index })
+    });
     const data = await res.json();
     closeModal('rebootOnuModal');
     if (data.success) {

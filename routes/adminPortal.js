@@ -681,9 +681,14 @@ router.post('/olts/:id/test-snmp', requireAdminSession, async (req, res) => {
   }
 });
 
-router.post('/olts/:id/onu/:index/reboot', requireAdminSession, restrictToAdmin, async (req, res) => {
+router.post(['/olts/:id/onu/reboot', '/olts/:id/onu/:index/reboot', '/olts/:id/onu/:port/:onuId/reboot'], requireAdminSession, restrictToAdmin, express.json(), express.urlencoded({ extended: true }), async (req, res) => {
   try {
-    await oltSvc.rebootOnu(req.params.id, req.params.index);
+    let index = req.body?.index || req.query?.index || req.params.index;
+    if (!index && req.params.port && req.params.onuId !== undefined) {
+      index = `${req.params.port}/${req.params.onuId}`;
+    }
+    if (!index) throw new Error('Parameter index ONU tidak valid');
+    await oltSvc.rebootOnu(req.params.id, index);
     res.json({ success: true, message: 'Perintah reboot berhasil dikirim.' });
   } catch (e) {
     const errorMsg = (e && typeof e === 'object' && e.message) ? e.message : (typeof e === 'string' ? e : JSON.stringify(e));
@@ -691,11 +696,16 @@ router.post('/olts/:id/onu/:index/reboot', requireAdminSession, restrictToAdmin,
   }
 });
 
-router.post('/olts/:id/onu/:index/rename', requireAdminSession, restrictToAdmin, express.urlencoded({ extended: true }), async (req, res) => {
+router.post(['/olts/:id/onu/rename', '/olts/:id/onu/:index/rename', '/olts/:id/onu/:port/:onuId/rename'], requireAdminSession, restrictToAdmin, express.json(), express.urlencoded({ extended: true }), async (req, res) => {
   try {
-    const { name } = req.body;
+    let index = req.body?.index || req.query?.index || req.params.index;
+    if (!index && req.params.port && req.params.onuId !== undefined) {
+      index = `${req.params.port}/${req.params.onuId}`;
+    }
+    if (!index) throw new Error('Parameter index ONU tidak valid');
+    const name = req.body?.name || req.query?.name;
     if (!name) throw new Error('Nama tidak boleh kosong');
-    await oltSvc.renameOnu(req.params.id, req.params.index, name);
+    await oltSvc.renameOnu(req.params.id, index, name);
     res.json({ success: true, message: 'Nama ONU berhasil diubah.' });
   } catch (e) {
     const errorMsg = (e && typeof e === 'object' && e.message) ? e.message : (typeof e === 'string' ? e : JSON.stringify(e));
