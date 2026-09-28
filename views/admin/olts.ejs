@@ -1329,120 +1329,129 @@
   </div>
 </div>
 
-<!-- Modal Detail & Diagnostik ONU -->
+<!-- Modal Detail & Diagnostik ONU (Spacious & Clean Redesign) -->
 <div class="mo" id="onuDetailModal">
-  <div class="mb" style="max-width: 560px;">
-    <div class="mh">
-      <span class="mt text-info"><i class="bi bi-info-circle-fill me-2"></i> Detail Informasi & Diagnostik ONU</span>
-      <button type="button" class="mc" onclick="closeModal('onuDetailModal')">&times;</button>
+  <div class="mb" style="max-width: 580px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+    <!-- Header -->
+    <div class="mh" style="padding: 16px 22px; border-bottom: 1px solid var(--border);">
+      <div class="d-flex align-items-center gap-2">
+        <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(56, 189, 248, 0.15); display: flex; align-items: center; justify-content: center; color: #38bdf8;">
+          <i class="bi bi-router" style="font-size: 16px;"></i>
+        </div>
+        <div>
+          <span class="mt" style="font-size: 15px; font-weight: 700; color: var(--text);">Informasi & Diagnostik Modem</span>
+        </div>
+      </div>
+      <button type="button" class="mc" onclick="closeModal('onuDetailModal')" style="font-size: 20px;">&times;</button>
     </div>
-    <div class="mbody" style="padding: 18px 20px; max-height: 80vh; overflow-y: auto;">
-      <!-- Header Summary Card -->
-      <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px;">
-        <div class="d-flex justify-content-between align-items-start mb-2">
+
+    <div class="mbody" style="padding: 20px 22px; max-height: 80vh; overflow-y: auto;">
+      
+      <!-- 1. Header Card: Nama, Status, ID/SN -->
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px;">
+        <div class="d-flex justify-content-between align-items-start">
           <div>
-            <h5 class="fw-bold mb-1" id="detOnuName" style="color: var(--text); font-size: 16px;">-</h5>
-            <div id="detCustName" style="font-size: 12px; color: #38bdf8; font-weight: 600;"></div>
+            <div class="d-flex align-items-center gap-2">
+              <h4 class="fw-bold mb-0" id="detOnuName" style="color: #fff; font-size: 17px; letter-spacing: -0.2px;">-</h4>
+              <span id="detStatusBadge" class="status-pill-v3 pill-up">-</span>
+            </div>
+            <div id="detCustName" style="font-size: 12px; color: #38bdf8; font-weight: 600; margin-top: 4px;"></div>
           </div>
-          <span id="detStatusBadge" class="status-pill-v3 pill-up">-</span>
+          <div class="text-end">
+            <span class="badge" id="detType" style="background: rgba(255,255,255,0.08); color: var(--muted); border: 1px solid var(--border); font-size: 11px;">GPON</span>
+          </div>
         </div>
-        <div class="d-flex gap-2 align-items-center mt-2" style="font-size: 12px;">
-          <span class="text-muted">Port:</span> <strong id="detPortId" class="sn-code">-</strong>
-          <span class="text-muted ms-2">SN:</span> <strong id="detSn" class="sn-code" style="color: var(--primary);">-</strong>
-          <span class="text-muted ms-2">Tipe:</span> <span id="detType" class="badge bg-secondary">-</span>
-        </div>
-      </div>
 
-      <!-- Riwayat Koneksi & Downtime -->
-      <div style="margin-bottom: 16px;">
-        <div class="text-uppercase fw-bold text-muted mb-2" style="font-size: 11px; letter-spacing: 0.5px;">
-          <i class="bi bi-clock-history me-1 text-primary"></i> Status & Riwayat Koneksi
-        </div>
-        <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 12.5px;">
-          <div class="row g-2">
-            <div class="col-6">
-              <span class="text-muted d-block" style="font-size: 11px;">Jarak Kabel Optik (Distance):</span>
-              <strong id="detDistance" class="text-info" style="font-family:'JetBrains Mono',monospace;">-</strong>
-            </div>
-            <div class="col-6">
-              <span class="text-muted d-block" style="font-size: 11px;">Uptime Modem:</span>
-              <strong id="detUptime" style="color: var(--text);">-</strong>
-            </div>
-            <div class="col-12"><hr style="border-color: var(--border); margin: 4px 0;"></div>
-            <div class="col-6">
-              <span class="text-muted d-block" style="font-size: 11px;">Terakhir Online (Last Up):</span>
-              <span id="detLastUp" style="color: #10b981; font-family:'JetBrains Mono',monospace;">-</span>
-            </div>
-            <div class="col-6">
-              <span class="text-muted d-block" style="font-size: 11px;">Terakhir Offline (Last Down):</span>
-              <span id="detLastDown" style="color: #ef4444; font-family:'JetBrains Mono',monospace;">-</span>
-            </div>
-            <div class="col-12"><hr style="border-color: var(--border); margin: 4px 0;"></div>
-            <div class="col-12">
-              <span class="text-muted d-block" style="font-size: 11px;">Penyebab Terakhir Putus (Last Down Cause):</span>
-              <div id="detDownCause" class="mt-1" style="font-weight: 600; font-size: 12.5px;">-</div>
-            </div>
-            <div class="col-12" id="detDyingGaspRow" style="display: none;">
-              <span class="text-muted d-block" style="font-size: 11px;">Waktu Terakhir Mati Listrik (Last Dying Gasp):</span>
-              <span id="detDyingGasp" class="text-warning" style="font-family:'JetBrains Mono',monospace; font-size: 12px;">-</span>
-            </div>
+        <div class="d-flex gap-3 align-items-center mt-3 pt-2" style="border-top: 1px solid rgba(255,255,255,0.06); font-size: 12px;">
+          <div>
+            <span class="text-muted" style="font-size: 11px;">PORT PON</span>
+            <div id="detPortId" class="sn-code mt-1" style="font-size: 12px; font-weight: 600;">-</div>
+          </div>
+          <div style="width: 1px; height: 24px; background: var(--border);"></div>
+          <div>
+            <span class="text-muted" style="font-size: 11px;">SERIAL NUMBER</span>
+            <div id="detSn" class="sn-code mt-1" style="font-size: 12px; font-weight: 600; color: #38bdf8;">-</div>
+          </div>
+          <div style="width: 1px; height: 24px; background: var(--border);"></div>
+          <div>
+            <span class="text-muted" style="font-size: 11px;">LINE PROFILE</span>
+            <div id="detLineProfile" style="color: var(--text); font-size: 12px; font-weight: 600; margin-top: 4px;">-</div>
           </div>
         </div>
       </div>
 
-      <!-- Sinyal Optik & Telemetri -->
-      <div style="margin-bottom: 16px;">
-        <div class="text-uppercase fw-bold text-muted mb-2" style="font-size: 11px; letter-spacing: 0.5px;">
-          <i class="bi bi-activity me-1 text-info"></i> Sinyal Optik & Telemetri
+      <!-- 2. Tiga Kartu Metrik Utama (Redaman, Jarak, Uptime) -->
+      <div class="row g-2 mb-3">
+        <!-- Card Rx Power -->
+        <div class="col-4">
+          <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; height: 100%;">
+            <div class="text-muted" style="font-size: 11px; margin-bottom: 4px;"><i class="bi bi-broadcast me-1 text-info"></i> Redaman (Rx)</div>
+            <div id="detRxPower" style="font-size: 15px; font-weight: 800; font-family:'JetBrains Mono',monospace;">-</div>
+            <div id="detRxStatus" style="font-size: 10.5px; margin-top: 4px; font-weight: 600;">-</div>
+          </div>
         </div>
-        <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 12.5px;">
-          <div class="row g-2">
-            <div class="col-6">
-              <span class="text-muted d-block" style="font-size: 11px;">Receive Power (Rx):</span>
-              <span id="detRxPower" class="rx-badge rx-good">-</span>
-            </div>
-            <div class="col-6">
-              <span class="text-muted d-block" style="font-size: 11px;">Transmit Power (Tx):</span>
-              <span id="detTxPower" class="rx-badge rx-muted">-</span>
-            </div>
-            <div class="col-6 mt-2">
-              <span class="text-muted d-block" style="font-size: 11px;">Suhu Perangkat (Temp):</span>
-              <strong id="detTemp" style="color: var(--text);">-</strong>
-            </div>
-            <div class="col-6 mt-2">
-              <span class="text-muted d-block" style="font-size: 11px;">Tegangan (Voltage):</span>
-              <strong id="detVoltage" style="color: var(--text);">-</strong>
-            </div>
+        <!-- Card Distance -->
+        <div class="col-4">
+          <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; height: 100%;">
+            <div class="text-muted" style="font-size: 11px; margin-bottom: 4px;"><i class="bi bi-geo-alt-fill me-1 text-primary"></i> Jarak Kabel</div>
+            <div id="detDistance" style="font-size: 15px; font-weight: 800; color: #38bdf8; font-family:'JetBrains Mono',monospace;">-</div>
+            <div class="text-muted" style="font-size: 10.5px; margin-top: 4px;">Dari OLT</div>
+          </div>
+        </div>
+        <!-- Card Uptime -->
+        <div class="col-4">
+          <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; height: 100%;">
+            <div class="text-muted" style="font-size: 11px; margin-bottom: 4px;"><i class="bi bi-stopwatch me-1 text-success"></i> Durasi Aktif</div>
+            <div id="detUptime" style="font-size: 13.5px; font-weight: 700; color: #10b981; margin-top: 2px;">-</div>
+            <div class="text-muted" style="font-size: 10.5px; margin-top: 4px;">Uptime</div>
           </div>
         </div>
       </div>
 
-      <!-- Profil Konfigurasi OLT -->
-      <div>
-        <div class="text-uppercase fw-bold text-muted mb-2" style="font-size: 11px; letter-spacing: 0.5px;">
-          <i class="bi bi-diagram-3 me-1 text-secondary"></i> Profil OLT
+      <!-- 3. Riwayat Koneksi (Waktu Up / Down) -->
+      <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;">
+        <div class="fw-bold text-muted mb-2" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+          <i class="bi bi-clock-history me-1 text-warning"></i> Riwayat Sambungan
         </div>
-        <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 12px;">
-          <div class="row g-2">
-            <div class="col-6">
-              <span class="text-muted d-block" style="font-size: 11px;">Line Profile:</span>
-              <strong id="detLineProfile" style="color: var(--text);">-</strong>
-            </div>
-            <div class="col-6">
-              <span class="text-muted d-block" style="font-size: 11px;">Service Profile:</span>
-              <strong id="detSrvProfile" style="color: var(--text);">-</strong>
-            </div>
-            <div class="col-12" id="detDescRow" style="display: none;">
-              <span class="text-muted d-block" style="font-size: 11px;">Deskripsi ONU:</span>
-              <span id="detDescription" class="text-muted">-</span>
-            </div>
+        <div class="row g-2" style="font-size: 12.5px;">
+          <div class="col-6">
+            <span class="text-muted" style="font-size: 11px;">Terakhir Online:</span>
+            <div id="detLastUp" class="fw-semibold mt-1" style="color: #10b981;">-</div>
+          </div>
+          <div class="col-6">
+            <span class="text-muted" style="font-size: 11px;">Terakhir Terputus:</span>
+            <div id="detLastDown" class="fw-semibold mt-1" style="color: #ef4444;">-</div>
           </div>
         </div>
+
+        <!-- Penyebab Putus Box -->
+        <div id="detDownCauseBox" class="mt-3 pt-2" style="border-top: 1px solid rgba(255,255,255,0.06);">
+          <span class="text-muted" style="font-size: 11px;">Status / Penyebab Terakhir:</span>
+          <div id="detDownCause" class="mt-1" style="font-size: 12.5px; font-weight: 600;">-</div>
+        </div>
+
+        <!-- Dying Gasp Alert jika pernah ada riwayat mati lampu -->
+        <div id="detDyingGaspRow" class="mt-2 p-2 rounded" style="display: none; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); font-size: 11.5px; color: #fbbf24;">
+          <i class="bi bi-lightning-charge-fill me-1"></i> <span id="detDyingGasp">-</span>
+        </div>
       </div>
+
+      <!-- 4. Telemetri Tambahan (Collapsible / Compact Row) -->
+      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 11.5px;">
+        <div class="d-flex justify-content-between align-items-center text-muted">
+          <span><i class="bi bi-arrow-up-right me-1"></i> Tx: <strong id="detTxPower" class="text-light">-</strong></span>
+          <span><i class="bi bi-thermometer-half me-1"></i> Suhu: <strong id="detTemp" class="text-light">-</strong></span>
+          <span><i class="bi bi-lightning me-1"></i> Volt: <strong id="detVoltage" class="text-light">-</strong></span>
+          <span><i class="bi bi-diagram-2 me-1"></i> Srv: <strong id="detSrvProfile" class="text-light">-</strong></span>
+        </div>
+      </div>
+
     </div>
-    <div class="mf" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-top: 1px solid var(--border);">
+
+    <!-- Footer -->
+    <div class="mf" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 22px; border-top: 1px solid var(--border);">
       <div class="d-flex gap-2" id="detActionButtons"></div>
-      <button type="button" class="btn btn-g btn-sm" onclick="closeModal('onuDetailModal')">Tutup</button>
+      <button type="button" class="btn btn-g btn-sm px-3" onclick="closeModal('onuDetailModal')">Tutup</button>
     </div>
   </div>
 </div>
@@ -2332,6 +2341,36 @@ async function submitWanConfig(e) {
   }
 }
 
+function formatOltDateTime(raw) {
+  if (!raw || raw === '-') return '-';
+  const cleaned = String(raw).replace(/\+[0-9:]+$/, '').trim();
+  const m = cleaned.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})\s+(\d{1,2}:\d{2}(?::\d{2})?)/);
+  if (m) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const monthName = months[parseInt(m[2], 10) - 1] || m[2];
+    return `${parseInt(m[3], 10)} ${monthName} ${m[1]}, ${m[4]} WIB`;
+  }
+  return cleaned;
+}
+
+function formatOltUptime(raw) {
+  if (!raw || raw === '-') return null;
+  const m = String(raw).match(/(?:(\d+)\s*days?)?\s*(?:(\d+)\s*hours?)?\s*(?:(\d+)\s*mins?)?\s*(?:(\d+)\s*secs?)?/i);
+  if (m) {
+    const d = parseInt(m[1] || '0', 10);
+    const h = parseInt(m[2] || '0', 10);
+    const min = parseInt(m[3] || '0', 10);
+    const s = parseInt(m[4] || '0', 10);
+    const parts = [];
+    if (d > 0) parts.push(`${d} hari`);
+    if (h > 0) parts.push(`${h} jam`);
+    if (min > 0) parts.push(`${min} mnt`);
+    if (d === 0 && h === 0 && s > 0) parts.push(`${s} dtk`);
+    return parts.length > 0 ? parts.join(' ') : 'Baru aktif';
+  }
+  return raw;
+}
+
 function showOnuDetailModal(encodedOnu) {
   let onu = {};
   try {
@@ -2361,70 +2400,79 @@ function showOnuDetailModal(encodedOnu) {
   document.getElementById('detPortId').textContent = onu.id || onu.index || '-';
   document.getElementById('detSn').textContent = onu.sn || '-';
   document.getElementById('detType').textContent = onu.type || 'GPON';
+  document.getElementById('detLineProfile').textContent = onu.line_profile || '-';
 
-  // Connection History
-  document.getElementById('detDistance').textContent = (onu.distance && onu.distance !== '-') ? onu.distance : '-';
-  document.getElementById('detUptime').textContent = onu.ont_uptime || (isOnline ? 'Aktif' : '-');
-  document.getElementById('detLastUp').textContent = onu.last_up || '-';
-  document.getElementById('detLastDown').textContent = onu.last_down || '-';
-
-  const downCauseEl = document.getElementById('detDownCause');
-  if (downCauseEl) {
-    const cause = onu.last_down_cause || onu.offline_reason;
-    if (cause) {
-      downCauseEl.className = 'mt-1 text-danger';
-      downCauseEl.innerHTML = `<i class="bi bi-exclamation-octagon me-1"></i> ${cause}`;
+  // 1. Redaman Rx Power
+  const rxVal = parseFloat(onu.rx);
+  const rxEl = document.getElementById('detRxPower');
+  const rxStatEl = document.getElementById('detRxStatus');
+  if (rxEl) {
+    rxEl.textContent = onu.rx || 'N/A';
+    if (!Number.isFinite(rxVal)) {
+      rxEl.style.color = 'var(--muted)';
+      if (rxStatEl) { rxStatEl.textContent = 'Tidak Ada Sinyal'; rxStatEl.style.color = 'var(--muted)'; }
+    } else if (rxVal >= -25) {
+      rxEl.style.color = '#10b981';
+      if (rxStatEl) { rxStatEl.textContent = '✅ Sinyal Bagus'; rxStatEl.style.color = '#10b981'; }
+    } else if (rxVal >= -27) {
+      rxEl.style.color = '#f59e0b';
+      if (rxStatEl) { rxStatEl.textContent = '⚠️ Sinyal Sedang'; rxStatEl.style.color = '#f59e0b'; }
     } else {
-      downCauseEl.className = 'mt-1 text-muted';
-      downCauseEl.textContent = isOnline ? 'Normal (Tidak Ada Gangguan)' : '-';
+      rxEl.style.color = '#ef4444';
+      if (rxStatEl) { rxStatEl.textContent = '❌ Sinyal Kritis'; rxStatEl.style.color = '#ef4444'; }
     }
   }
 
+  // 2. Jarak Fiber
+  const distEl = document.getElementById('detDistance');
+  if (distEl) {
+    distEl.textContent = (onu.distance && onu.distance !== '-') ? onu.distance : '-';
+  }
+
+  // 3. Durasi Aktif (Uptime)
+  const upEl = document.getElementById('detUptime');
+  if (upEl) {
+    const formattedUptime = formatOltUptime(onu.ont_uptime);
+    upEl.textContent = formattedUptime || (isOnline ? 'Aktif' : 'Offline');
+    upEl.style.color = isOnline ? '#10b981' : '#ef4444';
+  }
+
+  // Riwayat Up & Down
+  document.getElementById('detLastUp').textContent = formatOltDateTime(onu.last_up);
+  document.getElementById('detLastDown').textContent = formatOltDateTime(onu.last_down);
+
+  // Status / Penyebab Putus
+  const downCauseEl = document.getElementById('detDownCause');
+  if (downCauseEl) {
+    const cause = onu.last_down_cause || onu.offline_reason;
+    if (!isOnline) {
+      downCauseEl.innerHTML = `<span class="text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> Terputus: ${cause || 'Link Down'}</span>`;
+    } else if (cause) {
+      downCauseEl.innerHTML = `<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i> Normal (Online)</span> <span class="text-muted ms-2" style="font-size:11px;">• Riwayat sebelumnya: ${cause}</span>`;
+    } else {
+      downCauseEl.innerHTML = `<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i> Normal (Online & Koneksi Stabil)</span>`;
+    }
+  }
+
+  // Alert Dying Gasp (Mati Listrik)
   const dgRow = document.getElementById('detDyingGaspRow');
   const dgVal = document.getElementById('detDyingGasp');
   if (dgRow && dgVal) {
     if (onu.last_dying_gasp) {
       dgRow.style.display = 'block';
-      dgVal.textContent = onu.last_dying_gasp;
+      dgVal.innerHTML = `<strong>Terakhir Mati Lampu / Listrik Padam:</strong> ${formatOltDateTime(onu.last_dying_gasp)} (Dying Gasp)`;
     } else {
       dgRow.style.display = 'none';
     }
   }
 
-  // Optical & Telemetry
-  const rxEl = document.getElementById('detRxPower');
-  if (rxEl) {
-    const rxVal = parseFloat(onu.rx);
-    let rxCls = 'rx-good';
-    if (!Number.isFinite(rxVal)) rxCls = 'rx-muted';
-    else if (rxVal < -27) rxCls = 'rx-danger';
-    else if (rxVal < -25) rxCls = 'rx-warning';
-    rxEl.className = `rx-badge ${rxCls}`;
-    rxEl.textContent = onu.rx || 'N/A';
-  }
-
-  const txEl = document.getElementById('detTxPower');
-  if (txEl) txEl.textContent = onu.tx || 'N/A';
-
+  // Telemetri Tambahan
+  document.getElementById('detTxPower').textContent = onu.tx || 'N/A';
   document.getElementById('detTemp').textContent = onu.temp || 'N/A';
   document.getElementById('detVoltage').textContent = onu.voltage || 'N/A';
-
-  // Profiles
-  document.getElementById('detLineProfile').textContent = onu.line_profile || '-';
   document.getElementById('detSrvProfile').textContent = onu.srv_profile || '-';
 
-  const descRow = document.getElementById('detDescRow');
-  const descEl = document.getElementById('detDescription');
-  if (descRow && descEl) {
-    if (onu.description) {
-      descRow.style.display = 'block';
-      descEl.textContent = onu.description;
-    } else {
-      descRow.style.display = 'none';
-    }
-  }
-
-  // Action Buttons inside Modal
+  // Action Buttons
   const actContainer = document.getElementById('detActionButtons');
   if (actContainer) {
     const targetOltId = onu.olt_id || document.getElementById('olt-selector')?.value || '';
