@@ -584,6 +584,10 @@
         </div>
         <div class="telemetry-sep"></div>
         <div class="telemetry-item">
+          <i class="bi bi-fan"></i> Kipas: <strong id="stat-fan">-</strong>
+        </div>
+        <div class="telemetry-sep"></div>
+        <div class="telemetry-item">
           <i class="bi bi-clock-history"></i> Uptime: <strong id="stat-uptime">-</strong>
         </div>
         <div class="telemetry-sep"></div>
@@ -1360,6 +1364,7 @@ function showSelectOltPrompt() {
   document.getElementById('stat-temp').innerText = '-';
   document.getElementById('stat-cpu').innerText = '-';
   document.getElementById('stat-ram').innerText = '-';
+  if (document.getElementById('stat-fan')) document.getElementById('stat-fan').innerText = '-';
   document.getElementById('stat-uptime').innerText = '-';
   document.getElementById('stat-traffic-in').innerText = '0 B/s';
   document.getElementById('stat-traffic-out').innerText = '0 B/s';
@@ -1419,6 +1424,7 @@ async function loadOltDashboard(id) {
     document.getElementById('stat-temp').innerText = stats.temp || 'N/A';
     document.getElementById('stat-cpu').innerText = stats.cpu || 'N/A';
     document.getElementById('stat-ram').innerText = stats.ram || 'N/A';
+    if (document.getElementById('stat-fan')) document.getElementById('stat-fan').innerText = stats.fan || 'Normal';
     document.getElementById('stat-uptime').innerText = stats.uptime || 'N/A';
     document.getElementById('stat-traffic-in').innerText = formatBytes(stats.uplink_rx) + '/s';
     document.getElementById('stat-traffic-out').innerText = formatBytes(stats.uplink_tx) + '/s';

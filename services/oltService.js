@@ -968,57 +968,64 @@ const parseHsgqTelemetry = (rawOutput) => {
   let ram = null;
   let temp = null;
   let uptime = null;
+  let fan = null;
 
   const text = String(rawOutput || '');
 
   // 1. CPU
-  const cpuMatch = text.match(/(?:cpu(?: utilization| usage)?|cpu)\s*[:]?\s*(\d+(?:\.\d+)?)\s*%/i);
+  const cpuMatch = text.match(/(?:get the )?cpu usage (?:is )?([\d\.]+)%/i) ||
+                   text.match(/(?:cpu(?: utilization| usage)?|cpu)\s*[:]?\s*([\d\.]+)%/i);
   if (cpuMatch) {
-    cpu = `${cpuMatch[1]}%`;
-  } else {
-    const idleMatch = text.match(/idle\s*[:]?\s*(\d+(?:\.\d+)?)\s*%/i);
-    if (idleMatch) {
-      const idle = parseFloat(idleMatch[1]);
-      if (Number.isFinite(idle) && idle <= 100) {
-        cpu = `${(100 - idle).toFixed(0)}%`;
-      }
-    }
+    cpu = `${parseFloat(cpuMatch[1]).toFixed(1)}%`;
   }
 
   // 2. RAM / Memory
-  const memMatch = text.match(/(?:memory(?: utilization| usage)?|ram|mem)\s*[:]?\s*(\d+(?:\.\d+)?)\s*%/i);
+  const memMatch = text.match(/Memory\s+\d+\s*kB\s+\d+\s*kB\s+([\d\.]+)%/i) ||
+                   text.match(/Storage Rate\s*[\r\n\-]+\s*Memory[^\n\r%]+([\d\.]+)%/i) ||
+                   text.match(/(?:memory(?: utilization| usage)?|ram|mem)\s*[:]?\s*([\d\.]+)%/i);
   if (memMatch) {
-    ram = `${memMatch[1]}%`;
-  } else {
-    const memMbMatch = text.match(/(?:total|used)[^\d]*(\d+)\s*(?:mb|kb|m|k)[^\d]*(?:total|used)[^\d]*(\d+)\s*(?:mb|kb|m|k)/i);
-    if (memMbMatch) {
-      const v1 = parseFloat(memMbMatch[1]);
-      const v2 = parseFloat(memMbMatch[2]);
-      if (v1 > 0 && v2 > 0) {
-        const pct = Math.round((Math.min(v1, v2) / Math.max(v1, v2)) * 100);
-        ram = `${pct}%`;
-      }
-    }
+    ram = `${parseFloat(memMatch[1]).toFixed(1)}%`;
   }
 
   // 3. Suhu / Temperature
-  const tempMatch = text.match(/(?:temperature|temp|board\s+temp)\s*(?:is|:)?\s*([+-]?\d+(?:\.\d+)?)\s*C/i);
-  if (tempMatch) {
-    temp = `${tempMatch[1]}°C`;
+  const chipMatch = text.match(/\d{4}\/\d{2}\/\d{2}\s+\S+\s+[\d\.]+%?\s+[\d\.]+%?\s+([\d\.]+)/);
+  if (chipMatch) {
+    const n = parseFloat(chipMatch[1]);
+    if (Number.isFinite(n) && n > 0 && n < 150) {
+      temp = `${n.toFixed(0)}°C`;
+    }
+  }
+  if (!temp) {
+    const tempMatch = text.match(/(?:temperature|temp|board\s+temp)\s*(?:is|:)?\s*([+-]?\d+(?:\.\d+)?)\s*C/i);
+    if (tempMatch) {
+      temp = `${tempMatch[1]}°C`;
+    }
   }
 
-  // 4. Uptime
+  // 4. Status Fan
+  const activeFans = [];
+  for (const fl of text.split(/\r?\n/)) {
+    const fm = fl.trim().match(/^(Fan\d+)\s+(\d+)\s+([\d\.]+)\s+(Auto|Manual)/i);
+    if (fm) {
+      activeFans.push({ name: fm[1], speed: fm[2], temp: `${parseFloat(fm[3]).toFixed(0)}°C`, mode: fm[4] });
+    }
+  }
+  if (activeFans.length > 0) {
+    fan = `${activeFans.length} Fan (${activeFans.map(f => f.temp).join(', ')})`;
+  }
+
+  // 5. Uptime
   const uptimeMatch = text.match(/(?:system\s+)?(?:uptime|up\s*time|running\s+time)\s*(?:is|:)\s*([^\r\n]+)/i);
   if (uptimeMatch) {
     uptime = uptimeMatch[1].trim();
   } else {
-    const daysMatch = text.match(/(\d+\s*days?[,\s]+\d+\s*hours?(?:[,\s]+\d+\s*min[a-z]*)?)/i);
-    if (daysMatch) {
-      uptime = daysMatch[1].trim();
+    const tsMatch = text.match(/(\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2})/);
+    if (tsMatch) {
+      uptime = `Aktif (${tsMatch[1]})`;
     }
   }
 
-  return { cpu, ram, temp, uptime };
+  return { cpu, ram, temp, uptime, fan };
 };
 
 const fetchHsgqGponViaTelnet = async (olt, full = true) => {
@@ -1030,12 +1037,12 @@ const fetchHsgqGponViaTelnet = async (olt, full = true) => {
     : pass;
 
   const cmds = [
-    'show version',
-    'show system',
-    'show cpu',
-    'show memory',
-    'show temperature',
     'configure',
+    'show cpu-usage',
+    'show memory statistics',
+    'show system-monitor',
+    'show fan info',
+    'show version',
     'show ont-info all',
     'show ont-optical all',
     'show ont-autofind all',
@@ -1084,7 +1091,7 @@ const fetchHsgqGponViaTelnet = async (olt, full = true) => {
 
     const telemetry = parseHsgqTelemetry(rawOutput);
 
-    // Suhu OLT fallback: gunakan rata-rata sensor suhu modul optik ONU jika sensor chassis OLT tidak terbaca
+    // Suhu OLT: prioritas sensor chip OLT, fallback ke suhu fan, fallback ke rata-rata SFP
     let finalTemp = telemetry.temp;
     if (!finalTemp || finalTemp === 'N/A') {
       const temps = onus.map(o => parseFloat(o.temp)).filter(Number.isFinite);
@@ -1105,8 +1112,9 @@ const fetchHsgqGponViaTelnet = async (olt, full = true) => {
       error: null,
       uptime: telemetry.uptime || 'Active (Telnet)',
       temp: finalTemp || 'N/A',
-      cpu: telemetry.cpu || 'Normal',
-      ram: telemetry.ram || 'Normal',
+      cpu: telemetry.cpu || 'N/A',
+      ram: telemetry.ram || 'N/A',
+      fan: telemetry.fan || 'Normal',
       sysDescr: sysDescr,
       onus_total: total,
       onus_online: online,
