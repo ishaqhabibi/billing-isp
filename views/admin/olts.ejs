@@ -550,7 +550,7 @@
             <i class="bi bi-hdd-network me-1"></i> Perangkat:
           </label>
           <select id="olt-selector" class="custom-select-v2" onchange="handleOltChange()">
-            <option value="all">🌐 Semua OLT (Agregasi Seluruh Jaringan)</option>
+            <option value="" disabled selected>-- Pilih Perangkat OLT Terlebih Dahulu --</option>
             <% olts.forEach(olt => { %>
               <option value="<%= olt.id %>" data-brand="<%= olt.brand %>" data-host="<%= olt.host %>" <%= !olt.is_active ? 'disabled' : '' %>>
                 <%= olt.name %> (<%= (olt.brand || '').toUpperCase() %> - <%= olt.host %>) <%= !olt.is_active ? '[Nonaktif]' : '' %>
@@ -1345,8 +1345,42 @@ function switchOltTab(tabName) {
   document.getElementById('tabBtnOid')?.classList.toggle('active', tabName === 'oid');
 }
 
+function showSelectOltPrompt() {
+  currentStats = null;
+  rawOnus = [];
+  document.getElementById('stat-total-onu').innerText = '-';
+  document.getElementById('stat-online-onu').innerText = '-';
+  document.getElementById('stat-offline-onu').innerText = '-';
+  document.getElementById('stat-weak-onu').innerText = '-';
+  document.getElementById('stat-online-percent').innerText = '0%';
+  document.getElementById('stat-offline-percent').innerText = '0%';
+  document.getElementById('badgeOnuCount').innerText = '0';
+  document.getElementById('badgeUnauthCount').innerText = '0';
+  document.getElementById('badgeCardsCount').innerText = '0';
+  document.getElementById('stat-temp').innerText = '-';
+  document.getElementById('stat-cpu').innerText = '-';
+  document.getElementById('stat-ram').innerText = '-';
+  document.getElementById('stat-uptime').innerText = '-';
+  document.getElementById('stat-traffic-in').innerText = '0 B/s';
+  document.getElementById('stat-traffic-out').innerText = '0 B/s';
+  
+  const tbody = document.getElementById('onu-table-body');
+  if (tbody) {
+    tbody.innerHTML = `
+      <tr><td colspan="9" class="text-center p-5 text-muted">
+        <i class="bi bi-hdd-network text-primary" style="font-size:38px; display:block; margin-bottom:12px; opacity:0.8;"></i>
+        <div class="fw-bold" style="font-size:16px; color:var(--text);">Pilih Perangkat OLT Terlebih Dahulu</div>
+        <p class="text-muted small mt-1 mb-0">Silakan pilih salah satu OLT pada menu pilihan di atas untuk memuat data telemetri, status ONU, dan redaman optik.</p>
+      </td></tr>
+    `;
+  }
+}
+
 async function loadOltDashboard(id) {
-  if (!id) return;
+  if (!id) {
+    showSelectOltPrompt();
+    return;
+  }
   
   const overlay = document.getElementById('loading-overlay');
   const refreshIcon = document.getElementById('refreshIcon');
@@ -1354,7 +1388,7 @@ async function loadOltDashboard(id) {
   if (refreshIcon) refreshIcon.classList.add('spin');
   
   try {
-    const url = (id === 'all') ? `/admin/olts/all/stats?full=true` : `/admin/olts/${id}/stats?full=true`;
+    const url = `/admin/olts/${id}/stats?full=true`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(I18N.serverConnectFailed);
     const stats = await res.json();
@@ -1382,21 +1416,12 @@ async function loadOltDashboard(id) {
     document.getElementById('badgeCardsCount').innerText = (stats.cards || []).length;
     
     // Telemetry strip
-    if (stats.is_all) {
-      document.getElementById('stat-temp').innerText = 'Agregasi ' + (stats.olts_summary?.length || 0) + ' OLT';
-      document.getElementById('stat-cpu').innerText = '-';
-      document.getElementById('stat-ram').innerText = '-';
-      document.getElementById('stat-uptime').innerText = 'Multi-Chassis';
-      document.getElementById('stat-traffic-in').innerText = '-';
-      document.getElementById('stat-traffic-out').innerText = '-';
-    } else {
-      document.getElementById('stat-temp').innerText = stats.temp || 'N/A';
-      document.getElementById('stat-cpu').innerText = stats.cpu || 'N/A';
-      document.getElementById('stat-ram').innerText = stats.ram || 'N/A';
-      document.getElementById('stat-uptime').innerText = stats.uptime || 'N/A';
-      document.getElementById('stat-traffic-in').innerText = formatBytes(stats.uplink_rx) + '/s';
-      document.getElementById('stat-traffic-out').innerText = formatBytes(stats.uplink_tx) + '/s';
-    }
+    document.getElementById('stat-temp').innerText = stats.temp || 'N/A';
+    document.getElementById('stat-cpu').innerText = stats.cpu || 'N/A';
+    document.getElementById('stat-ram').innerText = stats.ram || 'N/A';
+    document.getElementById('stat-uptime').innerText = stats.uptime || 'N/A';
+    document.getElementById('stat-traffic-in').innerText = formatBytes(stats.uplink_rx) + '/s';
+    document.getElementById('stat-traffic-out').innerText = formatBytes(stats.uplink_tx) + '/s';
 
     // Render OID Tab Content
     renderOidTab(stats);
@@ -1714,18 +1739,29 @@ function formatStatus(statusVal) {
 }
 
 function handleOltChange() {
-  const id = document.getElementById('olt-selector').value;
-  if (id) loadOltDashboard(id);
+  const sel = document.getElementById('olt-selector');
+  const id = sel ? sel.value : '';
+  if (id) {
+    loadOltDashboard(id);
+  } else {
+    showSelectOltPrompt();
+  }
 }
 
 function refreshCurrentOlt() {
-  handleOltChange();
+  const sel = document.getElementById('olt-selector');
+  const id = sel ? sel.value : '';
+  if (!id) {
+    alert('Pilih salah satu OLT pada dropdown terlebih dahulu.');
+    return;
+  }
+  loadOltDashboard(id);
 }
 
 function runDiagnosticPrompt() {
   const sel = document.getElementById('olt-selector');
-  if (!sel || !sel.value || sel.value === 'all') {
-    alert('Pilih salah satu perangkat OLT spesifik terlebih dahulu pada dropdown untuk menjalankan test SNMP.');
+  if (!sel || !sel.value) {
+    alert('Pilih salah satu perangkat OLT terlebih dahulu pada dropdown untuk menjalankan test SNMP.');
     return;
   }
   testOltSnmpDirect(sel.value);
@@ -1970,8 +2006,15 @@ async function submitWanConfig(e) {
 
 document.addEventListener('DOMContentLoaded', () => {
   const selector = document.getElementById('olt-selector');
+  const urlParams = new URLSearchParams(window.location.search);
+  const paramOltId = urlParams.get('olt_id');
+  if (paramOltId && selector) {
+    selector.value = paramOltId;
+  }
   if (selector && selector.value) {
     handleOltChange();
+  } else {
+    showSelectOltPrompt();
   }
 });
 </script>

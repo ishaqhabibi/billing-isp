@@ -963,6 +963,64 @@ const parseHsgqOntAutofind = (text) => {
   return unauth;
 };
 
+const parseHsgqTelemetry = (rawOutput) => {
+  let cpu = null;
+  let ram = null;
+  let temp = null;
+  let uptime = null;
+
+  const text = String(rawOutput || '');
+
+  // 1. CPU
+  const cpuMatch = text.match(/(?:cpu(?: utilization| usage)?|cpu)\s*[:]?\s*(\d+(?:\.\d+)?)\s*%/i);
+  if (cpuMatch) {
+    cpu = `${cpuMatch[1]}%`;
+  } else {
+    const idleMatch = text.match(/idle\s*[:]?\s*(\d+(?:\.\d+)?)\s*%/i);
+    if (idleMatch) {
+      const idle = parseFloat(idleMatch[1]);
+      if (Number.isFinite(idle) && idle <= 100) {
+        cpu = `${(100 - idle).toFixed(0)}%`;
+      }
+    }
+  }
+
+  // 2. RAM / Memory
+  const memMatch = text.match(/(?:memory(?: utilization| usage)?|ram|mem)\s*[:]?\s*(\d+(?:\.\d+)?)\s*%/i);
+  if (memMatch) {
+    ram = `${memMatch[1]}%`;
+  } else {
+    const memMbMatch = text.match(/(?:total|used)[^\d]*(\d+)\s*(?:mb|kb|m|k)[^\d]*(?:total|used)[^\d]*(\d+)\s*(?:mb|kb|m|k)/i);
+    if (memMbMatch) {
+      const v1 = parseFloat(memMbMatch[1]);
+      const v2 = parseFloat(memMbMatch[2]);
+      if (v1 > 0 && v2 > 0) {
+        const pct = Math.round((Math.min(v1, v2) / Math.max(v1, v2)) * 100);
+        ram = `${pct}%`;
+      }
+    }
+  }
+
+  // 3. Suhu / Temperature
+  const tempMatch = text.match(/(?:temperature|temp|board\s+temp)\s*(?:is|:)?\s*([+-]?\d+(?:\.\d+)?)\s*C/i);
+  if (tempMatch) {
+    temp = `${tempMatch[1]}°C`;
+  }
+
+  // 4. Uptime
+  const uptimeMatch = text.match(/(?:system\s+)?(?:uptime|up\s*time|running\s+time)\s*(?:is|:)\s*([^\r\n]+)/i);
+  if (uptimeMatch) {
+    uptime = uptimeMatch[1].trim();
+  } else {
+    const daysMatch = text.match(/(\d+\s*days?[,\s]+\d+\s*hours?(?:[,\s]+\d+\s*min[a-z]*)?)/i);
+    if (daysMatch) {
+      uptime = daysMatch[1].trim();
+    }
+  }
+
+  return { cpu, ram, temp, uptime };
+};
+
 const fetchHsgqGponViaTelnet = async (olt, full = true) => {
   const user = olt.web_user || 'root';
   const pass = olt.web_password || 'admin';
@@ -973,6 +1031,10 @@ const fetchHsgqGponViaTelnet = async (olt, full = true) => {
 
   const cmds = [
     'show version',
+    'show system',
+    'show cpu',
+    'show memory',
+    'show temperature',
     'configure',
     'show ont-info all',
     'show ont-optical all',
@@ -987,6 +1049,8 @@ const fetchHsgqGponViaTelnet = async (olt, full = true) => {
     });
 
     if (!rawOutput) return null;
+
+    logger.info(`[HSGQ Telnet Output Preview] ${rawOutput.slice(0, 400)}`);
 
     const ontInfoText = extractCommandSection(rawOutput, 'show ont-info all');
     const opticalText = extractCommandSection(rawOutput, 'show ont-optical all');
@@ -1018,10 +1082,16 @@ const fetchHsgqGponViaTelnet = async (olt, full = true) => {
       return Number.isFinite(rxVal) && rxVal < -24;
     }).length;
 
-    let uptime = 'Active (Telnet)';
-    const uptimeMatch = rawOutput.match(/(?:system\s+)?uptime\s+is\s+([^\r\n]+)/i);
-    if (uptimeMatch) {
-      uptime = uptimeMatch[1].trim();
+    const telemetry = parseHsgqTelemetry(rawOutput);
+
+    // Suhu OLT fallback: gunakan rata-rata sensor suhu modul optik ONU jika sensor chassis OLT tidak terbaca
+    let finalTemp = telemetry.temp;
+    if (!finalTemp || finalTemp === 'N/A') {
+      const temps = onus.map(o => parseFloat(o.temp)).filter(Number.isFinite);
+      if (temps.length > 0) {
+        const avg = Math.round(temps.reduce((a, b) => a + b, 0) / temps.length);
+        finalTemp = `${avg}°C (Avg SFP)`;
+      }
     }
 
     let sysDescr = 'HSGQ GPON OLT';
@@ -1033,8 +1103,11 @@ const fetchHsgqGponViaTelnet = async (olt, full = true) => {
     return {
       status: 'Online',
       error: null,
-      uptime,
-      sysDescr,
+      uptime: telemetry.uptime || 'Active (Telnet)',
+      temp: finalTemp || 'N/A',
+      cpu: telemetry.cpu || 'Normal',
+      ram: telemetry.ram || 'Normal',
+      sysDescr: sysDescr,
       onus_total: total,
       onus_online: online,
       onus_offline: offline,
