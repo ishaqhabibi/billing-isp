@@ -639,14 +639,14 @@
           </div>
         </div>
 
-        <div class="kpi-card c-warning" id="kpiCardWeak" onclick="filterByKpi('weak', this)" title="Klik untuk memfilter redaman sinyal lemah (< -24 dBm)">
+        <div class="kpi-card c-warning" id="kpiCardWeak" onclick="filterByKpi('weak', this)" title="Klik untuk memfilter redaman sinyal lemah (< -27 dBm)">
           <div class="kpi-header">
-            <span class="kpi-label"><%= t('admin.olts.stats.weak_signal', 'Sinyal Lemah') %></span>
+            <span class="kpi-label"><%= t('admin.olts.stats.weak_signal', 'Sinyal Lemah / Kritis') %></span>
             <div class="kpi-icon"><i class="bi bi-exclamation-triangle"></i></div>
           </div>
           <div class="kpi-body">
             <span class="kpi-val" id="stat-weak-onu">-</span>
-            <span class="kpi-badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;">&lt; -24 dBm</span>
+            <span class="kpi-badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;">&lt; -27 dBm</span>
           </div>
           <div class="kpi-footer">
             <span>Rentan degradasi / LOS</span>
@@ -706,7 +706,7 @@
                   <i class="bi bi-circle-fill text-danger" style="font-size:7px"></i> Offline
                 </button>
                 <button type="button" class="status-pill-btn" data-filter="weak" onclick="filterByStatusPill('weak')">
-                  <i class="bi bi-exclamation-triangle text-warning" style="font-size:11px"></i> Lemah (&lt; -24 dBm)
+                  <i class="bi bi-exclamation-triangle text-warning" style="font-size:11px"></i> Waspada (&lt; -25 dBm)
                 </button>
                 <button type="button" class="status-pill-btn" data-filter="critical" onclick="filterByStatusPill('critical')">
                   <i class="bi bi-lightning-charge text-danger" style="font-size:11px"></i> Kritis (&lt; -27 dBm)
@@ -1464,7 +1464,7 @@ function renderOnuTable() {
   } else if (currentFilter === 'weak') {
     filtered = filtered.filter(o => {
       const rx = parseFloat(o.rx);
-      return Number.isFinite(rx) && rx < -24;
+      return Number.isFinite(rx) && rx < -25;
     });
   } else if (currentFilter === 'critical') {
     filtered = filtered.filter(o => {
@@ -1504,7 +1504,7 @@ function renderOnuTable() {
     let rxClass = 'rx-good';
     if (!Number.isFinite(rxVal)) rxClass = 'rx-muted';
     else if (rxVal < -27) rxClass = 'rx-danger';
-    else if (rxVal < -24) rxClass = 'rx-warning';
+    else if (rxVal < -25) rxClass = 'rx-warning';
 
     const targetOltId = onu.olt_id || document.getElementById('olt-selector').value;
     const oltBadge = onu.olt_name ? `<span class="brand-badge brand-generic me-1">${onu.olt_name}</span>` : '';

@@ -1086,7 +1086,7 @@ const fetchHsgqGponViaTelnet = async (olt, full = true) => {
     const offline = total - online;
     const weak = onus.filter(o => {
       const rxVal = parseFloat(o.rx);
-      return Number.isFinite(rxVal) && rxVal < -24;
+      return Number.isFinite(rxVal) && rxVal < -27;
     }).length;
 
     const telemetry = parseHsgqTelemetry(rawOutput);
