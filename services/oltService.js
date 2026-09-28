@@ -469,37 +469,63 @@ async function testOltSnmp(id) {
       resolve(result);
     };
 
-    const timer = setTimeout(() => {
-      finish({
+    const tryTelnetFallback = async (snmpError) => {
+      const telnetPort = Number(olt.telnet_port) > 0 ? Number(olt.telnet_port) : 23;
+      if (olt.web_user && olt.web_password) {
+        try {
+          const tStart = Date.now();
+          const out = await telnetLoginAndRun(host, olt.web_user, olt.web_password, ['show version'], {
+            port: telnetPort,
+            enablePassword: olt.enable_password
+          });
+          const latencyMs = Date.now() - tStart;
+          const lines = (out || '').split('\n').map(l => l.trim()).filter(Boolean);
+          const versionLine = lines.find(l => /version|olt|hsgq|software|firmware/i.test(l)) || lines[0] || 'HSGQ GPON OLT';
+          return finish({
+            success: true,
+            via: 'telnet',
+            latencyMs,
+            sysDescr: `Terhubung via Telnet: ${versionLine}`,
+            sysUpTime: 'Telnet Active',
+            sysName: olt.name,
+            host,
+            port: telnetPort,
+            brand: olt.brand,
+            note: `SNMP port ${port} timeout, tetapi koneksi Telnet port ${telnetPort} BERHASIL!`
+          });
+        } catch (tErr) {
+          return finish({
+            success: false,
+            error: `SNMP timeout (${host}:${port}) & Telnet gagal (${tErr.message})`
+          });
+        }
+      }
+      return finish({
         success: false,
         error: `Timeout (3.5s): OLT di ${host}:${port} tidak merespons SNMP.`
       });
+    };
+
+    const timer = setTimeout(() => {
+      tryTelnetFallback(`Timeout 3.5s di port ${port}`);
     }, 4000);
 
     session.on('error', (err) => {
       clearTimeout(timer);
-      finish({ success: false, error: err.message || 'SNMP Session error' });
+      tryTelnetFallback(err.message || 'SNMP Session error');
     });
 
     // Query sysDescr (1.3.6.1.2.1.1.1.0), sysUpTime (1.3.6.1.2.1.1.3.0), sysName (1.3.6.1.2.1.1.5.0)
     session.get(
       ['1.3.6.1.2.1.1.1.0', '1.3.6.1.2.1.1.3.0', '1.3.6.1.2.1.1.5.0'],
-      (err, varbinds) => {
+      async (err, varbinds) => {
         clearTimeout(timer);
         const latencyMs = Date.now() - startTime;
         if (err) {
-          return finish({
-            success: false,
-            latencyMs,
-            error: err.message || 'Gagal query OID sistem'
-          });
+          return tryTelnetFallback(err.message || 'Gagal query OID sistem');
         }
         if (!varbinds || !varbinds.length) {
-          return finish({
-            success: false,
-            latencyMs,
-            error: 'Tidak ada respons varbind dari OLT'
-          });
+          return tryTelnetFallback('Tidak ada respons varbind dari OLT');
         }
 
         const sysDescr = varbinds[0] && !snmp.isVarbindError(varbinds[0]) ? varbinds[0].value.toString() : 'N/A';
@@ -684,18 +710,16 @@ const telnetLoginAndRun = async (host, user, pass, commands, opts = {}) => {
     throw new Error('Telnet prompt not detected');
   }
 
-  if (enablePassword) {
-    try {
-      socket.write('enable\r\n');
-      const enBuf = await telnetReadUntil(socket, (b) => /password\s*[:>]\s*$/im.test(b) || promptRe.test(b), 12000);
-      if (/password\s*[:>]\s*$/im.test(enBuf)) {
-        socket.write(enablePassword + '\r\n');
-        await telnetReadUntil(socket, promptRe, 12000);
-      }
-    } catch (e) {
-      socket.destroy();
-      throw new Error('Telnet enable gagal: ' + (e.message || String(e)));
+  // Pastikan masuk ke privileged exec mode (#) jika saat ini berada di user mode (>)
+  try {
+    socket.write('enable\r\n');
+    const enBuf = await telnetReadUntil(socket, (b) => /password\s*[:>]\s*$/im.test(b) || /[>#]\s*$/m.test(b), 6000);
+    if (/password\s*[:>]\s*$/im.test(enBuf)) {
+      socket.write((enablePassword || pass || 'admin') + '\r\n');
+      await telnetReadUntil(socket, /[>#]\s*$/m, 6000);
     }
+  } catch (_) {
+    // Abaikan jika sudah di mode #
   }
 
   let cmdList = Array.isArray(commands) ? [...commands] : [];

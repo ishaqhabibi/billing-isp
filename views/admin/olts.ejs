@@ -1746,13 +1746,17 @@ async function testOltSnmpDirect(oltId) {
     const res = await fetch(`/admin/olts/${oltId}/test-snmp`, { method: 'POST' });
     const data = await res.json();
     if (data.success) {
+      const isTelnet = data.via === 'telnet';
       body.innerHTML = `
         <div class="text-center mb-3">
           <div style="width:54px; height:54px; border-radius:50%; background:rgba(16,185,129,0.15); color:#10b981; display:inline-flex; align-items:center; justify-content:center; font-size:26px;">
             <i class="bi bi-check2-circle"></i>
           </div>
-          <h5 class="fw-bold mt-2 text-success" style="font-size:16px;">Koneksi SNMP Berhasil</h5>
+          <h5 class="fw-bold mt-2 text-success" style="font-size:16px;">
+            ${isTelnet ? 'Koneksi OLT Berhasil (via Telnet)' : 'Koneksi SNMP Berhasil'}
+          </h5>
           <span class="badge bs">Latency: ${data.latencyMs} ms</span>
+          ${data.note ? `<div class="text-muted small mt-1 text-center" style="font-size:11px;">${data.note}</div>` : ''}
         </div>
         <div class="diag-box">
           <div class="diag-item">
