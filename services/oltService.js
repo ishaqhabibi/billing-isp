@@ -732,6 +732,19 @@ const telnetLoginAndRun = async (host, user, pass, commands, opts = {}) => {
     // Abaikan jika sudah di mode #
   }
 
+  if (typeof commands === 'function') {
+    const runner = (cmd) => telnetReadUntil(socket, promptRe, 15000, () => socket.write(cmd + '\r\n'));
+    try {
+      const res = await commands(runner);
+      socket.end();
+      socket.destroy();
+      return res;
+    } catch (err) {
+      socket.destroy();
+      throw err;
+    }
+  }
+
   let cmdList = Array.isArray(commands) ? [...commands] : [];
   while (cmdList.length && /^enable\s*$/i.test(String(cmdList[0]).trim())) {
     cmdList.shift();
@@ -832,7 +845,7 @@ const parseHsgqOntInfo = (text) => {
   const seen = new Set();
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed) continue;
+    if (!trimmed || trimmed.startsWith('---') || trimmed.toLowerCase().includes('pon/onu') || trimmed.toLowerCase().includes('total:')) continue;
     // Format: 4/0     GPON  FHTTc1edd0fd  Active  Online  normal  Initial                ONT04/000
     const m = trimmed.match(/^(\d+\/\d+(?::\d+)?)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(.*)$/);
     if (!m) continue;
@@ -844,7 +857,7 @@ const parseHsgqOntInfo = (text) => {
     const rest = (m[6] || '').trim();
 
     // Validasi ketat baris 'show ont-info all' agar tidak salah membaca output 'show ont-optical'
-    if (!/^(gpon|epon|ge|fe)$/i.test(type)) continue;
+    if (!/^(gpon|epon|xgpon|ge|fe)$/i.test(type)) continue;
     if (!/^(active|inactive)$/i.test(state)) continue;
     if (/^\d+$/.test(sn) || sn.length < 6) continue;
 
@@ -881,10 +894,93 @@ const parseHsgqOntInfo = (text) => {
       rx: 'N/A',
       distance: '-',
       temp: 'N/A',
-      voltage: 'N/A'
+      voltage: 'N/A',
+      last_up: null,
+      last_down: null,
+      last_dying_gasp: null,
+      last_down_cause: offlineReason || null,
+      ont_uptime: null,
+      line_profile: null,
+      srv_profile: null
     });
   }
   return onus;
+};
+
+const parseHsgqOntDetails = (text) => {
+  const map = new Map();
+  if (!text) return map;
+  const rawBlocks = String(text).split(/-{20,}/);
+
+  for (const block of rawBlocks) {
+    if (!block.includes('PON ID') && !block.includes('SerialNumber') && !block.includes('ONU ID')) continue;
+
+    const kv = {};
+    for (const line of block.split(/\r?\n/)) {
+      const m = line.match(/^\s*([^:]+?)\s*:\s*(.*)$/);
+      if (m) {
+        kv[m[1].trim().toLowerCase()] = m[2].trim();
+      }
+    }
+
+    const ponId = kv['pon id'];
+    const onuId = kv['onu id'];
+    const sn = kv['serialnumber'];
+    if (!sn && (ponId == null || onuId == null)) continue;
+
+    const distanceNum = kv['distance'];
+    const lastUp = kv['last up time'];
+    const lastDown = kv['last down time'];
+    const lastDyingGasp = kv['last dyinggasp time'];
+    let lastDownCause = kv['last down cause'];
+    const ontUptime = kv['ont uptime'];
+    const lineProfile = kv['line profile name'];
+    const srvProfile = kv['srv profile name'];
+    const ontDesc = kv['ont description'];
+
+    if (!lastDownCause || lastDownCause === '-' || lastDownCause.toLowerCase() === 'none') {
+      if (lastDyingGasp && lastDown) {
+        const dgMin = lastDyingGasp.slice(0, 16);
+        const ldMin = lastDown.slice(0, 16);
+        if (dgMin && ldMin && dgMin === ldMin) {
+          lastDownCause = 'dying-gasp (Mati Listrik / Adaptor Dicabut)';
+        } else {
+          lastDownCause = null;
+        }
+      } else {
+        lastDownCause = null;
+      }
+    } else if (/dying[_-]?gasp/i.test(lastDownCause)) {
+      lastDownCause = 'dying-gasp (Mati Listrik / Adaptor Dicabut)';
+    } else if (/los|loss|signal/i.test(lastDownCause)) {
+      lastDownCause = 'LOS (Kabel Optik Putus / Redaman Hilang)';
+    } else if (/power[_-]?off/i.test(lastDownCause)) {
+      lastDownCause = 'Power Off (Modem Dimatikan)';
+    } else if (/wire[_-]?down/i.test(lastDownCause)) {
+      lastDownCause = 'Wire Down (Kabel Terlepas)';
+    }
+
+    const detailObj = {
+      distance: distanceNum ? `${distanceNum} m` : null,
+      last_up: lastUp || null,
+      last_down: lastDown || null,
+      last_dying_gasp: lastDyingGasp || null,
+      last_down_cause: lastDownCause,
+      ont_uptime: (ontUptime && !ontUptime.includes('0 days 0 hours 0 mins 0 secs')) ? ontUptime : null,
+      line_profile: lineProfile || null,
+      srv_profile: srvProfile || null,
+      description: ontDesc && ontDesc !== 'No-description' ? ontDesc : null
+    };
+
+    if (ponId != null && onuId != null) {
+      map.set(`${ponId}/${onuId}`, detailObj);
+    }
+    if (sn) {
+      map.set(sn.toUpperCase(), detailObj);
+      map.set(sn.toLowerCase(), detailObj);
+    }
+  }
+  return map;
 };
 
 const parseHsgqOntOptical = (text) => {
@@ -1039,38 +1135,75 @@ const fetchHsgqGponViaTelnet = async (olt, full = true) => {
     ? String(olt.enable_password)
     : pass;
 
-  const cmds = [
-    'configure',
-    'show cpu-usage',
-    'show memory statistics',
-    'show system-monitor',
-    'show fan info',
-    'show version',
-    'show ont-info all',
-    'show ont-optical all',
-    'show ont-autofind all',
-    'exit'
-  ];
-
   try {
-    const rawOutput = await telnetLoginAndRun(olt.host, user, pass, cmds, {
+    const rawResult = await telnetLoginAndRun(olt.host, user, pass, async (run) => {
+      await run('configure');
+      const cpu = await run('show cpu-usage');
+      const mem = await run('show memory statistics');
+      const sys = await run('show system-monitor');
+      const fan = await run('show fan info');
+      const ver = await run('show version');
+      const ontInfoText = await run('show ont-info all');
+      const opticalText = await run('show ont-optical all');
+      const autofindText = await run('show ont-autofind all');
+
+      const initialOnus = parseHsgqOntInfo(ontInfoText);
+      const details = [];
+
+      if (full && initialOnus.length > 0) {
+        try {
+          const ponGroups = {};
+          for (const onu of initialOnus) {
+            const m = String(onu.index || onu.id).match(/^(\d+)\/(\d+)$/);
+            if (m) {
+              const port = m[1];
+              const onuId = m[2];
+              if (!ponGroups[port]) ponGroups[port] = [];
+              ponGroups[port].push(onuId);
+            }
+          }
+
+          for (const [port, ids] of Object.entries(ponGroups)) {
+            try {
+              await run(`interface gpon ${port}`);
+              for (const id of ids.slice(0, 128)) {
+                try {
+                  const d = await run(`show ont-info ${id}`);
+                  details.push(d);
+                } catch (_) {}
+              }
+              await run('exit');
+            } catch (_) {}
+          }
+        } catch (detailErr) {
+          logger.warn(`[oltService] Error fetching detailed ont-info: ${detailErr.message}`);
+        }
+      }
+
+      await run('exit');
+
+      return {
+        rawOutput: [cpu, mem, sys, fan, ver, ontInfoText, opticalText, autofindText].join('\n'),
+        ontInfoText,
+        opticalText,
+        autofindText,
+        detailsText: details.join('\n')
+      };
+    }, {
       port: telnetPort,
       enablePassword: enablePassword
     });
 
-    if (!rawOutput) return null;
+    if (!rawResult) return null;
 
-    logger.info(`[HSGQ Telnet Output Preview] ${rawOutput.slice(0, 400)}`);
+    logger.info(`[HSGQ Telnet Output Preview] ${rawResult.rawOutput.slice(0, 400)}`);
 
-    const ontInfoText = extractCommandSection(rawOutput, 'show ont-info all');
-    const opticalText = extractCommandSection(rawOutput, 'show ont-optical all');
-    const autofindText = extractCommandSection(rawOutput, 'show ont-autofind all');
+    const onus = parseHsgqOntInfo(rawResult.ontInfoText);
+    const opticalMap = parseHsgqOntOptical(rawResult.opticalText);
+    const unauth = parseHsgqOntAutofind(rawResult.autofindText);
+    const detailMap = parseHsgqOntDetails(rawResult.detailsText);
 
-    const onus = parseHsgqOntInfo(ontInfoText);
-    const opticalMap = parseHsgqOntOptical(opticalText);
-    const unauth = parseHsgqOntAutofind(autofindText);
-
-    // Merge optical power into ONUs
+    // Merge optical power and detail into ONUs
     for (const onu of onus) {
       const opt = opticalMap.get(onu.index) ||
                   opticalMap.get(onu.sn) ||
@@ -1082,6 +1215,26 @@ const fetchHsgqGponViaTelnet = async (olt, full = true) => {
         if (opt.temp && opt.temp !== 'N/A') onu.temp = opt.temp;
         if (opt.voltage && opt.voltage !== 'N/A') onu.voltage = opt.voltage;
       }
+
+      const det = detailMap.get(onu.index) ||
+                  detailMap.get(onu.sn) ||
+                  detailMap.get(onu.sn.toUpperCase()) ||
+                  detailMap.get(onu.sn.toLowerCase());
+      if (det) {
+        if (det.distance) onu.distance = det.distance;
+        if (det.last_up) onu.last_up = det.last_up;
+        if (det.last_down) onu.last_down = det.last_down;
+        if (det.last_dying_gasp) onu.last_dying_gasp = det.last_dying_gasp;
+        if (det.last_down_cause) onu.last_down_cause = det.last_down_cause;
+        if (det.ont_uptime) onu.ont_uptime = det.ont_uptime;
+        if (det.line_profile) onu.line_profile = det.line_profile;
+        if (det.srv_profile) onu.srv_profile = det.srv_profile;
+        if (det.description) onu.description = det.description;
+
+        if (onu.status !== 'Online' && det.last_down_cause) {
+          onu.offline_reason = det.last_down_cause;
+        }
+      }
     }
 
     const total = onus.length;
@@ -1092,7 +1245,7 @@ const fetchHsgqGponViaTelnet = async (olt, full = true) => {
       return Number.isFinite(rxVal) && rxVal < -27;
     }).length;
 
-    const telemetry = parseHsgqTelemetry(rawOutput);
+    const telemetry = parseHsgqTelemetry(rawResult.rawOutput);
 
     // Suhu OLT: prioritas sensor chip OLT, fallback ke suhu fan, fallback ke rata-rata SFP
     let finalTemp = telemetry.temp;
@@ -1105,7 +1258,7 @@ const fetchHsgqGponViaTelnet = async (olt, full = true) => {
     }
 
     let sysDescr = 'HSGQ GPON OLT';
-    const verMatch = rawOutput.match(/(?:software\s+version|version)\s*[:]\s*([^\r\n]+)/i);
+    const verMatch = rawResult.rawOutput.match(/(?:software\s+version|version)\s*[:]\s*([^\r\n]+)/i);
     if (verMatch) {
       sysDescr = verMatch[1].trim();
     }
