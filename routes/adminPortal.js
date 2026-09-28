@@ -5384,34 +5384,49 @@ router.post('/api/device/:tag/reboot', requireAdmin, async (req, res) => {
 
 router.post('/api/device/:tag/wifi', requireAdmin, express.json(), async (req, res) => {
   try {
-    const { ssid, password, notifyWa } = req.body;
+    const { ssid, password, ssid24, password24, ssid5, password5, notifyWa } = req.body;
     const tag = req.params.tag;
-    const cleanSsid = ssid ? String(ssid).trim() : null;
-    const cleanPass = password ? String(password).trim() : null;
+    
+    const s24 = (ssid24 !== undefined ? ssid24 : ssid) ? String(ssid24 || ssid).trim() : null;
+    const p24 = (password24 !== undefined ? password24 : password) ? String(password24 || password).trim() : null;
+    const s5 = ssid5 ? String(ssid5).trim() : null;
+    const p5 = password5 ? String(password5).trim() : null;
 
-    if (!cleanSsid && !cleanPass) {
+    if (!s24 && !p24 && !s5 && !p5) {
       return res.status(400).json({ success: false, error: 'Masukkan nama SSID atau password baru' });
     }
 
-    if (cleanPass && cleanPass.length < 8) {
-      return res.status(400).json({ success: false, error: 'Password Wi-Fi minimal 8 karakter' });
+    if (p24 && p24.length < 8) {
+      return res.status(400).json({ success: false, error: 'Password Wi-Fi 2.4G minimal 8 karakter' });
+    }
+    if (p5 && p5.length < 8) {
+      return res.status(400).json({ success: false, error: 'Password Wi-Fi 5G minimal 8 karakter' });
     }
 
-    let ssidOk = true;
-    let passOk = true;
+    let okCount = 0;
     let errors = [];
 
-    if (cleanSsid) {
-      ssidOk = await customerDevice.updateSSID(tag, cleanSsid);
-      if (!ssidOk) errors.push('Gagal memperbarui SSID');
+    // 2.4 GHz
+    if (s24) {
+      const ok = await customerDevice.updateSSID(tag, s24, null, '2.4');
+      if (ok) okCount++; else errors.push('Gagal antre SSID 2.4G');
+    }
+    if (p24) {
+      const ok = await customerDevice.updatePassword(tag, p24, null, '2.4');
+      if (ok) okCount++; else errors.push('Gagal antre Password 2.4G');
     }
 
-    if (cleanPass) {
-      passOk = await customerDevice.updatePassword(tag, cleanPass);
-      if (!passOk) errors.push('Gagal memperbarui Password Wi-Fi');
+    // 5 GHz
+    if (s5) {
+      const ok = await customerDevice.updateSSID(tag, s5, null, '5');
+      if (ok) okCount++; else errors.push('Gagal antre SSID 5G');
+    }
+    if (p5) {
+      const ok = await customerDevice.updatePassword(tag, p5, null, '5');
+      if (ok) okCount++; else errors.push('Gagal antre Password 5G');
     }
 
-    const success = (cleanSsid ? ssidOk : true) && (cleanPass ? passOk : true);
+    const success = okCount > 0;
 
     if (success && notifyWa !== false) {
       try {
@@ -5422,8 +5437,10 @@ router.post('/api/device/:tag/wifi', requireAdmin, express.json(), async (req, r
             `👤 *Pelanggan:* ${cust.name}\n` +
             `🕒 *Waktu:* ${now}\n\n` +
             `Informasi Wi-Fi modem Anda telah diperbarui:\n`;
-          if (cleanSsid && ssidOk) msg += `📡 *Nama Wi-Fi (SSID):* ${cleanSsid}\n`;
-          if (cleanPass && passOk) msg += `🔐 *Password Baru:* ${cleanPass}\n`;
+          if (s24) msg += `📡 *Wi-Fi 2.4G:* ${s24}\n`;
+          if (p24) msg += `🔐 *Password 2.4G:* ${p24}\n`;
+          if (s5) msg += `📡 *Wi-Fi 5G:* ${s5}\n`;
+          if (p5) msg += `🔐 *Password 5G:* ${p5}\n`;
           msg += `\nSilakan pilih SSID baru atau gunakan password baru untuk terhubung kembali ke internet.\n` +
             `⚠️ Jangan bagikan password ini ke sembarang orang.`;
           await trySendWhatsappPayment(cust.phone, msg);
@@ -5435,9 +5452,9 @@ router.post('/api/device/:tag/wifi', requireAdmin, express.json(), async (req, r
 
     res.json({
       success,
-      ssidUpdated: Boolean(cleanSsid && ssidOk),
-      passwordUpdated: Boolean(cleanPass && passOk),
-      message: success ? 'Pengaturan Wi-Fi berhasil diperbarui!' : (errors.join(', ') || 'Gagal memperbarui Wi-Fi'),
+      message: success 
+        ? 'Perintah konfigurasi Wi-Fi berhasil dikirim ke antrean TR-069 modem!' 
+        : (errors.join(', ') || 'Gagal memperbarui Wi-Fi'),
       error: errors.length > 0 ? errors.join(', ') : undefined
     });
   } catch (err) {

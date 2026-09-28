@@ -508,7 +508,7 @@
                                     </td>
                                     <td>
                                         <div class="action-group">
-                                            <button class="btn-act btn-wifi" onclick="openAcsWifiModal('<%= d.id %>', '<%= d.sn %>', '<%= d.ssid || "" %>', '<%= d.customer_name || "" %>')" title="Ganti Nama / Sandi Wi-Fi (TR-069)">
+                                            <button class="btn-act btn-wifi" onclick="openAcsWifiModal('<%= d.id %>', '<%= d.sn %>', '<%= d.ssid || "" %>', '<%= d.customer_name || "" %>', '<%= d.acs_server_id || selectedAcsId %>')" title="Ganti Nama / Sandi Wi-Fi 2.4G & 5G (TR-069)">
                                                 <i class="bi bi-wifi"></i>
                                             </button>
                                             <button class="btn-act btn-refresh" onclick="refreshDevice('<%= d.id %>')" title="Summon / Refresh Data Perangkat">
@@ -855,36 +855,76 @@
 <!-- MODAL: KELOLA WI-FI PERANGKAT (TR-069)     -->
 <!-- ========================================== -->
 <div class="mo" id="acsWifiModal">
-  <div class="mb" style="max-width:480px">
-    <div class="mh">
-      <h3 class="mt"><i class="bi bi-wifi text-primary"></i> Kelola Wi-Fi Perangkat (TR-069)</h3>
+  <div class="mb" style="max-width:540px; border-radius:16px;">
+    <div class="mh" style="padding:16px 20px; border-bottom:1px solid var(--border);">
+      <h3 class="mt" style="font-size:16px; font-weight:700;"><i class="bi bi-wifi text-primary me-2"></i>Kelola Wi-Fi Perangkat (TR-069)</h3>
       <button type="button" class="mc" onclick="closeModal('acsWifiModal')">&times;</button>
     </div>
     <form id="acsWifiForm" onsubmit="submitAcsWifi(event)">
-      <div class="mbody">
+      <div class="mbody" style="padding:20px;">
         <input type="hidden" id="acs_wifi_device_id" value="">
+        <input type="hidden" id="acs_wifi_acs_id" value="">
+        
         <div style="font-size:12px; padding:10px 14px; background:rgba(0,82,204,0.08); border:1px solid rgba(0,82,204,0.25); border-radius:10px; color:var(--text); margin-bottom:16px;">
-          <i class="bi bi-info-circle-fill me-1 text-primary"></i> Perubahan konfigurasi Wi-Fi akan langsung di-push ke modem pelanggan via TR-069.
+          <i class="bi bi-info-circle-fill me-1 text-primary"></i> Perubahan konfigurasi Wi-Fi akan dikirimkan ke antrean TR-069 dan langsung diterapkan oleh modem.
         </div>
-        <div class="fg">
-          <label class="fl">Perangkat / Pelanggan</label>
-          <input type="text" class="fc" id="acs_wifi_device_label" readonly style="font-weight:700;">
+
+        <div class="fg" style="margin-bottom:14px;">
+          <label class="fl" style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase;">Perangkat / Pelanggan</label>
+          <input type="text" class="fc" id="acs_wifi_device_label" readonly style="font-weight:700; background:var(--bg3);">
         </div>
-        <div class="fg">
-          <label class="fl">Nama Wi-Fi (SSID) Baru</label>
-          <input type="text" class="fc" id="acs_wifi_new_ssid" placeholder="Contoh: KELUARGA-NET">
-          <small class="text-muted" style="font-size:11px; margin-top:4px; display:block;">Kosongkan jika hanya ingin mengganti kata sandi.</small>
+
+        <div id="acs_wifi_loading" style="display:none; text-align:center; padding:10px; font-size:12px; color:var(--muted); margin-bottom:10px;">
+          <i class="bi bi-arrow-repeat spin me-1 text-primary"></i> Membaca konfigurasi SSID modem...
         </div>
-        <div class="fg">
-          <label class="fl">Kata Sandi Wi-Fi Baru</label>
-          <div style="position:relative">
-            <input type="password" class="fc" id="acs_wifi_new_password" placeholder="Minimal 8 karakter" minlength="8" style="padding-right:40px">
-            <button type="button" onclick="togglePassVisibility('acs_wifi_new_password', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:var(--muted);cursor:pointer;padding:4px">
-              <i class="bi bi-eye"></i>
-            </button>
+
+        <!-- 2.4 GHz Section -->
+        <div style="background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:14px;">
+          <div style="font-size:12px; font-weight:700; color:#10b981; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+            <i class="bi bi-broadcast"></i> Wi-Fi 2.4 GHz (Default)
           </div>
-          <small class="text-muted" style="font-size:11px; margin-top:4px; display:block;">Minimal 8 karakter. Kosongkan jika hanya ingin mengganti nama SSID.</small>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label class="fl" style="font-size:11px;">Nama SSID (2.4G)</label>
+              <input type="text" class="fc" id="acs_wifi_new_ssid" placeholder="Contoh: BIONFIBER">
+            </div>
+            <div>
+              <label class="fl" style="font-size:11px;">Password (2.4G)</label>
+              <div style="position:relative">
+                <input type="password" class="fc" id="acs_wifi_new_password" placeholder="Kosongkan jika tak diubah" minlength="8" style="padding-right:36px">
+                <button type="button" onclick="togglePassVisibility('acs_wifi_new_password', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:var(--muted);cursor:pointer;padding:4px">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <!-- 5 GHz Section (Dual-Band) -->
+        <div id="acs_wifi_5g_container" style="background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:14px;">
+          <div style="font-size:12px; font-weight:700; color:#38bdf8; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between;">
+            <span style="display:flex; align-items:center; gap:6px;"><i class="bi bi-lightning-charge-fill"></i> Wi-Fi 5 GHz (Dual Band)</span>
+            <label style="font-size:11px; font-weight:normal; color:var(--muted); cursor:pointer; display:flex; align-items:center; gap:4px;">
+              <input type="checkbox" id="acs_wifi_sync_pass" onchange="syncWifi5gPassword(this)"> Samakan Password
+            </label>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label class="fl" style="font-size:11px;">Nama SSID (5G)</label>
+              <input type="text" class="fc" id="acs_wifi_new_ssid_5g" placeholder="Contoh: BIONFIBER-5G">
+            </div>
+            <div>
+              <label class="fl" style="font-size:11px;">Password (5G)</label>
+              <div style="position:relative">
+                <input type="password" class="fc" id="acs_wifi_new_password_5g" placeholder="Kosongkan jika tak diubah" minlength="8" style="padding-right:36px">
+                <button type="button" onclick="togglePassVisibility('acs_wifi_new_password_5g', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:var(--muted);cursor:pointer;padding:4px">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="fg" style="margin-bottom:6px;">
           <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
             <input type="checkbox" id="acs_wifi_notify_wa" checked style="width:16px; height:16px;">
@@ -892,7 +932,7 @@
           </label>
         </div>
       </div>
-      <div class="mf">
+      <div class="mf" style="padding:14px 20px; border-top:1px solid var(--border); display:flex; justify-content:space-between;">
         <button type="button" class="btn btn-g btn-sm" onclick="closeModal('acsWifiModal')">Batal</button>
         <button type="submit" class="btn btn-p btn-sm" id="btn_save_acs_wifi">
           <i class="bi bi-save"></i> Terapkan Pengaturan
@@ -1017,25 +1057,77 @@ function resetClientFilters() {
     filterDevicesByStatus('all', document.querySelector('.status-pill-btn[data-filter="all"]'));
 }
 
-// ── WI-FI MODAL ACTIONS ──
-function openAcsWifiModal(id, sn, currentSsid, custName) {
+// ── WI-FI MODAL ACTIONS (DUAL BAND 2.4G & 5G) ──
+function syncWifi5gPassword(chk) {
+    const pass24 = document.getElementById('acs_wifi_new_password').value;
+    const pass5 = document.getElementById('acs_wifi_new_password_5g');
+    if (chk && chk.checked) {
+        pass5.value = pass24;
+    }
+}
+
+async function openAcsWifiModal(id, sn, currentSsid, custName, acsId) {
     document.getElementById('acs_wifi_device_id').value = id;
+    document.getElementById('acs_wifi_acs_id').value = acsId || 'builtin';
     document.getElementById('acs_wifi_device_label').value = (custName && custName !== '-' ? (custName + ' — ') : '') + (sn || id);
     document.getElementById('acs_wifi_new_ssid').value = (currentSsid && currentSsid !== '-' ? currentSsid : '');
     document.getElementById('acs_wifi_new_password').value = '';
+    document.getElementById('acs_wifi_new_ssid_5g').value = '';
+    document.getElementById('acs_wifi_new_password_5g').value = '';
+    
+    const syncChk = document.getElementById('acs_wifi_sync_pass');
+    if (syncChk) syncChk.checked = false;
+    
+    const loading = document.getElementById('acs_wifi_loading');
+    const container5g = document.getElementById('acs_wifi_5g_container');
+    if (loading) loading.style.display = 'block';
+    
     openModal('acsWifiModal');
+
+    // Async fetch WLAN actual SSID names from modem
+    try {
+        const res = await fetch(`/admin/acs/api/wifi-settings/${encodeURIComponent(id)}?acsId=${encodeURIComponent(acsId || 'builtin')}`);
+        const d = await res.json();
+        if (d && d.success && Array.isArray(d.bands) && d.bands.length > 0) {
+            let found5g = false;
+            d.bands.forEach(b => {
+                if (b.index === '1') {
+                    if (b.ssid) document.getElementById('acs_wifi_new_ssid').value = b.ssid;
+                } else if (b.index === '5' || b.index === '2') {
+                    found5g = true;
+                    if (b.ssid) document.getElementById('acs_wifi_new_ssid_5g').value = b.ssid;
+                }
+            });
+            if (container5g) {
+                container5g.style.display = 'block';
+            }
+        }
+    } catch (e) {
+        console.error('Gagal mengambil detail WiFi perangkat:', e);
+    } finally {
+        if (loading) loading.style.display = 'none';
+    }
 }
 
 async function submitAcsWifi(e) {
     e.preventDefault();
     const deviceId = document.getElementById('acs_wifi_device_id').value;
-    const ssid = document.getElementById('acs_wifi_new_ssid').value.trim();
-    const password = document.getElementById('acs_wifi_new_password').value.trim();
+    const ssid24 = document.getElementById('acs_wifi_new_ssid').value.trim();
+    const password24 = document.getElementById('acs_wifi_new_password').value.trim();
+    const ssid5 = document.getElementById('acs_wifi_new_ssid_5g').value.trim();
+    let password5 = document.getElementById('acs_wifi_new_password_5g').value.trim();
+    const syncPass = document.getElementById('acs_wifi_sync_pass')?.checked;
+    if (syncPass && password24) {
+        password5 = password24;
+    }
     const notifyWa = document.getElementById('acs_wifi_notify_wa').checked;
     const btn = document.getElementById('btn_save_acs_wifi');
 
-    if (!ssid && !password) return alert('Silakan masukkan nama SSID atau password baru.');
-    if (password && password.length < 8) return alert('Password Wi-Fi minimal 8 karakter.');
+    if (!ssid24 && !password24 && !ssid5 && !password5) {
+        return alert('Silakan masukkan nama SSID atau password baru.');
+    }
+    if (password24 && password24.length < 8) return alert('Password Wi-Fi 2.4G minimal 8 karakter.');
+    if (password5 && password5.length < 8) return alert('Password Wi-Fi 5G minimal 8 karakter.');
 
     btn.disabled = true;
     btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Menerapkan ke Modem...';
@@ -1044,11 +1136,17 @@ async function submitAcsWifi(e) {
         const res = await fetch('/admin/api/device/' + encodeURIComponent(deviceId) + '/wifi', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ssid, password, notifyWa })
+            body: JSON.stringify({ 
+                ssid24, 
+                password24, 
+                ssid5, 
+                password5, 
+                notifyWa 
+            })
         });
         const data = await res.json();
         if (data.success) {
-            alert(data.message || 'Pengaturan Wi-Fi berhasil diperbarui via TR-069!');
+            alert(data.message || 'Perintah ubah Wi-Fi berhasil dikirim ke antrean TR-069!');
             closeModal('acsWifiModal');
             location.reload();
         } else {

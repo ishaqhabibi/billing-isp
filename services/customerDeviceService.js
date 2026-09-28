@@ -938,20 +938,32 @@ async function updateSSID(tag, newSSID, actor = null, band = 'all') {
     
     // Fallback if no parameters match or device not bootstrapped yet
     if (parameterValues.length === 0) {
-      if (shouldUpdate24) {
-        parameterValues.push(
-          ['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID', newSSID, 'xsd:string'],
-          ['Device.WiFi.SSID.1.SSID', newSSID, 'xsd:string']
-        );
-      }
-      if (shouldUpdate5) {
-        const ssid5Name = (targetBand === '5' || targetBand === '5ghz') 
-          ? newSSID 
-          : (newSSID.toLowerCase().endsWith('-5g') ? newSSID : `${newSSID}-5G`);
-        parameterValues.push(
-          ['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID', ssid5Name, 'xsd:string'],
-          ['Device.WiFi.SSID.2.SSID', ssid5Name, 'xsd:string']
-        );
+      const isTr181 = flatParams 
+        ? Object.keys(flatParams).some(k => k.startsWith('Device.'))
+        : (device._deviceId?._ProductClass?.includes('TR181') || false);
+
+      if (isTr181) {
+        if (shouldUpdate24) {
+          parameterValues.push(['Device.WiFi.SSID.1.SSID', newSSID, 'xsd:string']);
+        }
+        if (shouldUpdate5) {
+          const ssid5Name = (targetBand === '5' || targetBand === '5ghz') 
+            ? newSSID 
+            : (newSSID.toLowerCase().endsWith('-5g') ? newSSID : `${newSSID}-5G`);
+          parameterValues.push(['Device.WiFi.SSID.2.SSID', ssid5Name, 'xsd:string']);
+        }
+      } else {
+        // TR-098 (Fiberhome, ZTE, Huawei, etc.)
+        if (shouldUpdate24) {
+          parameterValues.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID', newSSID, 'xsd:string']);
+        }
+        if (shouldUpdate5) {
+          const ssid5Name = (targetBand === '5' || targetBand === '5ghz') 
+            ? newSSID 
+            : (newSSID.toLowerCase().endsWith('-5g') ? newSSID : `${newSSID}-5G`);
+          const idx5 = (flatParams && flatParams['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID'] !== undefined) ? 2 : 5;
+          parameterValues.push([`InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx5}.SSID`, ssid5Name, 'xsd:string']);
+        }
       }
     }
 
@@ -1040,60 +1052,71 @@ async function updatePassword(tag, newPassword, actor = null, band = 'all') {
     const db = require('../config/database');
     const row = db.prepare('SELECT params FROM acs_devices WHERE id = ?').get(device._id);
     const flatParams = row && row.params ? JSON.parse(row.params) : null;
+    const isTr181 = flatParams 
+      ? Object.keys(flatParams).some(k => k.startsWith('Device.'))
+      : (device._deviceId?._ProductClass?.includes('TR181') || false);
     
     if (flatParams) {
       if (shouldUpdate24) {
-        // 2.4G password paths
-        const paths24G = [
-          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase',
-          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase',
-          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.PreSharedKey',
-          'Device.WiFi.AccessPoint.1.Security.KeyPassphrase',
-          'Device.WiFi.AccessPoint.1.Security.PreSharedKey'
-        ];
-        paths24G.forEach(p => {
-          if (flatParams[p] !== undefined) {
-            parameterValues.push([p, pw, 'xsd:string']);
-          }
-        });
+        // 2.4G password paths (pick first supported path to avoid 9005 collision)
+        const paths24G = isTr181
+          ? [
+              'Device.WiFi.AccessPoint.1.Security.KeyPassphrase',
+              'Device.WiFi.AccessPoint.1.Security.PreSharedKey'
+            ]
+          : [
+              'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase',
+              'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase',
+              'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.PreSharedKey'
+            ];
+        const validPath24 = paths24G.find(p => flatParams[p] !== undefined);
+        if (validPath24) {
+          parameterValues.push([validPath24, pw, 'xsd:string']);
+        }
       }
       
       if (shouldUpdate5) {
-        // 5G password paths
-        const paths5G = [
-          'Device.WiFi.AccessPoint.2.Security.KeyPassphrase',
-          'Device.WiFi.AccessPoint.2.Security.PreSharedKey'
-        ];
-        for (const idx of [5, 6, 7, 8, 2]) {
-          paths5G.push(
-            `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.KeyPassphrase`,
-            `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.PreSharedKey.1.KeyPassphrase`,
-            `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.PreSharedKey.1.PreSharedKey`
-          );
-        }
-        paths5G.forEach(p => {
-          if (flatParams[p] !== undefined) {
-            parameterValues.push([p, pw, 'xsd:string']);
+        // 5G password paths (pick first supported path to avoid 9005 collision)
+        const paths5G = isTr181
+          ? [
+              'Device.WiFi.AccessPoint.2.Security.KeyPassphrase',
+              'Device.WiFi.AccessPoint.2.Security.PreSharedKey'
+            ]
+          : [];
+        if (!isTr181) {
+          for (const idx of [5, 2, 6, 7, 8]) {
+            paths5G.push(
+              `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.KeyPassphrase`,
+              `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.PreSharedKey.1.KeyPassphrase`,
+              `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}.PreSharedKey.1.PreSharedKey`
+            );
           }
-        });
+        }
+        const validPath5 = paths5G.find(p => flatParams[p] !== undefined);
+        if (validPath5) {
+          parameterValues.push([validPath5, pw, 'xsd:string']);
+        }
       }
     }
     
     // Fallback if no parameters match or device not bootstrapped yet
     if (parameterValues.length === 0) {
-      if (shouldUpdate24) {
-        parameterValues.push(
-          ['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase', pw, 'xsd:string'],
-          ['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase', pw, 'xsd:string'],
-          ['Device.WiFi.AccessPoint.1.Security.KeyPassphrase', pw, 'xsd:string']
-        );
-      }
-      if (shouldUpdate5) {
-        parameterValues.push(
-          ['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.KeyPassphrase', pw, 'xsd:string'],
-          ['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.PreSharedKey.1.KeyPassphrase', pw, 'xsd:string'],
-          ['Device.WiFi.AccessPoint.2.Security.KeyPassphrase', pw, 'xsd:string']
-        );
+      if (isTr181) {
+        if (shouldUpdate24) {
+          parameterValues.push(['Device.WiFi.AccessPoint.1.Security.KeyPassphrase', pw, 'xsd:string']);
+        }
+        if (shouldUpdate5) {
+          parameterValues.push(['Device.WiFi.AccessPoint.2.Security.KeyPassphrase', pw, 'xsd:string']);
+        }
+      } else {
+        // TR-098 (Fiberhome, ZTE, Huawei, etc.)
+        if (shouldUpdate24) {
+          parameterValues.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase', pw, 'xsd:string']);
+        }
+        if (shouldUpdate5) {
+          const idx5 = (flatParams && flatParams['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID'] !== undefined) ? 2 : 5;
+          parameterValues.push([`InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx5}.KeyPassphrase`, pw, 'xsd:string']);
+        }
       }
     }
 
