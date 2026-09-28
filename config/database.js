@@ -226,7 +226,8 @@ db.exec(`
     password TEXT NOT NULL,
     description TEXT DEFAULT '',
     is_active INTEGER DEFAULT 1,
-    created_at DATETIME DEFAULT (NOW_LOCAL())
+    created_at DATETIME DEFAULT (NOW_LOCAL()),
+    updated_at DATETIME DEFAULT (NOW_LOCAL())
   );
 
   CREATE TABLE IF NOT EXISTS promo_slides (
@@ -767,6 +768,10 @@ try {
   db.exec("ALTER TABLE collectors ADD COLUMN auto_approve INTEGER DEFAULT 0");
 } catch (e) { /* ignore if already exists */ }
 try { db.exec("ALTER TABLE odps ADD COLUMN port_capacity INTEGER NOT NULL DEFAULT 16"); } catch (e) { /* ignore if already exists */ }
+try {
+  db.exec("ALTER TABLE routers ADD COLUMN updated_at DATETIME DEFAULT NULL");
+  db.exec("UPDATE routers SET updated_at = (NOW_LOCAL()) WHERE updated_at IS NULL");
+} catch (e) { /* ignore if already exists */ }
 
 // Kolom untuk PPN & ULO/USO pada tabel packages
 try { db.exec("ALTER TABLE packages ADD COLUMN use_ppn INTEGER DEFAULT 0"); } catch (e) {}
