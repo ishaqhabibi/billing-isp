@@ -804,9 +804,29 @@ const parseHiosoOnuTable = (text) => {
   return rows;
 };
 
+const extractCommandSection = (rawOutput, cmd) => {
+  const lines = String(rawOutput || '').split(/\r?\n/);
+  let capturing = false;
+  const sectionLines = [];
+  for (const line of lines) {
+    if (line.includes(cmd)) {
+      capturing = true;
+      continue;
+    }
+    if (capturing) {
+      if (/^[^\r\n]*OLT[^\r\n]*[>#]/i.test(line) || /^show\s+/i.test(line.trim())) {
+        break;
+      }
+      sectionLines.push(line);
+    }
+  }
+  return sectionLines.length > 0 ? sectionLines.join('\n') : rawOutput;
+};
+
 const parseHsgqOntInfo = (text) => {
   const lines = String(text || '').split(/\r?\n/);
   const onus = [];
+  const seen = new Set();
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
@@ -819,6 +839,11 @@ const parseHsgqOntInfo = (text) => {
     const state = m[4];
     const runState = m[5];
     const rest = (m[6] || '').trim();
+
+    // Validasi ketat baris 'show ont-info all' agar tidak salah membaca output 'show ont-optical'
+    if (!/^(gpon|epon|ge|fe)$/i.test(type)) continue;
+    if (!/^(active|inactive)$/i.test(state)) continue;
+    if (/^\d+$/.test(sn) || sn.length < 6) continue;
 
     const restParts = rest.split(/\s+/).filter(Boolean);
     let ontName = null;
@@ -835,6 +860,10 @@ const parseHsgqOntInfo = (text) => {
     if (!ontName || ontName === '-') ontName = `ONU-${portOnu}`;
 
     const isOnline = /^on/i.test(runState);
+    const key = `${portOnu}:${sn}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
     onus.push({
       index: portOnu,
       id: portOnu,
@@ -959,9 +988,13 @@ const fetchHsgqGponViaTelnet = async (olt, full = true) => {
 
     if (!rawOutput) return null;
 
-    const onus = parseHsgqOntInfo(rawOutput);
-    const opticalMap = parseHsgqOntOptical(rawOutput);
-    const unauth = parseHsgqOntAutofind(rawOutput);
+    const ontInfoText = extractCommandSection(rawOutput, 'show ont-info all');
+    const opticalText = extractCommandSection(rawOutput, 'show ont-optical all');
+    const autofindText = extractCommandSection(rawOutput, 'show ont-autofind all');
+
+    const onus = parseHsgqOntInfo(ontInfoText);
+    const opticalMap = parseHsgqOntOptical(opticalText);
+    const unauth = parseHsgqOntAutofind(autofindText);
 
     // Merge optical power into ONUs
     for (const onu of onus) {
