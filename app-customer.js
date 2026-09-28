@@ -1943,6 +1943,33 @@ app.post(['/donasi/confirm', '/api/donasi/confirm'], async (req, res) => {
 
 // Mount built-in ACS server endpoint (TR-069)
 const acsServerService = require('./services/acsServerService');
+app.get('/acs', (req, res) => {
+  res.status(200).send(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Built-in TR-069 ACS Server</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b1120; color: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+          .card { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 32px; max-width: 480px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+          .badge { display: inline-block; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 999px; padding: 4px 14px; font-size: 12px; font-weight: 700; margin-bottom: 16px; }
+          h2 { margin: 0 0 10px; font-size: 20px; color: #fff; }
+          p { color: #94a3b8; font-size: 13.5px; line-height: 1.5; margin: 0 0 16px; }
+          .code { background: #0f172a; padding: 8px 12px; border-radius: 8px; font-family: monospace; font-size: 13px; color: #38bdf8; border: 1px solid #334155; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <span class="badge">● TR-069 ACS Server Aktif</span>
+          <h2>Endpoint CWMP Siap Digunakan</h2>
+          <p>Jalur ini khusus menerima protokol komunikasi TR-069 SOAP (HTTP POST) dari perangkat modem/ONT.</p>
+          <div class="code">POST /acs (Port 3001) — Ready</div>
+        </div>
+      </body>
+    </html>
+  `);
+});
 app.post('/acs', express.raw({ type: ['text/xml', 'application/soap+xml', 'application/xml', 'text/plain'], limit: '2mb' }), acsServerService.handleCwmpRequest);
 
 // Landing page untuk scan QR stiker modem ONU pelanggan
