@@ -655,6 +655,9 @@ const telnetReadUntil = (socket, matcher, timeoutMs, sendFn) => {
       if (/--\s*More\s*--|--\s*Press\s+Enter\s*--|Press any key|\[More\]/i.test(buf.slice(-100))) {
         try { socket.write(' '); } catch (_) {}
       }
+      if (/(?:\(y\/n\)|\[y\/n\])\s*[:?]?\s*$/i.test(buf.slice(-50))) {
+        try { socket.write('y\r\n'); } catch (_) {}
+      }
       if (typeof matcher === 'function' ? matcher(buf) : matcher.test(buf)) {
         cleanup();
         resolve(buf);
@@ -2419,11 +2422,9 @@ async function rebootOnu(oltId, index) {
     const cmds = [
       'enable',
       'configure',
-      `interface gpon 0/${port}`,
-      `ont reset ${onuId}`,
+      `interface gpon ${port}`,
       `ont reboot ${onuId}`,
       `exit`,
-      `ont reset ${port} ${onuId}`,
       `exit`
     ];
 
@@ -2486,7 +2487,8 @@ async function renameOnu(oltId, index, newName) {
     const cmds = [
       'enable',
       'configure',
-      `interface gpon 0/${port}`,
+      `interface gpon ${port}`,
+      `ont modify ${onuId} ont-name "${cleanName}"`,
       `ont name ${onuId} "${cleanName}"`,
       `ont description ${onuId} "${cleanName}"`,
       `exit`,

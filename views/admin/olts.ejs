@@ -1614,9 +1614,6 @@ function renderOnuTable() {
         <td><span class="small text-muted" style="font-family:'JetBrains Mono',monospace;">${onu.distance != null ? onu.distance : '-'}</span></td>
         <td style="text-align:right">
           <div class="d-flex justify-content-end align-items-center gap-1">
-            <button class="btn btn-sm btn-outline-primary py-1 px-2" onclick="configureWanPrompt('${targetOltId}', '${onu.index}', '${onu.name || ''}', '${onu.sn || ''}')" style="font-size: 11.5px; border-radius:7px;">
-              <i class="bi bi-globe"></i> WAN
-            </button>
             <button class="btn-act btn-rename" onclick="renameOnuPrompt('${targetOltId}', '${onu.index}', '${(onu.name || '').replace(/'/g, "\\'")}', '${onu.sn || ''}')" title="${I18N.renameTitle}">
               <i class="bi bi-pencil-square"></i>
             </button>
