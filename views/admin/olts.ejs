@@ -1511,7 +1511,10 @@ function renderOnuTable() {
           ${!isOnline && onu.offline_reason ? `<div class="text-danger small mt-1" style="font-size: 11px; font-weight: 600;"><i class="bi bi-exclamation-octagon"></i> ${onu.offline_reason}</div>` : ''}
         </td>
         <td><span class="rx-badge rx-muted">${onu.tx || 'N/A'}</span></td>
-        <td><span class="rx-badge ${rxClass}">${onu.rx || 'N/A'}</span></td>
+        <td>
+          <span class="rx-badge ${rxClass}">${onu.rx || 'N/A'}</span>
+          ${onu.temp && onu.temp !== 'N/A' ? `<div class="text-muted" style="font-size: 10px; font-family:'JetBrains Mono',monospace; margin-top: 3px;" title="Suhu / Tegangan ONU"><i class="bi bi-thermometer-half"></i> ${onu.temp}${onu.voltage && onu.voltage !== 'N/A' ? ' | ' + onu.voltage : ''}</div>` : ''}
+        </td>
         <td><span class="small text-muted" style="font-family:'JetBrains Mono',monospace;">${onu.distance != null ? onu.distance : '-'}</span></td>
         <td style="text-align:right">
           <div class="d-flex justify-content-end align-items-center gap-1">

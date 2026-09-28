@@ -641,14 +641,19 @@ const hiosoOnuIdFromIndex = (index) => {
   return `0/${port}:${onu}`;
 };
 
-const telnetReadUntil = (socket, matcher, timeoutMs) => {
+const telnetOptsFromOlt = (olt) => ({
+  port: Number(olt.telnet_port) > 0 ? Number(olt.telnet_port) : 23,
+  enablePassword: olt.enable_password != null && String(olt.enable_password).length > 0 ? String(olt.enable_password) : null
+});
+
+const telnetReadUntil = (socket, matcher, timeoutMs, sendFn) => {
   return new Promise((resolve, reject) => {
     let buf = '';
     const onData = (chunk) => {
       const s = chunk.toString('utf8');
       buf += s;
-      if (buf.includes('--More--') || buf.includes('--Press Enter--')) {
-        socket.write(' ');
+      if (/--\s*More\s*--|--\s*Press\s+Enter\s*--|Press any key|\[More\]/i.test(buf.slice(-100))) {
+        try { socket.write(' '); } catch (_) {}
       }
       if (typeof matcher === 'function' ? matcher(buf) : matcher.test(buf)) {
         cleanup();
@@ -667,6 +672,9 @@ const telnetReadUntil = (socket, matcher, timeoutMs) => {
     socket.on('data', onData);
     socket.on('error', onErr);
     socket.on('close', onClose);
+    if (typeof sendFn === 'function') {
+      try { sendFn(); } catch (err) { cleanup(); reject(err); }
+    }
   });
 };
 
@@ -677,7 +685,7 @@ const telnetLoginAndRun = async (host, user, pass, commands, opts = {}) => {
     : null;
 
   const socket = new net.Socket();
-  socket.setTimeout(15000);
+  socket.setTimeout(35000);
 
   await new Promise((resolve, reject) => {
     socket.connect(telnetPort, host, resolve);
@@ -692,18 +700,19 @@ const telnetLoginAndRun = async (host, user, pass, commands, opts = {}) => {
   try {
     banner = await telnetReadUntil(socket, (b) => loginRe.test(b) || passRe.test(b) || promptRe.test(b), 8000);
   } catch (e) {
-    socket.destroy();
-    throw e;
+    try {
+      banner = await telnetReadUntil(socket, (b) => loginRe.test(b) || passRe.test(b) || promptRe.test(b), 5000, () => socket.write('\r\n'));
+    } catch (e2) {
+      socket.destroy();
+      throw e;
+    }
   }
 
   if (loginRe.test(banner)) {
-    socket.write(String(user || 'admin') + '\r\n');
-    await telnetReadUntil(socket, passRe, 8000);
-    socket.write(String(pass || 'admin') + '\r\n');
-    await telnetReadUntil(socket, promptRe, 8000);
+    await telnetReadUntil(socket, passRe, 8000, () => socket.write(String(user || 'admin') + '\r\n'));
+    await telnetReadUntil(socket, promptRe, 8000, () => socket.write(String(pass || 'admin') + '\r\n'));
   } else if (passRe.test(banner)) {
-    socket.write(String(pass || 'admin') + '\r\n');
-    await telnetReadUntil(socket, promptRe, 8000);
+    await telnetReadUntil(socket, promptRe, 8000, () => socket.write(String(pass || 'admin') + '\r\n'));
   } else if (promptRe.test(banner)) {
   } else {
     socket.destroy();
@@ -712,11 +721,9 @@ const telnetLoginAndRun = async (host, user, pass, commands, opts = {}) => {
 
   // Pastikan masuk ke privileged exec mode (#) jika saat ini berada di user mode (>)
   try {
-    socket.write('enable\r\n');
-    const enBuf = await telnetReadUntil(socket, (b) => /password\s*[:>]\s*$/im.test(b) || /[>#]\s*$/m.test(b), 6000);
+    const enBuf = await telnetReadUntil(socket, (b) => /password\s*[:>]\s*$/im.test(b) || /[>#]\s*$/m.test(b), 6000, () => socket.write('enable\r\n'));
     if (/password\s*[:>]\s*$/im.test(enBuf)) {
-      socket.write((enablePassword || pass || 'admin') + '\r\n');
-      await telnetReadUntil(socket, /[>#]\s*$/m, 6000);
+      await telnetReadUntil(socket, /[>#]\s*$/m, 6000, () => socket.write((enablePassword || pass || 'admin') + '\r\n'));
     }
   } catch (_) {
     // Abaikan jika sudah di mode #
@@ -729,8 +736,7 @@ const telnetLoginAndRun = async (host, user, pass, commands, opts = {}) => {
 
   const outputs = [];
   for (const cmd of cmdList) {
-    socket.write(cmd + '\r\n');
-    const out = await telnetReadUntil(socket, promptRe, 15000);
+    const out = await telnetReadUntil(socket, promptRe, 15000, () => socket.write(cmd + '\r\n'));
     outputs.push(out);
   }
 
@@ -798,6 +804,217 @@ const parseHiosoOnuTable = (text) => {
   return rows;
 };
 
+const parseHsgqOntInfo = (text) => {
+  const lines = String(text || '').split(/\r?\n/);
+  const onus = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    // Format: 4/0     GPON  FHTTc1edd0fd  Active  Online  normal  Initial                ONT04/000
+    const m = trimmed.match(/^(\d+\/\d+(?::\d+)?)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(.*)$/);
+    if (!m) continue;
+    const portOnu = m[1];
+    const type = m[2];
+    const sn = m[3];
+    const state = m[4];
+    const runState = m[5];
+    const rest = (m[6] || '').trim();
+
+    const restParts = rest.split(/\s+/).filter(Boolean);
+    let ontName = null;
+    let offlineReason = null;
+    if (restParts.length > 0) {
+      ontName = restParts[restParts.length - 1];
+      if (restParts.length > 2) {
+        const reasonParts = restParts.slice(2, restParts.length - 1);
+        if (reasonParts.length > 0) {
+          offlineReason = reasonParts.join(' ');
+        }
+      }
+    }
+    if (!ontName || ontName === '-') ontName = `ONU-${portOnu}`;
+
+    const isOnline = /^on/i.test(runState);
+    onus.push({
+      index: portOnu,
+      id: portOnu,
+      name: ontName,
+      sn: sn,
+      type: type,
+      state: state,
+      status: isOnline ? 'Online' : 'Offline',
+      runState: runState,
+      offline_reason: !isOnline ? (offlineReason || 'Link Down') : null,
+      tx: 'N/A',
+      rx: 'N/A',
+      distance: '-',
+      temp: 'N/A',
+      voltage: 'N/A'
+    });
+  }
+  return onus;
+};
+
+const parseHsgqOntOptical = (text) => {
+  const lines = String(text || '').split(/\r?\n/);
+  const map = new Map();
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    // Line: 4/0 FHTTc1edd0fd 46 C 3.20 V   7.71 mA  1.9700 dBm  -26.0200 dBm ONT04/000
+    const m = trimmed.match(/^(\d+\/\d+(?::\d+)?)\s+(\S+)\s+(?:(\d+(?:\.\d+)?)\s*C)?\s*(?:([\d\.]+)\s*V)?\s*(?:([\d\.]+)\s*mA)?\s*([+-]?[\d\.]+)\s*dBm\s*([+-]?[\d\.]+)\s*dBm/i);
+    if (m) {
+      const portOnu = m[1];
+      const sn = m[2];
+      const temp = m[3] ? `${m[3]}°C` : 'N/A';
+      const voltage = m[4] ? `${m[4]}V` : 'N/A';
+      const bias = m[5] ? `${m[5]}mA` : 'N/A';
+      const txNum = parseFloat(m[6]);
+      const rxNum = parseFloat(m[7]);
+      const tx = Number.isFinite(txNum) ? `${txNum.toFixed(2)} dBm` : 'N/A';
+      const rx = Number.isFinite(rxNum) ? `${rxNum.toFixed(2)} dBm` : 'N/A';
+
+      const entry = { portOnu, sn, temp, voltage, bias, tx, rx, rxNum, txNum };
+      map.set(portOnu, entry);
+      map.set(sn.toUpperCase(), entry);
+      map.set(sn.toLowerCase(), entry);
+    } else {
+      // Fallback: check if line starts with PON/ONU index
+      const idMatch = trimmed.match(/^(\d+\/\d+(?::\d+)?)\s+(\S+)/);
+      if (idMatch) {
+        const portOnu = idMatch[1];
+        const sn = idMatch[2];
+        const dbms = [];
+        const dbmRegex = /([+-]?\d+(?:\.\d+)?)\s*dBm/gi;
+        let match;
+        while ((match = dbmRegex.exec(trimmed)) !== null) {
+          dbms.push(parseFloat(match[1]));
+        }
+        if (dbms.length >= 2) {
+          const entry = {
+            portOnu,
+            sn,
+            tx: `${dbms[0].toFixed(2)} dBm`,
+            rx: `${dbms[1].toFixed(2)} dBm`,
+            txNum: dbms[0],
+            rxNum: dbms[1]
+          };
+          map.set(portOnu, entry);
+          map.set(sn.toUpperCase(), entry);
+          map.set(sn.toLowerCase(), entry);
+        }
+      }
+    }
+  }
+
+  return map;
+};
+
+const parseHsgqOntAutofind = (text) => {
+  const lines = String(text || '').split(/\r?\n/);
+  const unauth = [];
+  if (text.includes('does not exist') || text.includes('not exist')) {
+    return unauth;
+  }
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('---') || trimmed.toLowerCase().includes('warning') || trimmed.toLowerCase().includes('ont-sn')) continue;
+    const m = trimmed.match(/^(\d+\/\d+(?::\d+)?|\d+)\s+([A-Za-z0-9]{12,16})/);
+    if (m) {
+      unauth.push({
+        id: m[1],
+        index: m[1],
+        sn: m[2],
+        type: 'GPON'
+      });
+    }
+  }
+  return unauth;
+};
+
+const fetchHsgqGponViaTelnet = async (olt, full = true) => {
+  const user = olt.web_user || 'root';
+  const pass = olt.web_password || 'admin';
+  const telnetPort = Number(olt.telnet_port) > 0 ? Number(olt.telnet_port) : 23;
+  const enablePassword = (olt.enable_password != null && String(olt.enable_password).length > 0)
+    ? String(olt.enable_password)
+    : pass;
+
+  const cmds = [
+    'show version',
+    'configure',
+    'show ont-info all',
+    'show ont-optical all',
+    'show ont-autofind all',
+    'exit'
+  ];
+
+  try {
+    const rawOutput = await telnetLoginAndRun(olt.host, user, pass, cmds, {
+      port: telnetPort,
+      enablePassword: enablePassword
+    });
+
+    if (!rawOutput) return null;
+
+    const onus = parseHsgqOntInfo(rawOutput);
+    const opticalMap = parseHsgqOntOptical(rawOutput);
+    const unauth = parseHsgqOntAutofind(rawOutput);
+
+    // Merge optical power into ONUs
+    for (const onu of onus) {
+      const opt = opticalMap.get(onu.index) ||
+                  opticalMap.get(onu.sn) ||
+                  opticalMap.get(onu.sn.toUpperCase()) ||
+                  opticalMap.get(onu.sn.toLowerCase());
+      if (opt) {
+        onu.tx = opt.tx;
+        onu.rx = opt.rx;
+        if (opt.temp && opt.temp !== 'N/A') onu.temp = opt.temp;
+        if (opt.voltage && opt.voltage !== 'N/A') onu.voltage = opt.voltage;
+      }
+    }
+
+    const total = onus.length;
+    const online = onus.filter(o => o.status === 'Online').length;
+    const offline = total - online;
+    const weak = onus.filter(o => {
+      const rxVal = parseFloat(o.rx);
+      return Number.isFinite(rxVal) && rxVal < -24;
+    }).length;
+
+    let uptime = 'Active (Telnet)';
+    const uptimeMatch = rawOutput.match(/(?:system\s+)?uptime\s+is\s+([^\r\n]+)/i);
+    if (uptimeMatch) {
+      uptime = uptimeMatch[1].trim();
+    }
+
+    let sysDescr = 'HSGQ GPON OLT';
+    const verMatch = rawOutput.match(/(?:software\s+version|version)\s*[:]\s*([^\r\n]+)/i);
+    if (verMatch) {
+      sysDescr = verMatch[1].trim();
+    }
+
+    return {
+      status: 'Online',
+      error: null,
+      uptime,
+      sysDescr,
+      onus_total: total,
+      onus_online: online,
+      onus_offline: offline,
+      onus_weak: weak,
+      onus: onus,
+      unauth_onus: unauth
+    };
+  } catch (err) {
+    logger.warn(`[oltService] Telnet fetch failed for HSGQ OLT ${olt.host}: ${err.message}`);
+    return null;
+  }
+};
+
 const fetchHiosoOnuDetailViaTelnet = async (olt) => {
   const user = olt.web_user || 'admin';
   const pass = olt.web_password || 'admin';
@@ -809,12 +1026,56 @@ const fetchHiosoOnuDetailViaTelnet = async (olt) => {
   ];
 
   try {
-    const out = await telnetLoginAndRun(olt.host, user, pass, cmds);
+    const out = await telnetLoginAndRun(olt.host, user, pass, cmds, telnetOptsFromOlt(olt));
     const rows = parseHiosoOnuTable(out);
     return rows.length > 0 ? rows : null;
   } catch (e) {
     return null;
   }
+};
+
+const fetchOltViaTelnet = async (olt, full = true) => {
+  const brandKey = (olt.brand || '').toLowerCase();
+  if (brandKey === 'hsgq') {
+    const gponRes = await fetchHsgqGponViaTelnet(olt, full);
+    if (gponRes && (gponRes.onus_total > 0 || gponRes.status === 'Online')) {
+      return gponRes;
+    }
+  }
+
+  // Fallback to HIOSO / Cortina EPON format
+  const hiosoData = await fetchHiosoOnuDetailViaTelnet(olt);
+  if (hiosoData && hiosoData.length > 0) {
+    const total = hiosoData.length;
+    const online = hiosoData.filter(r => String(r.status).toLowerCase().includes('on')).length;
+    const offline = total - online;
+    return {
+      status: 'Online',
+      error: null,
+      uptime: 'Active (Telnet)',
+      sysDescr: 'HIOSO / EPON OLT',
+      onus_total: total,
+      onus_online: online,
+      onus_offline: offline,
+      onus_weak: 0,
+      onus: hiosoData.map((r, idx) => ({
+        index: r.id || idx,
+        id: r.id || '-',
+        name: r.name || r.mac || `ONU-${idx+1}`,
+        sn: r.mac || '-',
+        status: String(r.status).toLowerCase().includes('on') ? 'Online' : 'Offline',
+        offline_reason: translateOfflineReason(brandKey, r.offlineReason),
+        tx: r.txPower || 'N/A',
+        rx: r.rxPower || 'N/A',
+        distance: r.distance || '-',
+        firmware: r.fwVersion || '-',
+        uptime: r.onlineTime || '-'
+      })),
+      unauth_onus: []
+    };
+  }
+
+  return null;
 };
 
 // ─── CORE SNMP FUNCTIONS ─────────────────────────────────────────────────────
@@ -1669,7 +1930,7 @@ async function getOltStatsInternal(id, full = false) {
       resolve(data);
     };
 
-    const timeoutMs = full ? 15000 : 10000;
+    const timeoutMs = full ? 25000 : 15000;
     const globalTimeout = setTimeout(() => {
       stats.error = `Koneksi Timeout (${Math.round(timeoutMs / 1000)}s) - OLT ${olt.host} tidak merespons SNMP/Telnet`;
       safeResolve(stats);
@@ -1677,40 +1938,27 @@ async function getOltStatsInternal(id, full = false) {
 
     (async () => {
       try {
-        // 1. Cek koneksi dasar (Uptime)
+        // 1. Cek koneksi dasar (Uptime) dengan fast timeout jika SNMP tidak aktif
         const uptimeVbs = await new Promise(rv => {
+          const snmpTimer = setTimeout(() => rv([]), 3500);
           session.get(['1.3.6.1.2.1.1.3.0'], (err, vbs) => {
+            clearTimeout(snmpTimer);
             if (err) {
               stats.error = err.message;
               rv([]);
-            } else rv(vbs);
+            } else rv(vbs || []);
           });
         });
 
         if (!uptimeVbs[0] || uptimeVbs[0].type === snmp.ObjectType.NoSuchObject || uptimeVbs[0].type === snmp.ObjectType.EndOfMibView) {
           // Telnet Fallback for HIOSO/HSGQ if SNMP is not enabled
           if (brandKey === 'hioso' || brandKey === 'hsgq') {
-            const telnetData = await fetchHiosoOnuDetailViaTelnet(olt);
-            if (telnetData && telnetData.length > 0) {
-              stats.status = 'Online';
-              stats.error = null;
-              stats.onus_total = telnetData.length;
-              stats.onus_online = telnetData.filter(r => String(r.status).toLowerCase().includes('on')).length;
-              stats.onus_offline = stats.onus_total - stats.onus_online;
-              if (full) {
-                stats.onus = telnetData.map((r, idx) => ({
-                  index: r.id || idx,
-                  id: r.id || '-',
-                  name: r.name || r.mac || `ONU-${idx+1}`,
-                  sn: r.mac || '-',
-                  status: String(r.status).toLowerCase().includes('on') ? 'Online' : 'Offline',
-                  offline_reason: translateOfflineReason(brandKey, r.offlineReason),
-                  tx: r.txPower || 'N/A',
-                  rx: r.rxPower || 'N/A',
-                  distance: r.distance || '-',
-                  firmware: r.fwVersion || '-',
-                  uptime: r.onlineTime || '-'
-                }));
+            logger.info(`[oltService] SNMP probe failed for ${olt.host}, falling back to Telnet...`);
+            const telnetStats = await fetchOltViaTelnet(olt, full);
+            if (telnetStats && (telnetStats.onus_total > 0 || telnetStats.status === 'Online')) {
+              Object.assign(stats, telnetStats);
+              if (stats.onus && stats.onus.length > 0) {
+                stats.onus = enrichOnusWithCustomerData(stats.onus.sort((a, b) => (a.name || '').localeCompare(b.name || '')));
               }
               safeResolve(stats);
               return;
@@ -1738,27 +1986,12 @@ async function getOltStatsInternal(id, full = false) {
         if (!activeProfile) {
           // Telnet Fallback if profile not matched
           if (brandKey === 'hioso' || brandKey === 'hsgq') {
-            const telnetData = await fetchHiosoOnuDetailViaTelnet(olt);
-            if (telnetData && telnetData.length > 0) {
-              stats.status = 'Online';
-              stats.error = null;
-              stats.onus_total = telnetData.length;
-              stats.onus_online = telnetData.filter(r => String(r.status).toLowerCase().includes('on')).length;
-              stats.onus_offline = stats.onus_total - stats.onus_online;
-              if (full) {
-                stats.onus = telnetData.map((r, idx) => ({
-                  index: r.id || idx,
-                  id: r.id || '-',
-                  name: r.name || r.mac || `ONU-${idx+1}`,
-                  sn: r.mac || '-',
-                  status: String(r.status).toLowerCase().includes('on') ? 'Online' : 'Offline',
-                  offline_reason: translateOfflineReason(brandKey, r.offlineReason),
-                  tx: r.txPower || 'N/A',
-                  rx: r.rxPower || 'N/A',
-                  distance: r.distance || '-',
-                  firmware: r.fwVersion || '-',
-                  uptime: r.onlineTime || '-'
-                }));
+            logger.info(`[oltService] SNMP profile not matched for ${olt.host}, falling back to Telnet...`);
+            const telnetStats = await fetchOltViaTelnet(olt, full);
+            if (telnetStats && (telnetStats.onus_total > 0 || telnetStats.status === 'Online')) {
+              Object.assign(stats, telnetStats);
+              if (stats.onus && stats.onus.length > 0) {
+                stats.onus = enrichOnusWithCustomerData(stats.onus.sort((a, b) => (a.name || '').localeCompare(b.name || '')));
               }
               safeResolve(stats);
               return;
@@ -2252,10 +2485,6 @@ function parseZteOnuIndex(index) {
   return { board: String(board), port: String(port), onuId: String(onuId) };
 }
 
-const telnetOptsFromOlt = (olt) => ({
-  port: Number(olt.telnet_port) > 0 ? Number(olt.telnet_port) : 23,
-  enablePassword: olt.enable_password != null && String(olt.enable_password).length > 0 ? String(olt.enable_password) : null
-});
 
 /**
  * Delegasi VLAN / service-port ke [go-api-c320](https://github.com/s4lfanet/go-api-c320) — POST /api/v1/vlan/onu
