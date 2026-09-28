@@ -590,12 +590,6 @@
         <div class="telemetry-item">
           <i class="bi bi-clock-history"></i> Uptime: <strong id="stat-uptime">-</strong>
         </div>
-        <div class="telemetry-sep"></div>
-        <div class="telemetry-item ms-auto">
-          <i class="bi bi-arrow-down-up"></i> Traffic Uplink:
-          <span style="color:#10b981;font-weight:700;font-family:monospace;" id="stat-traffic-in">0 B/s</span> ↓
-          <span style="color:#38bdf8;font-weight:700;font-family:monospace;margin-left:4px;" id="stat-traffic-out">0 B/s</span> ↑
-        </div>
       </div>
 
       <!-- KPI Executive Summary Cards (Click-to-Filter) -->
@@ -1366,8 +1360,6 @@ function showSelectOltPrompt() {
   document.getElementById('stat-ram').innerText = '-';
   if (document.getElementById('stat-fan')) document.getElementById('stat-fan').innerText = '-';
   document.getElementById('stat-uptime').innerText = '-';
-  document.getElementById('stat-traffic-in').innerText = '0 B/s';
-  document.getElementById('stat-traffic-out').innerText = '0 B/s';
   
   const tbody = document.getElementById('onu-table-body');
   if (tbody) {
@@ -1426,8 +1418,6 @@ async function loadOltDashboard(id) {
     document.getElementById('stat-ram').innerText = stats.ram || 'N/A';
     if (document.getElementById('stat-fan')) document.getElementById('stat-fan').innerText = stats.fan || 'Normal';
     document.getElementById('stat-uptime').innerText = stats.uptime || 'N/A';
-    document.getElementById('stat-traffic-in').innerText = formatBytes(stats.uplink_rx) + '/s';
-    document.getElementById('stat-traffic-out').innerText = formatBytes(stats.uplink_tx) + '/s';
 
     // Render OID Tab Content
     renderOidTab(stats);
