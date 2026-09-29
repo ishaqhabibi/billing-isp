@@ -784,10 +784,10 @@
             <div class="fg">
               <label class="fl" style="font-weight:700;color:var(--primary);"><i class="bi bi-upc-scan"></i> Kode Pelanggan (ID)</label>
               <div style="display:flex;gap:6px;">
-                <input class="fc" name="customer_code" id="add_customer_code" placeholder="Contoh: PWK010204" style="font-family:monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
+                <input class="fc" name="customer_code" id="add_customer_code" placeholder="Contoh: URG24001" style="font-family:monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
                 <button type="button" class="btn btn-g btn-sm" onclick="triggerAutoGenerateCode('add')" title="Generate Kode & PPPoE"><i class="bi bi-magic text-primary"></i> Auto</button>
               </div>
-              <small class="text-muted" style="font-size:11px;">Format: <strong>[AREA][ODC][ODP][PORT]</strong> (otomatis terisi saat Area, ODC, ODP, & Port dipilih).</small>
+              <small class="text-muted" style="font-size:11px;">Format: <strong>[AREA][TAHUN][NOMOR URUT]</strong> (Contoh: <strong>URG24001</strong> - otomatis terisi saat Area dipilih).</small>
             </div>
             <div class="fg">
               <label class="fl"><i class="bi bi-card-text"></i> NIK / No. KTP (Opsional)</label>
@@ -1192,10 +1192,10 @@
             <div class="fg">
               <label class="fl" style="font-weight:700;color:var(--primary);"><i class="bi bi-upc-scan"></i> Kode Pelanggan (ID)</label>
               <div style="display:flex;gap:6px;">
-                <input class="fc" name="customer_code" id="e_customer_code" placeholder="Contoh: PWK010204" style="font-family:monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
-                <button type="button" class="btn btn-g btn-sm" onclick="triggerAutoGenerateCode('edit')" title="Generate Kode dari Area/ODP/Port"><i class="bi bi-magic text-primary"></i> Auto</button>
+                <input class="fc" name="customer_code" id="e_customer_code" placeholder="Contoh: URG24001" style="font-family:monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
+                <button type="button" class="btn btn-g btn-sm" onclick="triggerAutoGenerateCode('edit')" title="Generate Kode"><i class="bi bi-magic text-primary"></i> Auto</button>
               </div>
-              <small class="text-muted" style="font-size:11px;">Format: <strong>[AREA][ODC][ODP][PORT]</strong> (otomatis terisi saat Area, ODC, ODP, & Port dipilih).</small>
+              <small class="text-muted" style="font-size:11px;">Format: <strong>[AREA][TAHUN][NOMOR URUT]</strong> (Contoh: <strong>URG24001</strong> - otomatis terisi saat Area dipilih).</small>
             </div>
             <div class="fg">
               <label class="fl"><i class="bi bi-card-text"></i> NIK / No. KTP (Opsional)</label>
@@ -3633,95 +3633,75 @@ function generateRandomPassword(length = 6) {
   return pass;
 }
 
-function autoGenerateCustomerCode(type = 'add') {
+async function autoGenerateCustomerCode(type = 'add') {
   const prefix = type === 'add' ? 'add_' : 'e_';
   const areaSelect = document.getElementById(prefix + 'area');
-  const odcSelect = document.getElementById(prefix + 'odc_id');
-  const odpSelect = document.getElementById(prefix + 'odp_id');
-  const portInput = document.getElementById(prefix + 'odp_port') || document.getElementById(prefix + 'pon_port');
   const codeInput = document.getElementById(prefix + 'customer_code');
 
   if (!codeInput) return;
 
-  // 1. Get Area Code (from data-code, or derive 3 letters from area name)
-  let areaCode = '';
+  let areaVal = '';
+  let areaCodeAttr = '';
   if (areaSelect && areaSelect.selectedIndex > 0) {
     const opt = areaSelect.options[areaSelect.selectedIndex];
-    const dataCode = opt ? opt.getAttribute('data-code') : '';
-    if (dataCode && dataCode.trim()) {
-      areaCode = dataCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-    } else if (opt && opt.value) {
-      areaCode = opt.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
-    }
+    areaVal = opt ? (opt.value || opt.text || '').trim() : '';
+    areaCodeAttr = opt ? (opt.getAttribute('data-code') || '').trim() : '';
   }
 
-  // 2. Get ODC Number (extract digits from ODC name, pad to 2 digits)
-  let odcNumber = '';
-  if (odcSelect && odcSelect.selectedIndex > 0) {
-    const opt = odcSelect.options[odcSelect.selectedIndex];
-    const odcName = (opt ? (opt.getAttribute('data-name') || opt.text || '') : '').trim();
-    const digitsMatch = odcName.match(/\d+/);
-    if (digitsMatch) {
-      odcNumber = String(digitsMatch[0]).padStart(2, '0');
-    } else if (opt && opt.value) {
-      odcNumber = String(opt.value).padStart(2, '0');
-    }
-  }
+  // Coba ambil next-code otomatis dari server database backend
+  try {
+    const queryParam = encodeURIComponent(areaCodeAttr || areaVal);
+    const res = await fetch(`/admin/api/customers/next-code?area=${queryParam}`);
+    const data = await res.json();
+    if (data.ok && data.customer_code) {
+      codeInput.value = data.customer_code;
 
-  // 3. Get ODP Number (extract digits from ODP name, pad to 2 digits)
-  let odpNumber = '';
-  if (odpSelect && odpSelect.selectedIndex > 0) {
-    const opt = odpSelect.options[odpSelect.selectedIndex];
-    const odpName = (opt ? (opt.getAttribute('data-name') || opt.text || '') : '').trim();
-    const digitsMatch = odpName.match(/\d+/);
-    if (digitsMatch) {
-      odpNumber = String(digitsMatch[0]).padStart(2, '0');
-    } else if (opt && opt.value) {
-      odpNumber = String(opt.value).padStart(2, '0');
-    }
-  }
+      if (type === 'add') {
+        const pppoeUsernameDefault = document.querySelector('#addModal input[name="pppoe_username"]');
+        const pppoeUsernameManual = document.getElementById('add_pppoe_username_manual');
+        const pppoeWithDomain = data.pppoe_username || (data.customer_code.toLowerCase() + '@bionfiber.net');
 
-  // 4. Get Port Number (extract digits from ODP port or PON port, pad to 2 digits)
-  let portNumber = '';
-  if (portInput) {
-    const portVal = (portInput.value || '').trim();
-    const portMatch = portVal.match(/\d+/);
-    if (portMatch) {
-      portNumber = String(portMatch[0]).padStart(2, '0');
-    }
-  }
+        if (pppoeUsernameDefault) pppoeUsernameDefault.value = pppoeWithDomain;
+        if (pppoeUsernameManual) pppoeUsernameManual.value = pppoeWithDomain;
 
-  // If user has chosen area, ODC, ODP, or port:
-  if (areaCode || odcNumber || odpNumber || portNumber) {
-    const finalArea = areaCode || 'PGG';
-    const finalOdc = odcNumber || '01';
-    const finalOdp = odpNumber || '01';
-    const finalPort = portNumber || '01';
-    const customerCode = `${finalArea}${finalOdc}${finalOdp}${finalPort}`;
+        const passInput = document.getElementById('add_pppoe_password');
+        if (passInput && !passInput.value) {
+          passInput.value = generateRandomPassword(6);
+        }
 
-    codeInput.value = customerCode;
-
-    if (type === 'add') {
-      // Auto-fill PPPoE Username with lowercase of customer code + @bionfiber.net
-      const pppoeUsernameDefault = document.querySelector('#addModal input[name="pppoe_username"]');
-      const pppoeUsernameManual = document.getElementById('add_pppoe_username_manual');
-      const lowerCode = customerCode.toLowerCase();
-      const pppoeWithDomain = lowerCode.includes('@') ? lowerCode : (lowerCode + '@bionfiber.net');
-
-      if (pppoeUsernameDefault) pppoeUsernameDefault.value = pppoeWithDomain;
-      if (pppoeUsernameManual) pppoeUsernameManual.value = pppoeWithDomain;
-
-      // Auto-generate secure random password if empty
-      const passInput = document.getElementById('add_pppoe_password');
-      if (passInput && !passInput.value) {
-        passInput.value = generateRandomPassword(6);
+        const tagInput = document.querySelector('#addModal input[name="genieacs_tag"]');
+        if (tagInput && (!tagInput.value || tagInput.value.trim() === '')) {
+          tagInput.value = pppoeWithDomain;
+        }
       }
+      return;
+    }
+  } catch (e) {
+    console.warn('Gagal fetch next-code dari server, gunakan fallback lokal:', e);
+  }
 
-      // Auto-fill Tag GenieACS if empty
-      const tagInput = document.querySelector('#addModal input[name="genieacs_tag"]');
-      if (tagInput && (!tagInput.value || tagInput.value.trim() === '')) {
-        tagInput.value = pppoeWithDomain;
-      }
+  // Fallback lokal jika fetch offline
+  const finalArea = areaCodeAttr || (areaVal ? areaVal.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3) : 'BN');
+  const year2 = String(new Date().getFullYear()).slice(-2);
+  const fallbackCode = `${finalArea}${year2}001`;
+  codeInput.value = fallbackCode;
+
+  if (type === 'add') {
+    const pppoeUsernameDefault = document.querySelector('#addModal input[name="pppoe_username"]');
+    const pppoeUsernameManual = document.getElementById('add_pppoe_username_manual');
+    const pppoeWithDomain = fallbackCode.toLowerCase() + '@bionfiber.net';
+
+    if (pppoeUsernameDefault) pppoeUsernameDefault.value = pppoeWithDomain;
+    if (pppoeUsernameManual) pppoeUsernameManual.value = pppoeWithDomain;
+
+    const passInput = document.getElementById('add_pppoe_password');
+    if (passInput && !passInput.value) {
+      passInput.value = generateRandomPassword(6);
+    }
+
+    const tagInput = document.querySelector('#addModal input[name="genieacs_tag"]');
+    if (tagInput && (!tagInput.value || tagInput.value.trim() === '')) {
+      tagInput.value = pppoeWithDomain;
     }
   }
 }

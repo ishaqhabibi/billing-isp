@@ -819,6 +819,75 @@ router.get('/api/customers/live-sessions', requireAdminSession, async (req, res)
   }
 });
 
+// ── GENERATE NEXT CUSTOMER CODE OTOMATIS (FORMAT: [AREA][TAHUN][URUT] -> URG24001) ──
+router.get('/api/customers/next-code', requireAdminSession, (req, res) => {
+  try {
+    const areaParam = String(req.query.area || '').trim();
+    let areaCode = '';
+
+    if (areaParam) {
+      // 1. Cek di tabel areas (berdasarkan nama atau kode)
+      const row = db.prepare('SELECT code, name FROM areas WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) OR LOWER(TRIM(code)) = LOWER(TRIM(?)) LIMIT 1').get(areaParam, areaParam);
+      if (row && row.code && row.code.trim()) {
+        areaCode = row.code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+      } else if (row && row.name) {
+        areaCode = row.name.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
+      } else {
+        areaCode = areaParam.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
+      }
+    }
+
+    if (!areaCode || areaCode.length < 2) {
+      areaCode = 'BN'; // Fallback prefix Bion
+    }
+
+    // 2. Tahun 2 digit (misal: 24 untuk 2024, 26 untuk 2026)
+    const year2Digits = String(new Date().getFullYear()).slice(-2);
+    const prefix = `${areaCode}${year2Digits}`;
+
+    // 3. Ambil seluruh customer_code yang diawali prefix ini
+    const existing = db.prepare("SELECT customer_code FROM customers WHERE customer_code LIKE ?").all(`${prefix}%`);
+    let maxNum = 0;
+
+    for (const item of existing) {
+      const code = String(item.customer_code || '').trim().toUpperCase();
+      if (code.startsWith(prefix)) {
+        const restDigits = code.slice(prefix.length).match(/^\d+/);
+        if (restDigits) {
+          const num = parseInt(restDigits[0], 10);
+          if (!isNaN(num) && num > maxNum) {
+            maxNum = num;
+          }
+        }
+      }
+    }
+
+    // Jika belum ada yang cocok dengan prefix, hitung juga total pelanggan di area tersebut sebagai baseline
+    if (maxNum === 0 && areaParam) {
+      const countRow = db.prepare('SELECT COUNT(*) as total FROM customers WHERE LOWER(TRIM(area)) = LOWER(TRIM(?))').get(areaParam);
+      if (countRow && countRow.total > 0) {
+        maxNum = countRow.total;
+      }
+    }
+
+    const nextNum = maxNum + 1;
+    const seqStr = String(nextNum).padStart(3, '0');
+    const customerCode = `${prefix}${seqStr}`;
+    const pppoeUsername = `${customerCode.toLowerCase()}@bionfiber.net`;
+
+    return res.json({
+      ok: true,
+      customer_code: customerCode,
+      area_code: areaCode,
+      year: year2Digits,
+      sequence: nextNum,
+      pppoe_username: pppoeUsername
+    });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 router.get('/api/customers/:id/pppoe-traffic', requireAdminSession, async (req, res) => {
   const customerId = Number(req.params.id);
   if (!customerId) return res.status(400).json({ ok: false, error: 'invalid_customer' });
