@@ -1050,16 +1050,16 @@
           <div class="android-action-icon" style="background:var(--isp-danger-subtle); color:var(--isp-danger);">
             <i class="bi bi-arrow-clockwise"></i>
           </div>
-          <div class="android-action-label">Restart ONU</div>
+          <div class="android-action-label">Restart Modem</div>
         </div>
 
-        <!-- 3. REFRESH SESI MIKROTIK -->
-        <form method="POST" action="/customer/reconnect" class="d-contents" onsubmit="return confirm('Segarkan rute sesi internet MikroTik Anda?')">
+        <!-- 3. REFRESH JARINGAN INTERNET -->
+        <form method="POST" action="/customer/reconnect" class="d-contents" onsubmit="return confirm('Segarkan rute koneksi jaringan internet Anda?')">
           <button type="submit" class="android-action-tile w-100 border-0">
             <div class="android-action-icon" style="background:var(--isp-warning-subtle); color:var(--isp-warning);">
               <i class="bi bi-lightning-charge-fill"></i>
             </div>
-            <div class="android-action-label">Refresh Sesi</div>
+            <div class="android-action-label">Refresh Jaringan</div>
           </button>
         </form>
 
@@ -1238,9 +1238,9 @@
           <button type="button" class="btn btn-sm flex-fill py-2 fw-bold d-flex align-items-center justify-content-center gap-2 btn-restart-action" onclick="rebootDevice('<%= (customer.tags && customer.tags[0]) || customer.id %>')">
             <i class="bi bi-arrow-clockwise"></i> Restart Modem
           </button>
-          <form method="POST" action="/customer/reconnect" class="flex-fill" onsubmit="return confirm('Segarkan rute sesi internet MikroTik Anda?')">
+          <form method="POST" action="/customer/reconnect" class="flex-fill" onsubmit="return confirm('Segarkan rute koneksi jaringan internet Anda?')">
             <button type="submit" class="btn btn-sm w-100 py-2 fw-bold d-flex align-items-center justify-content-center gap-2 btn-refresh-action">
-              <i class="bi bi-lightning-charge-fill"></i> Refresh Sesi
+              <i class="bi bi-lightning-charge-fill"></i> Refresh Jaringan
             </button>
           </form>
         </div>
@@ -1395,7 +1395,7 @@
             </h2>
             <div id="collapseNormal" class="accordion-collapse collapse" data-bs-parent="#modemAccordion">
               <div class="accordion-body small" style="font-size:12px; line-height:1.5;">
-                Klik tombol <strong>Refresh Sesi</strong> di beranda aplikasi untuk mereset rute jaringan MikroTik secara instan. Pastikan seluruh tagihan bulan ini berstatus LUNAS.
+                Klik tombol <strong>Refresh Jaringan</strong> di beranda aplikasi untuk mereset rute koneksi internet Anda secara instan. Pastikan seluruh tagihan bulan ini berstatus LUNAS.
               </div>
             </div>
           </div>
