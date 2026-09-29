@@ -1037,7 +1037,7 @@
 
       <!-- 3. AKSI CEPAT (4-TILE LAUNCHER ANDROID) -->
       <section class="android-action-grid">
-        <!-- 1. KONTROL WIFI -->
+        <!-- 1. KELOLA WIFI -->
         <a href="#wifi-section" class="android-action-tile" onclick="switchAndroidTab('wifi-section', this)">
           <div class="android-action-icon" style="background:var(--isp-primary-subtle); color:var(--isp-primary-text);">
             <i class="bi bi-wifi"></i>
@@ -1045,23 +1045,21 @@
           <div class="android-action-label">Kelola Wi-Fi</div>
         </a>
 
-        <!-- 2. RESTART MODEM -->
-        <div class="android-action-tile" onclick="rebootDevice('<%= (customer.tags && customer.tags[0]) || customer.id %>')">
-          <div class="android-action-icon" style="background:var(--isp-danger-subtle); color:var(--isp-danger);">
-            <i class="bi bi-arrow-clockwise"></i>
+        <!-- 2. CEK TAGIHAN -->
+        <a href="#billing-section" class="android-action-tile" onclick="switchAndroidTab('billing-section', this)">
+          <div class="android-action-icon" style="background:var(--isp-warning-subtle); color:var(--isp-warning);">
+            <i class="bi bi-receipt-cutoff"></i>
           </div>
-          <div class="android-action-label">Restart Modem</div>
-        </div>
+          <div class="android-action-label">Cek Tagihan</div>
+        </a>
 
-        <!-- 3. REFRESH JARINGAN INTERNET -->
-        <form method="POST" action="/customer/reconnect" class="d-contents" onsubmit="return confirm('Segarkan rute koneksi jaringan internet Anda?')">
-          <button type="submit" class="android-action-tile w-100 border-0">
-            <div class="android-action-icon" style="background:var(--isp-warning-subtle); color:var(--isp-warning);">
-              <i class="bi bi-lightning-charge-fill"></i>
-            </div>
-            <div class="android-action-label">Refresh Jaringan</div>
-          </button>
-        </form>
+        <!-- 3. BUAT TIKET GANGGUAN -->
+        <div class="android-action-tile" role="button" data-bs-toggle="modal" data-bs-target="#ticketModal" onclick="const m = bootstrap.Modal.getOrCreateInstance(document.getElementById('ticketModal')); m.show();">
+          <div class="android-action-icon" style="background:var(--isp-info-subtle); color:var(--isp-info);">
+            <i class="bi bi-ticket-detailed-fill"></i>
+          </div>
+          <div class="android-action-label">Buat Tiket</div>
+        </div>
 
         <!-- 4. CHAT CS RESMI -->
         <% 
