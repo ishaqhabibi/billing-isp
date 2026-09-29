@@ -952,47 +952,114 @@ function extractUptime(d) {
 }
 
 function extractClientCount(d) {
-    if (!d) return null;
+    if (!d) return 0;
+
+    // 1. Collect MACs of genuinely associated Wi-Fi devices from active radio interfaces
+    const activeWifiMacs = new Set();
     const wlanConfig = getNestedValue(d, 'InternetGatewayDevice.LANDevice.1.WLANConfiguration');
     if (wlanConfig && typeof wlanConfig === 'object') {
-        let totalAssoc = 0;
-        let foundAssoc = false;
         for (const k of Object.keys(wlanConfig)) {
+            if (k.startsWith('_')) continue;
             const band = wlanConfig[k];
-            if (band && typeof band === 'object') {
-                if (band.AssociatedDevice) {
-                    foundAssoc = true;
-                    if (Array.isArray(band.AssociatedDevice)) {
-                        totalAssoc += band.AssociatedDevice.length;
-                    } else if (typeof band.AssociatedDevice === 'object') {
-                        totalAssoc += Object.keys(band.AssociatedDevice).length;
-                    }
-                } else {
-                    const assoc = getNestedValue(band, 'TotalAssociations');
-                    if (assoc !== null && assoc !== undefined && assoc !== '-') {
-                        const num = parseInt(assoc, 10);
-                        if (!isNaN(num)) {
-                            totalAssoc += num;
-                            foundAssoc = true;
-                        }
+            if (!band || typeof band !== 'object') continue;
+            const assoc = band.AssociatedDevice;
+            if (assoc && typeof assoc === 'object') {
+                const entries = Array.isArray(assoc) ? assoc : Object.values(assoc);
+                for (const item of entries) {
+                    if (!item || typeof item !== 'object') continue;
+                    const mac = item.AssociatedDeviceMACAddress?._value || item.AssociatedDeviceMACAddress || 
+                                item.MACAddress?._value || item.MACAddress;
+                    if (mac && typeof mac === 'string' && mac.length >= 10) {
+                        activeWifiMacs.add(mac.toLowerCase());
                     }
                 }
             }
         }
-        if (foundAssoc) return totalAssoc;
     }
 
-    let hostsCount = getNestedValue(d, 'InternetGatewayDevice.LANDevice.1.Hosts.HostNumberOfEntries');
-    if (hostsCount !== null && hostsCount !== undefined && hostsCount !== '-') {
-        const count = parseInt(hostsCount, 10);
-        if (!isNaN(count)) return count;
+    // TR-181 AccessPoint AssociatedDevice
+    const tr181APs = getNestedValue(d, 'Device.WiFi.AccessPoint');
+    if (tr181APs && typeof tr181APs === 'object') {
+        for (const k of Object.keys(tr181APs)) {
+            if (k.startsWith('_')) continue;
+            const ap = tr181APs[k];
+            if (!ap || typeof ap !== 'object') continue;
+            const assoc = ap.AssociatedDevice;
+            if (assoc && typeof assoc === 'object') {
+                const entries = Array.isArray(assoc) ? assoc : Object.values(assoc);
+                for (const item of entries) {
+                    if (!item || typeof item !== 'object') continue;
+                    const mac = item.MACAddress?._value || item.MACAddress;
+                    if (mac && typeof mac === 'string' && mac.length >= 10) {
+                        activeWifiMacs.add(mac.toLowerCase());
+                    }
+                }
+            }
+        }
     }
 
-    const hostObj = getNestedValue(d, 'InternetGatewayDevice.LANDevice.1.Hosts.Host');
-    if (hostObj) {
-        if (Array.isArray(hostObj)) return hostObj.length;
-        if (typeof hostObj === 'object') return Object.keys(hostObj).length;
+    // 2. Check Hosts list (LAN & Wi-Fi) and count ONLY actively connected clients
+    const hostObj = getNestedValue(d, 'InternetGatewayDevice.LANDevice.1.Hosts.Host') ||
+                    getNestedValue(d, 'Device.Hosts.Host');
+    if (hostObj && typeof hostObj === 'object') {
+        let activeCount = 0;
+        const hostEntries = Array.isArray(hostObj) ? hostObj : Object.values(hostObj);
+
+        for (const host of hostEntries) {
+            if (!host || typeof host !== 'object') continue;
+            const getVal = (key) => {
+                const v = host[key];
+                return (v && typeof v === 'object' && '_value' in v) ? v._value : v;
+            };
+
+            const mac = String(getVal('MACAddress') || '').toLowerCase();
+            const iface = String(getVal('InterfaceType') || getVal('Layer2Interface') || '').toLowerCase();
+            const activeRaw = getVal('Active');
+            const isWiFi = iface.includes('802.11') || iface.includes('wlan') || iface.includes('wifi');
+
+            let isActive = false;
+            if (isWiFi) {
+                // Wi-Fi clients are ONLY genuinely active if currently associated to the radio
+                isActive = activeWifiMacs.has(mac);
+            } else {
+                // Wired LAN Ethernet clients
+                isActive = activeRaw === true || activeRaw === 'true' || activeRaw === 1 || activeRaw === '1';
+            }
+
+            if (isActive) {
+                activeCount++;
+            }
+        }
+
+        return activeCount;
     }
+
+    // 3. Fallback to active associated Wi-Fi devices if Hosts list was not provided
+    if (activeWifiMacs.size > 0) {
+        return activeWifiMacs.size;
+    }
+
+    // 4. Check TotalAssociations only if explicitly reported and valid
+    if (wlanConfig && typeof wlanConfig === 'object') {
+        let totalAssoc = 0;
+        let hasTotalAssocParam = false;
+        for (const k of Object.keys(wlanConfig)) {
+            if (k.startsWith('_')) continue;
+            const band = wlanConfig[k];
+            if (band && typeof band === 'object') {
+                const assoc = getNestedValue(band, 'TotalAssociations');
+                if (assoc !== null && assoc !== undefined && assoc !== '-') {
+                    const num = parseInt(assoc, 10);
+                    if (!isNaN(num)) {
+                        totalAssoc += num;
+                        hasTotalAssocParam = true;
+                    }
+                }
+            }
+        }
+        if (hasTotalAssocParam) return totalAssoc;
+    }
+
     return 0;
 }
 
@@ -1181,7 +1248,7 @@ async function fetchDevicesFromACS(server, vParams = [], paths = {}, options = {
     try {
         const baseUrl = normalizeUrl(server.url);
         // Gabungkan proyeksi dasar dengan path pencarian
-        let projection = '_id,_lastInform,_ip,_deviceId._Manufacturer,_deviceId._ProductClass,_deviceId._SerialNumber,VirtualParameters,InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1,InternetGatewayDevice.LANDevice.1.WLANConfiguration,InternetGatewayDevice.LANDevice.1.Hosts.HostNumberOfEntries,InternetGatewayDevice.DeviceInfo.UpTime,Device.WiFi.SSID';
+        let projection = '_id,_lastInform,_ip,_deviceId._Manufacturer,_deviceId._ProductClass,_deviceId._SerialNumber,VirtualParameters,InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1,InternetGatewayDevice.LANDevice.1.WLANConfiguration,InternetGatewayDevice.LANDevice.1.Hosts.Host,InternetGatewayDevice.LANDevice.1.Hosts.HostNumberOfEntries,InternetGatewayDevice.DeviceInfo.UpTime,Device.WiFi.SSID,Device.WiFi.AccessPoint,Device.Hosts.Host';
         
         const params = { projection };
         if (limit !== null) {
