@@ -47,16 +47,25 @@ function findUserCredentials(username) {
   const cleanUsername = String(username || '').trim();
   if (!cleanUsername) return null;
 
+  const noDomain = cleanUsername.includes('@') ? cleanUsername.split('@')[0] : cleanUsername;
+  const withDomain = cleanUsername.includes('@') ? cleanUsername : (cleanUsername + '@bionfiber.net');
+
   // 1. Cek tabel customers (pppoe_username atau name atau phone)
   try {
     const cust = db.prepare(`
-      SELECT c.id, c.name, c.pppoe_username, c.pppoe_password, c.status, c.static_ip, c.package_id,
+      SELECT c.id, c.name, c.customer_code, c.pppoe_username, c.pppoe_password, c.status, c.static_ip, c.package_id,
              p.name as package_name, p.speed_up, p.speed_down, p.speed_up_upto, p.speed_down_upto
       FROM customers c
       LEFT JOIN packages p ON p.id = c.package_id
-      WHERE c.pppoe_username = ? OR c.name = ? OR c.phone = ?
+      WHERE LOWER(c.pppoe_username) = LOWER(?) 
+         OR LOWER(c.pppoe_username) = LOWER(?) 
+         OR LOWER(c.pppoe_username) = LOWER(?)
+         OR LOWER(c.customer_code) = LOWER(?)
+         OR LOWER(c.customer_code) = LOWER(?)
+         OR LOWER(c.name) = LOWER(?) 
+         OR c.phone = ?
       LIMIT 1
-    `).get(cleanUsername, cleanUsername, cleanUsername);
+    `).get(cleanUsername, withDomain, noDomain, cleanUsername, noDomain, cleanUsername, cleanUsername);
 
     if (cust) {
       // Prioritaskan pppoe_password, fallback ke pppoe_users table — JANGAN gunakan username sebagai password
