@@ -127,7 +127,16 @@ function findCustomerProfileByLoginId(loginId) {
 
 function buildCustomerDeviceTokens(loginId, profile) {
   const tokenCandidates = [];
-  for (const value of [loginId, profile?.phone, profile?.pppoe_username, profile?.genieacs_tag]) {
+  for (const value of [
+    loginId, 
+    profile?.phone, 
+    profile?.pppoe_username, 
+    profile?.genieacs_tag,
+    profile?.ont_sn,
+    profile?.onu_sn,
+    profile?.sn,
+    profile?.mac_address
+  ]) {
     const token = String(value ?? '').replace(/[\r\n\t]+/g, '').trim();
     if (token && !tokenCandidates.includes(token)) tokenCandidates.push(token);
   }

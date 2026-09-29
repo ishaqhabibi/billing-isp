@@ -61,7 +61,25 @@ async function searchDeviceAcrossServers(query, fullData = true) {
 
 async function findDeviceByTag(tag) {
   try {
-    const query = { $or: [{ _id: tag }, { _tags: tag }] };
+    const cleanTag = String(tag || '').trim();
+    if (!cleanTag) return null;
+    const query = {
+      $or: [
+        { _id: cleanTag },
+        { _tags: cleanTag },
+        { '_deviceId._SerialNumber': cleanTag },
+        { 'DeviceID.SerialNumber': cleanTag },
+        { 'InternetGatewayDevice.DeviceInfo.SerialNumber': cleanTag },
+        { 'Device.DeviceInfo.SerialNumber': cleanTag },
+        { 'VirtualParameters.PPPoEUser': cleanTag },
+        { 'VirtualParameters.pppoeUsername': cleanTag },
+        { 'VirtualParameters.customer_name': cleanTag }
+      ]
+    };
+    if (cleanTag.length >= 5) {
+      query.$or.push({ '_deviceId._SerialNumber': { $regex: cleanTag, $options: 'i' } });
+      query.$or.push({ '_id': { $regex: cleanTag, $options: 'i' } });
+    }
     // Get full data by default
     return await searchDeviceAcrossServers(query, true);
   } catch (e) {
@@ -75,11 +93,18 @@ async function findDeviceByPppoe(pppoeUser) {
     const user = String(pppoeUser || '').trim();
     if (!user) return null;
     const keys = [
+      'VirtualParameters.PPPoEUser',
       'VirtualParameters.pppoeUsername',
       'VirtualParameters.pppUsername',
+      'VirtualParameters.pppoe_user',
       ...PPPOE_USER_KEYS
     ];
-    const query = { $or: keys.map(k => ({ [k]: user })) };
+    const query = {
+      $or: [
+        ...keys.map(k => ({ [k]: user })),
+        { 'VirtualParameters.PPPoEUser': { $regex: user, $options: 'i' } }
+      ]
+    };
     // Get full data by default
     return await searchDeviceAcrossServers(query, true);
   } catch (e) {
@@ -890,7 +915,8 @@ async function updateSSID(tag, newSSID, actor = null, band = 'all') {
     if (!server) return false;
     
     const instance = genieacsApi.createAxiosInstance(server);
-    const tasksUrl = `/devices/${deviceId}/tasks`;
+    // Tambahkan ?connection_request agar GenieACS langsung mengirimkan Connection Request ke modem
+    const tasksUrl = `/devices/${deviceId}/tasks?connection_request`;
 
     const targetBand = String(band || 'all').toLowerCase();
     const shouldUpdate24 = targetBand === 'all' || targetBand === '2.4' || targetBand === '2.4ghz';
@@ -914,7 +940,10 @@ async function updateSSID(tag, newSSID, actor = null, band = 'all') {
       try {
         await instance.post(tasksUrl, {
           name: 'setParameterValues',
-          parameterValues: [[p24, newSSID, 'xsd:string']]
+          parameterValues: [
+            [p24, newSSID, 'xsd:string'],
+            [isTr181 ? 'Device.WiFi.SSID.1.Enable' : 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Enable', 'true', 'xsd:boolean']
+          ]
         }, { timeout: 10000 });
         ok = true;
       } catch (e) {
@@ -932,14 +961,17 @@ async function updateSSID(tag, newSSID, actor = null, band = 'all') {
         try {
           await instance.post(tasksUrl, {
             name: 'setParameterValues',
-            parameterValues: [['Device.WiFi.SSID.2.SSID', ssid5Name, 'xsd:string']]
+            parameterValues: [
+              ['Device.WiFi.SSID.2.SSID', ssid5Name, 'xsd:string'],
+              ['Device.WiFi.SSID.2.Enable', 'true', 'xsd:boolean']
+            ]
           }, { timeout: 10000 });
           ok = true;
         } catch (e) {
           logger.error(`[updateSSID 5G TR-181] Error: ${e.message}`);
         }
       } else {
-        // TR-098 (Fiberhome, ZTE, Huawei, etc.)
+        // TR-098 (Fiberhome HG6045F3, ZTE, Huawei, etc.)
         let target5Path = flatParams?._wlan_5g_ssid_path || null;
         if (!target5Path && flatParams) {
           if (flatParams['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID'] !== undefined) {
@@ -951,7 +983,19 @@ async function updateSSID(tag, newSSID, actor = null, band = 'all') {
           }
         }
 
-        // Standard TR-098 index 5 default (Fiberhome HG6145F / ZTE / Huawei)
+        // Cek struktur pohon device jika flatParams belum ada
+        if (!target5Path && device) {
+          const wlanObj = device.InternetGatewayDevice?.LANDevice?.['1']?.WLANConfiguration || {};
+          if (wlanObj['5'] || wlanObj[5]) {
+            target5Path = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID';
+          } else if (wlanObj['2'] || wlanObj[2]) {
+            target5Path = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID';
+          } else if (device.InternetGatewayDevice?.LANDevice?.['2']?.WLANConfiguration) {
+            target5Path = 'InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.SSID';
+          }
+        }
+
+        // Standard TR-098 index 5 default (Fiberhome HG6045F3 / ZTE / Huawei)
         if (!target5Path) {
           target5Path = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID';
         }
@@ -959,24 +1003,29 @@ async function updateSSID(tag, newSSID, actor = null, band = 'all') {
         const enablePath = target5Path.replace(/\.SSID$/, '.Enable');
 
         try {
-          // Task 1: Set 5G SSID
           await instance.post(tasksUrl, {
             name: 'setParameterValues',
-            parameterValues: [[target5Path, ssid5Name, 'xsd:string']]
+            parameterValues: [
+              [target5Path, ssid5Name, 'xsd:string'],
+              [enablePath, 'true', 'xsd:boolean']
+            ]
           }, { timeout: 10000 });
           ok = true;
-
-          // Task 2: Ensure 5G Radio / SSID instance is Enabled so it broadcasts
-          await instance.post(tasksUrl, {
-            name: 'setParameterValues',
-            parameterValues: [[enablePath, 'true', 'xsd:boolean']]
-          }, { timeout: 10000 });
-
           logger.info(`[updateSSID 5G] Enqueued SSID '${ssid5Name}' on ${target5Path} and Enable on ${enablePath}`);
         } catch (e) {
           logger.error(`[updateSSID 5G] Error on ${target5Path}: ${e.message}`);
         }
       }
+    }
+
+    // Wake up modem instantly via CWMP Connection Request
+    if (ok) {
+      try {
+        const acsServer = require('./acsServerService');
+        if (acsServer && typeof acsServer.triggerConnectionRequest === 'function') {
+          acsServer.triggerConnectionRequest(device._id).catch(() => {});
+        }
+      } catch (_) {}
     }
 
     // Catat audit trail jika berhasil
@@ -1025,7 +1074,8 @@ async function updatePassword(tag, newPassword, actor = null, band = 'all') {
     if (!server) return false;
     
     const instance = genieacsApi.createAxiosInstance(server);
-    const tasksUrl = `/devices/${deviceId}/tasks`;
+    // Tambahkan ?connection_request agar task langsung dieksekusi di modem sekarang juga
+    const tasksUrl = `/devices/${deviceId}/tasks?connection_request`;
 
     logger.info(`[updatePassword] Setting password for device ${deviceId}, tag ${tag}, band ${band}`);
 
@@ -1054,35 +1104,30 @@ async function updatePassword(tag, newPassword, actor = null, band = 'all') {
           ok = true;
         } catch (_) {}
       } else {
-        const paths24G = [
-          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.PreSharedKey',
-          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase',
-          'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase'
-        ];
-        const known24 = paths24G.find(p => flatParams && flatParams[p] !== undefined);
-        if (known24) {
+        const psk24 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.PreSharedKey';
+        const kp24 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase';
+        try {
+          await instance.post(tasksUrl, {
+            name: 'setParameterValues',
+            parameterValues: [
+              [psk24, pw, 'xsd:string'],
+              [kp24, pw, 'xsd:string']
+            ]
+          }, { timeout: 10000 });
+          ok = true;
+          logger.info(`[updatePassword 2.4G] Enqueued on ${psk24} and ${kp24}`);
+        } catch (e) {
           try {
             await instance.post(tasksUrl, {
               name: 'setParameterValues',
-              parameterValues: [[known24, pw, 'xsd:string']]
-            }, { timeout: 10000 });
-            ok = true;
-          } catch (e) {
-            logger.error(`[updatePassword 2.4G] Error: ${e.message}`);
-          }
-        } else {
-          // Send PreSharedKey.1.PreSharedKey (Fiberhome standard) and KeyPassphrase
-          try {
-            await instance.post(tasksUrl, {
-              name: 'setParameterValues',
-              parameterValues: [['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.PreSharedKey', pw, 'xsd:string']]
+              parameterValues: [[psk24, pw, 'xsd:string']]
             }, { timeout: 10000 });
             ok = true;
           } catch (_) {}
           try {
             await instance.post(tasksUrl, {
               name: 'setParameterValues',
-              parameterValues: [['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase', pw, 'xsd:string']]
+              parameterValues: [[kp24, pw, 'xsd:string']]
             }, { timeout: 10000 });
             ok = true;
           } catch (_) {}
@@ -1101,7 +1146,7 @@ async function updatePassword(tag, newPassword, actor = null, band = 'all') {
           ok = true;
         } catch (_) {}
       } else {
-        // TR-098 5G Password
+        // TR-098 5G Password (Fiberhome HG6045F3, ZTE, etc.)
         let target5Ssid = flatParams?._wlan_5g_ssid_path || null;
         let base5Obj = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5';
         if (target5Ssid) {
@@ -1112,32 +1157,31 @@ async function updatePassword(tag, newPassword, actor = null, band = 'all') {
           } else if (flatParams['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID'] !== undefined && flatParams['InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.SSID'] === undefined) {
             base5Obj = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2';
           }
+        } else if (device) {
+          const wlanObj = device.InternetGatewayDevice?.LANDevice?.['1']?.WLANConfiguration || {};
+          if (wlanObj['5'] || wlanObj[5]) {
+            base5Obj = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5';
+          } else if (wlanObj['2'] || wlanObj[2]) {
+            base5Obj = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2';
+          } else if (device.InternetGatewayDevice?.LANDevice?.['2']?.WLANConfiguration) {
+            base5Obj = 'InternetGatewayDevice.LANDevice.2.WLANConfiguration.1';
+          }
         }
 
         const pskPath = `${base5Obj}.PreSharedKey.1.PreSharedKey`;
         const kpPath = `${base5Obj}.KeyPassphrase`;
-        const altPskPath = `${base5Obj}.PreSharedKey.1.KeyPassphrase`;
 
-        // Check which one exists in flatParams
-        let chosenPwPath = null;
-        if (flatParams && flatParams[pskPath] !== undefined) chosenPwPath = pskPath;
-        else if (flatParams && flatParams[kpPath] !== undefined) chosenPwPath = kpPath;
-        else if (flatParams && flatParams[altPskPath] !== undefined) chosenPwPath = altPskPath;
-
-        if (chosenPwPath) {
-          try {
-            await instance.post(tasksUrl, {
-              name: 'setParameterValues',
-              parameterValues: [[chosenPwPath, pw, 'xsd:string']]
-            }, { timeout: 10000 });
-            ok = true;
-            logger.info(`[updatePassword 5G] Enqueued on verified path ${chosenPwPath}`);
-          } catch (e) {
-            logger.error(`[updatePassword 5G] Error on ${chosenPwPath}: ${e.message}`);
-          }
-        } else {
-          // If not yet verified from DB, send PreSharedKey.1.PreSharedKey (Fiberhome default)
-          // and KeyPassphrase as separate safe tasks
+        try {
+          await instance.post(tasksUrl, {
+            name: 'setParameterValues',
+            parameterValues: [
+              [pskPath, pw, 'xsd:string'],
+              [kpPath, pw, 'xsd:string']
+            ]
+          }, { timeout: 10000 });
+          ok = true;
+          logger.info(`[updatePassword 5G] Enqueued on ${pskPath} and ${kpPath}`);
+        } catch (e) {
           try {
             await instance.post(tasksUrl, {
               name: 'setParameterValues',
@@ -1152,9 +1196,18 @@ async function updatePassword(tag, newPassword, actor = null, band = 'all') {
             }, { timeout: 10000 });
             ok = true;
           } catch (_) {}
-          logger.info(`[updatePassword 5G] Enqueued fallback tasks on ${pskPath} and ${kpPath}`);
         }
       }
+    }
+
+    // Wake up modem instantly via CWMP Connection Request
+    if (ok) {
+      try {
+        const acsServer = require('./acsServerService');
+        if (acsServer && typeof acsServer.triggerConnectionRequest === 'function') {
+          acsServer.triggerConnectionRequest(device._id).catch(() => {});
+        }
+      } catch (_) {}
     }
 
     // Catat audit trail jika berhasil

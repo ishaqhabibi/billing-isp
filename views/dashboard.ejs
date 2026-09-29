@@ -640,6 +640,145 @@
       border-color: var(--isp-primary) !important;
       box-shadow: 0 0 0 3px var(--isp-primary-subtle) !important;
     }
+    .form-label {
+      color: var(--isp-text-heading) !important;
+      font-weight: 700 !important;
+      font-size: 13px !important;
+      margin-bottom: 6px !important;
+    }
+    .form-text {
+      color: var(--isp-text-muted) !important;
+      font-size: 11.5px !important;
+    }
+    .input-group-text {
+      background: var(--isp-card-surface) !important;
+      color: var(--isp-text-muted) !important;
+      border: 1px solid var(--isp-border-strong) !important;
+    }
+    [data-theme="dark"] .btn-close {
+      filter: invert(1) grayscale(100%) brightness(200%);
+    }
+
+    /* ── HIGH-CONTRAST THEME RULES FOR DARK & LIGHT MODE ── */
+    .text-muted {
+      color: var(--isp-text-muted) !important;
+    }
+    .btn-warning.text-dark, .badge.bg-warning.text-dark, .btn-warning .text-dark, .bg-warning.text-dark {
+      color: #0b0f19 !important;
+    }
+    [data-theme="dark"] .text-dark:not(.btn-warning):not(.bg-warning) {
+      color: var(--isp-text-heading) !important;
+    }
+
+    /* Form & select theme enhancements */
+    [data-theme="dark"] .form-select option {
+      background-color: #182235;
+      color: #f1f5f9;
+    }
+    [data-theme="light"] .form-select option {
+      background-color: #ffffff;
+      color: #0f172a;
+    }
+    [data-theme="dark"] ::placeholder {
+      color: #64748b !important;
+      opacity: 1;
+    }
+    [data-theme="light"] ::placeholder {
+      color: #94a3b8 !important;
+      opacity: 1;
+    }
+
+    .btn-outline-secondary {
+      color: var(--isp-text-muted) !important;
+      border-color: var(--isp-border-strong) !important;
+    }
+    .btn-outline-secondary:hover {
+      background: var(--isp-card-hover) !important;
+      color: var(--isp-text-heading) !important;
+      border-color: var(--isp-primary) !important;
+    }
+
+    [data-theme="dark"] .alert-danger {
+      background: rgba(239, 68, 68, 0.16) !important;
+      color: #fca5a5 !important;
+      border-color: rgba(239, 68, 68, 0.3) !important;
+    }
+    [data-theme="dark"] .alert-success {
+      background: rgba(16, 185, 129, 0.16) !important;
+      color: #6ee7b7 !important;
+      border-color: rgba(16, 185, 129, 0.3) !important;
+    }
+    [data-theme="dark"] .alert-warning {
+      background: rgba(245, 158, 11, 0.16) !important;
+      color: #fcd34d !important;
+      border-color: rgba(245, 158, 11, 0.3) !important;
+    }
+
+    /* Wi-Fi Parameter Display Boxes */
+    .wifi-box-container {
+      background: var(--isp-card-surface);
+      border: 1px solid var(--isp-border-strong);
+      border-radius: 14px;
+      padding: 14px 16px;
+      transition: all 0.2s ease;
+    }
+    [data-theme="light"] .wifi-box-container {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    [data-theme="dark"] .wifi-box-container {
+      background: #182337;
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+    .wifi-box-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: var(--isp-text-muted) !important;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+    }
+    .wifi-box-value {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--isp-text-heading) !important;
+      margin-top: 2px;
+    }
+
+    /* Accordion styling for Bantuan & Diagnostik */
+    .isp-accordion .accordion-item {
+      background: var(--isp-card-bg) !important;
+      border: 1px solid var(--isp-border) !important;
+      border-radius: 12px !important;
+      overflow: hidden;
+    }
+    .isp-accordion .accordion-button {
+      background: var(--isp-card-surface) !important;
+      color: var(--isp-text-heading) !important;
+      border: none !important;
+      box-shadow: none !important;
+      font-size: 12.5px !important;
+      font-weight: 700 !important;
+    }
+    .isp-accordion .accordion-button:not(.collapsed) {
+      background: var(--isp-primary-subtle) !important;
+      color: var(--isp-primary-text) !important;
+    }
+    [data-theme="dark"] .isp-accordion .accordion-button::after {
+      filter: invert(1) brightness(180%);
+    }
+    .isp-accordion .accordion-body {
+      background: var(--isp-card-bg) !important;
+      color: var(--isp-text-body) !important;
+      line-height: 1.6 !important;
+    }
+
+    /* Section scroll margin to prevent sticky header and chip bar overlapping */
+    #home-section, #wifi-section, #billing-section, #help-section {
+      scroll-margin-top: 130px;
+    }
   </style>
 </head>
 
@@ -969,38 +1108,38 @@
           </div>
 
           <!-- NAMA WIFI 2.4G -->
-          <div class="p-3 rounded-3 mb-2" style="background:var(--isp-card-surface); border:1px solid var(--isp-border);">
+          <div class="wifi-box-container mb-3">
             <div class="d-flex align-items-center justify-content-between mb-1">
-              <span class="small text-muted fw-bold" style="font-size:10px;">NAMA WIFI (SSID 2.4G)</span>
-              <button type="button" class="btn btn-sm p-0 text-primary fw-bold" onclick="openEditSsidModal('2.4')" style="font-size:11px;">
+              <span class="wifi-box-label"><i class="bi bi-broadcast me-1 text-primary"></i> NAMA WIFI (SSID 2.4G)</span>
+              <button type="button" class="btn btn-sm p-0 text-primary fw-bold" onclick="openEditSsidModal('2.4')" style="font-size:12px;">
                 <i class="bi bi-pencil-square"></i> Ganti
               </button>
             </div>
-            <div class="fw-bold font-monospace fs-5 text-truncate" id="displaySsid24" style="color:var(--isp-text-heading);">
+            <div class="wifi-box-value font-monospace text-truncate" id="displaySsid24">
               <%= currentWifiSsid24 %>
             </div>
           </div>
 
           <!-- SANDI WIFI 2.4G -->
-          <div class="p-3 rounded-3 mb-3" style="background:var(--isp-card-surface); border:1px solid var(--isp-border);">
+          <div class="wifi-box-container mb-3">
             <div class="d-flex align-items-center justify-content-between mb-1">
-              <span class="small text-muted fw-bold" style="font-size:10px;">KATA SANDI 2.4G</span>
-              <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm p-0 text-primary fw-bold" onclick="togglePeekPassBand('2.4')" style="font-size:11px;">
+              <span class="wifi-box-label"><i class="bi bi-key-fill me-1 text-warning"></i> KATA SANDI 2.4G</span>
+              <div class="d-flex gap-2 align-items-center">
+                <button type="button" class="btn btn-sm p-0 text-primary fw-bold" onclick="togglePeekPassBand('2.4')" style="font-size:12px;">
                   <i class="bi bi-eye" id="iconEye24"></i> <span id="labelEye24">Lihat</span>
                 </button>
                 <span class="text-muted">•</span>
-                <button type="button" class="btn btn-sm p-0 text-warning fw-bold" onclick="openEditPasswordModal('2.4')" style="font-size:11px;">
-                  <i class="bi bi-key-fill"></i> Ganti
+                <button type="button" class="btn btn-sm p-0 text-warning fw-bold" onclick="openEditPasswordModal('2.4')" style="font-size:12px;">
+                  <i class="bi bi-pencil-square"></i> Ganti
                 </button>
               </div>
             </div>
             <div class="d-flex align-items-center justify-content-between">
-              <div class="fw-bold font-monospace fs-5 text-truncate" id="displayPass24" data-real="<%= currentWifiPass24 %>" style="color:var(--isp-text-heading); letter-spacing:1px;">
+              <div class="wifi-box-value font-monospace text-truncate" id="displayPass24" data-real="<%= currentWifiPass24 %>" style="letter-spacing:1px;">
                 <%= currentWifiPass24 ? '••••••••' : '(Belum Disetel)' %>
               </div>
-              <button type="button" class="btn btn-sm text-muted p-0" onclick="copyPasswordToClipboard('<%= currentWifiPass24 %>', this)" title="Salin Sandi">
-                <i class="bi bi-clipboard"></i>
+              <button type="button" class="btn btn-sm text-muted p-1" onclick="copyPasswordToClipboard('<%= currentWifiPass24 %>', this)" title="Salin Sandi">
+                <i class="bi bi-clipboard fs-6"></i>
               </button>
             </div>
           </div>
@@ -1016,42 +1155,42 @@
         <div id="paneBand5" class="wifi-band-pane" style="display:none;">
           <div class="d-flex align-items-center gap-2 p-2 px-3 rounded-3 mb-3" style="background:var(--isp-card-surface); border:1px solid var(--isp-border); font-size:11px; color:var(--isp-text-muted);">
             <i class="bi bi-info-circle text-primary flex-shrink-0"></i>
-            <span>Pengaturan nama Wi-Fi (SSID) dan kata sandi frekuensi 5 GHz.</span>
+            <span>Pengaturan nama Wi-Fi (SSID) dan kata sandi frekuensi 5 GHz (Super Cepat).</span>
           </div>
 
           <!-- NAMA WIFI 5G -->
-          <div class="p-3 rounded-3 mb-2" style="background:var(--isp-card-surface); border:1px solid var(--isp-border);">
+          <div class="wifi-box-container mb-3">
             <div class="d-flex align-items-center justify-content-between mb-1">
-              <span class="small text-muted fw-bold" style="font-size:10px;">NAMA WIFI (SSID 5G)</span>
-              <button type="button" class="btn btn-sm p-0 text-primary fw-bold" onclick="openEditSsidModal('5')" style="font-size:11px;">
+              <span class="wifi-box-label"><i class="bi bi-broadcast me-1 text-primary"></i> NAMA WIFI (SSID 5G)</span>
+              <button type="button" class="btn btn-sm p-0 text-primary fw-bold" onclick="openEditSsidModal('5')" style="font-size:12px;">
                 <i class="bi bi-pencil-square"></i> Ganti
               </button>
             </div>
-            <div class="fw-bold font-monospace fs-5 text-truncate" id="displaySsid5" style="color:var(--isp-text-heading);">
+            <div class="wifi-box-value font-monospace text-truncate" id="displaySsid5">
               <%= currentWifiSsid5 %>
             </div>
           </div>
 
           <!-- SANDI WIFI 5G -->
-          <div class="p-3 rounded-3 mb-3" style="background:var(--isp-card-surface); border:1px solid var(--isp-border);">
+          <div class="wifi-box-container mb-3">
             <div class="d-flex align-items-center justify-content-between mb-1">
-              <span class="small text-muted fw-bold" style="font-size:10px;">KATA SANDI 5G</span>
-              <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm p-0 text-primary fw-bold" onclick="togglePeekPassBand('5')" style="font-size:11px;">
+              <span class="wifi-box-label"><i class="bi bi-key-fill me-1 text-warning"></i> KATA SANDI 5G</span>
+              <div class="d-flex gap-2 align-items-center">
+                <button type="button" class="btn btn-sm p-0 text-primary fw-bold" onclick="togglePeekPassBand('5')" style="font-size:12px;">
                   <i class="bi bi-eye" id="iconEye5"></i> <span id="labelEye5">Lihat</span>
                 </button>
                 <span class="text-muted">•</span>
-                <button type="button" class="btn btn-sm p-0 text-warning fw-bold" onclick="openEditPasswordModal('5')" style="font-size:11px;">
-                  <i class="bi bi-key-fill"></i> Ganti
+                <button type="button" class="btn btn-sm p-0 text-warning fw-bold" onclick="openEditPasswordModal('5')" style="font-size:12px;">
+                  <i class="bi bi-pencil-square"></i> Ganti
                 </button>
               </div>
             </div>
             <div class="d-flex align-items-center justify-content-between">
-              <div class="fw-bold font-monospace fs-5 text-truncate" id="displayPass5" data-real="<%= currentWifiPass5 %>" style="color:var(--isp-text-heading); letter-spacing:1px;">
+              <div class="wifi-box-value font-monospace text-truncate" id="displayPass5" data-real="<%= currentWifiPass5 %>" style="letter-spacing:1px;">
                 <%= currentWifiPass5 ? '••••••••' : '(Belum Disetel)' %>
               </div>
-              <button type="button" class="btn btn-sm text-muted p-0" onclick="copyPasswordToClipboard('<%= currentWifiPass5 %>', this)" title="Salin Sandi">
-                <i class="bi bi-clipboard"></i>
+              <button type="button" class="btn btn-sm text-muted p-1" onclick="copyPasswordToClipboard('<%= currentWifiPass5 %>', this)" title="Salin Sandi">
+                <i class="bi bi-clipboard fs-6"></i>
               </button>
             </div>
           </div>

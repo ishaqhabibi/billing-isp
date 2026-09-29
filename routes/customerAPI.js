@@ -3645,7 +3645,7 @@ router.get('/wifi', requireCustomerApiAuth, async (req, res) => {
 
 // Ubah Nama WiFi Saja (SSID)
 router.post('/wifi/change-ssid', requireCustomerApiAuth, async (req, res) => {
-  const { ssid } = req.body;
+  const { ssid, band = 'all' } = req.body;
   if (!ssid || ssid.trim().length < 2) {
     return res.status(400).json({ success: false, message: 'Nama WiFi (SSID) minimal 2 karakter.' });
   }
@@ -3661,7 +3661,7 @@ router.post('/wifi/change-ssid', requireCustomerApiAuth, async (req, res) => {
   const tokens = [customer.pppoe_username, customer.genieacs_tag, customer.phone, String(customer.id)].filter(Boolean);
   for (const token of tokens) {
     try {
-      await customerDevice.updateSSID(token, newSsid);
+      await customerDevice.updateSSID(token, newSsid, { type: 'customer', id: customer.id, name: customer.name }, band);
     } catch (_) {}
   }
 
@@ -3673,7 +3673,7 @@ router.post('/wifi/change-ssid', requireCustomerApiAuth, async (req, res) => {
 
 // Ubah Sandi WiFi Saja (Password)
 router.post('/wifi/change-password', requireCustomerApiAuth, async (req, res) => {
-  const { newPassword } = req.body;
+  const { newPassword, band = 'all' } = req.body;
   if (!newPassword || newPassword.trim().length < 8) {
     return res.status(400).json({ success: false, message: 'Sandi WiFi minimal 8 karakter.' });
   }
@@ -3682,14 +3682,14 @@ router.post('/wifi/change-password', requireCustomerApiAuth, async (req, res) =>
 
   // Simpan ke DB customer
   try {
-    db.prepare('UPDATE customers SET pppoe_password = ? WHERE id = ?').run(newPass, customer.id);
+    db.prepare('UPDATE customers SET wifi_password = ? WHERE id = ?').run(newPass, customer.id);
   } catch (_) {}
 
   // Kirim ke GenieACS TR-069
   const tokens = [customer.pppoe_username, customer.genieacs_tag, customer.phone, String(customer.id)].filter(Boolean);
   for (const token of tokens) {
     try {
-      await customerDevice.updatePassword(token, newPass);
+      await customerDevice.updatePassword(token, newPass, { type: 'customer', id: customer.id, name: customer.name }, band);
     } catch (_) {}
   }
 
