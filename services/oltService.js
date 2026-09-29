@@ -2455,23 +2455,46 @@ function enrichOnusWithCustomerData(onus) {
   if (!Array.isArray(onus) || onus.length === 0) return onus;
   try {
     const custs = db.prepare(`
-      SELECT id, name, pppoe_username, mac_address, genieacs_tag, phone
+      SELECT id, customer_code, name, pppoe_username, mac_address, genieacs_tag, phone, ont_sn
       FROM customers
     `).all() || [];
 
+    const snMap = new Map();
     const pppoeMap = new Map();
     const macMap = new Map();
     const tagMap = new Map();
+    const codeMap = new Map();
     const nameMap = new Map();
 
     for (const c of custs) {
-      if (c.pppoe_username) pppoeMap.set(String(c.pppoe_username).trim().toLowerCase(), c);
+      if (c.ont_sn) {
+        const cleanSn = String(c.ont_sn).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        if (cleanSn) snMap.set(cleanSn, c);
+      }
+      if (c.pppoe_username) {
+        const ppp = String(c.pppoe_username).trim().toLowerCase();
+        pppoeMap.set(ppp, c);
+        // Also map without @domain if applicable
+        if (ppp.includes('@')) {
+          pppoeMap.set(ppp.split('@')[0], c);
+        }
+      }
       if (c.mac_address) {
         const rawMac = String(c.mac_address).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
         if (rawMac) macMap.set(rawMac, c);
       }
-      if (c.genieacs_tag) tagMap.set(String(c.genieacs_tag).trim().toLowerCase(), c);
-      if (c.name) nameMap.set(String(c.name).trim().toLowerCase(), c);
+      if (c.genieacs_tag) {
+        const tag = String(c.genieacs_tag).trim().toLowerCase();
+        tagMap.set(tag, c);
+        const cleanTag = tag.replace(/[^a-zA-Z0-9]/g, '');
+        if (cleanTag) snMap.set(cleanTag, c);
+      }
+      if (c.customer_code) {
+        codeMap.set(String(c.customer_code).trim().toLowerCase(), c);
+      }
+      if (c.name) {
+        nameMap.set(String(c.name).trim().toLowerCase(), c);
+      }
     }
 
     for (const onu of onus) {
@@ -2479,9 +2502,11 @@ function enrichOnusWithCustomerData(onus) {
       const nameClean = String(onu.name || '').trim().toLowerCase();
 
       let matched = null;
-      if (snClean && macMap.has(snClean)) matched = macMap.get(snClean);
+      if (snClean && snMap.has(snClean)) matched = snMap.get(snClean);
+      else if (snClean && macMap.has(snClean)) matched = macMap.get(snClean);
       else if (snClean && tagMap.has(snClean)) matched = tagMap.get(snClean);
       else if (nameClean && pppoeMap.has(nameClean)) matched = pppoeMap.get(nameClean);
+      else if (nameClean && codeMap.has(nameClean)) matched = codeMap.get(nameClean);
       else if (nameClean && nameMap.has(nameClean)) matched = nameMap.get(nameClean);
       else if (snClean.length >= 6) {
         for (const [mac, c] of macMap.entries()) {
@@ -2495,7 +2520,9 @@ function enrichOnusWithCustomerData(onus) {
       if (matched) {
         onu.customer_id = matched.id;
         onu.customer_name = matched.name;
+        onu.customer_code = matched.customer_code || null;
         onu.customer_phone = matched.phone || null;
+        onu.pppoe_username = matched.pppoe_username || null;
       }
     }
   } catch (e) {

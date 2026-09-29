@@ -172,6 +172,21 @@ function getCustomerById(id) {
   `).get(id);
 }
 
+function formatBionPppoe(username) {
+  if (!username) return '';
+  let u = String(username).trim();
+  if (!u) return '';
+  const domain = '@bionfiber.net';
+  if (!u.toLowerCase().endsWith(domain)) {
+    if (u.includes('@')) {
+      u = u.split('@')[0] + domain;
+    } else {
+      u = u + domain;
+    }
+  }
+  return u;
+}
+
 function createCustomer(data) {
   let expiredAt = data.expired_at || null;
   if (!expiredAt && data.package_id) {
@@ -183,10 +198,12 @@ function createCustomer(data) {
   }
 
   const customerCode = data.customer_code ? String(data.customer_code).trim().toUpperCase() : null;
+  const pppoeUsername = data.pppoe_username ? formatBionPppoe(data.pppoe_username) : '';
+  const ontSn = data.ont_sn ? String(data.ont_sn).trim() : '';
 
   return db.prepare(`
-    INSERT INTO customers (nik, name, phone, email, address, area, customer_code, package_id, router_id, olt_id, odc_id, odp_id, pon_port, odp_port, photo_house, photo_customer, photo_optical_power, initial_rx_power, lat, lng, genieacs_tag, pppoe_username, pppoe_password, pppoe_remote_address, isolir_profile, status, install_date, expired_at, notes, auto_isolate, isolate_day, connection_type, static_ip, mac_address, hotspot_username, hotspot_password, hotspot_profile, collector_id, is_radius)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO customers (nik, name, phone, email, address, area, customer_code, package_id, router_id, olt_id, odc_id, odp_id, pon_port, odp_port, photo_house, photo_customer, photo_optical_power, initial_rx_power, lat, lng, genieacs_tag, pppoe_username, pppoe_password, pppoe_remote_address, isolir_profile, status, install_date, expired_at, notes, auto_isolate, isolate_day, connection_type, static_ip, mac_address, hotspot_username, hotspot_password, hotspot_profile, collector_id, is_radius, ont_sn)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     data.nik ? String(data.nik).trim() : '',
     data.name, data.phone || '', data.email || '', data.address || '',
@@ -205,7 +222,7 @@ function createCustomer(data) {
     data.initial_rx_power !== undefined && data.initial_rx_power !== '' && !isNaN(parseFloat(data.initial_rx_power)) ? parseFloat(data.initial_rx_power) : null,
     data.lat || '',
     data.lng || '',
-    data.genieacs_tag || '', data.pppoe_username || '',
+    data.genieacs_tag || '', pppoeUsername,
     data.pppoe_password || '',
     data.pppoe_remote_address || '',
     data.isolir_profile || 'isolir',
@@ -222,7 +239,8 @@ function createCustomer(data) {
     data.hotspot_password || '',
     data.hotspot_profile || '',
     data.collector_id ? parseInt(data.collector_id) : null,
-    data.is_radius !== undefined ? parseInt(data.is_radius) : 1
+    data.is_radius !== undefined ? parseInt(data.is_radius) : 1,
+    ontSn
   );
 }
 
@@ -251,8 +269,15 @@ function updateCustomer(id, data) {
     ? (isNaN(parseFloat(data.initial_rx_power)) ? null : parseFloat(data.initial_rx_power))
     : (prev ? prev.initial_rx_power : null);
 
+  const pppoeUsername = data.pppoe_username !== undefined
+    ? formatBionPppoe(data.pppoe_username)
+    : (prev ? prev.pppoe_username : '');
+  const ontSn = data.ont_sn !== undefined
+    ? (data.ont_sn ? String(data.ont_sn).trim() : '')
+    : (prev ? (prev.ont_sn || '') : '');
+
   const result = db.prepare(`
-    UPDATE customers SET nik=?, name=?, phone=?, email=?, address=?, area=?, customer_code=?, package_id=?, router_id=?, olt_id=?, odc_id=?, odp_id=?, pon_port=?, odp_port=?, photo_house=?, photo_customer=?, photo_optical_power=?, initial_rx_power=?, lat=?, lng=?, genieacs_tag=?, pppoe_username=?, pppoe_password=?, pppoe_remote_address=?, isolir_profile=?, status=?, install_date=?, expired_at=?, notes=?, auto_isolate=?, isolate_day=?, cable_path=?, connection_type=?, static_ip=?, mac_address=?, hotspot_username=?, hotspot_password=?, hotspot_profile=?, collector_id=?, is_radius=?
+    UPDATE customers SET nik=?, name=?, phone=?, email=?, address=?, area=?, customer_code=?, package_id=?, router_id=?, olt_id=?, odc_id=?, odp_id=?, pon_port=?, odp_port=?, photo_house=?, photo_customer=?, photo_optical_power=?, initial_rx_power=?, lat=?, lng=?, genieacs_tag=?, pppoe_username=?, pppoe_password=?, pppoe_remote_address=?, isolir_profile=?, status=?, install_date=?, expired_at=?, notes=?, auto_isolate=?, isolate_day=?, cable_path=?, connection_type=?, static_ip=?, mac_address=?, hotspot_username=?, hotspot_password=?, hotspot_profile=?, collector_id=?, is_radius=?, ont_sn=?
     WHERE id=?
   `).run(
     data.nik !== undefined ? (data.nik ? String(data.nik).trim() : '') : (prev ? (prev.nik || '') : ''),
@@ -272,7 +297,7 @@ function updateCustomer(id, data) {
     initialRx,
     data.lat || '',
     data.lng || '',
-    data.genieacs_tag || '', data.pppoe_username || '',
+    data.genieacs_tag || '', pppoeUsername,
     data.pppoe_password || '',
     data.pppoe_remote_address || '',
     data.isolir_profile || 'isolir',
@@ -291,6 +316,7 @@ function updateCustomer(id, data) {
     data.hotspot_profile || '',
     data.collector_id ? parseInt(data.collector_id) : null,
     data.is_radius !== undefined ? parseInt(data.is_radius) : 1,
+    ontSn,
     id
   );
 

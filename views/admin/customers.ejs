@@ -880,12 +880,12 @@
                   <input type="hidden" name="pppoe_input_mode" value="mikrotik">
                 <% } %>
                 <div id="add_pppoe_mikrotik_input">
-                  <input class="fc" name="pppoe_username" list="add_pppoe_list" placeholder="Pilih / cari username PPPoE MikroTik">
+                  <input class="fc" name="pppoe_username" list="add_pppoe_list" placeholder="Pilih / ketik username@bionfiber.net" onblur="enforceBionPppoeDomain(this)">
                   <datalist id="add_pppoe_list"></datalist>
                   <div class="hint" id="add_pppoe_hint"></div>
                 </div>
                 <div id="add_pppoe_manual_input" style="display:none">
-                  <input class="fc" id="add_pppoe_username_manual" placeholder="Ketik username PPPoE baru...">
+                  <input class="fc" id="add_pppoe_username_manual" placeholder="Ketik username@bionfiber.net" onblur="enforceBionPppoeDomain(this)">
                 </div>
               </div>
               <div class="fg">
@@ -1273,7 +1273,7 @@
             <div class="form-row" style="background:rgba(59,130,246,0.04); padding:12px 14px; border-radius:10px; border:1px solid rgba(59,130,246,0.15);">
               <div class="fg">
                 <label class="fl" style="font-weight:700; color:var(--primary);"><i class="bi bi-person-fill"></i> PPPoE Username *</label>
-                <input class="fc" name="pppoe_username" id="e_pppoe" list="e_pppoe_list" placeholder="PPPoE Username" required>
+                <input class="fc" name="pppoe_username" id="e_pppoe" list="e_pppoe_list" placeholder="username@bionfiber.net" onblur="enforceBionPppoeDomain(this)" required>
                 <datalist id="e_pppoe_list"></datalist>
                 <div class="hint" id="e_pppoe_hint"></div>
               </div>
@@ -3702,13 +3702,14 @@ function autoGenerateCustomerCode(type = 'add') {
     codeInput.value = customerCode;
 
     if (type === 'add') {
-      // Auto-fill PPPoE Username with lowercase of customer code
+      // Auto-fill PPPoE Username with lowercase of customer code + @bionfiber.net
       const pppoeUsernameDefault = document.querySelector('#addModal input[name="pppoe_username"]');
       const pppoeUsernameManual = document.getElementById('add_pppoe_username_manual');
       const lowerCode = customerCode.toLowerCase();
+      const pppoeWithDomain = lowerCode.includes('@') ? lowerCode : (lowerCode + '@bionfiber.net');
 
-      if (pppoeUsernameDefault) pppoeUsernameDefault.value = lowerCode;
-      if (pppoeUsernameManual) pppoeUsernameManual.value = lowerCode;
+      if (pppoeUsernameDefault) pppoeUsernameDefault.value = pppoeWithDomain;
+      if (pppoeUsernameManual) pppoeUsernameManual.value = pppoeWithDomain;
 
       // Auto-generate secure random password if empty
       const passInput = document.getElementById('add_pppoe_password');
@@ -3719,10 +3720,25 @@ function autoGenerateCustomerCode(type = 'add') {
       // Auto-fill Tag GenieACS if empty
       const tagInput = document.querySelector('#addModal input[name="genieacs_tag"]');
       if (tagInput && (!tagInput.value || tagInput.value.trim() === '')) {
-        tagInput.value = lowerCode;
+        tagInput.value = pppoeWithDomain;
       }
     }
   }
+}
+
+function enforceBionPppoeDomain(el) {
+  if (!el || !el.value) return;
+  let val = el.value.trim();
+  if (!val) return;
+  const domain = '@bionfiber.net';
+  if (!val.toLowerCase().endsWith(domain)) {
+    if (val.includes('@')) {
+      val = val.split('@')[0] + domain;
+    } else {
+      val = val + domain;
+    }
+  }
+  el.value = val;
 }
 
 function triggerAutoGenerateCode(type) {

@@ -632,6 +632,14 @@ async function getPppoeSecrets(routerId = null) {
 async function addPppoeSecret(data, routerId = null) {
   let conn = null;
   try {
+    if (data && data.name && !String(data.name).toLowerCase().endsWith('@bionfiber.net')) {
+      const raw = String(data.name).trim();
+      if (raw.includes('@')) {
+        data.name = raw.split('@')[0] + '@bionfiber.net';
+      } else {
+        data.name = raw + '@bionfiber.net';
+      }
+    }
     conn = await getConnection(routerId);
     const res = await conn.client.menu('/ppp/secret').add(data);
     listCache.delete(cacheKey(routerId, 'pppoeSecrets'));
@@ -645,6 +653,14 @@ async function addPppoeSecret(data, routerId = null) {
 async function updatePppoeSecret(id, data, routerId = null) {
   let conn = null;
   try {
+    if (data && data.name && !String(data.name).toLowerCase().endsWith('@bionfiber.net')) {
+      const raw = String(data.name).trim();
+      if (raw.includes('@')) {
+        data.name = raw.split('@')[0] + '@bionfiber.net';
+      } else {
+        data.name = raw + '@bionfiber.net';
+      }
+    }
     conn = await getConnection(routerId);
     const res = await conn.client.menu('/ppp/secret').set(data, id);
     listCache.delete(cacheKey(routerId, 'pppoeSecrets'));
@@ -671,9 +687,18 @@ async function deletePppoeSecret(id, routerId = null) {
 async function createPppoeSecret({ username, password, profile, remoteAddress, routerId = null, comment = null }) {
   let conn = null;
   try {
+    let finalUsername = String(username || '').trim();
+    if (finalUsername && !finalUsername.toLowerCase().endsWith('@bionfiber.net')) {
+      if (finalUsername.includes('@')) {
+        finalUsername = finalUsername.split('@')[0] + '@bionfiber.net';
+      } else {
+        finalUsername = finalUsername + '@bionfiber.net';
+      }
+    }
+
     conn = await getConnection(routerId);
     const secretData = {
-      name: username,
+      name: finalUsername,
       password: password,
       service: 'pppoe',
       profile: profile

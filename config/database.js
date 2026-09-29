@@ -765,6 +765,9 @@ try {
   db.exec("ALTER TABLE customers ADD COLUMN initial_rx_power REAL DEFAULT NULL");
 } catch (e) { /* ignore if already exists */ }
 try {
+  db.exec("ALTER TABLE customers ADD COLUMN ont_sn TEXT DEFAULT ''");
+} catch (e) { /* ignore if already exists */ }
+try {
   db.exec("ALTER TABLE collectors ADD COLUMN auto_approve INTEGER DEFAULT 0");
 } catch (e) { /* ignore if already exists */ }
 try { db.exec("ALTER TABLE odps ADD COLUMN port_capacity INTEGER NOT NULL DEFAULT 16"); } catch (e) { /* ignore if already exists */ }

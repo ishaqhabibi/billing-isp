@@ -962,7 +962,7 @@ function enrichDevicesWithCustomerNames(devices) {
     let customers = [];
     try {
         customers = db.prepare(`
-            SELECT id, name, genieacs_tag, pppoe_username, hotspot_username, static_ip
+            SELECT id, name, customer_code, genieacs_tag, pppoe_username, hotspot_username, static_ip, ont_sn
             FROM customers
         `).all();
     } catch (e) {
@@ -974,61 +974,93 @@ function enrichDevicesWithCustomerNames(devices) {
     const byPppoe = new Map();
     const byHotspot = new Map();
     const byIp = new Map();
+    const bySn = new Map();
 
     for (const c of customers) {
         if (!c.name) continue;
-        const name = String(c.name).trim();
-        if (c.genieacs_tag) byTag.set(String(c.genieacs_tag).trim().toLowerCase(), name);
-        if (c.pppoe_username) byPppoe.set(String(c.pppoe_username).trim().toLowerCase(), name);
-        if (c.hotspot_username) byHotspot.set(String(c.hotspot_username).trim().toLowerCase(), name);
-        if (c.static_ip) byIp.set(String(c.static_ip).trim().toLowerCase(), name);
+        if (c.ont_sn) {
+            const cleanSn = String(c.ont_sn).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+            if (cleanSn) bySn.set(cleanSn, c);
+        }
+        if (c.genieacs_tag) {
+            byTag.set(String(c.genieacs_tag).trim().toLowerCase(), c);
+            const cleanTag = String(c.genieacs_tag).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+            if (cleanTag) bySn.set(cleanTag, c);
+        }
+        if (c.pppoe_username) {
+            const ppp = String(c.pppoe_username).trim().toLowerCase();
+            byPppoe.set(ppp, c);
+            if (ppp.includes('@')) {
+                byPppoe.set(ppp.split('@')[0], c);
+            }
+        }
+        if (c.hotspot_username) byHotspot.set(String(c.hotspot_username).trim().toLowerCase(), c);
+        if (c.static_ip) byIp.set(String(c.static_ip).trim().toLowerCase(), c);
     }
 
     return devices.map(d => {
-        let matchedName = null;
+        let matchedCust = null;
 
-        // 1. PPPoE Username Match
-        const pppUser = String(d.pppoe_user || d.pppoeUser || d.pppoeUsername || '').trim().toLowerCase();
-        if (pppUser && pppUser !== '-' && pppUser !== 'n/a' && byPppoe.has(pppUser)) {
-            matchedName = byPppoe.get(pppUser);
+        // 1. Serial Number Match
+        const sn = String(d.sn || d.serialNumber || '').trim().toLowerCase();
+        const snClean = sn.replace(/[^a-zA-Z0-9]/g, '');
+        if (snClean && bySn.has(snClean)) {
+            matchedCust = bySn.get(snClean);
         }
 
-        // 2. Serial Number, Device ID, or Tags Match
-        if (!matchedName) {
-            const sn = String(d.sn || d.serialNumber || '').trim().toLowerCase();
+        // 2. PPPoE Username Match
+        if (!matchedCust) {
+            const pppUser = String(d.pppoe_user || d.pppoeUser || d.pppoeUsername || '').trim().toLowerCase();
+            if (pppUser && pppUser !== '-' && pppUser !== 'n/a' && byPppoe.has(pppUser)) {
+                matchedCust = byPppoe.get(pppUser);
+            }
+        }
+
+        // 3. Device ID or Tags Match
+        if (!matchedCust) {
             const devId = String(d.id || d.phone || '').trim().toLowerCase();
-            if (sn && byTag.has(sn)) matchedName = byTag.get(sn);
-            else if (devId && byTag.has(devId)) matchedName = byTag.get(devId);
+            if (sn && byTag.has(sn)) matchedCust = byTag.get(sn);
+            else if (devId && byTag.has(devId)) matchedCust = byTag.get(devId);
             else if (Array.isArray(d.tags)) {
                 for (const t of d.tags) {
                     const tagKey = String(t || '').trim().toLowerCase();
                     if (byTag.has(tagKey)) {
-                        matchedName = byTag.get(tagKey);
+                        matchedCust = byTag.get(tagKey);
+                        break;
+                    }
+                    if (byPppoe.has(tagKey)) {
+                        matchedCust = byPppoe.get(tagKey);
                         break;
                     }
                 }
             }
         }
 
-        // 3. Hotspot Username Match
-        if (!matchedName && pppUser && byHotspot.has(pppUser)) {
-            matchedName = byHotspot.get(pppUser);
-        }
-
-        // 4. IP Address Match
-        if (!matchedName) {
-            const ip = String(d.ip || d.pppoe_ip || d.pppoeIP || '').trim().toLowerCase();
-            if (ip && ip !== '-' && byIp.has(ip)) {
-                matchedName = byIp.get(ip);
+        // 4. Hotspot Username Match
+        if (!matchedCust) {
+            const pppUser = String(d.pppoe_user || d.pppoeUser || d.pppoeUsername || '').trim().toLowerCase();
+            if (pppUser && byHotspot.has(pppUser)) {
+                matchedCust = byHotspot.get(pppUser);
             }
         }
 
-        const finalName = matchedName || (d.customer_name && d.customer_name !== '-' ? d.customer_name : (d.customerName && d.customerName !== '-' ? d.customerName : '-'));
+        // 5. IP Address Match
+        if (!matchedCust) {
+            const ip = String(d.ip || d.pppoe_ip || d.pppoeIP || '').trim().toLowerCase();
+            if (ip && ip !== '-' && byIp.has(ip)) {
+                matchedCust = byIp.get(ip);
+            }
+        }
+
+        const finalName = matchedCust ? matchedCust.name : (d.customer_name && d.customer_name !== '-' ? d.customer_name : (d.customerName && d.customerName !== '-' ? d.customerName : '-'));
+        const finalCode = matchedCust ? matchedCust.customer_code : (d.customer_code || null);
 
         return {
             ...d,
             customer_name: finalName,
-            customerName: finalName
+            customerName: finalName,
+            customer_code: finalCode,
+            customer_id: matchedCust ? matchedCust.id : (d.customer_id || null)
         };
     });
 }
@@ -1142,6 +1174,17 @@ router.get('/', async (req, res) => {
             console.error('Failed to load PPPoE profiles from MikroTik:', e.message);
         }
 
+        let customersList = [];
+        try {
+            customersList = db.prepare(`
+                SELECT id, customer_code, name, pppoe_username, pppoe_password, wifi_ssid, wifi_password, phone, ont_sn
+                FROM customers
+                ORDER BY name ASC
+            `).all() || [];
+        } catch (e) {
+            console.error('Failed to load customers for ACS page:', e.message);
+        }
+
         res.render('admin/acs', {
             user: req.session,
             devices: allDevices,
@@ -1149,11 +1192,12 @@ router.get('/', async (req, res) => {
             selectedAcsId,
             searchQuery,
             pppoeProfiles,
+            customers: customersList,
             currentPage: 'acs_pro'
         });
     } catch (err) {
         console.error('ACS page error:', err);
-        res.render('admin/acs', { user: req.session, devices: [], acsServers: [], selectedAcsId: null, searchQuery: null, pppoeProfiles: [], currentPage: 'acs_pro' });
+        res.render('admin/acs', { user: req.session, devices: [], acsServers: [], selectedAcsId: null, searchQuery: null, pppoeProfiles: [], customers: [], currentPage: 'acs_pro' });
     }
 });
 
@@ -1846,6 +1890,7 @@ router.post('/api/add-wan/:deviceId', requireAdmin, async (req, res) => {
             pppoePass,
             pppoeProfile,
             autoCreateMikrotik,
+            customerId,
             lanPorts,
             wlanSsids,
             configureWifi,
@@ -1867,10 +1912,21 @@ router.post('/api/add-wan/:deviceId', requireAdmin, async (req, res) => {
             return res.json({ success: false, message: 'VLAN ID tidak valid (harus 1-4094)' });
         }
         
-        const trimmedPppoeUser = String(pppoeUser || '').trim();
+        let trimmedPppoeUser = String(pppoeUser || '').trim();
         const trimmedPppoePass = String(pppoePass || '').trim();
-        if (normalizedMode === 'pppoe' && (!trimmedPppoeUser || !trimmedPppoePass)) {
-            return res.json({ success: false, message: 'Username dan password PPPoE wajib diisi untuk mode PPPoE' });
+        if (normalizedMode === 'pppoe') {
+            if (!trimmedPppoeUser || !trimmedPppoePass) {
+                return res.json({ success: false, message: 'Username dan password PPPoE wajib diisi untuk mode PPPoE' });
+            }
+            // Wajib sertakan domain @bionfiber.net
+            const domain = '@bionfiber.net';
+            if (!trimmedPppoeUser.toLowerCase().endsWith(domain)) {
+                if (trimmedPppoeUser.includes('@')) {
+                    trimmedPppoeUser = trimmedPppoeUser.split('@')[0] + domain;
+                } else {
+                    trimmedPppoeUser = trimmedPppoeUser + domain;
+                }
+            }
         }
         
         const servers = getACSServers(acsId);
@@ -1899,12 +1955,45 @@ router.post('/api/add-wan/:deviceId', requireAdmin, async (req, res) => {
             ...config,
             params: {
                 query: JSON.stringify({ _id: deviceId }),
-                projection: '_id,_deviceId.Manufacturer,_deviceId._Manufacturer,InternetGatewayDevice.WANDevice.1.WANConnectionDevice,InternetGatewayDevice.LANDevice.1.WLANConfiguration'
+                projection: '_id,_deviceId.SerialNumber,_deviceId._SerialNumber,_deviceId.Manufacturer,_deviceId._Manufacturer,InternetGatewayDevice.WANDevice.1.WANConnectionDevice,InternetGatewayDevice.LANDevice.1.WLANConfiguration'
             }
         });
         
         const deviceData = Array.isArray(getDeviceRes.data) && getDeviceRes.data.length > 0 ? getDeviceRes.data[0] : null;
         if (!deviceData) return res.json({ success: false, message: 'CPE/Device tidak ditemukan di GenieACS' });
+
+        const deviceSn = String(deviceData._deviceId?._SerialNumber || deviceData._deviceId?.SerialNumber || deviceData._id || deviceId || '').trim();
+
+        // 3b. Sinkronisasi data ke tabel customers di database billing
+        try {
+            const targetCustId = customerId ? parseInt(customerId, 10) : null;
+            if (targetCustId) {
+                db.prepare(`
+                    UPDATE customers 
+                    SET ont_sn = COALESCE(NULLIF(?, ''), ont_sn),
+                        pppoe_username = COALESCE(NULLIF(?, ''), pppoe_username),
+                        pppoe_password = COALESCE(NULLIF(?, ''), pppoe_password),
+                        wifi_ssid = COALESCE(NULLIF(?, ''), wifi_ssid),
+                        wifi_password = COALESCE(NULLIF(?, ''), wifi_password),
+                        genieacs_tag = COALESCE(NULLIF(?, ''), genieacs_tag)
+                    WHERE id = ?
+                `).run(deviceSn, trimmedPppoeUser, trimmedPppoePass, wifiSsid24 || '', wifiPass24 || '', trimmedPppoeUser, targetCustId);
+            } else if (trimmedPppoeUser) {
+                db.prepare(`
+                    UPDATE customers
+                    SET ont_sn = COALESCE(NULLIF(?, ''), ont_sn),
+                        genieacs_tag = COALESCE(NULLIF(?, ''), genieacs_tag)
+                    WHERE LOWER(pppoe_username) = LOWER(?) OR LOWER(pppoe_username) = LOWER(?)
+                `).run(deviceSn, trimmedPppoeUser, trimmedPppoeUser, trimmedPppoeUser.replace('@bionfiber.net', ''));
+            }
+
+            // Tag CPE di GenieACS dengan username PPPoE
+            if (trimmedPppoeUser) {
+                axios.post(`${baseUrl}/devices/${encodeURIComponent(deviceId)}/tags/${encodeURIComponent(trimmedPppoeUser)}`, {}, config).catch(() => {});
+            }
+        } catch (dbErr) {
+            console.error('[AddWAN] Gagal sinkronisasi data pelanggan:', dbErr.message);
+        }
         
         const manufacturer = (deviceData._deviceId?._Manufacturer || deviceData._deviceId?.Manufacturer || '').toLowerCase();
         const wlanConfig = deviceData.InternetGatewayDevice?.LANDevice?.['1']?.WLANConfiguration || {};

@@ -658,6 +658,34 @@
             </label>
         </div>
 
+        <!-- Pilih Pelanggan (Auto-fill) -->
+        <div style="background:rgba(56, 189, 248, 0.08); border:1px solid rgba(56, 189, 248, 0.25); padding:14px; border-radius:12px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <label class="fl" style="margin:0; font-weight:700; color:#38bdf8; display:flex; align-items:center; gap:6px;">
+                    <i class="bi bi-person-check-fill"></i> Pilih Pelanggan (Auto-fill Akun & Wi-Fi)
+                </label>
+                <span style="font-size:11px; color:var(--muted);">Tersambung ke Database Billing</span>
+            </div>
+            <select id="wanCustomerSelect" class="fc" onchange="onWanCustomerSelected(this.value)" style="height:40px; font-weight:600;">
+                <option value="">-- Pilih Pelanggan Langsung (Otomatis Isi Data) --</option>
+                <% if (typeof customers !== 'undefined' && Array.isArray(customers)) { %>
+                    <% customers.forEach(c => { %>
+                        <option value="<%= c.id %>" 
+                            data-code="<%= c.customer_code || '' %>"
+                            data-name="<%= c.name || '' %>"
+                            data-pppoe="<%= c.pppoe_username || '' %>"
+                            data-pppoepass="<%= c.pppoe_password || '' %>"
+                            data-ssid="<%= c.wifi_ssid || '' %>"
+                            data-wifipass="<%= c.wifi_password || '' %>"
+                            data-phone="<%= c.phone || '' %>"
+                        >
+                            <%= c.customer_code ? '[' + c.customer_code + '] ' : '' %><%= c.name %> (<%= c.pppoe_username || 'Belum ada PPPoE' %>)
+                        </option>
+                    <% }); %>
+                <% } %>
+            </select>
+        </div>
+
         <!-- PPPoE Credentials Block -->
         <div id="pppoeFields" style="background:rgba(0,82,204,0.05); border:1px solid rgba(0,82,204,0.18); padding:16px; border-radius:14px; margin-bottom:16px;">
             <h4 style="margin:0 0 12px 0; font-size:13px; color:var(--text); font-weight:700; display:flex; align-items:center; gap:6px;">
@@ -665,8 +693,8 @@
             </h4>
             <div class="form-row2" style="margin-bottom:12px;">
                 <div class="fg" style="margin:0;">
-                  <label class="fl">Username PPPoE</label>
-                  <input type="text" id="wanPppoeUser" class="fc" placeholder="user@domain">
+                  <label class="fl">Username PPPoE (Wajib @bionfiber.net)</label>
+                  <input type="text" id="wanPppoeUser" class="fc" placeholder="user@bionfiber.net" onblur="enforceWanBionDomain(this)">
                 </div>
                 <div class="fg" style="margin:0;">
                   <label class="fl">Password PPPoE</label>
@@ -1752,6 +1780,8 @@ async function openAddWanModal(deviceId, acsId, sn, manufacturer, model) {
     document.getElementById('wanPppoePass').value = '';
     document.getElementById('wanConfigureWifi').checked = false;
     document.getElementById('wifiFields').style.display = 'none';
+    const custSel = document.getElementById('wanCustomerSelect');
+    if (custSel) custSel.value = '';
     
     // Default active bindings
     document.querySelectorAll('input[name="lanPorts"]').forEach(c => {
@@ -1810,14 +1840,18 @@ async function submitAddWanForm(e) {
     const wlanSsids = [];
     document.querySelectorAll('input[name="wlanSsids"]:checked').forEach(c => wlanSsids.push(c.value));
     
+    const userInp = document.getElementById('wanPppoeUser');
+    enforceWanBionDomain(userInp);
+
     const body = {
         acsId,
         mode: document.getElementById('wanMode').value,
         vlanId: document.getElementById('wanVlanId').value,
-        pppoeUser: document.getElementById('wanPppoeUser').value,
+        pppoeUser: userInp.value,
         pppoePass: document.getElementById('wanPppoePass').value,
         pppoeProfile: document.getElementById('wanPppoeProfile').value,
         autoCreateMikrotik: document.getElementById('wanAutoMikrotik').checked,
+        customerId: document.getElementById('wanCustomerSelect')?.value || null,
         lanPorts,
         wlanSsids,
         configureWifi: document.getElementById('wanConfigureWifi').checked,
@@ -1867,6 +1901,61 @@ async function submitAddWanForm(e) {
         txt.style.display = 'inline-block';
         ldr.style.display = 'none';
     }
+}
+
+function onWanCustomerSelected(customerId) {
+    if (!customerId) return;
+    const sel = document.getElementById('wanCustomerSelect');
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt) return;
+
+    const pppoe = opt.getAttribute('data-pppoe') || '';
+    const pass = opt.getAttribute('data-pppoepass') || '';
+    const ssid = opt.getAttribute('data-ssid') || '';
+    const wifipass = opt.getAttribute('data-wifipass') || '';
+    const code = opt.getAttribute('data-code') || '';
+    const name = opt.getAttribute('data-name') || '';
+
+    // Enforce @bionfiber.net
+    let targetUser = pppoe;
+    if (!targetUser) {
+        targetUser = (code || name.toLowerCase().replace(/[^a-z0-9]/g, '')) + '@bionfiber.net';
+    } else if (!targetUser.toLowerCase().endsWith('@bionfiber.net')) {
+        targetUser = (targetUser.includes('@') ? targetUser.split('@')[0] : targetUser) + '@bionfiber.net';
+    }
+
+    const pppoeUserInp = document.getElementById('wanPppoeUser');
+    if (pppoeUserInp) pppoeUserInp.value = targetUser;
+
+    const pppoePassInp = document.getElementById('wanPppoePass');
+    if (pppoePassInp && pass) pppoePassInp.value = pass;
+
+    if (ssid) {
+        const chkWifi = document.getElementById('wanConfigureWifi');
+        if (chkWifi) {
+            chkWifi.checked = true;
+            toggleWifiFields();
+        }
+        const ssidInput = document.getElementById('wifiSsid24');
+        if (ssidInput) ssidInput.value = ssid;
+        const passInput = document.getElementById('wifiPass24');
+        if (passInput && wifipass) passInput.value = wifipass;
+    }
+}
+
+function enforceWanBionDomain(input) {
+    if (!input) return;
+    let val = (input.value || '').trim();
+    if (!val) return;
+    const domain = '@bionfiber.net';
+    if (!val.toLowerCase().endsWith(domain)) {
+        if (val.includes('@')) {
+            val = val.split('@')[0] + domain;
+        } else {
+            val = val + domain;
+        }
+    }
+    input.value = val;
 }
 </script>
 </body>
