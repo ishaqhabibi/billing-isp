@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panduan Konfigurasi TR-069 Fiberhome D2 & F3 | Bionfiber Network</title>
+  <link rel="icon" href="/img/logo.png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-light: #3b82f6;
+      --primary-dark: #1d4ed8;
+      --cyan: #06b6d4;
+      --secondary: #0ea5e9;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --purple: #8b5cf6;
+      --bg: #0b1120;
+      --surface: #1e293b;
+      --surface-card: rgba(30, 41, 59, 0.85);
+      --surface-hover: rgba(51, 65, 85, 0.9);
+      --border: rgba(148, 163, 184, 0.16);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      line-height: 1.7;
+      padding-bottom: 80px;
+      margin: 0;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.18) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.12) 0px, transparent 45%),
+        radial-gradient(at 50% 100%, rgba(139, 92, 246, 0.1) 0px, transparent 55%);
+      background-attachment: fixed;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Top Navigation */
+    .top-nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(11, 17, 32, 0.88);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+    }
+
+    /* Hero Banner */
+    .hero {
+      padding: 48px 0 28px;
+      text-align: center;
+      position: relative;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      background: rgba(37, 99, 235, 0.16);
+      border: 1px solid rgba(37, 99, 235, 0.35);
+      color: #60a5fa;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: 2.35rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 760px;
+      margin: 0 auto 24px;
+    }
+
+    /* Cards */
+    .glass-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(12px);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .glass-card:hover {
+      border-color: rgba(96, 165, 250, 0.3);
+    }
+
+    .card-title-custom {
+      font-size: 1.25rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      color: #fff;
+    }
+
+    /* Method Selector Pills */
+    .method-nav {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 6px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+    .method-btn {
+      flex: 1;
+      min-width: 170px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 13.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+    .method-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .method-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary-light);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    }
+    .method-badge-rec {
+      font-size: 10px;
+      background: #10b981;
+      color: #064e3b;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    /* Code & Config Box */
+    .code-box {
+      background: #0f172a;
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 12px;
+      padding: 16px;
+      position: relative;
+      margin: 12px 0 16px;
+    }
+    .code-box pre {
+      margin: 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(51, 65, 85, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      color: #cbd5e1;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s;
+    }
+    .copy-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary-light);
+    }
+
+    /* Comparison Table */
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13.5px;
+    }
+    .spec-table th {
+      background: rgba(15, 23, 42, 0.7);
+      color: #94a3b8;
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+    }
+    .spec-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+      vertical-align: middle;
+    }
+    .spec-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Badges */
+    .badge-vlan {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .vlan-10 { background: rgba(139, 92, 246, 0.18); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.35); }
+    .vlan-20 { background: rgba(6, 182, 212, 0.18); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.35); }
+    .vlan-100 { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.35); }
+
+    /* Step circles */
+    .step-list {
+      position: relative;
+      padding-left: 20px;
+    }
+    .step-item {
+      position: relative;
+      padding-bottom: 24px;
+      padding-left: 28px;
+    }
+    .step-item:last-child {
+      padding-bottom: 4px;
+    }
+    .step-item::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 26px;
+      bottom: -6px;
+      width: 2px;
+      background: rgba(148, 163, 184, 0.2);
+    }
+    .step-item:last-child::before {
+      display: none;
+    }
+    .step-number {
+      position: absolute;
+      left: -13px;
+      top: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      font-weight: 700;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
+    }
+    .step-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Topology Box */
+    .topo-diagram {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+    .topo-node {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      text-align: center;
+      flex: 1;
+      min-width: 140px;
+    }
+    .topo-icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+    .topo-arrow {
+      color: var(--text-muted);
+      font-size: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-weight: bold;
+    }
+
+    /* Interactive Calculator / Generator */
+    .param-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .callout {
+      border-left: 4px solid var(--primary);
+      background: rgba(37, 99, 235, 0.08);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 13.5px;
+    }
+    .callout.callout-success {
+      border-left-color: var(--success);
+      background: rgba(16, 185, 129, 0.08);
+    }
+    .callout.callout-warning {
+      border-left-color: var(--warning);
+      background: rgba(245, 158, 11, 0.08);
+    }
+
+    /* Accordion Custom */
+    .accordion-button {
+      background: rgba(15, 23, 42, 0.7) !important;
+      color: #fff !important;
+      font-weight: 700;
+      border: none !important;
+      box-shadow: none !important;
+    }
+    .accordion-button:not(.collapsed) {
+      background: rgba(37, 99, 235, 0.15) !important;
+      color: #60a5fa !important;
+    }
+    .accordion-item {
+      background: transparent;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+      border-radius: 10px !important;
+      overflow: hidden;
+    }
+    .accordion-body {
+      background: rgba(15, 23, 42, 0.4);
+      color: var(--text);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Sticky Nav -->
+  <nav class="top-nav">
+    <div class="container d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <a href="/admin/acs" class="btn btn-sm btn-outline-light d-flex align-items-center gap-2" style="border-radius:8px; border-color:var(--border);">
+          <i class="bi bi-arrow-left"></i> Kembali ke GenieACS Pro
+        </a>
+        <span class="d-none d-md-inline text-muted" style="font-size: 13px;">| Panduan Operasional NOC Bionfiber</span>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-primary px-3 py-2" style="font-size:12px; font-weight:700;"><i class="bi bi-cpu me-1"></i> RB5009 + GenieACS</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container" style="max-width: 1080px;">
+
+    <!-- Hero Header -->
+    <div class="hero">
+      <div class="hero-badge">
+        <i class="bi bi-broadcast"></i> TR-069 CWMP BULK PROVISIONING GUIDE
+      </div>
+      <h1>Setup Otomatis TR-069 Fiberhome D2 &amp; F3</h1>
+      <p>
+        Panduan komprehensif mengintegrasikan ratusan modem Fiberhome ke server GenieACS Bionfiber menggunakan arsitektur <strong>VLAN 20 (DHCP TR-069)</strong> dan <strong>VLAN 100 (PPPoE)</strong> yang sudah terpasang di MikroTik Core RB5009 (<code class="mono" style="color:#60a5fa;">29septfix.rsc</code>).
+      </p>
+    </div>
+
+    <!-- Live Network Architecture Card -->
+    <div class="glass-card">
+      <div class="card-title-custom">
+        <i class="bi bi-diagram-3 text-primary"></i> Topologi &amp; Parameter Jaringan Sesuai Config MikroTik
+      </div>
+
+      <!-- Diagram visual -->
+      <div class="topo-diagram">
+        <div class="topo-node">
+          <div class="topo-icon text-primary"><i class="bi bi-router"></i></div>
+          <div style="font-weight:700; font-size:13px;">MikroTik RB5009</div>
+          <div style="font-size:11px; color:var(--text-muted);">CORE-RTR-RB5009</div>
+          <div class="badge bg-dark border mt-1" style="font-size:10px;">Port ether1 (Uplink)</div>
+        </div>
+        <div class="topo-arrow">
+          <span style="font-size:11px; color:#38bdf8;">Trunk 3 VLAN</span>
+          <i class="bi bi-arrow-right"></i>
+        </div>
+        <div class="topo-node">
+          <div class="topo-icon text-info"><i class="bi bi-hdd-rack"></i></div>
+          <div style="font-weight:700; font-size:13px;">OLT Uplink</div>
+          <div style="font-size:11px; color:var(--text-muted);">HSGQ / ZTE / Fiberhome</div>
+          <div class="badge bg-dark border mt-1" style="font-size:10px;">VLAN 10, 20, 100</div>
+        </div>
+        <div class="topo-arrow">
+          <span style="font-size:11px; color:#10b981;">ODN / Splitter</span>
+          <i class="bi bi-arrow-right"></i>
+        </div>
+        <div class="topo-node">
+          <div class="topo-icon text-success"><i class="bi bi-wifi"></i></div>
+          <div style="font-weight:700; font-size:13px;">CPE Fiberhome</div>
+          <div style="font-size:11px; color:var(--text-muted);">D2 &amp; F3 (Ratusan Modem)</div>
+          <div class="badge bg-success mt-1" style="font-size:10px;">Dual WAN Config</div>
+        </div>
+        <div class="topo-arrow">
+          <span style="font-size:11px; color:#8b5cf6;">WireGuard</span>
+          <i class="bi bi-arrow-right"></i>
+        </div>
+        <div class="topo-node">
+          <div class="topo-icon text-warning"><i class="bi bi-cloud-check"></i></div>
+          <div style="font-weight:700; font-size:13px;">GenieACS VPS</div>
+          <div style="font-size:11px; color:var(--text-muted);">10.200.0.1:7547</div>
+          <div class="badge bg-primary mt-1" style="font-size:10px;">bionfiber.com</div>
+        </div>
+      </div>
+
+      <!-- Parameter Table -->
+      <table class="spec-table">
+        <thead>
+          <tr>
+            <th>Segmen / VLAN</th>
+            <th>VLAN ID</th>
+            <th>Network &amp; Gateway MikroTik</th>
+            <th>Fungsi Utama</th>
+            <th>Metode IP Modem</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong style="color:#67e8f9;">TR-069 Management</strong></td>
+            <td><span class="badge-vlan vlan-20">VLAN 20</span></td>
+            <td><code class="mono">10.20.0.1/22</code> (Gateway)</td>
+            <td>Jalur khusus komunikasi modem ke GenieACS Server</td>
+            <td><span class="badge bg-info text-dark">DHCP Client (Pool 1000 IP)</span></td>
+          </tr>
+          <tr>
+            <td><strong style="color:#6ee7b7;">PPPoE Internet Traffic</strong></td>
+            <td><span class="badge-vlan vlan-100">VLAN 100</span></td>
+            <td><code class="mono">172.16.4.1</code> (Service: BIONFIBER)</td>
+            <td>Jalur internet browsing &amp; WiFi pelanggan</td>
+            <td><span class="badge bg-success">PPPoE Client (Dial-up)</span></td>
+          </tr>
+          <tr>
+            <td><strong style="color:#c4b5fd;">OLT Management</strong></td>
+            <td><span class="badge-vlan vlan-10">VLAN 10</span></td>
+            <td><code class="mono">172.16.0.1/24</code> (OLT: 172.16.0.2)</td>
+            <td>Web GUI &amp; Telnet NMS OLT</td>
+            <td>Static IP</td>
+          </tr>
+          <tr>
+            <td><strong style="color:#fcd34d;">GenieACS Server URL</strong></td>
+            <td>-</td>
+            <td><code class="mono">http://10.200.0.1:7547</code> (atau IP VPS)</td>
+            <td>Target CWMP ACS yang dimasukkan ke modem</td>
+            <td>Port 7547 (Inform 300s)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-success">
+        <i class="bi bi-check-circle-fill text-success me-1"></i>
+        <strong>Keunggulan Desain Dual WAN (VLAN 20 + VLAN 100):</strong> Jika pelanggan belum bayar atau sesi PPPoE terputus, <strong>TR-069 pada VLAN 20 tetap menyala 24/7</strong>. NOC tetap bisa memonitor redaman optik, merestart modem, dan mengubah password Wi-Fi pelanggan dari jarak jauh tanpa terganggu status isolir PPPoE!
+      </div>
+    </div>
+
+    <!-- STRATEGI MODEM BANYAK (BULK SOLUTIONS) -->
+    <div class="glass-card">
+      <div class="card-title-custom">
+        <i class="bi bi-lightning-charge-fill text-warning"></i> 4 Pilihan Cara Setup (Khusus untuk Stok Modem BANYAK)
+      </div>
+      <p style="color:var(--text-muted); margin-bottom:18px;">
+        Pilih metode yang paling cocok dengan alur kerja teknisi Anda di lapangan maupun di gudang aktivasi:
+      </p>
+
+      <!-- Nav Tabs -->
+      <div class="method-nav">
+        <a href="#metode1" class="method-btn active" onclick="activateTab(event, 'metode1')">
+          <i class="bi bi-hdd-network"></i> Metode 1: OLT OMCI
+          <span class="method-badge-rec">Paling Otomatis</span>
+        </a>
+        <a href="#metode2" class="method-btn" onclick="activateTab(event, 'metode2')">
+          <i class="bi bi-file-earmark-code"></i> Metode 2: Clone XML Template
+          <span class="badge bg-primary" style="font-size:10px;">Cepat 30 Detik</span>
+        </a>
+        <a href="#metode3" class="method-btn" onclick="activateTab(event, 'metode3')">
+          <i class="bi bi-code-slash"></i> Metode 3: Script Console F12
+          <span class="badge bg-secondary" style="font-size:10px;">1 Klik Browser</span>
+        </a>
+        <a href="#metode4" class="method-btn" onclick="activateTab(event, 'metode4')">
+          <i class="bi bi-sliders"></i> Metode 4: Manual Web GUI
+          <span class="badge bg-dark border" style="font-size:10px;">Teknisi Lapangan</span>
+        </a>
+      </div>
+
+      <!-- TAB CONTENT 1: METODE OLT OMCI ZERO TOUCH -->
+      <div id="metode1" class="method-content">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h4 style="font-weight:700; color:#60a5fa; margin:0;">
+            <i class="bi bi-magic me-2"></i>Metode 1: Zero-Touch via OMCI Profile di OLT (Recommended!)
+          </h4>
+          <span class="badge bg-success px-3 py-1">Solusi Terbaik Untuk 100+ Modem</span>
+        </div>
+        <p>
+          Dengan metode ini, Anda <strong>sama sekali tidak perlu mencolok kabel LAN ke laptop atau membuka web GUI modem satu per satu</strong>. Cukup buat profil WAN di OLT. Setiap kali modem Fiberhome D2 atau F3 dicolokkan ke kabel optik dan di-bind ke profil ini, OLT akan otomatis menyuntikkan (push) konfigurasi TR-069 dan PPPoE ke modem!
+        </p>
+
+        <div class="step-list mt-4">
+          <div class="step-item">
+            <div class="step-number">1</div>
+            <div class="step-title">Buka OLT Web GUI / Telnet (IP: 172.16.0.2)</div>
+            <p style="color:var(--text-muted); font-size:13.5px;">
+              Akses OLT Bionfiber dari jaringan manajemen (VLAN 10). Buka menu <strong>ONU Profile</strong> &rarr; <strong>WAN Service Profile</strong>.
+            </p>
+          </div>
+
+          <div class="step-item">
+            <div class="step-number">2</div>
+            <div class="step-title">Buat WAN Service Profile untuk TR-069 (VLAN 20)</div>
+            <div class="code-box">
+              <button class="copy-btn" onclick="copyCode(this)"><i class="bi bi-copy"></i> Salin</button>
+              <pre>
+WAN 1 (Management / TR-069):
+- Service Name     : WAN_TR069
+- Service Type     : TR069 (atau Management)
+- Mode             : Route
+- IP Mode          : DHCP (IPv4)
+- VLAN Mode        : Tag
+- VLAN ID          : 20
+- 802.1p Priority  : 0
+- Port Binding     : JANGAN CENTANG APAPUN (khusus internal CPU modem)
+- NAT              : Enabled</pre>
+            </div>
+          </div>
+
+          <div class="step-item">
+            <div class="step-number">3</div>
+            <div class="step-title">Buat WAN Service Profile untuk PPPoE (VLAN 100)</div>
+            <div class="code-box">
+              <button class="copy-btn" onclick="copyCode(this)"><i class="bi bi-copy"></i> Salin</button>
+              <pre>
+WAN 2 (Internet PPPoE):
+- Service Name     : WAN_INTERNET
+- Service Type     : INTERNET
+- Mode             : Route
+- IP Mode          : PPPoE (IPv4)
+- VLAN Mode        : Tag
+- VLAN ID          : 100
+- Port Binding     : Centang LAN1, LAN2, LAN3, LAN4, SSID1 (2.4G &amp; 5G)
+- NAT              : Enabled</pre>
+            </div>
+          </div>
+
+          <div class="step-item">
+            <div class="step-number">4</div>
+            <div class="step-title">Konfigurasi TR-069 ACS Template di OLT</div>
+            <div class="code-box">
+              <button class="copy-btn" onclick="copyCode(this)"><i class="bi bi-copy"></i> Salin</button>
+              <pre>
+TR-069 OMCI Config:
+- ACS URL          : http://10.200.0.1:7547
+- ACS Username     : admin
+- ACS Password     : admin
+- Periodic Inform  : Enable (300 Detik)
+- WAN Interface    : WAN_TR069 (VLAN 20)</pre>
+            </div>
+          </div>
+
+          <div class="step-item">
+            <div class="step-number">5</div>
+            <div class="step-title">Hasil Otomatisasi di Lapangan</div>
+            <p style="color:var(--text-muted); font-size:13.5px;">
+              Teknisi di lapangan cukup pasang modem baru dari kardus &rarr; OLT mendeteksi serial number &rarr; konfigurasi ter-push dalam hitungan detik &rarr; Modem langsung muncul di <a href="/admin/acs" class="text-primary font-weight-bold">GenieACS Pro</a> dengan status Online!
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB CONTENT 2: METODE BACKUP RESTORE XML TEMPLATE -->
+      <div id="metode2" class="method-content" style="display:none;">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h4 style="font-weight:700; color:#38bdf8; margin:0;">
+            <i class="bi bi-file-earmark-code me-2"></i>Metode 2: Bulk Cloning dengan File Master XML
+          </h4>
+          <span class="badge bg-primary px-3 py-1">Sangat Cepat untuk Meja Gudang</span>
+        </div>
+        <p>
+          Jika OLT Anda belum memiliki fitur push OMCI WAN, cara tercepat kedua adalah <strong>membuat 1 file konfigurasi master</strong>, lalu me-restore ke seluruh modem yang baru dibuka dari kardus. Waktu aktivasi hanya <strong>20-30 detik per modem</strong>!
+        </p>
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <div class="glass-card" style="padding:16px; margin:0; border-color:rgba(59,130,246,0.3);">
+              <div style="font-weight:700; color:#60a5fa; font-size:15px; margin-bottom:8px;">
+                <i class="bi bi-hdd me-1"></i> Master Fiberhome D2 (AN5506-02-B / HG6243C)
+              </div>
+              <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px;">
+                Sudah dikonfigurasi WAN 1 (VLAN 100 PPPoE), WAN 2 (VLAN 20 DHCP TR-069), ACS URL <code class="mono">http://10.200.0.1:7547</code>, WiFi Default BIONFIBER.
+              </p>
+              <button class="btn btn-sm btn-primary w-100" onclick="downloadTemplate('d2')">
+                <i class="bi bi-download me-1"></i> Download XML Master D2
+              </button>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="glass-card" style="padding:16px; margin:0; border-color:rgba(16,185,129,0.3);">
+              <div style="font-weight:700; color:#34d399; font-size:15px; margin-bottom:8px;">
+                <i class="bi bi-router me-1"></i> Master Fiberhome F3 (HG6045F3 / HG6821M Dual-Band)
+              </div>
+              <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px;">
+                Dual Band 2.4G &amp; 5GHz, WAN 1 VLAN 100, WAN 2 VLAN 20 TR-069, ACS Inform 300s, Firewall Proteksi &amp; Remote Access aktif.
+              </p>
+              <button class="btn btn-sm btn-success w-100" onclick="downloadTemplate('f3')">
+                <i class="bi bi-download me-1"></i> Download XML Master F3
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-list">
+          <div class="step-item">
+            <div class="step-number">1</div>
+            <div class="step-title">Colok Kabel LAN Laptop ke Port LAN1 Modem Baru</div>
+            <p style="color:var(--text-muted); font-size:13.5px;">
+              Nyalakan modem, buka browser dan akses <code class="mono">http://192.168.1.1</code>.
+            </p>
+          </div>
+          <div class="step-item">
+            <div class="step-number">2</div>
+            <div class="step-title">Login dengan Akun Superadmin</div>
+            <div class="param-pill">
+              <span>Username: <strong class="mono text-white">admin</strong></span>
+              <span>Password: <strong class="mono text-warning">%0@m?2#ZyKw</strong> atau <strong class="mono text-warning">Fh-n0c!</strong></span>
+              <button class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="navigator.clipboard.writeText('%0@m?2#ZyKw')"><i class="bi bi-copy"></i></button>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-number">3</div>
+            <div class="step-title">Buka Menu Device Management &rarr; Restore Configuration</div>
+            <p style="color:var(--text-muted); font-size:13.5px;">
+              Pilih menu <strong>Management</strong> &rarr; <strong>Device Management</strong> &rarr; <strong>Restore Configuration</strong>. Klik <strong>Browse</strong>, pilih file XML Master yang diunduh di atas, lalu klik <strong>Update Configuration</strong>.
+            </p>
+          </div>
+          <div class="step-item">
+            <div class="step-number">4</div>
+            <div class="step-title">Modem Reboot Otomatis &rarr; Selesai!</div>
+            <p style="color:var(--text-muted); font-size:13.5px;">
+              Dalam 30 detik modem restart. Begitu kabel optik dicolok di rumah pelanggan, modem langsung online di GenieACS dan teknisi tinggal menginput PPPoE user langsung lewat web billing Bionfiber!
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB CONTENT 3: METODE BOOKMARKLET JAVASCRIPT SATU KLIK -->
+      <div id="metode3" class="method-content" style="display:none;">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h4 style="font-weight:700; color:#a78bfa; margin:0;">
+            <i class="bi bi-code-slash me-2"></i>Metode 3: One-Click Browser Console Script (Teknisi Lab)
+          </h4>
+          <span class="badge bg-purple text-white px-3 py-1">Otomatisasi Form Web GUI</span>
+        </div>
+        <p>
+          Untuk teknisi yang sedang membuka web GUI Fiberhome, Anda tidak perlu mengetik satu per satu kolom WAN &amp; CWMP. Cukup tekan <kbd>F12</kbd> (Developer Console), tempel script ini, lalu tekan <kbd>Enter</kbd>!
+        </p>
+
+        <div class="code-box">
+          <button class="copy-btn" onclick="copyCode(this)"><i class="bi bi-copy"></i> Salin Script</button>
+          <pre id="consoleSnippet">
+// == BIONFIBER FIBERHOME ONE-CLICK TR-069 CONFIG INJECTOR ==
+(function() {
+    console.log("%c[BIONFIBER] Mengisi konfigurasi TR-069 Otomatis...", "color:#3b82f6; font-size:14px; font-weight:bold;");
+    
+    // 1. Auto-fill TR-069 CWMP Parameters
+    const trUrl = document.querySelector('input[name*="acs_url"], input[id*="acs_url"], input[name*="ACSURL"]');
+    const trUser = document.querySelector('input[name*="acs_user"], input[id*="acs_user"], input[name*="ACSUsername"]');
+    const trPass = document.querySelector('input[name*="acs_pwd"], input[id*="acs_pwd"], input[name*="ACSPassword"]');
+    const trInform = document.querySelector('input[name*="inform_interval"], input[id*="inform_interval"], input[name*="PeriodicInformInterval"]');
+    const trEnable = document.querySelector('input[name*="tr069_enable"], input[id*="tr069_enable"], input[type="checkbox"][name*="enable"]');
+
+    if (trUrl) trUrl.value = "http://10.200.0.1:7547";
+    if (trUser) trUser.value = "admin";
+    if (trPass) trPass.value = "admin";
+    if (trInform) trInform.value = "300";
+    if (trEnable) trEnable.checked = true;
+
+    // 2. Auto-fill WAN Connection Form (Jika berada di tab Network WAN)
+    const vlanIdInput = document.querySelector('input[name*="vlan_id"], input[id*="vlan_id"], input[name*="VLANID"]');
+    const vlanEnable = document.querySelector('input[name*="vlan_enable"], input[id*="vlan_enable"]');
+    if (vlanIdInput) vlanIdInput.value = "20";
+    if (vlanEnable) vlanEnable.checked = true;
+
+    alert("[BIONFIBER] Parameter TR-069 (VLAN 20 & ACS 10.200.0.1:7547) telah terisi otomatis! Silakan klik tombol 'Apply' / 'Save'.");
+})();</pre>
+        </div>
+      </div>
+
+      <!-- TAB CONTENT 4: METODE MANUAL STEP BY STEP -->
+      <div id="metode4" class="method-content" style="display:none;">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h4 style="font-weight:700; color:#34d399; margin:0;">
+            <i class="bi bi-sliders me-2"></i>Metode 4: Konfigurasi Web GUI Manual (Step-by-Step Lengkap)
+          </h4>
+          <span class="badge bg-dark border px-3 py-1">Panduan Standar Operasional</span>
+        </div>
+        <p>
+          Ikuti langkah-langkah di bawah ini jika ingin mengkonfigurasi manual satu per satu pada modem Fiberhome D2 atau F3:
+        </p>
+
+        <!-- Accordion Panduan Manual -->
+        <div class="accordion" id="accManual">
+          <!-- Accordion 1 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#acc1">
+                <i class="bi bi-1-circle-fill me-2 text-primary"></i> Langkah 1: Login ke Web GUI Modem (IP: 192.168.1.1)
+              </button>
+            </h2>
+            <div id="acc1" class="accordion-collapse collapse show" data-bs-parent="#accManual">
+              <div class="accordion-body">
+                <p>Hubungkan laptop ke port <strong>LAN 1</strong> menggunakan kabel UTP. Buka browser dan ketik alamat <code class="mono">192.168.1.1</code>.</p>
+                <div class="table-responsive">
+                  <table class="table table-dark table-sm table-bordered">
+                    <thead><tr><th>Tipe Firmware</th><th>Username</th><th>Password</th><th>Catatan</th></tr></thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Fiberhome Standar / Telkom</strong></td>
+                        <td><code class="mono">admin</code></td>
+                        <td><code class="mono">%0@m?2#ZyKw</code></td>
+                        <td>Akses Superadmin Penuh</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Fiberhome F3 Firmware Baru</strong></td>
+                        <td><code class="mono">admin</code></td>
+                        <td><code class="mono">Fh-n0c!</code></td>
+                        <td>Password standar NOC Fiberhome</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Fiberhome Retail Global</strong></td>
+                        <td><code class="mono">telecomadmin</code></td>
+                        <td><code class="mono">admintelecom</code></td>
+                        <td>Default pabrik internasional</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Accordion 2 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#acc2">
+                <i class="bi bi-2-circle-fill me-2 text-info"></i> Langkah 2: Buat WAN 1 untuk Internet PPPoE (VLAN 100)
+              </button>
+            </h2>
+            <div id="acc2" class="accordion-collapse collapse" data-bs-parent="#accManual">
+              <div class="accordion-body">
+                <p>Masuk ke menu <strong>Network</strong> &rarr; <strong>Broadband Settings</strong> &rarr; <strong>Internet Connection</strong>:</p>
+                <ul>
+                  <li><strong>Mode</strong>: Pilih <code>Route</code></li>
+                  <li><strong>Service Type</strong>: Pilih <code>INTERNET</code></li>
+                  <li><strong>Enable VLAN</strong>: <code>Centang (Enable)</code></li>
+                  <li><strong>VLAN ID</strong>: Ketik <strong style="color:#6ee7b7;">100</strong> (Sesuai VLAN PPPoE MikroTik)</li>
+                  <li><strong>802.1p Priority</strong>: <code>0</code></li>
+                  <li><strong>IP Protocol Version</strong>: <code>IPv4</code></li>
+                  <li><strong>IPv4 Addressing Mode</strong>: Pilih <code>PPPoE</code></li>
+                  <li><strong>Username &amp; Password</strong>: Masukkan akun PPPoE pelanggan (Contoh: <code>pelanggan01@bionfiber.net</code>)</li>
+                  <li><strong>Port Binding</strong>: <strong>Centang semua port LAN (LAN1 - LAN4) dan SSID1 (2.4G &amp; 5G)</strong> agar klien rumah mendapat akses internet.</li>
+                  <li>Klik <strong>Apply</strong> / <strong>Save</strong>.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Accordion 3 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#acc3">
+                <i class="bi bi-3-circle-fill me-2 text-cyan"></i> Langkah 3: Buat WAN 2 Khusus TR-069 (VLAN 20 DHCP)
+              </button>
+            </h2>
+            <div id="acc3" class="accordion-collapse collapse" data-bs-parent="#accManual">
+              <div class="accordion-body">
+                <p>Masih di menu <strong>Internet Connection</strong>, klik tombol <strong>Add</strong> untuk membuat koneksi WAN baru:</p>
+                <ul>
+                  <li><strong>Mode</strong>: Pilih <code>Route</code></li>
+                  <li><strong>Service Type</strong>: Pilih <code>TR069</code> (atau <code>MANAGEMENT</code> / <code>TR069_VOICE</code>)</li>
+                  <li><strong>Enable VLAN</strong>: <code>Centang (Enable)</code></li>
+                  <li><strong>VLAN ID</strong>: Ketik <strong style="color:#67e8f9;">20</strong> (Sesuai VLAN TR-069 MikroTik)</li>
+                  <li><strong>802.1p Priority</strong>: <code>0</code></li>
+                  <li><strong>IP Protocol Version</strong>: <code>IPv4</code></li>
+                  <li><strong>IPv4 Addressing Mode</strong>: Pilih <code>DHCP</code> (Modem akan otomatis meminta IP dari pool MikroTik <code>10.20.0.10 - 10.20.3.250</code>)</li>
+                  <li><strong>Port Binding</strong>: <strong style="color:#ef4444;">JANGAN CENTANG PORT MANAPUN!</strong> (Koneksi ini murni digunakan internal modem untuk melapor ke GenieACS).</li>
+                  <li>Klik <strong>Apply</strong> / <strong>Save</strong>.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Accordion 4 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#acc4">
+                <i class="bi bi-4-circle-fill me-2 text-warning"></i> Langkah 4: Konfigurasi Parameter TR-069 / CWMP
+              </button>
+            </h2>
+            <div id="acc4" class="accordion-collapse collapse" data-bs-parent="#accManual">
+              <div class="accordion-body">
+                <p>Buka menu <strong>Administration</strong> (atau <strong>Application</strong>) &rarr; <strong>TR-069</strong> / <strong>CWMP</strong>:</p>
+                <div class="code-box">
+                  <button class="copy-btn" onclick="copyCode(this)"><i class="bi bi-copy"></i> Salin</button>
+                  <pre>
+- Enable TR-069               : Centang (Enable)
+- WAN Interface               : Pilih koneksi WAN 2 (Contoh: 2_TR069_DHCP_VID_20)
+- ACS URL                     : http://10.200.0.1:7547
+- ACS Username                : admin
+- ACS Password                : admin
+- Periodic Inform             : Centang (Enable)
+- Periodic Inform Interval    : 300 (Detik / 5 Menit)
+- Connection Request Username : admin
+- Connection Request Password : admin
+- Connection Request Port     : 7547 (Default)</pre>
+                </div>
+                <p>Klik tombol <strong>Apply</strong> untuk menyimpan konfigurasi.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VERIFIKASI & MONITORING CARD -->
+    <div class="glass-card">
+      <div class="card-title-custom">
+        <i class="bi bi-check2-circle text-success"></i> Cara Verifikasi Bahwa Modem Berhasil Terhubung
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div style="background:rgba(15,23,42,0.6); border:1px solid var(--border); border-radius:12px; padding:16px; height:100%;">
+            <div style="font-weight:700; color:#38bdf8; font-size:14px; margin-bottom:8px;">
+              <i class="bi bi-1-square me-1"></i> 1. Cek di Web GUI Modem
+            </div>
+            <p style="font-size:12.5px; color:var(--text-muted); margin:0;">
+              Masuk ke menu <strong>Status</strong> &rarr; <strong>Device Information</strong> &rarr; <strong>WAN Connection</strong>. Pastikan interface VLAN 20 mendapatkan status <strong>Connected</strong> dan menerima IP <code class="mono" style="color:#67e8f9;">10.20.x.x</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div style="background:rgba(15,23,42,0.6); border:1px solid var(--border); border-radius:12px; padding:16px; height:100%;">
+            <div style="font-weight:700; color:#10b981; font-size:14px; margin-bottom:8px;">
+              <i class="bi bi-2-square me-1"></i> 2. Cek di Terminal MikroTik
+            </div>
+            <p style="font-size:12.5px; color:var(--text-muted); margin:0;">
+              Jalankan perintah ini di Winbox/Terminal RB5009 untuk melihat daftar sewa IP modem TR-069:
+            </p>
+            <div class="code-box my-2 p-2">
+              <pre style="font-size:11.5px;">/ip dhcp-server lease print where server=DHCP-TR069</pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div style="background:rgba(15,23,42,0.6); border:1px solid var(--border); border-radius:12px; padding:16px; height:100%;">
+            <div style="font-weight:700; color:#f59e0b; font-size:14px; margin-bottom:8px;">
+              <i class="bi bi-3-square me-1"></i> 3. Cek di GenieACS Pro
+            </div>
+            <p style="font-size:12.5px; color:var(--text-muted); margin:0;">
+              Buka menu <a href="/admin/acs" class="text-primary font-weight-bold">GenieACS Pro</a> di panel billing. Modem akan langsung muncul dengan Serial Number, Redaman Optik (dBm), SSID Wi-Fi, dan status Online hijau!
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Troubleshooting Tips -->
+    <div class="glass-card">
+      <div class="card-title-custom">
+        <i class="bi bi-shield-exclamation text-warning"></i> Tips &amp; Solusi Troubleshooting
+      </div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <h6 style="color:#f87171; font-weight:700;"><i class="bi bi-x-circle me-1"></i> Modem Tidak Dapat IP di VLAN 20?</h6>
+          <p style="font-size:13px; color:var(--text-muted);">
+            Periksa konfigurasi port uplink di OLT. Pastikan port uplink OLT di-set mode <strong>Hybrid</strong> atau <strong>Trunk</strong> yang mengizinkan (permit/pass) <strong>VLAN 20</strong> selain VLAN 100 dan VLAN 10.
+          </p>
+        </div>
+        <div class="col-md-6">
+          <h6 style="color:#f87171; font-weight:700;"><i class="bi bi-x-circle me-1"></i> Modem Dapat IP tapi Tidak Muncul di GenieACS?</h6>
+          <p style="font-size:13px; color:var(--text-muted);">
+            Pastikan rule NAT di MikroTik aktif: <code class="mono" style="font-size:11px;">dst-address=10.200.0.0/24 src-address=10.20.0.0/22 action=masquerade</code>. Coba ping dari MikroTik ke <code class="mono" style="font-size:11px;">10.200.0.1</code> untuk memastikan tunnel WireGuard ke VPS terhubung aktif.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Action Footer -->
+    <div class="text-center mt-4">
+      <a href="/admin/acs" class="btn btn-primary px-4 py-2 me-2" style="border-radius:10px; font-weight:700;">
+        <i class="bi bi-hdd-network me-1"></i> Buka Dashboard GenieACS Pro
+      </a>
+      <a href="/admin/onu-provision" class="btn btn-outline-light px-4 py-2" style="border-radius:10px; font-weight:600; border-color:var(--border);">
+        <i class="bi bi-hdd-rack me-1"></i> Menu Provisioning ONU
+      </a>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Tab switching
+    function activateTab(e, tabId) {
+      if (e) e.preventDefault();
+      document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.method-content').forEach(c => c.style.display = 'none');
+      
+      const targetBtn = e ? e.currentTarget : document.querySelector(`a[href="#${tabId}"]`);
+      if (targetBtn) targetBtn.classList.add('active');
+      const targetContent = document.getElementById(tabId);
+      if (targetContent) targetContent.style.display = 'block';
+    }
+
+    // Copy code snippet
+    function copyCode(btn) {
+      const box = btn.closest('.code-box');
+      const pre = box.querySelector('pre');
+      navigator.clipboard.writeText(pre.innerText).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check2"></i> Tersalin!';
+        btn.classList.add('bg-success', 'text-white');
+        setTimeout(() => {
+          btn.innerHTML = orig;
+          btn.classList.remove('bg-success', 'text-white');
+        }, 2000);
+      });
+    }
+
+    // Download XML Template Mock
+    function downloadTemplate(type) {
+      const isF3 = type === 'f3';
+      const filename = isF3 ? 'master_fiberhome_f3_hg6045.xml' : 'master_fiberhome_d2_an5506.xml';
+      const content = `<?xml version="1.0" encoding="UTF-8"?>
+<!-- BIONFIBER NETWORK MASTER TR-069 TEMPLATE FOR FIBERHOME ${isF3 ? 'F3 (HG6045F3)' : 'D2 (AN5506-02-B)'} -->
+<DslCpeConfig version="3.0">
+  <InternetGatewayDevice>
+    <ManagementServer>
+      <URL>http://10.200.0.1:7547</URL>
+      <Username>admin</Username>
+      <Password>admin</Password>
+      <PeriodicInformEnable>true</PeriodicInformEnable>
+      <PeriodicInformInterval>300</PeriodicInformInterval>
+      <ConnectionRequestUsername>admin</ConnectionRequestUsername>
+      <ConnectionRequestPassword>admin</ConnectionRequestPassword>
+    </ManagementServer>
+    <WANDevice instance="1">
+      <WANConnectionDevice instance="1">
+        <!-- WAN 1: PPPoE VLAN 100 -->
+        <WANPPPConnection instance="1">
+          <Enable>true</Enable>
+          <ConnectionType>IP_Routed</ConnectionType>
+          <Name>1_INTERNET_R_VID_100</Name>
+          <VLANIDMark>100</VLANIDMark>
+          <ServiceList>INTERNET</ServiceList>
+        </WANPPPConnection>
+      </WANConnectionDevice>
+      <WANConnectionDevice instance="2">
+        <!-- WAN 2: TR-069 DHCP VLAN 20 -->
+        <WANIPConnection instance="1">
+          <Enable>true</Enable>
+          <ConnectionType>IP_Routed</ConnectionType>
+          <Name>2_TR069_R_VID_20</Name>
+          <VLANIDMark>20</VLANIDMark>
+          <AddressingType>DHCP</AddressingType>
+          <ServiceList>TR069</ServiceList>
+        </WANIPConnection>
+      </WANConnectionDevice>
+    </WANDevice>
+  </InternetGatewayDevice>
+</DslCpeConfig>`;
+      
+      const blob = new Blob([content], { type: 'text/xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
