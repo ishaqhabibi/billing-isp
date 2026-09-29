@@ -398,34 +398,41 @@ const RX_POWER_PATHS = [
 ];
 
 // PPPoE IP search keys matching user's template
+// PPPoE IP search keys matching user's template (prioritizing newest WAN instances)
 const PPPOE_IP_KEYS = [
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.ExternalIPAddress',
-    'InternetGatewayDevice.WANDevice.*.WANConnectionDevice.1.WANPPPConnection.2.ExternalIPAddress',
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANPPPConnection.1.ExternalIPAddress',
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANPPPConnection.2.ExternalIPAddress',
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.3.WANPPPConnection.1.ExternalIPAddress',
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.4.WANPPPConnection.1.ExternalIPAddress',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.5.WANPPPConnection.2.ExternalIPAddress',
     'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.5.WANPPPConnection.1.ExternalIPAddress',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.4.WANPPPConnection.2.ExternalIPAddress',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.4.WANPPPConnection.1.ExternalIPAddress',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.3.WANPPPConnection.2.ExternalIPAddress',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.3.WANPPPConnection.1.ExternalIPAddress',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANPPPConnection.2.ExternalIPAddress',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANPPPConnection.1.ExternalIPAddress',
+    'InternetGatewayDevice.WANDevice.*.WANConnectionDevice.1.WANPPPConnection.2.ExternalIPAddress',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.ExternalIPAddress',
     'InternetGatewayDevice.WANDevice.*.WANConnectionDevice.*.WANPPPConnection.*.ExternalIPAddress',
+    'Device.PPP.Interface.3.ExternalIPAddress',
+    'Device.PPP.Interface.2.ExternalIPAddress',
     'Device.PPP.Interface.1.ExternalIPAddress',
     'Device.IP.Interface.1.IPv4Address.1.IPAddress'
 ];
 
-// PPPoE Username search keys matching user's template
+// PPPoE Username search keys matching user's template (prioritizing newest WAN instances)
 const PPPOE_USER_KEYS = [
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Username',
-    'InternetGatewayDevice.WANDevice.*.WANConnectionDevice.1.WANPPPConnection.2.Username',
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANPPPConnection.1.Username',
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANPPPConnection.2.Username',
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.3.WANPPPConnection.1.Username',
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.3.WANPPPConnection.2.Username',
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.4.WANPPPConnection.1.Username',
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.4.WANPPPConnection.2.Username',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.5.WANPPPConnection.2.Username',
     'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.5.WANPPPConnection.1.Username',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.4.WANPPPConnection.2.Username',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.4.WANPPPConnection.1.Username',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.3.WANPPPConnection.2.Username',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.3.WANPPPConnection.1.Username',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANPPPConnection.2.Username',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANPPPConnection.1.Username',
+    'InternetGatewayDevice.WANDevice.*.WANConnectionDevice.1.WANPPPConnection.2.Username',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Username',
     'InternetGatewayDevice.WANDevice.*.WANConnectionDevice.*.WANPPPConnection.*.Username',
-    'Device.PPP.Interface.1.Username',
+    'Device.PPP.Interface.3.Username',
     'Device.PPP.Interface.2.Username',
-    'Device.PPP.Interface.3.Username'
+    'Device.PPP.Interface.1.Username'
 ];
 
 function getWildcardMatches(device, path) {
@@ -508,20 +515,37 @@ function extractPppoeIp(d) {
 }
 
 function extractPppoeUser(d) {
-    const user = getDeviceParameterValue(d, PPPOE_USER_KEYS, (matchedPath, value, device) => {
-        if (!value || value === '-') return false;
-        
-        if (matchedPath.includes('WANPPPConnection.')) {
-            const connectionTypePath = matchedPath.replace('Username', 'ConnectionType');
-            const connTypeMatches = getWildcardMatches(device, connectionTypePath);
-            if (connTypeMatches.length > 0 && connTypeMatches[0].value === 'PPPoE_Bridged') {
-                return false;
+    const allMatches = [];
+    for (const key of PPPOE_USER_KEYS) {
+        const matches = getWildcardMatches(d, key);
+        for (const match of matches) {
+            if (match.value && match.value !== '-' && !allMatches.some(x => x.value === match.value)) {
+                let isValid = true;
+                if (match.path.includes('WANPPPConnection.')) {
+                    const connectionTypePath = match.path.replace('Username', 'ConnectionType');
+                    const connTypeMatches = getWildcardMatches(d, connectionTypePath);
+                    if (connTypeMatches.length > 0 && connTypeMatches[0].value === 'PPPoE_Bridged') {
+                        isValid = false;
+                    }
+                }
+                if (isValid) allMatches.push(match);
             }
         }
-        return true;
-    });
-    
-    return user || '-';
+    }
+
+    if (allMatches.length === 0) return '-';
+    if (allMatches.length === 1) return allMatches[0].value;
+
+    // Jika ada lebih dari satu, utamakan yang ada di tags perangkat (misal hasil provisioning)
+    if (Array.isArray(d.tags)) {
+        for (const t of d.tags) {
+            const found = allMatches.find(m => String(m.value).toLowerCase() === String(t).toLowerCase());
+            if (found) return found.value;
+        }
+    }
+
+    // Default: ambil yang instance-nya paling tinggi (paling baru dibuat)
+    return allMatches[0].value;
 }
 
 function formatUptime(seconds) {
