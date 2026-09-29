@@ -2174,7 +2174,7 @@ router.get('/api/connected-devices', async (req, res) => {
   if (isRescan) {
     for (const token of tokenCandidates) {
       try {
-        await customerDevice.requestDeviceRefresh(token, {
+        await customerDevice.requestRefresh(token, {
           type: 'customer',
           id: profile?.id || null,
           name: profile?.name || loginId,
@@ -2183,6 +2183,8 @@ router.get('/api/connected-devices', async (req, res) => {
         });
       } catch (e) {}
     }
+    // Beri jeda singkat agar modem merespons CWMP connection request
+    await new Promise(r => setTimeout(r, 1200));
   }
 
   let deviceData = null;
@@ -2192,14 +2194,13 @@ router.get('/api/connected-devices', async (req, res) => {
   }
 
   const devices = (deviceData && Array.isArray(deviceData.connectedUsers)) ? deviceData.connectedUsers : [];
-  const total = (deviceData && deviceData.totalAssociations !== undefined && deviceData.totalAssociations !== 'N/A' && deviceData.totalAssociations !== '-')
-    ? Number(deviceData.totalAssociations)
-    : devices.length;
+  const onlineCount = devices.filter(d => String(d.status || '').toLowerCase() === 'online').length;
 
   return res.json({
     ok: true,
-    count: total,
-    totalAssociations: total,
+    count: onlineCount,
+    totalAssociations: onlineCount,
+    onlineCount,
     ssid: deviceData?.ssid || profile?.wifi_ssid || '-',
     devices
   });

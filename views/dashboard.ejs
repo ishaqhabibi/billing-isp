@@ -924,9 +924,12 @@
         }
       }
 
+      const onlineConnectedUsers = (connectedUsers && Array.isArray(connectedUsers)) 
+        ? connectedUsers.filter(u => String(u.status || '').toLowerCase() === 'online') 
+        : [];
       const totalConnectedDevices = (customer.totalAssociations !== undefined && customer.totalAssociations !== 'N/A' && customer.totalAssociations !== '-')
         ? Number(customer.totalAssociations)
-        : (connectedUsers ? connectedUsers.length : 0);
+        : onlineConnectedUsers.length;
     %>
 
     <!-- ══════════════════════════════════════════════════════════════════
@@ -1211,7 +1214,7 @@
               <i class="bi bi-people-fill text-success fs-5"></i> Perangkat Terhubung
             </h5>
             <span class="badge flex-shrink-0" style="background:var(--isp-success-subtle); color:var(--isp-success); font-size:11px; font-weight:800;">
-              <%= totalConnectedDevices %> Aktif
+              <span id="dashConnectedCount"><%= totalConnectedDevices %></span> Aktif
             </span>
           </div>
           <button type="button" class="btn-detail-scan" onclick="openConnectedDevicesModal()" title="Pindai detail perangkat terhubung">
@@ -2151,14 +2154,19 @@
           icon = 'bi-hdd-network'; bg = 'rgba(16, 185, 129, 0.15)'; color = '#10b981'; label = 'Koneksi Kabel LAN';
         }
 
+        const isOnline = String(d.status || '').toLowerCase() === 'online';
         const name = (d.hostname && d.hostname !== '-') ? d.hostname : `${label} #${idx + 1}`;
         const ip = d.ip || '-';
         const mac = d.mac || '-';
 
+        const statusBadge = isOnline
+          ? `<span class="badge" style="background:var(--isp-success-subtle); color:var(--isp-success); font-size:9px; font-weight:700;">Online</span>`
+          : `<span class="badge" style="background:rgba(255,255,255,0.06); color:var(--isp-text-muted); font-size:9px; font-weight:700; border:1px solid var(--isp-border);">Offline</span>`;
+
         return `
-          <div class="p-3 rounded-3 d-flex align-items-center justify-content-between gap-3" style="background:var(--isp-card-surface); border:1px solid var(--isp-border);">
+          <div class="p-3 rounded-3 d-flex align-items-center justify-content-between gap-3" style="background:var(--isp-card-surface); border:1px solid var(--isp-border); opacity:${isOnline ? '1' : '0.65'};">
             <div class="d-flex align-items-center gap-3 min-w-0">
-              <div style="width:38px; height:38px; border-radius:10px; background:${bg}; color:${color}; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">
+              <div style="width:38px; height:38px; border-radius:10px; background:${isOnline ? bg : 'rgba(100,116,139,0.1)'}; color:${isOnline ? color : 'var(--isp-text-muted)'}; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">
                 <i class="bi ${icon}"></i>
               </div>
               <div class="min-w-0">
@@ -2168,7 +2176,7 @@
                 </div>
               </div>
             </div>
-            <span class="badge" style="background:var(--isp-success-subtle); color:var(--isp-success); font-size:9px;">Online</span>
+            ${statusBadge}
           </div>
         `;
       }).join('');
@@ -2188,9 +2196,14 @@
         if (data.ok) {
           const list = data.devices || [];
           gCachedConnectedDevices = list;
-          const count = (data.totalAssociations !== undefined) ? Number(data.totalAssociations) : list.length;
+          const onlineCount = list.filter(d => String(d.status || '').toLowerCase() === 'online').length;
+          const count = (data.onlineCount !== undefined) ? Number(data.onlineCount) : ((data.totalAssociations !== undefined) ? Number(data.totalAssociations) : onlineCount);
+          
           const countEl = document.getElementById('modalConnectedCountText');
           if (countEl) countEl.innerText = count;
+
+          const dashEl = document.getElementById('dashConnectedCount');
+          if (dashEl) dashEl.innerText = count;
 
           renderDevicesList(list);
           if (isRescan) showCustomerToast(`Pindai selesai: ${count} perangkat aktif.`, 'success');

@@ -1783,6 +1783,25 @@ router.get('/device/:deviceId', async (req, res) => {
         let rawClients = await getLANHosts(deviceData._id, selectedServer);
         if ((!rawClients || rawClients.length === 0) && deviceData) {
             try {
+                const activeWifiMacs = new Set();
+                const wlanCfg = getNestedValue(deviceData, 'InternetGatewayDevice.LANDevice.1.WLANConfiguration');
+                if (wlanCfg && typeof wlanCfg === 'object') {
+                    for (const bKey of Object.keys(wlanCfg)) {
+                        if (bKey.startsWith('_')) continue;
+                        const band = wlanCfg[bKey];
+                        const assoc = band?.AssociatedDevice;
+                        if (assoc && typeof assoc === 'object') {
+                            const entries = Array.isArray(assoc) ? assoc : Object.values(assoc);
+                            for (const item of entries) {
+                                const mac = item?.AssociatedDeviceMACAddress?._value || item?.AssociatedDeviceMACAddress || item?.MACAddress?._value || item?.MACAddress;
+                                if (mac && typeof mac === 'string' && mac.length >= 10) {
+                                    activeWifiMacs.add(mac.toLowerCase());
+                                }
+                            }
+                        }
+                    }
+                }
+
                 const devHosts = deviceData?.InternetGatewayDevice?.LANDevice?.['1']?.Hosts?.Host || deviceData?.Device?.Hosts?.Host;
                 if (devHosts && typeof devHosts === 'object') {
                     for (const key in devHosts) {
@@ -1792,7 +1811,13 @@ router.get('/device/:deviceId', async (req, res) => {
                             const hIp = typeof entry?.IPAddress === 'object' ? entry?.IPAddress?._value || '-' : entry?.IPAddress || '-';
                             const hMac = typeof entry?.MACAddress === 'object' ? entry?.MACAddress?._value || '-' : entry?.MACAddress || '-';
                             const hIface = typeof entry?.InterfaceType === 'object' ? entry?.InterfaceType?._value || '-' : entry?.InterfaceType || '-';
-                            const isActive = entry?.Active === true || entry?.Active === 'true' || entry?.Active === 1 || entry?.Active?._value === 'true' || entry?.Active?._value === '1';
+                            const isWiFi = hIface.toLowerCase().includes('wifi') || hIface.toLowerCase().includes('802.11') || hIface.toLowerCase().includes('wlan') || activeWifiMacs.has(String(hMac).toLowerCase());
+                            let isActive = false;
+                            if (isWiFi) {
+                                isActive = activeWifiMacs.has(String(hMac).toLowerCase());
+                            } else {
+                                isActive = entry?.Active === true || entry?.Active === 'true' || entry?.Active === 1 || entry?.Active?._value === 'true' || entry?.Active?._value === '1';
+                            }
                             if (hMac && hMac !== '-') {
                                 rawClients.push({
                                     hostname: hName,
@@ -1800,7 +1825,7 @@ router.get('/device/:deviceId', async (req, res) => {
                                     mac: hMac,
                                     iface: hIface,
                                     active: isActive,
-                                    isWiFi: hIface.toLowerCase().includes('wifi') || hIface.toLowerCase().includes('802.11'),
+                                    isWiFi,
                                     band: '2.4GHz',
                                     rssi: null
                                 });
