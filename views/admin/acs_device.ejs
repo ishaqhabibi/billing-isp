@@ -124,9 +124,9 @@
                         <i class="bi bi-stopwatch text-muted"></i> <strong class="ticker-text" style="font-family:monospace;"><%= device.pppoeUptime || '-' %></strong>
                     </span>
                 </div>
-                <div class="info-row"><span>Gateway &amp; Subnet LAN</span><code><%= device.lanIp %> / <%= device.lanMask %></code></div>
-                <div class="info-row"><span>DHCP Server Lokal</span><span class="badge <%= device.dhcpEnabled ? 'bs' : 'bm' %>"><%= device.dhcpEnabled ? 'Aktif' : 'Nonaktif' %></span></div>
-                <% if (device.allWans && device.allWans.length > 1) { %>
+                <div class="info-row"><span>Gateway &amp; Subnet LAN</span><code><%= (device && device.lanIp) || '192.168.1.1' %> / <%= (device && device.lanMask) || '255.255.255.0' %></code></div>
+                <div class="info-row"><span>DHCP Server Lokal</span><span class="badge <%= (device && device.dhcpEnabled) ? 'bs' : 'bm' %>"><%= (device && device.dhcpEnabled) ? 'Aktif' : 'Nonaktif' %></span></div>
+                <% if (device && device.allWans && device.allWans.length > 1) { %>
                     <div class="info-row" style="background:rgba(245,158,11,0.08); flex-direction:column; align-items:flex-start; gap:6px;">
                         <span style="color:#f59e0b; font-weight:700;"><i class="bi bi-exclamation-circle-fill me-1"></i> Terdeteksi <%= device.allWans.length %> Profil WAN di Modem:</span>
                         <div style="display:flex; flex-wrap:wrap; gap:6px; width:100%;">
@@ -153,18 +153,18 @@
                         <div style="font-weight:700; color:#38bdf8; display:flex; align-items:center; gap:6px;">
                             <i class="bi bi-broadcast"></i> Wi-Fi 2.4 GHz (Jangkauan Luas)
                         </div>
-                        <div style="font-size:11px; color:var(--muted); margin-top:2px;">Kanal: <%= device.wifi24.channel %> &bull; Status: <%= device.wifi24.enabled ? 'Aktif' : 'Nonaktif' %></div>
+                        <div style="font-size:11px; color:var(--muted); margin-top:2px;">Kanal: <%= (device && device.wifi24 && device.wifi24.channel) || 'Auto' %> &bull; Status: <%= (device && device.wifi24 && device.wifi24.enabled) ? 'Aktif' : 'Nonaktif' %></div>
                     </div>
-                    <strong style="font-size:14px; color:var(--text);"><%= device.wifi24.ssid || '-' %></strong>
+                    <strong style="font-size:14px; color:var(--text);"><%= (device && device.wifi24 && device.wifi24.ssid) || (device && device.ssid24) || (device && device.ssid) || '-' %></strong>
                 </div>
                 <div class="info-row" style="padding-top:12px; padding-bottom:12px; background:rgba(245,158,11,0.03);">
                     <div>
                         <div style="font-weight:700; color:#f59e0b; display:flex; align-items:center; gap:6px;">
                             <i class="bi bi-lightning-charge-fill"></i> Wi-Fi 5 GHz (High Speed)
                         </div>
-                        <div style="font-size:11px; color:var(--muted); margin-top:2px;">Kanal: <%= device.wifi5.channel %> &bull; Status: <%= device.wifi5.enabled ? 'Aktif 5G' : 'Nonaktif' %></div>
+                        <div style="font-size:11px; color:var(--muted); margin-top:2px;">Kanal: <%= (device && device.wifi5 && device.wifi5.channel) || 'Auto (5GHz)' %> &bull; Status: <%= (device && device.wifi5 && device.wifi5.enabled) ? 'Aktif 5G' : 'Nonaktif' %></div>
                     </div>
-                    <strong style="font-size:14px; color:var(--text);"><%= device.wifi5.ssid || 'Dual-Band 5G' %></strong>
+                    <strong style="font-size:14px; color:var(--text);"><%= (device && device.wifi5 && device.wifi5.ssid) || (device && device.ssid5) || 'Dual-Band 5G' %></strong>
                 </div>
                 <div class="info-row"><span>Kapasitas Bandwidth Radio</span><span>MIMO 2x2 (Up to 1200 Mbps)</span></div>
                 <div class="info-row"><span>Total Klien Terhubung</span><span class="badge bs"><%= (clients && clients.length) ? clients.filter(c => c.status === 'Online').length : 0 %> Klien Aktif</span></div>
@@ -238,7 +238,7 @@
         </div>
         <div style="margin-bottom:14px;">
           <label style="display:block; font-size:12px; font-weight:700; color:var(--muted); margin-bottom:6px;">Nama Wi-Fi (SSID) Baru</label>
-          <input type="text" class="fc" id="d_wifi_ssid" value="<%= device.wifi24 && device.wifi24.ssid !== '-' ? device.wifi24.ssid : (device.ssid && device.ssid !== '-' ? device.ssid : '') %>" placeholder="Contoh: KELUARGA-NET">
+          <input type="text" class="fc" id="d_wifi_ssid" value="<%= (device && device.wifi24 && device.wifi24.ssid && device.wifi24.ssid !== '-') ? device.wifi24.ssid : ((device && device.ssid24 && device.ssid24 !== '-') ? device.ssid24 : ((device && device.ssid && device.ssid !== '-') ? device.ssid : '')) %>" placeholder="Contoh: KELUARGA-NET">
           <small class="text-muted" style="font-size:11px;">Kosongkan jika hanya ingin mengganti password.</small>
         </div>
         <div style="margin-bottom:14px;">
