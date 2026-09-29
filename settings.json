@@ -76,7 +76,7 @@
   "use_builtin_acs": false,
   "logo_file": "",
   "radius_enabled": "1",
-  "radius_secret": "secret123",
+  "radius_secret": "@BionFiber2026",
   "radius_auth_port": "1812",
   "radius_acct_port": "1813",
   "radius_isolir_action": "pool",
