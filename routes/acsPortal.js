@@ -664,6 +664,170 @@ function extractRxPower(d) {
     return formatRxPower(rxPower);
 }
 
+const TX_POWER_PATHS = [
+    'VirtualParameters.getponpower',
+    'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.TXPower',
+    'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.TXPower',
+    'InternetGatewayDevice.WANDevice.1.X_CU_WANEPONInterfaceConfig.OpticalTransceiver.TXPower',
+    'Device.Optical.Interface.1.TransmitterOutputPower',
+    'Device.XPON.Interface.1.Stats.TXPower'
+];
+
+function extractTxPower(d) {
+    for (const path of TX_POWER_PATHS) {
+        const val = getNestedValue(d, path);
+        if (val && val !== '-' && val !== '') {
+            return formatRxPower(val);
+        }
+    }
+    return '-';
+}
+
+function extractTemperature(d) {
+    const TEMP_PATHS = [
+        'VirtualParameters.gettemp',
+        'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.TransceiverTemperature',
+        'InternetGatewayDevice.DeviceInfo.TemperatureStatus.TemperatureValue',
+        'Device.DeviceInfo.TemperatureStatus.TemperatureValue'
+    ];
+    for (const path of TEMP_PATHS) {
+        const val = getNestedValue(d, path);
+        if (val !== undefined && val !== null && val !== '-' && val !== '') {
+            const num = parseFloat(val);
+            if (!isNaN(num)) return `${Math.round(num)} °C`;
+            return String(val);
+        }
+    }
+    return '-';
+}
+
+function extractVoltage(d) {
+    const VOLT_PATHS = [
+        'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.TransceiverSupplyVoltage',
+        'Device.Optical.Interface.1.SupplyVoltage'
+    ];
+    for (const path of VOLT_PATHS) {
+        const val = getNestedValue(d, path);
+        if (val !== undefined && val !== null && val !== '-' && val !== '') {
+            const num = parseFloat(val);
+            if (!isNaN(num)) {
+                const volt = num > 100 ? (num / 1000).toFixed(2) : num.toFixed(2);
+                return `${volt} V`;
+            }
+            return String(val);
+        }
+    }
+    return '-';
+}
+
+function extractPppoeUptimeInfo(d, activeSessionsMap = null, pppoeUser = null) {
+    let baseSecs = 0;
+    let rawVal = null;
+
+    if (activeSessionsMap && pppoeUser && pppoeUser !== '-') {
+        const session = activeSessionsMap.get(String(pppoeUser).trim().toLowerCase());
+        if (session && session.uptime) {
+            baseSecs = parseUptimeToSeconds(session.uptime);
+            if (baseSecs > 0) {
+                return {
+                    formatted: formatUptime(baseSecs),
+                    seconds: baseSecs
+                };
+            }
+        }
+    }
+
+    rawVal = getDeviceParameterValue(d, PPPOE_UPTIME_KEYS, (matchedPath, value, device) => {
+        if (value === undefined || value === null || value === '' || value === '-') return false;
+        return true;
+    });
+
+    if (rawVal && rawVal !== '-') {
+        baseSecs = parseUptimeToSeconds(rawVal);
+        if (baseSecs > 0) {
+            const lastInform = d._lastInform || d.last_inform || d._updatedAt || d.updated_at;
+            if (lastInform) {
+                const informTime = new Date(lastInform).getTime();
+                if (!isNaN(informTime)) {
+                    const elapsed = Math.max(0, Math.floor((Date.now() - informTime) / 1000));
+                    if (elapsed > 0 && elapsed < 86400 * 30) {
+                        baseSecs += elapsed;
+                    }
+                }
+            }
+            return {
+                formatted: formatUptime(baseSecs),
+                seconds: baseSecs
+            };
+        }
+    }
+
+    return {
+        formatted: rawVal && isNaN(rawVal) ? String(rawVal) : '-',
+        seconds: 0
+    };
+}
+
+function extractAllWans(device, activeSessionsMap = new Map()) {
+    const wans = [];
+    const wanConnDevices = getNestedValue(device, 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice');
+    if (wanConnDevices && typeof wanConnDevices === 'object') {
+        for (const devKey of Object.keys(wanConnDevices)) {
+            if (devKey.startsWith('_')) continue;
+            const devObj = wanConnDevices[devKey];
+            if (!devObj || typeof devObj !== 'object') continue;
+
+            if (devObj.WANPPPConnection) {
+                for (const pppKey of Object.keys(devObj.WANPPPConnection)) {
+                    if (pppKey.startsWith('_')) continue;
+                    const ppp = devObj.WANPPPConnection[pppKey];
+                    if (!ppp || typeof ppp !== 'object') continue;
+                    const user = ppp.Username?._value || ppp.Username || '-';
+                    const ip = ppp.ExternalIPAddress?._value || ppp.ExternalIPAddress || '-';
+                    const connType = ppp.ConnectionType?._value || ppp.ConnectionType || 'PPPoE';
+                    const enable = ppp.Enable?._value !== false;
+                    const vlan = ppp.VLANID?._value || ppp.X_HW_VLAN?._value || ppp.X_ZTE_VLAN?._value || '-';
+                    
+                    const isSessionActive = user !== '-' && activeSessionsMap.has(user.toLowerCase());
+                    
+                    wans.push({
+                        instance: `${devKey}.${pppKey}`,
+                        type: connType,
+                        username: user,
+                        ip: ip,
+                        vlan: vlan,
+                        enabled: enable,
+                        isActive: isSessionActive || (ip && ip !== '0.0.0.0' && ip !== '-')
+                    });
+                }
+            }
+
+            if (devObj.WANIPConnection) {
+                for (const ipKey of Object.keys(devObj.WANIPConnection)) {
+                    if (ipKey.startsWith('_')) continue;
+                    const ipConn = devObj.WANIPConnection[ipKey];
+                    if (!ipConn || typeof ipConn !== 'object') continue;
+                    const ip = ipConn.ExternalIPAddress?._value || ipConn.ExternalIPAddress || '-';
+                    const connType = ipConn.ConnectionType?._value || ipConn.ConnectionType || 'IPoE';
+                    const addressingType = ipConn.AddressingType?._value || 'DHCP';
+                    const vlan = ipConn.VLANID?._value || ipConn.X_HW_VLAN?._value || ipConn.X_ZTE_VLAN?._value || '-';
+                    
+                    wans.push({
+                        instance: `${devKey}.${ipKey}`,
+                        type: `${connType} (${addressingType})`,
+                        username: '-',
+                        ip: ip,
+                        vlan: vlan,
+                        enabled: ipConn.Enable?._value !== false,
+                        isActive: ip && ip !== '0.0.0.0' && ip !== '-'
+                    });
+                }
+            }
+        }
+    }
+    return wans;
+}
+
 function extractSsid(d) {
     const SSID_PATHS = [
         'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
@@ -1338,21 +1502,67 @@ router.get('/device/:deviceId', async (req, res) => {
         const deviceData = Array.isArray(response.data) && response.data.length > 0 ? response.data[0] : null;
         if (!deviceData) return res.status(404).send('Device not found');
 
-        let pppoeUser = extractPppoeUser(deviceData);
         const activeSessionsMap = await mikrotikSvc.getActivePppoeSessionsMap().catch(() => new Map());
+        const allWans = extractAllWans(deviceData, activeSessionsMap);
+
+        let pppoeUser = extractPppoeUser(deviceData);
+        let ip = extractPppoeIp(deviceData);
+
+        // Prioritize active WAN connected in MikroTik
+        const activeWan = allWans.find(w => w.isActive && w.username !== '-');
+        if (activeWan) {
+            pppoeUser = activeWan.username;
+            if (activeWan.ip && activeWan.ip !== '-' && activeWan.ip !== '0.0.0.0') {
+                ip = activeWan.ip;
+            }
+        }
+        if (pppoeUser && pppoeUser !== '-' && activeSessionsMap.has(pppoeUser.toLowerCase())) {
+            const sess = activeSessionsMap.get(pppoeUser.toLowerCase());
+            if (sess.ip) ip = sess.ip;
+        }
 
         const lastInform = deviceData._lastInform;
         const isOnline = (lastInform && (Date.now() - new Date(lastInform).getTime() < 900000)) ||
                          (pppoeUser && pppoeUser !== '-' && activeSessionsMap.has(pppoeUser.toLowerCase()));
 
-        // Fallbacks for detail page using the same logic as listing
-        let rxPower = extractRxPower(deviceData);
+        const rxPower = extractRxPower(deviceData);
+        const txPower = extractTxPower(deviceData);
+        const temperature = extractTemperature(deviceData);
+        const voltage = extractVoltage(deviceData);
 
         const customerName = getNestedValue(deviceData, 'VirtualParameters.CustomerName') || 
                             getNestedValue(deviceData, 'VirtualParameters.customer_name') || 
                             '-';
 
-        let ip = extractPppoeIp(deviceData);
+        const uptimeInfo = extractUptimeInfo(deviceData, activeSessionsMap, pppoeUser);
+        const pppoeUptimeInfo = extractPppoeUptimeInfo(deviceData, activeSessionsMap, pppoeUser);
+
+        // Extract Dual-Band Wi-Fi (2.4GHz & 5GHz)
+        const wifi24Ssid = getNestedValue(deviceData, 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID') || 
+                           getNestedValue(deviceData, 'Device.WiFi.SSID.1.SSID') || 
+                           getNestedValue(deviceData, 'VirtualParameters.SSID') || '-';
+        const wifi24Channel = getNestedValue(deviceData, 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Channel') || 'Auto';
+        const wifi24Enabled = getNestedValue(deviceData, 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Enable') !== false;
+
+        let wifi5Ssid = getNestedValue(deviceData, 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID') || 
+                        getNestedValue(deviceData, 'InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.SSID') || 
+                        getNestedValue(deviceData, 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID') || 
+                        getNestedValue(deviceData, 'Device.WiFi.SSID.2.SSID');
+        if (!wifi5Ssid && (deviceData._deviceId?._ProductClass || '').toLowerCase().includes('hg6045')) {
+            wifi5Ssid = wifi24Ssid !== '-' ? (wifi24Ssid.includes('5G') ? wifi24Ssid : wifi24Ssid + ' 5G') : 'Dual-Band (5GHz)';
+        }
+        const wifi5Channel = getNestedValue(deviceData, 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Channel') || 
+                             getNestedValue(deviceData, 'InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.Channel') || 'Auto (5GHz)';
+        const wifi5Enabled = !!wifi5Ssid;
+
+        const lanIp = getNestedValue(deviceData, 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceIPAddress') || '192.168.1.1';
+        const lanMask = getNestedValue(deviceData, 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceSubnetMask') || '255.255.255.0';
+        const dhcpEnabled = getNestedValue(deviceData, 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.DHCPServerEnable') !== false;
+        const baseMac = getNestedValue(deviceData, 'InternetGatewayDevice.DeviceInfo.MACAddress') || 
+                        getNestedValue(deviceData, 'InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.1.MACAddress') || 
+                        getNestedValue(deviceData, 'VirtualParameters.MacAddress') || '-';
+        const hwVersion = getNestedValue(deviceData, 'InternetGatewayDevice.DeviceInfo.HardwareVersion') || 
+                          getNestedValue(deviceData, 'Device.DeviceInfo.HardwareVersion') || '-';
 
         const rawClients = await getLANHosts(deviceData._id, server);
         const clients = (Array.isArray(rawClients) ? rawClients : []).map((c) => ({
@@ -1367,18 +1577,43 @@ router.get('/device/:deviceId', async (req, res) => {
         res.render('admin/acs_device', {
             user: req.session,
             device: {
+                id: deviceData._id,
                 phone: deviceData._id,
                 serialNumber: deviceData._deviceId?._SerialNumber || deviceData._id,
+                vendor: deviceData._deviceId?._Manufacturer || 'Fiberhome',
                 model: deviceData._deviceId?._ProductClass || '-',
                 softwareVersion: extractSoftwareVersion(deviceData),
+                hardwareVersion: hwVersion,
+                macAddress: baseMac,
                 status: isOnline ? 'Online' : 'Offline',
                 lastInform: lastInform || null,
+                registered: deviceData._registered || null,
                 rxPower: rxPower,
+                txPower: txPower,
+                temperature: temperature,
+                voltage: voltage,
                 pppoeIP: ip,
                 pppoeUsername: pppoeUser,
-                pppoeUptime: extractPppoeUptime(deviceData),
-                ssid: extractSsid(deviceData),
-                uptime: extractUptime(deviceData)
+                customerName: customerName,
+                uptime: uptimeInfo.formatted,
+                uptime_seconds: uptimeInfo.seconds,
+                pppoeUptime: pppoeUptimeInfo.formatted,
+                pppoe_uptime_seconds: pppoeUptimeInfo.seconds,
+                lanIp: lanIp,
+                lanMask: lanMask,
+                dhcpEnabled: dhcpEnabled,
+                wifi24: {
+                    ssid: wifi24Ssid,
+                    channel: wifi24Channel,
+                    enabled: wifi24Enabled
+                },
+                wifi5: {
+                    ssid: wifi5Ssid,
+                    channel: wifi5Channel,
+                    enabled: wifi5Enabled
+                },
+                allWans: allWans,
+                ssid: wifi24Ssid
             },
             clients,
             isOnline,
