@@ -1112,7 +1112,7 @@
           <div class="wifi-box-container mb-3">
             <div class="d-flex align-items-center justify-content-between mb-1">
               <span class="wifi-box-label"><i class="bi bi-broadcast me-1 text-primary"></i> NAMA WIFI (SSID 2.4G)</span>
-              <button type="button" class="btn btn-sm p-0 text-primary fw-bold" onclick="openEditSsidModal('2.4')" style="font-size:12px;">
+              <button type="button" class="btn btn-sm p-0 text-primary fw-bold" onclick="openUnifiedWifiModal('2.4')" style="font-size:12px;">
                 <i class="bi bi-pencil-square"></i> Ganti
               </button>
             </div>
@@ -1130,7 +1130,7 @@
                   <i class="bi bi-eye" id="iconEye24"></i> <span id="labelEye24">Lihat</span>
                 </button>
                 <span class="text-muted">•</span>
-                <button type="button" class="btn btn-sm p-0 text-warning fw-bold" onclick="openEditPasswordModal('2.4')" style="font-size:12px;">
+                <button type="button" class="btn btn-sm p-0 text-warning fw-bold" onclick="openUnifiedWifiModal('2.4')" style="font-size:12px;">
                   <i class="bi bi-pencil-square"></i> Ganti
                 </button>
               </div>
@@ -1144,6 +1144,12 @@
               </button>
             </div>
           </div>
+
+          <!-- TOMBOL AKSI UTAMA: GANTI NAMA & SANDI WIFI 2.4G -->
+          <button type="button" class="btn btn-primary w-100 py-2 mb-2 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                  onclick="openUnifiedWifiModal('2.4')" style="border-radius:12px; font-size:13px;">
+            <i class="bi bi-pencil-square"></i> Ubah Nama & Sandi Wi-Fi 2.4 GHz
+          </button>
 
           <!-- BAGI VIA QR CODE BUTTON -->
           <button type="button" class="btn btn-qr-24 w-100 py-2 fw-bold d-flex align-items-center justify-content-center gap-2" 
@@ -1163,7 +1169,7 @@
           <div class="wifi-box-container mb-3">
             <div class="d-flex align-items-center justify-content-between mb-1">
               <span class="wifi-box-label"><i class="bi bi-broadcast me-1 text-primary"></i> NAMA WIFI (SSID 5G)</span>
-              <button type="button" class="btn btn-sm p-0 text-primary fw-bold" onclick="openEditSsidModal('5')" style="font-size:12px;">
+              <button type="button" class="btn btn-sm p-0 text-primary fw-bold" onclick="openUnifiedWifiModal('5')" style="font-size:12px;">
                 <i class="bi bi-pencil-square"></i> Ganti
               </button>
             </div>
@@ -1181,7 +1187,7 @@
                   <i class="bi bi-eye" id="iconEye5"></i> <span id="labelEye5">Lihat</span>
                 </button>
                 <span class="text-muted">•</span>
-                <button type="button" class="btn btn-sm p-0 text-warning fw-bold" onclick="openEditPasswordModal('5')" style="font-size:12px;">
+                <button type="button" class="btn btn-sm p-0 text-warning fw-bold" onclick="openUnifiedWifiModal('5')" style="font-size:12px;">
                   <i class="bi bi-pencil-square"></i> Ganti
                 </button>
               </div>
@@ -1195,6 +1201,13 @@
               </button>
             </div>
           </div>
+
+          <!-- TOMBOL AKSI UTAMA: GANTI NAMA & SANDI WIFI 5G -->
+          <button type="button" class="btn w-100 py-2 mb-2 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                  style="background:var(--isp-purple); color:#fff; border-radius:12px; font-size:13px;"
+                  onclick="openUnifiedWifiModal('5')">
+            <i class="bi bi-pencil-square"></i> Ubah Nama & Sandi Wi-Fi 5 GHz
+          </button>
 
           <!-- BAGI VIA QR CODE BUTTON -->
           <button type="button" class="btn btn-qr-5 w-100 py-2 fw-bold d-flex align-items-center justify-content-center gap-2" 
@@ -1472,111 +1485,86 @@
     </div>
   </div>
 
-  <!-- 2. MODAL: GANTI NAMA WIFI (SSID) -->
-  <div class="modal fade bottom-sheet" id="editSsidModal" tabindex="-1" aria-hidden="true">
+  <!-- 2. MODAL: UBAH PENGATURAN WIFI (NAMA & SANDI SEKALIGUS) -->
+  <div class="modal fade bottom-sheet" id="editWifiModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="bottom-sheet-handle d-block d-md-none"></div>
         <div class="modal-header">
           <h6 class="modal-title fw-bold" style="color:var(--isp-text-heading);">
-            <i class="bi bi-router text-primary me-2"></i> Ganti Nama Wi-Fi (SSID)
+            <i class="bi bi-gear-wide-connected text-primary me-2"></i> Pengaturan Nama & Sandi Wi-Fi
           </h6>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-        <form id="formEditSsid" onsubmit="handleSsidSubmit(event)">
+        <form id="formEditWifi" onsubmit="handleUnifiedWifiSubmit(event)">
           <div class="modal-body p-3 p-md-4">
-            <div id="ssidAlertBox" class="alert d-none mb-3 py-2 small" role="alert"></div>
+            <div id="wifiUnifiedAlertBox" class="alert d-none mb-3 py-2 small" role="alert"></div>
 
             <!-- PILIH FREKUENSI TARGET -->
             <div class="mb-3">
-              <label class="form-label">Terapkan Perubahan Untuk:</label>
-              <select id="selectSsidBand" name="band" class="form-select">
-                <option value="all">Kedua Frekuensi (2.4 GHz & 5 GHz)</option>
-                <option value="2.4">Wi-Fi (SSID) 2.4 GHz Saja</option>
-                <option value="5">Wi-Fi (SSID) 5 GHz Saja</option>
+              <label class="form-label fw-bold" style="font-size:12px; color:var(--isp-text-heading);">Terapkan Perubahan Untuk:</label>
+              <select id="selectWifiBand" name="band" class="form-select" onchange="onUnifiedBandChange()">
+                <option value="2.4">Wi-Fi 2.4 GHz Saja</option>
+                <option value="5">Wi-Fi 5 GHz Saja</option>
+                <option value="all">Kedua Frekuensi Sekaligus (2.4 GHz & 5 GHz)</option>
               </select>
             </div>
 
+            <!-- NAMA WIFI (SSID) -->
             <div class="mb-3">
-              <label for="inputSsidName" class="form-label">Nama Wi-Fi Baru (SSID) <span class="text-danger">*</span></label>
+              <label for="inputWifiSsid" class="form-label fw-bold" style="font-size:12px; color:var(--isp-text-heading);">
+                Nama Wi-Fi (SSID) <span class="text-danger">*</span>
+              </label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-wifi"></i></span>
-                <input type="text" id="inputSsidName" name="ssid" class="form-control" placeholder="Contoh: MyWifi_Rumah" maxlength="32" required value="<%= currentWifiSsid24 %>">
+                <input type="text" id="inputWifiSsid" name="ssid" class="form-control" placeholder="Nama Wi-Fi" maxlength="32" required value="<%= currentWifiSsid24 %>">
               </div>
-              <div class="form-text">Maksimal 32 karakter. Jika memilih kedua frekuensi, 5 GHz akan otomatis ditambah akhiran "-5G".</div>
+              <div class="form-text" style="font-size:11px;" id="helpSsidSuffix">
+                Maksimal 32 karakter. Jika memilih kedua frekuensi, 5 GHz akan otomatis ditambah akhiran "-5G".
+              </div>
             </div>
 
-            <div class="p-2 px-3 rounded-2 small" style="background:var(--isp-warning-subtle); color:var(--isp-warning); border:1px solid var(--isp-warning-border); font-size:11px;">
-              <i class="bi bi-exclamation-triangle-fill me-1"></i> Seluruh perangkat HP & laptop akan terputus dari Wi-Fi lama dan perlu disambungkan ulang ke nama baru.
-            </div>
-          </div>
-          <div class="modal-footer d-flex gap-2">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-            <button type="submit" id="btnSubmitSsid" class="btn btn-primary fw-bold flex-grow-1" style="min-height:38px;">
-              Simpan & Sinkronkan
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- 3. MODAL: GANTI SANDI WIFI -->
-  <div class="modal fade bottom-sheet" id="editPasswordModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="bottom-sheet-handle d-block d-md-none"></div>
-        <div class="modal-header">
-          <h6 class="modal-title fw-bold" style="color:var(--isp-text-heading);">
-            <i class="bi bi-shield-lock-fill text-warning me-2"></i> Ganti Kata Sandi Wi-Fi
-          </h6>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <form id="formEditPassword" onsubmit="handlePasswordSubmit(event)">
-          <div class="modal-body p-3 p-md-4">
-            <div id="passwordAlertBox" class="alert d-none mb-3 py-2 small" role="alert"></div>
-
-            <!-- PILIH FREKUENSI TARGET -->
+            <!-- KATA SANDI BARU -->
             <div class="mb-3">
-              <label class="form-label">Terapkan Perubahan Untuk:</label>
-              <select id="selectPasswordBand" name="band" class="form-select">
-                <option value="all">Samakan Sandi (2.4 GHz & 5 GHz Sekaligus)</option>
-                <option value="2.4">2.4 GHz Saja</option>
-                <option value="5">5 GHz Saja</option>
-              </select>
-            </div>
-
-            <div class="mb-3">
-              <label for="inputNewPassword" class="form-label">Kata Sandi Baru <span class="text-danger">*</span></label>
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <label for="inputWifiNewPassword" class="form-label fw-bold mb-0" style="font-size:12px; color:var(--isp-text-heading);">
+                  Kata Sandi Baru
+                </label>
+                <span class="badge" style="background:var(--isp-card-surface); color:var(--isp-text-muted); font-size:10px; border:1px solid var(--isp-border);">Opsional</span>
+              </div>
               <div class="input-group">
-                <span class="input-group-text"><i class="bi bi-key"></i></span>
-                <input type="password" id="inputNewPassword" name="password" class="form-control" placeholder="Minimal 8 karakter" minlength="8" required>
-                <button type="button" class="btn btn-outline-secondary" onclick="toggleInputType('inputNewPassword', this)">
+                <span class="input-group-text"><i class="bi bi-key-fill text-warning"></i></span>
+                <input type="password" id="inputWifiNewPassword" name="password" class="form-control" placeholder="Kosongkan jika sandi tidak diubah" minlength="8">
+                <button type="button" class="btn btn-outline-secondary" onclick="toggleInputType('inputWifiNewPassword', this)">
                   <i class="bi bi-eye"></i>
                 </button>
               </div>
-              <div class="form-text">Gunakan minimal 8 karakter perpaduan huruf dan angka.</div>
+              <div class="form-text" style="font-size:11px;">Minimal 8 karakter. Biarkan kosong jika Anda hanya ingin mengubah nama Wi-Fi saja.</div>
             </div>
 
-            <div class="mb-3">
-              <label for="inputConfirmPassword" class="form-label">Ulangi Kata Sandi Baru <span class="text-danger">*</span></label>
+            <!-- KONFIRMASI KATA SANDI BARU -->
+            <div class="mb-3" id="confirmPasswordGroup" style="display:none;">
+              <label for="inputWifiConfirmPassword" class="form-label fw-bold" style="font-size:12px; color:var(--isp-text-heading);">
+                Ulangi Kata Sandi Baru <span class="text-danger">*</span>
+              </label>
               <div class="input-group">
-                <span class="input-group-text"><i class="bi bi-check2-circle"></i></span>
-                <input type="password" id="inputConfirmPassword" class="form-control" placeholder="Ketik ulang kata sandi baru" minlength="8" required>
-                <button type="button" class="btn btn-outline-secondary" onclick="toggleInputType('inputConfirmPassword', this)">
+                <span class="input-group-text"><i class="bi bi-check2-circle text-success"></i></span>
+                <input type="password" id="inputWifiConfirmPassword" class="form-control" placeholder="Ketik ulang kata sandi baru" minlength="8">
+                <button type="button" class="btn btn-outline-secondary" onclick="toggleInputType('inputWifiConfirmPassword', this)">
                   <i class="bi bi-eye"></i>
                 </button>
               </div>
             </div>
 
+            <!-- INFO PERINGATAN -->
             <div class="p-2 px-3 rounded-2 small" style="background:var(--isp-warning-subtle); color:var(--isp-warning); border:1px solid var(--isp-warning-border); font-size:11px;">
-              <i class="bi bi-info-circle-fill me-1"></i> Modem akan menerapkan kata sandi baru. Perangkat akan meminta sandi baru saat terhubung kembali.
+              <i class="bi bi-exclamation-triangle-fill me-1"></i> Modem akan menerapkan pengaturan baru ke jaringan Wi-Fi. Seluruh HP & laptop akan terputus dan perlu disambungkan kembali.
             </div>
           </div>
           <div class="modal-footer d-flex gap-2">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-            <button type="submit" id="btnSubmitPassword" class="btn btn-warning text-dark fw-bold flex-grow-1" style="min-height:38px;">
-              Simpan Sandi Baru
+            <button type="submit" id="btnSubmitUnifiedWifi" class="btn btn-primary fw-bold flex-grow-1" style="min-height:38px;">
+              <i class="bi bi-check-circle me-1"></i> Simpan & Terapkan ke Modem
             </button>
           </div>
         </form>
@@ -1913,32 +1901,76 @@
       m.show();
     }
 
-    // OPEN EDIT SSID MODAL
-    function openEditSsidModal(defaultBand = 'all') {
-      const select = document.getElementById('selectSsidBand');
-      const input = document.getElementById('inputSsidName');
-      const alertBox = document.getElementById('ssidAlertBox');
-      if (alertBox) alertBox.className = 'alert d-none mb-3 py-2 small';
+    // ── UNIFIED WIFI MODAL CONTROLLER ──
+    function openUnifiedWifiModal(defaultBand = '2.4') {
+      const select = document.getElementById('selectWifiBand');
+      const ssidInput = document.getElementById('inputWifiSsid');
+      const p1 = document.getElementById('inputWifiNewPassword');
+      const p2 = document.getElementById('inputWifiConfirmPassword');
+      const confGroup = document.getElementById('confirmPasswordGroup');
+      const alertBox = document.getElementById('wifiUnifiedAlertBox');
 
+      if (alertBox) alertBox.className = 'alert d-none mb-3 py-2 small';
       if (select) select.value = defaultBand;
-      if (input) {
-        if (defaultBand === '5') input.value = gCurrentWifiSsid5;
-        else input.value = gCurrentWifiSsid24;
+
+      if (ssidInput) {
+        if (defaultBand === '5') ssidInput.value = gCurrentWifiSsid5;
+        else ssidInput.value = gCurrentWifiSsid24;
       }
 
-      const m = new bootstrap.Modal(document.getElementById('editSsidModal'));
+      if (p1) { p1.value = ''; p1.type = 'password'; }
+      if (p2) { p2.value = ''; p2.type = 'password'; }
+      if (confGroup) confGroup.style.display = 'none';
+
+      onUnifiedBandChange();
+
+      const m = bootstrap.Modal.getOrCreateInstance(document.getElementById('editWifiModal'));
       m.show();
     }
 
-    async function handleSsidSubmit(e) {
-      e.preventDefault();
-      const input = document.getElementById('inputSsidName');
-      const select = document.getElementById('selectSsidBand');
-      const btn = document.getElementById('btnSubmitSsid');
-      const alertBox = document.getElementById('ssidAlertBox');
+    function onUnifiedBandChange() {
+      const select = document.getElementById('selectWifiBand');
+      const ssidInput = document.getElementById('inputWifiSsid');
+      const help = document.getElementById('helpSsidSuffix');
+      if (!select || !ssidInput) return;
 
-      const newSsid = (input ? input.value : '').trim();
+      if (select.value === '5') {
+        ssidInput.value = gCurrentWifiSsid5 || (gCurrentWifiSsid24 ? `${gCurrentWifiSsid24}-5G` : '');
+        if (help) help.style.display = 'none';
+      } else if (select.value === '2.4') {
+        ssidInput.value = gCurrentWifiSsid24;
+        if (help) help.style.display = 'none';
+      } else {
+        ssidInput.value = gCurrentWifiSsid24;
+        if (help) help.style.display = 'block';
+      }
+    }
+
+    // Aliases for backward compatibility
+    function openEditSsidModal(defaultBand = 'all') {
+      openUnifiedWifiModal(defaultBand === 'all' ? '2.4' : defaultBand);
+    }
+    function openEditPasswordModal(defaultBand = 'all') {
+      openUnifiedWifiModal(defaultBand === 'all' ? '2.4' : defaultBand);
+      setTimeout(() => {
+        const p1 = document.getElementById('inputWifiNewPassword');
+        if (p1) p1.focus();
+      }, 350);
+    }
+
+    async function handleUnifiedWifiSubmit(e) {
+      e.preventDefault();
+      const select = document.getElementById('selectWifiBand');
+      const ssidInput = document.getElementById('inputWifiSsid');
+      const p1 = document.getElementById('inputWifiNewPassword');
+      const p2 = document.getElementById('inputWifiConfirmPassword');
+      const btn = document.getElementById('btnSubmitUnifiedWifi');
+      const alertBox = document.getElementById('wifiUnifiedAlertBox');
+
       const band = select ? select.value : 'all';
+      const newSsid = (ssidInput ? ssidInput.value : '').trim();
+      const pass = (p1 ? p1.value : '').trim();
+      const conf = (p2 ? p2.value : '').trim();
 
       if (!newSsid) {
         if (alertBox) {
@@ -1948,23 +1980,44 @@
         return;
       }
 
+      if (pass.length > 0) {
+        if (pass.length < 8) {
+          if (alertBox) {
+            alertBox.className = 'alert alert-danger mb-3 py-2 small';
+            alertBox.innerHTML = '<i class="bi bi-x-circle me-1"></i> Kata sandi baru minimal 8 karakter.';
+          }
+          return;
+        }
+        if (pass !== conf) {
+          if (alertBox) {
+            alertBox.className = 'alert alert-danger mb-3 py-2 small';
+            alertBox.innerHTML = '<i class="bi bi-x-circle me-1"></i> Konfirmasi kata sandi tidak cocok.';
+          }
+          return;
+        }
+      }
+
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan ke Modem...';
       }
 
       try {
-        const res = await fetch('/customer/change-ssid', {
+        const payload = { band, ssid: newSsid };
+        if (pass.length >= 8) payload.password = pass;
+
+        const res = await fetch('/customer/change-wifi', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           },
-          body: JSON.stringify({ ssid: newSsid, band })
+          body: JSON.stringify(payload)
         });
         const data = await res.json().catch(() => ({}));
 
         if (res.ok && data.ok) {
+          // Update SSID di DOM
           if (band === '2.4' || band === 'all') {
             gCurrentWifiSsid24 = newSsid;
             const el = document.getElementById('displaySsid24');
@@ -1977,13 +2030,35 @@
             if (el) el.innerText = s5;
           }
 
-          showCustomerToast(data.message || 'Nama Wi-Fi berhasil disinkronkan ke modem!', 'success');
-          const m = bootstrap.Modal.getInstance(document.getElementById('editSsidModal'));
+          // Update Password di DOM jika diisi
+          if (pass.length >= 8) {
+            if (band === '2.4' || band === 'all') {
+              gCurrentWifiPass24 = pass;
+              const el = document.getElementById('displayPass24');
+              if (el) {
+                el.setAttribute('data-real', pass);
+                if (gIsPasswordRevealed24) el.innerText = pass;
+                else el.innerText = '••••••••';
+              }
+            }
+            if (band === '5' || band === 'all') {
+              gCurrentWifiPass5 = pass;
+              const el = document.getElementById('displayPass5');
+              if (el) {
+                el.setAttribute('data-real', pass);
+                if (gIsPasswordRevealed5) el.innerText = pass;
+                else el.innerText = '••••••••';
+              }
+            }
+          }
+
+          showCustomerToast(data.message || 'Pengaturan Wi-Fi berhasil disinkronkan ke modem!', 'success');
+          const m = bootstrap.Modal.getInstance(document.getElementById('editWifiModal'));
           if (m) m.hide();
         } else {
           if (alertBox) {
             alertBox.className = 'alert alert-danger mb-3 py-2 small';
-            alertBox.innerHTML = `<i class="bi bi-exclamation-circle me-1"></i> ${data.message || 'Gagal mengubah nama Wi-Fi.'}`;
+            alertBox.innerHTML = `<i class="bi bi-exclamation-circle me-1"></i> ${data.message || 'Gagal mengubah pengaturan Wi-Fi.'}`;
           }
         }
       } catch (err) {
@@ -1994,107 +2069,7 @@
       } finally {
         if (btn) {
           btn.disabled = false;
-          btn.innerHTML = 'Simpan & Sinkronkan';
-        }
-      }
-    }
-
-    // OPEN EDIT PASSWORD MODAL
-    function openEditPasswordModal(defaultBand = 'all') {
-      const select = document.getElementById('selectPasswordBand');
-      const p1 = document.getElementById('inputNewPassword');
-      const p2 = document.getElementById('inputConfirmPassword');
-      const alertBox = document.getElementById('passwordAlertBox');
-
-      if (alertBox) alertBox.className = 'alert d-none mb-3 py-2 small';
-      if (select) select.value = defaultBand;
-      if (p1) { p1.value = ''; p1.type = 'password'; }
-      if (p2) { p2.value = ''; p2.type = 'password'; }
-
-      const m = new bootstrap.Modal(document.getElementById('editPasswordModal'));
-      m.show();
-    }
-
-    async function handlePasswordSubmit(e) {
-      e.preventDefault();
-      const p1 = document.getElementById('inputNewPassword');
-      const p2 = document.getElementById('inputConfirmPassword');
-      const select = document.getElementById('selectPasswordBand');
-      const btn = document.getElementById('btnSubmitPassword');
-      const alertBox = document.getElementById('passwordAlertBox');
-
-      const pass = (p1 ? p1.value : '').trim();
-      const conf = (p2 ? p2.value : '').trim();
-      const band = select ? select.value : 'all';
-
-      if (pass.length < 8) {
-        if (alertBox) {
-          alertBox.className = 'alert alert-danger mb-3 py-2 small';
-          alertBox.innerHTML = '<i class="bi bi-x-circle me-1"></i> Kata sandi minimal 8 karakter.';
-        }
-        return;
-      }
-
-      if (pass !== conf) {
-        if (alertBox) {
-          alertBox.className = 'alert alert-danger mb-3 py-2 small';
-          alertBox.innerHTML = '<i class="bi bi-x-circle me-1"></i> Konfirmasi kata sandi tidak cocok.';
-        }
-        return;
-      }
-
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
-      }
-
-      try {
-        const res = await fetch('/customer/change-password', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({ password: pass, band })
-        });
-        const data = await res.json().catch(() => ({}));
-
-        if (res.ok && data.ok) {
-          if (band === '2.4' || band === 'all') {
-            gCurrentWifiPass24 = pass;
-            const el = document.getElementById('displayPass24');
-            if (el) {
-              el.setAttribute('data-real', pass);
-              if (gIsPasswordRevealed24) el.innerText = pass;
-            }
-          }
-          if (band === '5' || band === 'all') {
-            gCurrentWifiPass5 = pass;
-            const el = document.getElementById('displayPass5');
-            if (el) {
-              el.setAttribute('data-real', pass);
-              if (gIsPasswordRevealed5) el.innerText = pass;
-            }
-          }
-
-          showCustomerToast(data.message || 'Sandi Wi-Fi berhasil disinkronkan ke modem!', 'success');
-          const m = bootstrap.Modal.getInstance(document.getElementById('editPasswordModal'));
-          if (m) m.hide();
-        } else {
-          if (alertBox) {
-            alertBox.className = 'alert alert-danger mb-3 py-2 small';
-            alertBox.innerHTML = `<i class="bi bi-exclamation-circle me-1"></i> ${data.message || 'Gagal mengubah kata sandi.'}`;
-          }
-        }
-      } catch (err) {
-        if (alertBox) {
-          alertBox.className = 'alert alert-danger mb-3 py-2 small';
-          alertBox.innerHTML = `<i class="bi bi-shield-x me-1"></i> Kesalahan jaringan: ${err.message}`;
-        }
-      } finally {
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = 'Simpan Sandi Baru';
+          btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Simpan & Terapkan ke Modem';
         }
       }
     }
@@ -2331,6 +2306,24 @@
       applyTheme(currentTheme);
 
       loadCustomerWebNotifs();
+
+      const pInput = document.getElementById('inputWifiNewPassword');
+      const confGroup = document.getElementById('confirmPasswordGroup');
+      const confInput = document.getElementById('inputWifiConfirmPassword');
+      if (pInput && confGroup) {
+        pInput.addEventListener('input', () => {
+          if (pInput.value.length > 0) {
+            confGroup.style.display = 'block';
+            if (confInput) confInput.required = true;
+          } else {
+            confGroup.style.display = 'none';
+            if (confInput) {
+              confInput.required = false;
+              confInput.value = '';
+            }
+          }
+        });
+      }
 
       const btnRefresh = document.getElementById('btnDeviceRefresh');
       if (btnRefresh) {

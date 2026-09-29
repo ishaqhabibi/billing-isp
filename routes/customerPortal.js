@@ -2206,6 +2206,121 @@ router.get('/api/connected-devices', async (req, res) => {
   });
 });
 
+// ── UBAH PENGATURAN WIFI SEKALIGUS (NAMA & KATA SANDI) ──
+router.post('/change-wifi', async (req, res) => {
+  const loginId = String(req.session?.phone ?? '').replace(/[\r\n\t]+/g, '').trim();
+  const isAjax = Boolean(req.xhr || req.headers.accept?.includes('application/json') || req.is('json'));
+
+  if (!loginId) {
+    if (isAjax) return res.status(401).json({ ok: false, message: 'Sesi login telah berakhir. Silakan login kembali.' });
+    return res.redirect('/customer/login');
+  }
+
+  const profile = findCustomerProfileByLoginId(loginId);
+  const band = String(req.body?.band || 'all').toLowerCase();
+  const ssidRaw = req.body?.ssid;
+  const ssid = String(ssidRaw ?? '').trim();
+  const passwordRaw = req.body?.password;
+  const password = String(passwordRaw ?? '').replace(/[\r\n\t]+/g, '').trim();
+
+  if (!ssid && !password) {
+    const errText = 'Harap masukkan nama Wi-Fi (SSID) atau kata sandi baru.';
+    if (isAjax) return res.status(400).json({ ok: false, message: errText });
+    req.session._msg = { type: 'danger', text: errText };
+    return res.redirect('/customer/dashboard#wifi-section');
+  }
+
+  if (password && password.length < 8) {
+    const errText = 'Kata sandi baru minimal 8 karakter.';
+    if (isAjax) return res.status(400).json({ ok: false, message: errText });
+    req.session._msg = { type: 'danger', text: errText };
+    return res.redirect('/customer/dashboard#wifi-section');
+  }
+
+  const tokenCandidates = Array.from(new Set([
+    req.session?.pppoe_username,
+    ...buildCustomerDeviceTokens(loginId, profile)
+  ].map(v => String(v || '').trim()).filter(Boolean)));
+
+  const actorMeta = {
+    type: 'customer',
+    id: profile?.id || null,
+    name: profile?.name || loginId,
+    ip: req.ip,
+    userAgent: req.headers['user-agent']
+  };
+
+  let ssidOk = false;
+  let passOk = false;
+
+  // 1. Update SSID jika diberikan
+  if (ssid) {
+    for (const token of tokenCandidates) {
+      ssidOk = await updateSSID(token, ssid, actorMeta, band);
+      if (ssidOk) break;
+    }
+    try {
+      db.prepare('UPDATE customers SET wifi_ssid = ? WHERE phone = ? OR pppoe_username = ? OR id = ?').run(ssid, loginId, loginId, profile?.id || 0);
+    } catch (e) {
+      logger.warn(`[change-wifi] Failed updating wifi_ssid in customers table: ${e.message}`);
+    }
+  }
+
+  // 2. Update Password jika diberikan
+  if (password) {
+    for (const token of tokenCandidates) {
+      passOk = await updatePassword(token, password, actorMeta, band);
+      if (passOk) break;
+    }
+    try {
+      db.prepare('UPDATE customers SET wifi_password = ? WHERE phone = ? OR pppoe_username = ? OR id = ?').run(password, loginId, loginId, profile?.id || 0);
+    } catch (e) {
+      logger.warn(`[change-wifi] Failed updating wifi_password in customers table: ${e.message}`);
+    }
+  }
+
+  const bandLabel = band === '5' ? ' (5 GHz)' : (band === '2.4' ? ' (2.4 GHz)' : '');
+  const updatedParts = [];
+  if (ssid) updatedParts.push(`Nama Wi-Fi: "${ssid}"`);
+  if (password) updatedParts.push(`Kata Sandi baru`);
+
+  const message = `Pengaturan Wi-Fi${bandLabel} (${updatedParts.join(' & ')}) berhasil diperbarui dan disinkronkan ke modem.`;
+
+  // 3. Kirim satu notifikasi WhatsApp rapi ke pelanggan
+  try {
+    const settings = getSettingsWithCache();
+    if (settings.whatsapp_enabled && profile && profile.phone) {
+      const { sendWA, whatsappStatus } = await import('../services/whatsappBot.mjs');
+      if (whatsappStatus && whatsappStatus.connection === 'open') {
+        const now = getNowLocal();
+        let waDetails = '';
+        if (ssid) waDetails += `📶 *Nama Wi-Fi (SSID):* ${ssid}\n`;
+        if (password) waDetails += `🔑 *Kata Sandi Baru:* ${password}\n`;
+        const msg = `📡 *PEMBARUAN PENGATURAN WI-FI${bandLabel}*\n\n` +
+          `👤 *Pelanggan:* ${profile.name}\n` +
+          `🕒 *Waktu:* ${now}\n\n` +
+          waDetails + `\n` +
+          `Silakan sambungkan kembali perangkat Anda ke jaringan Wi-Fi rumah dengan pengaturan baru di atas.\n` +
+          `⚠️ Jangan bagikan kata sandi ini ke sembarang orang.`;
+        await sendWA(profile.phone, msg);
+      }
+    }
+  } catch (e) { /* ignore WA notification errors */ }
+
+  if (isAjax) {
+    return res.json({
+      ok: true,
+      message,
+      ssid: ssid || undefined,
+      passwordUpdated: Boolean(password),
+      band
+    });
+  }
+
+  req.session._msg = { type: 'success', text: message };
+  res.redirect('/customer/dashboard#wifi-section');
+});
+
 router.post('/change-ssid', async (req, res) => {
   const loginId = String(req.session?.phone ?? '').replace(/[\r\n\t]+/g, '').trim();
   const isAjax = Boolean(req.xhr || req.headers.accept?.includes('application/json') || req.is('json'));

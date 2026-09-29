@@ -3699,6 +3699,51 @@ router.post('/wifi/change-password', requireCustomerApiAuth, async (req, res) =>
   });
 });
 
+// Ubah Pengaturan WiFi Sekaligus (Nama & Sandi)
+router.post('/wifi/change-settings', requireCustomerApiAuth, async (req, res) => {
+  const { ssid, newPassword, password, band = 'all' } = req.body;
+  const pass = String(newPassword || password || '').trim();
+  const newSsid = String(ssid || '').trim();
+
+  if (!newSsid && !pass) {
+    return res.status(400).json({ success: false, message: 'Harap masukkan nama WiFi atau sandi baru.' });
+  }
+  if (newSsid && newSsid.length < 2) {
+    return res.status(400).json({ success: false, message: 'Nama WiFi (SSID) minimal 2 karakter.' });
+  }
+  if (pass && pass.length < 8) {
+    return res.status(400).json({ success: false, message: 'Sandi WiFi minimal 8 karakter.' });
+  }
+
+  const customer = req.customer;
+  const tokens = [customer.pppoe_username, customer.genieacs_tag, customer.phone, String(customer.id)].filter(Boolean);
+
+  // 1. Simpan ke database lokal
+  try {
+    if (newSsid && pass) {
+      db.prepare('UPDATE customers SET wifi_ssid = ?, wifi_password = ? WHERE id = ?').run(newSsid, pass, customer.id);
+    } else if (newSsid) {
+      db.prepare('UPDATE customers SET wifi_ssid = ? WHERE id = ?').run(newSsid, customer.id);
+    } else if (pass) {
+      db.prepare('UPDATE customers SET wifi_password = ? WHERE id = ?').run(pass, customer.id);
+    }
+  } catch (_) {}
+
+  // 2. Kirim ke GenieACS TR-069
+  const actorMeta = { type: 'customer', id: customer.id, name: customer.name };
+  for (const token of tokens) {
+    try {
+      if (newSsid) await customerDevice.updateSSID(token, newSsid, actorMeta, band);
+      if (pass) await customerDevice.updatePassword(token, pass, actorMeta, band);
+    } catch (_) {}
+  }
+
+  res.json({
+    success: true,
+    message: 'Pengaturan WiFi (Nama & Sandi) berhasil diperbarui dan disinkronkan ke modem.'
+  });
+});
+
 router.post('/wifi/reboot', requireCustomerApiAuth, async (req, res) => {
   const customer = req.customer;
   const tokens = [customer.pppoe_username, customer.genieacs_tag, customer.phone, String(customer.id)].filter(Boolean);
