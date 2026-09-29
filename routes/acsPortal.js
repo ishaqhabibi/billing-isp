@@ -752,44 +752,47 @@ function extractUptime(d) {
 
 function extractClientCount(d) {
     if (!d) return null;
+    const wlanConfig = getNestedValue(d, 'InternetGatewayDevice.LANDevice.1.WLANConfiguration');
+    if (wlanConfig && typeof wlanConfig === 'object') {
+        let totalAssoc = 0;
+        let foundAssoc = false;
+        for (const k of Object.keys(wlanConfig)) {
+            const band = wlanConfig[k];
+            if (band && typeof band === 'object') {
+                if (band.AssociatedDevice) {
+                    foundAssoc = true;
+                    if (Array.isArray(band.AssociatedDevice)) {
+                        totalAssoc += band.AssociatedDevice.length;
+                    } else if (typeof band.AssociatedDevice === 'object') {
+                        totalAssoc += Object.keys(band.AssociatedDevice).length;
+                    }
+                } else {
+                    const assoc = getNestedValue(band, 'TotalAssociations');
+                    if (assoc !== null && assoc !== undefined && assoc !== '-') {
+                        const num = parseInt(assoc, 10);
+                        if (!isNaN(num)) {
+                            totalAssoc += num;
+                            foundAssoc = true;
+                        }
+                    }
+                }
+            }
+        }
+        if (foundAssoc) return totalAssoc;
+    }
+
     let hostsCount = getNestedValue(d, 'InternetGatewayDevice.LANDevice.1.Hosts.HostNumberOfEntries');
     if (hostsCount !== null && hostsCount !== undefined && hostsCount !== '-') {
         const count = parseInt(hostsCount, 10);
         if (!isNaN(count)) return count;
     }
-    const wlanConfig = getNestedValue(d, 'InternetGatewayDevice.LANDevice.1.WLANConfiguration');
-    if (wlanConfig && typeof wlanConfig === 'object') {
-        let totalAssoc = 0;
-        let found = false;
-        for (const k of Object.keys(wlanConfig)) {
-            const band = wlanConfig[k];
-            if (band && typeof band === 'object') {
-                const assoc = getNestedValue(band, 'TotalAssociations');
-                if (assoc !== null && assoc !== undefined && assoc !== '-') {
-                    const num = parseInt(assoc, 10);
-                    if (!isNaN(num)) {
-                        totalAssoc += num;
-                        found = true;
-                    }
-                } else if (band.AssociatedDevice) {
-                    if (Array.isArray(band.AssociatedDevice)) {
-                        totalAssoc += band.AssociatedDevice.length;
-                        found = true;
-                    } else if (typeof band.AssociatedDevice === 'object') {
-                        totalAssoc += Object.keys(band.AssociatedDevice).length;
-                        found = true;
-                    }
-                }
-            }
-        }
-        if (found) return totalAssoc;
-    }
+
     const hostObj = getNestedValue(d, 'InternetGatewayDevice.LANDevice.1.Hosts.Host');
     if (hostObj) {
         if (Array.isArray(hostObj)) return hostObj.length;
         if (typeof hostObj === 'object') return Object.keys(hostObj).length;
     }
-    return null;
+    return 0;
 }
 
 // Middleware: Require Admin Session
@@ -938,16 +941,26 @@ async function getLANHosts(deviceId, serverConfig) {
             let band = l2Str.includes('5') ? '5GHz' : '2.4GHz';
             const macLower = mac.toString().toLowerCase();
 
+            let isAssociated = false;
             if (isWiFi && wifiRssiMap.has(macLower)) {
                 const wifiInfo = wifiRssiMap.get(macLower);
                 finalRssi = wifiInfo.rssi;
                 band = wifiInfo.band;
+                isAssociated = true;
+            }
+
+            // Wi-Fi clients are only genuinely active if currently associated to the radio
+            let isReallyActive = false;
+            if (isWiFi) {
+                isReallyActive = isAssociated;
+            } else {
+                isReallyActive = activeRaw === true || activeRaw === 'true' || activeRaw === 1;
             }
 
             return {
                 index: index + 1,
                 mac, ip, hostname,
-                active: activeRaw === true || activeRaw === 'true' || activeRaw === 1,
+                active: isReallyActive,
                 isWiFi, band, rssi: finalRssi,
                 bytesReceived, bytesSent
             };
