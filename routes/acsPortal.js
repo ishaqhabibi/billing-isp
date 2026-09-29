@@ -548,13 +548,40 @@ function extractPppoeUser(d) {
     return allMatches[0].value;
 }
 
+function parseUptimeToSeconds(val) {
+    if (!val || val === '-' || val === 'N/A') return 0;
+    if (typeof val === 'number') return Math.floor(val);
+    const s = String(val).trim();
+    if (!isNaN(Number(s))) return parseInt(s, 10);
+    
+    let total = 0;
+    const wMatch = s.match(/(\d+)\s*w/i);
+    if (wMatch) total += parseInt(wMatch[1], 10) * 86400 * 7;
+    const dMatch = s.match(/(\d+)\s*d/i);
+    if (dMatch) total += parseInt(dMatch[1], 10) * 86400;
+    const hMatch = s.match(/(\d+)\s*h/i);
+    if (hMatch) total += parseInt(hMatch[1], 10) * 3600;
+    const mMatch = s.match(/(\d+)\s*m(?!s)/i);
+    if (mMatch) total += parseInt(mMatch[1], 10) * 60;
+    const sMatch = s.match(/(\d+)\s*s/i);
+    if (sMatch) total += parseInt(sMatch[1], 10);
+
+    if (total === 0 && s.includes(':')) {
+        const clean = s.replace(/.*d\s*/i, '');
+        const parts = clean.split(':').map(p => parseInt(p, 10));
+        if (parts.length === 3) {
+            total += (parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0);
+        } else if (parts.length === 2) {
+            total += (parts[0] || 0) * 60 + (parts[1] || 0);
+        }
+    }
+    return total;
+}
+
 function formatUptime(seconds) {
     if (!seconds || seconds === 'N/A' || seconds === '-') return seconds || '-';
-    if (typeof seconds === 'string' && (seconds.includes('d') || seconds.includes(':')) && isNaN(seconds)) {
-        return seconds;
-    }
-    const totalSecs = parseInt(seconds, 10);
-    if (isNaN(totalSecs)) return seconds || '-';
+    const totalSecs = parseUptimeToSeconds(seconds);
+    if (totalSecs <= 0) return typeof seconds === 'string' ? seconds : '-';
     const days = Math.floor(totalSecs / 86400);
     const rem = totalSecs % 86400;
     let hrs = Math.floor(rem / 3600);
@@ -662,7 +689,8 @@ function extractSoftwareVersion(d) {
     return '-';
 }
 
-function extractUptime(d) {
+function extractUptimeInfo(d, sessionsMap = null, pppoeUser = null) {
+    let rawVal = null;
     const UPTIME_PATHS = [
         'VirtualParameters.getdeviceuptime',
         'InternetGatewayDevice.DeviceInfo.UpTime',
@@ -671,28 +699,55 @@ function extractUptime(d) {
     for (const path of UPTIME_PATHS) {
         const val = getNestedValue(d, path);
         if (val && val !== '-' && val !== '') {
-            if (typeof val === 'string' && (val.includes('d') || val.includes(':')) && isNaN(val)) {
-                return val;
-            }
-            const totalSecs = parseInt(val, 10);
-            if (isNaN(totalSecs)) return val;
-            const days = Math.floor(totalSecs / 86400);
-            const rem = totalSecs % 86400;
-            
-            let hrs = Math.floor(rem / 3600);
-            if (hrs < 10) hrs = "0" + hrs;
-            
-            const rem2 = rem % 3600;
-            let mins = Math.floor(rem2 / 60);
-            if (mins < 10) mins = "0" + mins;
-            
-            let secs = rem2 % 60;
-            if (secs < 10) secs = "0" + secs;
-            
-            return days + "d " + hrs + ":" + mins + ":" + secs;
+            rawVal = val;
+            break;
         }
     }
-    return '-';
+
+    if (!rawVal || rawVal === '-') {
+        rawVal = getDeviceParameterValue(d, PPPOE_UPTIME_KEYS, (matchedPath, value, device) => {
+            if (value === undefined || value === null || value === '' || value === '-') return false;
+            return true;
+        });
+    }
+
+    let baseSecs = parseUptimeToSeconds(rawVal);
+
+    if (baseSecs > 0) {
+        // Add elapsed seconds since last_inform/updated_at so uptime advances smoothly between informs
+        const lastInform = d._lastInform || d.last_inform || d._updatedAt || d.updated_at;
+        if (lastInform) {
+            const informTime = new Date(lastInform).getTime();
+            if (!isNaN(informTime)) {
+                const elapsed = Math.max(0, Math.floor((Date.now() - informTime) / 1000));
+                if (elapsed > 0 && elapsed < 86400 * 30) {
+                    baseSecs += elapsed;
+                }
+            }
+        }
+    } else if (sessionsMap && pppoeUser && pppoeUser !== '-') {
+        // Fallback to active PPPoE session from MikroTik
+        const session = sessionsMap.get(String(pppoeUser).trim().toLowerCase());
+        if (session && session.uptime) {
+            baseSecs = parseUptimeToSeconds(session.uptime);
+        }
+    }
+
+    if (baseSecs > 0) {
+        return {
+            formatted: formatUptime(baseSecs),
+            seconds: baseSecs
+        };
+    }
+
+    return {
+        formatted: rawVal && isNaN(rawVal) ? String(rawVal) : '-',
+        seconds: 0
+    };
+}
+
+function extractUptime(d) {
+    return extractUptimeInfo(d).formatted;
 }
 
 function extractClientCount(d) {
@@ -951,7 +1006,7 @@ async function fetchDevicesFromACS(server, vParams = [], paths = {}, options = {
                              (pppoeUser && pppoeUser !== '-' && sessionsMap.has(pppoeUser.toLowerCase()));
 
             const ssid = extractSsid(d);
-            const uptime = extractUptime(d) || extractPppoeUptime(d);
+            const uptimeInfo = extractUptimeInfo(d, sessionsMap, pppoeUser);
             const clientCount = extractClientCount(d);
 
             return {
@@ -966,7 +1021,8 @@ async function fetchDevicesFromACS(server, vParams = [], paths = {}, options = {
                 pppoe_user: pppoeUser,
                 ip: ip,
                 ssid: (ssid && ssid !== '-') ? ssid : (getNestedValue(d, 'VirtualParameters.SSID') || '-'),
-                uptime: uptime,
+                uptime: uptimeInfo.formatted,
+                uptime_seconds: uptimeInfo.seconds,
                 client_count: clientCount,
                 acs_server_name: server.name,
                 acs_server_id: server.id
@@ -1140,7 +1196,7 @@ router.get('/', async (req, res) => {
                                                  (pppoeUser && pppoeUser !== '-' && activeSessionsMap.has(pppoeUser.toLowerCase()));
                                 
                                 const ssid = extractSsid(d);
-                                const uptime = extractUptime(d) || extractPppoeUptime(d);
+                                const uptimeInfo = extractUptimeInfo(d, activeSessionsMap, pppoeUser);
                                 const clientCount = extractClientCount(d);
 
                                 return {
@@ -1156,7 +1212,8 @@ router.get('/', async (req, res) => {
                                     pppoe_user: pppoeUser,
                                     customer_name: customerName,
                                     ssid: (ssid && ssid !== '-') ? ssid : (getNestedValue(d, 'VirtualParameters.SSID') || '-'),
-                                    uptime: uptime,
+                                    uptime: uptimeInfo.formatted,
+                                    uptime_seconds: uptimeInfo.seconds,
                                     client_count: clientCount,
                                     acs_server_id: server.id,
                                     acs_server_name: server.name

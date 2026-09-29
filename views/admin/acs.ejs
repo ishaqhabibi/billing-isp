@@ -501,8 +501,8 @@
                                                     <%= d.isOnline ? 'Online' : 'Offline' %>
                                                 </span>
                                             </div>
-                                            <div style="font-size:11px; color:var(--muted); font-family:monospace;">
-                                                <i class="bi bi-clock-history"></i> <%= d.uptime || '-' %>
+                                            <div style="font-size:11px; color:var(--muted); font-family:monospace;" class="live-uptime-ticker" data-seconds="<%= d.uptime_seconds || 0 %>" data-online="<%= d.isOnline ? '1' : '0' %>">
+                                                <i class="bi bi-clock-history"></i> <span class="uptime-clock-text"><%= d.uptime || '-' %></span>
                                             </div>
                                         </div>
                                     </td>
@@ -1957,6 +1957,31 @@ function enforceWanBionDomain(input) {
     }
     input.value = val;
 }
+
+// ── LIVE REAL-TIME UPTIME TICKER ──
+setInterval(() => {
+    document.querySelectorAll('.live-uptime-ticker[data-online="1"]').forEach(el => {
+        let sec = parseInt(el.getAttribute('data-seconds'), 10);
+        if (isNaN(sec) || sec <= 0) return;
+        sec += 1;
+        el.setAttribute('data-seconds', sec);
+
+        const days = Math.floor(sec / 86400);
+        const rem = sec % 86400;
+        let hrs = Math.floor(rem / 3600);
+        if (hrs < 10) hrs = '0' + hrs;
+        const rem2 = rem % 3600;
+        let mins = Math.floor(rem2 / 60);
+        if (mins < 10) mins = '0' + mins;
+        let secs = rem2 % 60;
+        if (secs < 10) secs = '0' + secs;
+
+        const span = el.querySelector('.uptime-clock-text');
+        if (span) {
+            span.textContent = `${days}d ${hrs}:${mins}:${secs}`;
+        }
+    });
+}, 1000);
 </script>
 </body>
 </html>
