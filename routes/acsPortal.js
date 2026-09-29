@@ -724,8 +724,12 @@ function extractPppoeUptimeInfo(d, activeSessionsMap = null, pppoeUser = null) {
     let baseSecs = 0;
     let rawVal = null;
 
-    if (activeSessionsMap && pppoeUser && pppoeUser !== '-') {
-        const session = activeSessionsMap.get(String(pppoeUser).trim().toLowerCase());
+    if (activeSessionsMap && pppoeUser && pppoeUser !== '-' && pppoeUser !== 'N/A') {
+        const u = String(pppoeUser).trim().toLowerCase();
+        let session = activeSessionsMap.get(u);
+        if (!session && u.includes('@')) {
+            session = activeSessionsMap.get(u.split('@')[0]);
+        }
         if (session && session.uptime) {
             baseSecs = parseUptimeToSeconds(session.uptime);
             if (baseSecs > 0) {
@@ -889,11 +893,44 @@ function extractUptimeInfo(d, sessionsMap = null, pppoeUser = null) {
                 }
             }
         }
-    } else if (sessionsMap && pppoeUser && pppoeUser !== '-') {
-        // Fallback to active PPPoE session from MikroTik
-        const session = sessionsMap.get(String(pppoeUser).trim().toLowerCase());
-        if (session && session.uptime) {
-            baseSecs = parseUptimeToSeconds(session.uptime);
+    }
+
+    // ── Hierarchy of Truth: Sync with authoritative MikroTik PPPoE Session ──
+    let pppoeSecs = 0;
+    if (sessionsMap) {
+        let userToFind = pppoeUser && pppoeUser !== '-' && pppoeUser !== 'N/A' ? String(pppoeUser).trim().toLowerCase() : null;
+        if (userToFind) {
+            let session = sessionsMap.get(userToFind);
+            if (!session && userToFind.includes('@')) {
+                session = sessionsMap.get(userToFind.split('@')[0]);
+            }
+            if (session && session.uptime) {
+                pppoeSecs = parseUptimeToSeconds(session.uptime);
+            }
+        }
+
+        // If not found yet, check tags or other identifiers
+        if (pppoeSecs === 0 && Array.isArray(d._tags)) {
+            for (const t of d._tags) {
+                const tagUser = String(t || '').trim().toLowerCase();
+                let session = sessionsMap.get(tagUser);
+                if (!session && tagUser.includes('@')) {
+                    session = sessionsMap.get(tagUser.split('@')[0]);
+                }
+                if (session && session.uptime) {
+                    pppoeSecs = parseUptimeToSeconds(session.uptime);
+                    break;
+                }
+            }
+        }
+    }
+
+    // Physical law: Modem hardware uptime MUST be >= PPPoE session uptime.
+    // Certain modems (e.g. Fiberhome HG6045F3) report CWMP timer / inform interval (~600s = 10m)
+    // instead of true hardware uptime. If modem uptime < PPPoE session uptime, we sync with PPPoE (+60s boot margin).
+    if (pppoeSecs > 0) {
+        if (baseSecs <= 0 || baseSecs < pppoeSecs) {
+            baseSecs = pppoeSecs + 60;
         }
     }
 
