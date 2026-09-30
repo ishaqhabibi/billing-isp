@@ -128,6 +128,26 @@ async function resolveDeviceToken(input) {
   const token = String(input ?? '').replace(/[\r\n\t]+/g, '').trim();
   if (!token) return null;
 
+  // 1. Direct fast lookup in Built-in ACS if enabled
+  if (typeof genieacsApi.isBuiltinAcsEnabled === 'function' && genieacsApi.isBuiltinAcsEnabled()) {
+    try {
+      const db = require('../config/database');
+      const row = db.prepare(`
+        SELECT * FROM acs_devices 
+        WHERE id = ? OR serial_number = ? OR id LIKE ? OR serial_number LIKE ?
+        LIMIT 1
+      `).get(token, token, `%${token}%`, `%${token}%`);
+      if (row && typeof genieacsApi.builtinRowToDevice === 'function') {
+        const dev = genieacsApi.builtinRowToDevice(row);
+        if (dev && dev._id) {
+          dev._acs_server_id = 'builtin';
+          dev._acs_server_name = 'Built-in ACS';
+          return dev;
+        }
+      }
+    } catch (_) {}
+  }
+
   const direct = await findDeviceByTag(token);
   if (direct && direct._id) return direct;
 

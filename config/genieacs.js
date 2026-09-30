@@ -104,6 +104,14 @@ function matchesQuery(device, query) {
 
     // Handle condition types
     if (condition && typeof condition === 'object' && !Array.isArray(condition)) {
+      if ('$regex' in condition) {
+        try {
+          const re = new RegExp(condition.$regex, condition.$options || '');
+          if (!re.test(String(val ?? ''))) return false;
+        } catch (_) {
+          return false;
+        }
+      }
       if ('$exists' in condition) {
         const exists = val !== undefined && val !== null;
         if (condition.$exists !== exists) return false;
@@ -140,10 +148,11 @@ function matchesQuery(device, query) {
 function createBuiltinAxiosProxy() {
   return {
     get: async (url, config = {}) => {
+      const cleanUrl = String(url || '').split('?')[0];
       const params = config.params || {};
       
       // GET /devices
-      if (url === '/devices' || url === '/devices/') {
+      if (cleanUrl === '/devices' || cleanUrl === '/devices/') {
         let rows = [];
         try {
           const limit = params.limit || 999999;
@@ -168,7 +177,7 @@ function createBuiltinAxiosProxy() {
       }
       
       // GET /devices/:id
-      const deviceMatch = url.match(/^\/devices\/(.+)$/);
+      const deviceMatch = cleanUrl.match(/^\/devices\/(.+)$/);
       if (deviceMatch) {
         const deviceId = decodeURIComponent(deviceMatch[1]);
         const row = db.prepare('SELECT * FROM acs_devices WHERE id = ?').get(deviceId);
@@ -184,8 +193,9 @@ function createBuiltinAxiosProxy() {
     },
     
     post: async (url, data = {}, config = {}) => {
+      const cleanUrl = String(url || '').split('?')[0];
       // POST /devices/:id/tasks
-      const taskMatch = url.match(/^\/devices\/(.+)\/tasks$/);
+      const taskMatch = cleanUrl.match(/^\/devices\/(.+)\/tasks$/);
       if (taskMatch) {
         const deviceId = decodeURIComponent(taskMatch[1]);
         const taskName = data.name || 'unknown';
@@ -1169,6 +1179,7 @@ module.exports = {
     getACSServer,
     createAxiosInstance,
     isBuiltinAcsEnabled,
+    builtinRowToDevice,
     
     // GenieACS API methods (now support multi-server)
     getDevices: genieacsApi.getDevices,
