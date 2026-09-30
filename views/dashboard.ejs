@@ -1124,24 +1124,18 @@
           <!-- SANDI WIFI 2.4G -->
           <div class="wifi-box-container mb-3">
             <div class="d-flex align-items-center justify-content-between mb-1">
-              <span class="wifi-box-label"><i class="bi bi-key-fill me-1 text-warning"></i> KATA SANDI 2.4G</span>
-              <div class="d-flex gap-2 align-items-center">
-                <button type="button" class="btn btn-sm p-0 text-primary fw-bold" onclick="togglePeekPassBand('2.4')" style="font-size:12px;">
-                  <i class="bi bi-eye" id="iconEye24"></i> <span id="labelEye24">Lihat</span>
-                </button>
-                <span class="text-muted">•</span>
-                <button type="button" class="btn btn-sm p-0 text-warning fw-bold" onclick="openUnifiedWifiModal('2.4')" style="font-size:12px;">
-                  <i class="bi bi-pencil-square"></i> Ganti
-                </button>
-              </div>
-            </div>
-            <div class="d-flex align-items-center justify-content-between">
-              <div class="wifi-box-value font-monospace text-truncate" id="displayPass24" data-real="<%= currentWifiPass24 %>" style="letter-spacing:1px;">
-                <%= currentWifiPass24 ? '••••••••' : '(Belum Disetel)' %>
-              </div>
-              <button type="button" class="btn btn-sm text-muted p-1" onclick="copyPasswordToClipboard('<%= currentWifiPass24 %>', this)" title="Salin Sandi">
-                <i class="bi bi-clipboard fs-6"></i>
+              <span class="wifi-box-label"><i class="bi bi-shield-lock-fill me-1 text-warning"></i> KATA SANDI 2.4G</span>
+              <button type="button" class="btn btn-sm p-0 text-warning fw-bold d-flex align-items-center gap-1" onclick="openUnifiedWifiModal('2.4')" style="font-size:12px;">
+                <i class="bi bi-pencil-square"></i> Ganti Password
               </button>
+            </div>
+            <div class="d-flex align-items-center justify-content-between py-1">
+              <div class="wifi-box-value font-monospace" style="letter-spacing:3px; color:var(--isp-text-muted); font-size:14px;">
+                ••••••••••••
+              </div>
+              <span class="badge" style="background:rgba(245,158,11,0.12); color:#fbbf24; font-size:10px; padding:3px 8px; border-radius:6px; border:1px solid rgba(245,158,11,0.25);">
+                <i class="bi bi-shield-check me-1"></i> Terlindungi
+              </span>
             </div>
           </div>
 
@@ -1181,24 +1175,18 @@
           <!-- SANDI WIFI 5G -->
           <div class="wifi-box-container mb-3">
             <div class="d-flex align-items-center justify-content-between mb-1">
-              <span class="wifi-box-label"><i class="bi bi-key-fill me-1 text-warning"></i> KATA SANDI 5G</span>
-              <div class="d-flex gap-2 align-items-center">
-                <button type="button" class="btn btn-sm p-0 text-primary fw-bold" onclick="togglePeekPassBand('5')" style="font-size:12px;">
-                  <i class="bi bi-eye" id="iconEye5"></i> <span id="labelEye5">Lihat</span>
-                </button>
-                <span class="text-muted">•</span>
-                <button type="button" class="btn btn-sm p-0 text-warning fw-bold" onclick="openUnifiedWifiModal('5')" style="font-size:12px;">
-                  <i class="bi bi-pencil-square"></i> Ganti
-                </button>
-              </div>
-            </div>
-            <div class="d-flex align-items-center justify-content-between">
-              <div class="wifi-box-value font-monospace text-truncate" id="displayPass5" data-real="<%= currentWifiPass5 %>" style="letter-spacing:1px;">
-                <%= currentWifiPass5 ? '••••••••' : '(Belum Disetel)' %>
-              </div>
-              <button type="button" class="btn btn-sm text-muted p-1" onclick="copyPasswordToClipboard('<%= currentWifiPass5 %>', this)" title="Salin Sandi">
-                <i class="bi bi-clipboard fs-6"></i>
+              <span class="wifi-box-label"><i class="bi bi-shield-lock-fill me-1 text-warning"></i> KATA SANDI 5G</span>
+              <button type="button" class="btn btn-sm p-0 text-warning fw-bold d-flex align-items-center gap-1" onclick="openUnifiedWifiModal('5')" style="font-size:12px;">
+                <i class="bi bi-pencil-square"></i> Ganti Password
               </button>
+            </div>
+            <div class="d-flex align-items-center justify-content-between py-1">
+              <div class="wifi-box-value font-monospace" style="letter-spacing:3px; color:var(--isp-text-muted); font-size:14px;">
+                ••••••••••••
+              </div>
+              <span class="badge" style="background:rgba(56,189,248,0.12); color:#38bdf8; font-size:10px; padding:3px 8px; border-radius:6px; border:1px solid rgba(56,189,248,0.25);">
+                <i class="bi bi-shield-check me-1"></i> Terlindungi
+              </span>
             </div>
           </div>
 

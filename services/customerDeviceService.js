@@ -1037,49 +1037,45 @@ async function updateSSID(tag, newSSID, actor = null, band = 'all') {
           logger.error(`[updateSSID 5G TR-181] Error: ${e.message}`);
         }
       } else {
-        // TR-098 (Fiberhome HG6045F3, ZTE, Huawei, etc.)
-        let target5Path = flatParams?._wlan_5g_ssid_path || null;
-        if (!target5Path && flatParams) {
-          if (flatParams['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID'] !== undefined) {
-            target5Path = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID';
-          } else if (flatParams['InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.SSID'] !== undefined) {
-            target5Path = 'InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.SSID';
-          } else if (flatParams['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID'] !== undefined && flatParams['InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.SSID'] === undefined) {
-            target5Path = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID';
-          }
-        }
-
-        // Cek struktur pohon device jika flatParams belum ada
-        if (!target5Path && device) {
-          const wlanObj = device.InternetGatewayDevice?.LANDevice?.['1']?.WLANConfiguration || {};
-          if (wlanObj['5'] || wlanObj[5]) {
-            target5Path = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID';
-          } else if (wlanObj['2'] || wlanObj[2]) {
-            target5Path = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID';
-          } else if (device.InternetGatewayDevice?.LANDevice?.['2']?.WLANConfiguration) {
-            target5Path = 'InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.SSID';
-          }
-        }
-
-        // Standard TR-098 index 5 default (Fiberhome HG6045F3 / ZTE / Huawei)
-        if (!target5Path) {
-          target5Path = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID';
+        // TR-098 5 GHz (Fiberhome HG6145D2/HG6845F3, ZTE F670L, Huawei, etc.)
+        let target5Path = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID';
+        if (flatParams && flatParams['InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.SSID'] !== undefined) {
+          target5Path = 'InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.SSID';
+        } else if (device && device.InternetGatewayDevice?.LANDevice?.['2']?.WLANConfiguration) {
+          target5Path = 'InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.SSID';
         }
 
         const enablePath = target5Path.replace(/\.SSID$/, '.Enable');
 
         try {
+          const pValues = [
+            [target5Path, ssid5Name, 'xsd:string'],
+            [enablePath, 'true', 'xsd:boolean']
+          ];
+          // Matikan Guest/Secondary SSID (index 2) agar tidak terjadi SSID kembar di rumah pelanggan
+          if (target5Path.includes('WLANConfiguration.5')) {
+            pValues.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Enable', 'false', 'xsd:boolean']);
+          }
+
           await instance.post(tasksUrl, {
             name: 'setParameterValues',
-            parameterValues: [
-              [target5Path, ssid5Name, 'xsd:string'],
-              [enablePath, 'true', 'xsd:boolean']
-            ]
+            parameterValues: pValues
           }, { timeout: 10000 });
           ok = true;
-          logger.info(`[updateSSID 5G] Enqueued SSID '${ssid5Name}' on ${target5Path} and Enable on ${enablePath}`);
+          logger.info(`[updateSSID 5G] Enqueued SSID '${ssid5Name}' on ${target5Path}`);
         } catch (e) {
-          logger.error(`[updateSSID 5G] Error on ${target5Path}: ${e.message}`);
+          try {
+            await instance.post(tasksUrl, {
+              name: 'setParameterValues',
+              parameterValues: [
+                [target5Path, ssid5Name, 'xsd:string'],
+                [enablePath, 'true', 'xsd:boolean']
+              ]
+            }, { timeout: 10000 });
+            ok = true;
+          } catch (e2) {
+            logger.error(`[updateSSID 5G] Error on ${target5Path}: ${e2.message}`);
+          }
         }
       }
     }
@@ -1212,26 +1208,12 @@ async function updatePassword(tag, newPassword, actor = null, band = 'all') {
           ok = true;
         } catch (_) {}
       } else {
-        // TR-098 5G Password (Fiberhome HG6045F3, ZTE, etc.)
-        let target5Ssid = flatParams?._wlan_5g_ssid_path || null;
+        // TR-098 5G Password (Fiberhome HG6145D2/HG6845F3, ZTE, etc.)
         let base5Obj = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5';
-        if (target5Ssid) {
-          base5Obj = target5Ssid.replace(/\.SSID$/, '');
-        } else if (flatParams) {
-          if (flatParams['InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.SSID'] !== undefined) {
-            base5Obj = 'InternetGatewayDevice.LANDevice.2.WLANConfiguration.1';
-          } else if (flatParams['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID'] !== undefined && flatParams['InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.SSID'] === undefined) {
-            base5Obj = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2';
-          }
-        } else if (device) {
-          const wlanObj = device.InternetGatewayDevice?.LANDevice?.['1']?.WLANConfiguration || {};
-          if (wlanObj['5'] || wlanObj[5]) {
-            base5Obj = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5';
-          } else if (wlanObj['2'] || wlanObj[2]) {
-            base5Obj = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2';
-          } else if (device.InternetGatewayDevice?.LANDevice?.['2']?.WLANConfiguration) {
-            base5Obj = 'InternetGatewayDevice.LANDevice.2.WLANConfiguration.1';
-          }
+        if (flatParams && flatParams['InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.SSID'] !== undefined) {
+          base5Obj = 'InternetGatewayDevice.LANDevice.2.WLANConfiguration.1';
+        } else if (device && device.InternetGatewayDevice?.LANDevice?.['2']?.WLANConfiguration) {
+          base5Obj = 'InternetGatewayDevice.LANDevice.2.WLANConfiguration.1';
         }
 
         const pskPath = `${base5Obj}.PreSharedKey.1.PreSharedKey`;
