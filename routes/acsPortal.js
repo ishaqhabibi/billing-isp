@@ -8,7 +8,8 @@ const customerDevice = require('../services/customerDeviceService');
 const mikrotikSvc = require('../services/mikrotikService');
 const fs = require('fs');
 const path = require('path');
-const { createAxiosInstance, isBuiltinAcsEnabled } = require('../config/genieacs');
+const genieacsApi = require('../config/genieacs');
+const { createAxiosInstance, isBuiltinAcsEnabled } = genieacsApi;
 
 // Proxy axios to support local built-in ACS proxy
 const axios = {
