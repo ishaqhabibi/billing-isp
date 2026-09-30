@@ -110,18 +110,32 @@ function shouldSendWa(key, ttlMs = 15000) {
   return true;
 }
 
-/** Cocokkan session login (tag GenieACS / PPPoE / nomor) ke baris customers */
+/** Cocokkan session login (tag GenieACS / PPPoE / nomor / customer_code) ke baris customers */
 function findCustomerProfileByLoginId(loginId) {
   if (!loginId) return null;
-  const cleanLogin = String(loginId).replace(/\D/g, '');
+  const rawLogin = String(loginId).trim();
+  if (!rawLogin || rawLogin === '-' || rawLogin === 'N/A') return null;
+
+  // 1. Cek langsung via customerService (mendukung phone, customer_code, tag, pppoe, mac, id)
+  const directMatch = customerSvc.findCustomerByAny(rawLogin);
+  if (directMatch) return directMatch;
+
+  // 2. Fallback pencarian fleksibel
+  const cleanLoginDigits = rawLogin.replace(/\D/g, '');
+  const cleanSuffix = cleanLoginDigits.length >= 8 ? cleanLoginDigits.slice(-9) : null;
+  const rawLower = rawLogin.toLowerCase();
+
   return customerSvc.getAllCustomers().find((c) => {
+    if (!c) return false;
     const cleanDb = String(c.phone || '').replace(/\D/g, '');
-    return (
-      cleanDb === cleanLogin ||
-      c.phone === loginId ||
-      c.genieacs_tag === loginId ||
-      c.pppoe_username === loginId
-    );
+    const codeMatch = c.customer_code && String(c.customer_code).trim().toLowerCase() === rawLower;
+    const idMatch = String(c.id) === rawLogin;
+    const phoneMatch = cleanSuffix ? cleanDb.endsWith(cleanSuffix) : (cleanLoginDigits && cleanDb === cleanLoginDigits);
+    const tagMatch = c.genieacs_tag && String(c.genieacs_tag).trim().toLowerCase() === rawLower;
+    const pppoeMatch = c.pppoe_username && String(c.pppoe_username).trim().toLowerCase() === rawLower;
+    const directPhone = c.phone && String(c.phone).trim() === rawLogin;
+    
+    return codeMatch || idMatch || phoneMatch || tagMatch || pppoeMatch || directPhone;
   }) || null;
 }
 
@@ -849,8 +863,11 @@ router.get('/check-billing', async (req, res) => {
 
     if (customerRow) {
       customer = customerRow;
-      const lookup = customer.pppoe_username || customer.genieacs_tag || customer.phone || String(customer.id);
-      invoices = billingSvc.getInvoicesByAny(lookup) || [];
+      invoices = billingSvc.getInvoicesByCustomerId(customer.id);
+      const lookup = customer.customer_code || customer.pppoe_username || customer.genieacs_tag || customer.phone || String(customer.id);
+      if (!invoices || invoices.length === 0) {
+        invoices = billingSvc.getInvoicesByAny(lookup) || [];
+      }
       unpaidInvoices = invoices.filter(i => i.status === 'unpaid');
 
       const secret = settings.session_secret || 'rahasia-portal-pelanggan-default-ganti-ini';
@@ -1767,6 +1784,10 @@ router.post('/login', loginRateLimiter, async (req, res) => {
   logger.info('[Login] Login direct berhasil.');
   req.session.phone = customerPhone; // Nomor telepon untuk findCustomerByAny()
   req.session.pppoe_username = pppoeUsername; // PPPoE username untuk GenieACS & MikroTik
+  if (customer && customer.id) {
+    req.session.customerId = customer.id;
+    req.session.customer = customer;
+  }
   if (customer && customer.status === 'suspended') {
     return res.redirect('/isolated');
   }
@@ -1798,6 +1819,10 @@ router.post('/login-otp', loginRateLimiter, (req, res) => {
     req.session.pppoe_username = pending.pppoeUsername; // PPPoE username untuk GenieACS & MikroTik
     delete req.session.pending_login;
     const custAfterOtp = customerSvc.findCustomerByAny(pending.phone);
+    if (custAfterOtp && custAfterOtp.id) {
+      req.session.customerId = custAfterOtp.id;
+      req.session.customer = custAfterOtp;
+    }
     if (custAfterOtp && custAfterOtp.status === 'suspended') {
       return res.redirect('/isolated');
     }
@@ -1839,6 +1864,7 @@ router.get('/dashboard', async (req, res) => {
   }
   
   const profile =
+    (req.session.customerId ? customerSvc.getCustomerById(req.session.customerId) : null) ||
     findCustomerProfileByLoginId(loginId) ||
     (req.session.pppoe_username ? findCustomerProfileByLoginId(req.session.pppoe_username) : null);
 
@@ -1860,12 +1886,25 @@ router.get('/dashboard', async (req, res) => {
     if (deviceData) break;
   }
   
-  const searchToken =
-    (deviceData && deviceData.pppoeUsername) ||
-    (profile && String(profile.pppoe_username || '').trim()) ||
-    loginId;
+  // Prioritas utama: Ambil daftar tagihan berdasarkan ID pelanggan di database
+  let invoices = [];
+  if (profile && profile.id) {
+    invoices = billingSvc.getInvoicesByCustomerId(profile.id);
+  }
   
-  const invoices = billingSvc.getInvoicesByAny(searchToken);
+  // Fallback pencarian fleksibel jika profile belum teridentifikasi sempurna
+  if (!invoices || invoices.length === 0) {
+    const validDeviceUser = (deviceData && deviceData.pppoeUsername && deviceData.pppoeUsername !== '-' && deviceData.pppoeUsername !== 'N/A') ? deviceData.pppoeUsername.trim() : null;
+    const validProfileUser = (profile && profile.pppoe_username && profile.pppoe_username !== '-' && profile.pppoe_username.trim()) ? profile.pppoe_username.trim() : null;
+    const validTag = (profile && profile.genieacs_tag && profile.genieacs_tag !== '-' && profile.genieacs_tag.trim()) ? profile.genieacs_tag.trim() : null;
+    const validCode = (profile && profile.customer_code && profile.customer_code.trim()) ? profile.customer_code.trim() : null;
+    const validPhone = (profile && profile.phone && profile.phone.trim()) ? profile.phone.trim() : null;
+
+    const searchToken = validDeviceUser || validProfileUser || validTag || validCode || validPhone || (loginId !== '-' ? loginId : null);
+    if (searchToken) {
+      invoices = billingSvc.getInvoicesByAny(searchToken) || [];
+    }
+  }
   
   // Ambil tiket keluhan pelanggan
   let tickets = [];
@@ -2672,18 +2711,19 @@ router.post('/change-tag', async (req, res) => {
 
   if (!newTag || newTag === oldTag) {
     const data = await getCustomerDeviceData(oldTag);
-    const invoices = billingSvc.getInvoicesByAny(oldTag);
+    const profile = (req.session.customerId ? customerSvc.getCustomerById(req.session.customerId) : null) || findCustomerProfileByLoginId(oldTag);
+    const invoices = (profile && profile.id) ? billingSvc.getInvoicesByCustomerId(profile.id) : (billingSvc.getInvoicesByAny(oldTag) || []);
     const states = sidebarMenuSvc.getStoredMenuStates();
     const showPPOB = states['digiflazz'] === 'visible';
     return res.render('dashboard', {
       customer: data || fallbackCustomer(oldTag),
-      profile: null,
+      profile: profile || null,
       invoices: invoices || [],
-      tickets: [],
+      tickets: profile ? ticketSvc.getTicketsByCustomerId(profile.id) : [],
       settings,
       paymentChannels: [],
       connectedUsers: data ? data.connectedUsers : [],
-      customerBalance: 0,
+      customerBalance: profile ? getCustomerBalance(profile.id) : 0,
       showPPOB,
       notif: dashboardNotif('ID/Tag baru tidak boleh kosong atau sama dengan yang lama.', 'warning')
     });
@@ -2701,7 +2741,7 @@ router.post('/change-tag', async (req, res) => {
     const profileToUpdate = customerSvc.getAllCustomers().find(c => {
       const cleanLogin = oldTag.replace(/\D/g, '');
       const cleanDb = (c.phone || '').replace(/\D/g, '');
-      return cleanDb === cleanLogin || c.phone === oldTag || c.genieacs_tag === oldTag;
+      return cleanDb === cleanLogin || c.phone === oldTag || c.customer_code === oldTag || c.genieacs_tag === oldTag;
     });
     
     if (profileToUpdate) {
@@ -2719,16 +2759,12 @@ router.post('/change-tag', async (req, res) => {
     notif = dashboardNotif(tagResult.message || 'Gagal mengubah ID/Tag pelanggan.', 'danger');
   }
   const deviceData = await getCustomerDeviceData(resolvedPhone);
+  const profile = (req.session.customerId ? customerSvc.getCustomerById(req.session.customerId) : null) || findCustomerProfileByLoginId(resolvedPhone);
   let searchToken = resolvedPhone;
-  if (deviceData && deviceData.pppoeUsername) {
+  if (deviceData && deviceData.pppoeUsername && deviceData.pppoeUsername !== '-' && deviceData.pppoeUsername !== 'N/A') {
     searchToken = deviceData.pppoeUsername;
   }
-  const invoices = billingSvc.getInvoicesByAny(searchToken);
-  const profile = customerSvc.getAllCustomers().find(c => {
-    const cleanLogin = resolvedPhone.replace(/\D/g, '');
-    const cleanDb = (c.phone || '').replace(/\D/g, '');
-    return cleanDb === cleanLogin || c.phone === resolvedPhone || c.pppoe_username === (deviceData ? deviceData.pppoeUsername : null);
-  });
+  const invoices = (profile && profile.id) ? billingSvc.getInvoicesByCustomerId(profile.id) : (billingSvc.getInvoicesByAny(searchToken) || []);
   const tickets = profile ? ticketSvc.getTicketsByCustomerId(profile.id) : [];
   const customerBalance = profile ? getCustomerBalance(profile.id) : 0;
 
@@ -3172,7 +3208,7 @@ router.get('/payment/create/:invoiceId', async (req, res) => {
     // Verify loginId atau publicToken
     let profile = null;
     if (loginId) {
-      profile = findCustomerProfileByLoginId(loginId);
+      profile = (req.session.customerId ? customerSvc.getCustomerById(req.session.customerId) : null) || findCustomerProfileByLoginId(loginId);
       if (!profile || Number(inv.customer_id) !== Number(profile.id)) throw new Error('Tagihan tidak valid');
     } else if (publicToken) {
       // Verify public token

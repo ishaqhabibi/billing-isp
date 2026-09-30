@@ -530,47 +530,81 @@ function getTopUnpaid(limit = 5) {
   `).all(limit);
 }
 
+function getInvoicesByCustomerId(customerId) {
+  const cid = Number(customerId);
+  if (!cid) return [];
+  return db.prepare(`
+    SELECT i.*,
+           c.name as customer_name,
+           c.phone as customer_phone,
+           c.address as customer_address,
+           c.pppoe_username,
+           c.genieacs_tag,
+           c.customer_code,
+           c.connection_type,
+           c.static_ip,
+           c.mac_address,
+           c.status as customer_status,
+           c.router_id,
+           c.install_date,
+           c.isolate_day,
+           c.isolir_profile,
+           p.name as package_name,
+           p.price as package_price,
+           r.name as router_name
+    FROM invoices i
+    JOIN customers c ON i.customer_id = c.id
+    LEFT JOIN packages p ON c.package_id = p.id
+    LEFT JOIN routers r ON c.router_id = r.id
+    WHERE i.customer_id = ?
+    ORDER BY i.period_year DESC, i.period_month DESC
+  `).all(cid);
+}
+
 function getInvoicesByAny(val) {
   if (!val) return [];
   const raw = String(val || '').trim();
+  if (!raw || raw === '-' || raw === 'N/A') return [];
   const cleanVal = raw.replace(/\D/g, '');
   
-  // Find customer ID first using phone, pppoe, or genieacs_tag
+  // 1. Cek numeric customer ID langsung (misal '1', '25')
   let customer = null;
-  
-  if (cleanVal.length >= 8) {
-    customer = db.prepare(`SELECT id FROM customers WHERE phone LIKE ?`).get(`%${cleanVal}%`);
+  if (/^\d+$/.test(raw) && raw.length <= 6) {
+    customer = db.prepare('SELECT id FROM customers WHERE id = ?').get(parseInt(raw, 10));
   }
   
+  // 2. Cek customer_code (URG010101, urg010101)
+  if (!customer) {
+    customer = db.prepare('SELECT id FROM customers WHERE customer_code = ? OR customer_code = ?').get(raw, raw.toUpperCase());
+  }
+
+  // 3. Cek nomor telepon (ambil suffix 9 digit untuk akurasi 08 vs 62)
+  if (!customer && cleanVal.length >= 8) {
+    const suffix = cleanVal.slice(-9);
+    customer = db.prepare(`SELECT id FROM customers WHERE phone LIKE ?`).get(`%${suffix}`);
+  }
+  
+  // 4. Cek PPPoE username atau GenieACS tag persis
   if (!customer) {
     customer = db.prepare(`SELECT id FROM customers WHERE pppoe_username = ? OR genieacs_tag = ?`).get(raw, raw);
   }
 
+  // 5. Cek username tanpa domain (misal urg010101@bionfiber.net -> urg010101)
+  if (!customer && raw.includes('@')) {
+    const userOnly = raw.split('@')[0].trim();
+    if (userOnly) {
+      customer = db.prepare(`
+        SELECT id FROM customers 
+        WHERE pppoe_username = ? 
+           OR customer_code = ? 
+           OR customer_code = ? 
+           OR genieacs_tag = ?
+      `).get(userOnly, userOnly, userOnly.toUpperCase(), userOnly);
+    }
+  }
+
   if (customer) {
-    return db.prepare(`
-      SELECT i.*,
-             c.name as customer_name,
-             c.phone as customer_phone,
-             c.address as customer_address,
-             c.pppoe_username,
-             c.genieacs_tag,
-             c.connection_type,
-             c.static_ip,
-             c.status as customer_status,
-             c.router_id,
-             c.install_date,
-             c.isolate_day,
-             c.isolir_profile,
-             p.name as package_name,
-             p.price as package_price,
-             r.name as router_name
-      FROM invoices i
-      JOIN customers c ON i.customer_id = c.id
-      LEFT JOIN packages p ON c.package_id = p.id
-      LEFT JOIN routers r ON c.router_id = r.id
-      WHERE i.customer_id = ?
-      ORDER BY i.period_year DESC, i.period_month DESC
-    `).all(customer.id);
+    return getInvoicesByCustomerId(customer.id);
   }
 
   const keyword = raw.toLowerCase();
@@ -583,6 +617,7 @@ function getInvoicesByAny(val) {
            c.address as customer_address,
            c.pppoe_username,
            c.genieacs_tag,
+           c.customer_code,
            c.connection_type,
            c.static_ip,
            c.mac_address,
@@ -602,10 +637,11 @@ function getInvoicesByAny(val) {
        OR lower(c.phone) LIKE ?
        OR lower(c.genieacs_tag) LIKE ?
        OR lower(c.pppoe_username) LIKE ?
+       OR lower(c.customer_code) LIKE ?
        OR lower(c.mac_address) LIKE ?
     ORDER BY i.period_year DESC, i.period_month DESC
     LIMIT 300
-  `).all(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
+  `).all(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
 }
 
 function getUnpaidInvoicesByCustomerId(customerId) {
@@ -716,6 +752,7 @@ function updatePaymentInfo(invoiceId, data) {
 
 module.exports = {
   getInvoicesByAny,
+  getInvoicesByCustomerId,
   getUnpaidInvoicesByCustomerId,
   renewCustomerPrepaidValidity,
   generateMonthlyInvoices, generateInvoiceForCustomer, createInstallProrataCatchUpInvoice, payInvoiceForCustomerPeriod, payInvoicesForCustomerMonths, getPaidMonthsForCustomerYear, getCustomerBillingYearSummary, getAllInvoices, getInvoiceById,
