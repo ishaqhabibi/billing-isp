@@ -2217,26 +2217,6 @@ router.post('/change-wifi', async (req, res) => {
   }
 
   const profile = findCustomerProfileByLoginId(loginId);
-  const band = String(req.body?.band || 'all').toLowerCase();
-  const ssidRaw = req.body?.ssid;
-  const ssid = String(ssidRaw ?? '').trim();
-  const passwordRaw = req.body?.password;
-  const password = String(passwordRaw ?? '').replace(/[\r\n\t]+/g, '').trim();
-
-  if (!ssid && !password) {
-    const errText = 'Harap masukkan nama Wi-Fi (SSID) atau kata sandi baru.';
-    if (isAjax) return res.status(400).json({ ok: false, message: errText });
-    req.session._msg = { type: 'danger', text: errText };
-    return res.redirect('/customer/dashboard#wifi-section');
-  }
-
-  if (password && password.length < 8) {
-    const errText = 'Kata sandi baru minimal 8 karakter.';
-    if (isAjax) return res.status(400).json({ ok: false, message: errText });
-    req.session._msg = { type: 'danger', text: errText };
-    return res.redirect('/customer/dashboard#wifi-section');
-  }
-
   const tokenCandidates = Array.from(new Set([
     req.session?.pppoe_username,
     ...buildCustomerDeviceTokens(loginId, profile)
@@ -2249,6 +2229,115 @@ router.post('/change-wifi', async (req, res) => {
     ip: req.ip,
     userAgent: req.headers['user-agent']
   };
+
+  // ── DUAL-BAND SIMULTANEOUS UPDATE (2.4G & 5G SEKALI KLIK) ──
+  const hasDualBandPayload = req.body?.ssid24 !== undefined || req.body?.ssid5 !== undefined || 
+                             req.body?.password24 !== undefined || req.body?.password5 !== undefined;
+
+  if (hasDualBandPayload) {
+    const s24 = req.body?.ssid24 ? String(req.body.ssid24).trim() : null;
+    const p24 = req.body?.password24 ? String(req.body.password24).trim() : null;
+    const s5 = req.body?.ssid5 ? String(req.body.ssid5).trim() : null;
+    const p5 = req.body?.password5 ? String(req.body.password5).trim() : null;
+
+    if (!s24 && !p24 && !s5 && !p5) {
+      const errText = 'Harap isi nama Wi-Fi atau kata sandi yang ingin diubah.';
+      if (isAjax) return res.status(400).json({ ok: false, message: errText });
+      req.session._msg = { type: 'danger', text: errText };
+      return res.redirect('/customer/dashboard#wifi-section');
+    }
+
+    if (p24 && p24.length < 8) {
+      const errText = 'Kata sandi Wi-Fi 2.4 GHz minimal 8 karakter.';
+      if (isAjax) return res.status(400).json({ ok: false, message: errText });
+      req.session._msg = { type: 'danger', text: errText };
+      return res.redirect('/customer/dashboard#wifi-section');
+    }
+    if (p5 && p5.length < 8) {
+      const errText = 'Kata sandi Wi-Fi 5 GHz minimal 8 karakter.';
+      if (isAjax) return res.status(400).json({ ok: false, message: errText });
+      req.session._msg = { type: 'danger', text: errText };
+      return res.redirect('/customer/dashboard#wifi-section');
+    }
+
+    // Update 2.4 GHz
+    if (s24) {
+      for (const token of tokenCandidates) {
+        if (await updateSSID(token, s24, actorMeta, '2.4')) break;
+      }
+    }
+    if (p24) {
+      for (const token of tokenCandidates) {
+        if (await updatePassword(token, p24, actorMeta, '2.4')) break;
+      }
+    }
+
+    // Update 5 GHz
+    if (s5) {
+      for (const token of tokenCandidates) {
+        if (await updateSSID(token, s5, actorMeta, '5')) break;
+      }
+    }
+    if (p5) {
+      for (const token of tokenCandidates) {
+        if (await updatePassword(token, p5, actorMeta, '5')) break;
+      }
+    }
+
+    // Simpan ke database customers
+    try {
+      const dbSsid = s24 || s5 || profile?.wifi_ssid;
+      const dbPass = p24 || p5 || profile?.wifi_password;
+      db.prepare('UPDATE customers SET wifi_ssid = ?, wifi_password = ? WHERE phone = ? OR pppoe_username = ? OR id = ?')
+        .run(dbSsid, dbPass, loginId, loginId, profile?.id || 0);
+    } catch (e) {
+      logger.warn(`[change-wifi] Failed updating customers table: ${e.message}`);
+    }
+
+    // Kirim notifikasi WhatsApp rapi
+    try {
+      const settings = getSettingsWithCache();
+      if (settings.whatsapp_enabled && profile && profile.phone) {
+        const { sendWA, whatsappStatus } = await import('../services/whatsappBot.mjs');
+        if (whatsappStatus && whatsappStatus.connection === 'open') {
+          const now = getNowLocal();
+          let waDetails = '';
+          if (s24) waDetails += `📡 *Wi-Fi 2.4G (SSID):* ${s24}\n`;
+          if (p24) waDetails += `🔐 *Sandi 2.4G:* ${p24}\n`;
+          if (s5) waDetails += `⚡ *Wi-Fi 5G (SSID):* ${s5}\n`;
+          if (p5) waDetails += `🔐 *Sandi 5G:* ${p5}\n`;
+          const msg = `📡 *PEMBARUAN WI-FI DUAL-BAND (2.4G & 5G)*\n\n` +
+            `👤 *Pelanggan:* ${profile.name}\n` +
+            `🕒 *Waktu:* ${now}\n\n` +
+            waDetails + `\n` +
+            `Pengaturan Wi-Fi telah berhasil diterapkan ke modem Anda. Silakan hubungkan kembali perangkat Anda.\n` +
+            `⚠️ Jangan bagikan kata sandi ini ke sembarang orang.`;
+          await sendWA(profile.phone, msg);
+        }
+      }
+    } catch (e) {}
+
+    const successMsg = 'Pengaturan Wi-Fi Dual-Band (2.4G & 5G) berhasil disimpan dan disinkronkan ke modem!';
+    if (isAjax) {
+      return res.json({
+        ok: true,
+        message: successMsg,
+        ssid24: s24 || undefined,
+        ssid5: s5 || undefined,
+        dualBand: true
+      });
+    }
+
+    req.session._msg = { type: 'success', text: successMsg };
+    return res.redirect('/customer/dashboard#wifi-section');
+  }
+
+  // ── LEGACY SINGLE BAND FALLBACK ──
+  const band = String(req.body?.band || 'all').toLowerCase();
+  const ssidRaw = req.body?.ssid;
+  const ssid = String(ssidRaw ?? '').trim();
+  const passwordRaw = req.body?.password;
+  const password = String(passwordRaw ?? '').replace(/[\r\n\t]+/g, '').trim();
 
   let ssidOk = false;
   let passOk = false;
