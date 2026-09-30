@@ -2470,11 +2470,19 @@ router.get('/api/device-diagnostics/:deviceId', requireAdmin, async (req, res) =
             }
         }
 
-        // Get last 15 tasks
+        // Get last 15 Wi-Fi related tasks
         const recentTasks = db.prepare(`
             SELECT id, name, payload, status, result, updated_at
             FROM acs_tasks
             WHERE device_id = ?
+              AND (
+                payload LIKE '%WLAN%' OR 
+                payload LIKE '%WiFi%' OR 
+                payload LIKE '%SSID%' OR
+                payload LIKE '%KeyPassphrase%' OR
+                payload LIKE '%PreSharedKey%' OR
+                name IN ('getParameterNames')
+              )
             ORDER BY id DESC
             LIMIT 15
         `).all(deviceId);
