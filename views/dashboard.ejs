@@ -640,6 +640,11 @@
       border-color: var(--isp-primary) !important;
       box-shadow: 0 0 0 3px var(--isp-primary-subtle) !important;
     }
+    .form-control.modern-input-with-icon {
+      padding-left: 48px !important;
+      padding-right: 44px !important;
+      height: 48px !important;
+    }
     .form-label {
       color: var(--isp-text-heading) !important;
       font-weight: 700 !important;
@@ -1521,8 +1526,8 @@
                   <span class="text-muted" style="font-size:10.5px;">Maks. 32 karakter</span>
                 </div>
                 <div style="position:relative;">
-                  <i class="bi bi-wifi" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:16px; color:#10b981; pointer-events:none;"></i>
-                  <input type="text" id="inputWifiSsid24" class="form-control" style="height:48px; border-radius:14px; padding-left:42px; padding-right:14px; background:var(--isp-card-surface); border:1.5px solid var(--isp-border); font-size:13.5px; font-weight:600; color:var(--isp-text-heading);" placeholder="Contoh: Rumah-2.4G" maxlength="32" required value="<%= currentWifiSsid24 %>">
+                  <i class="bi bi-wifi" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:16px; color:#10b981; pointer-events:none; z-index:5;"></i>
+                  <input type="text" id="inputWifiSsid24" class="form-control modern-input-with-icon" style="height:48px; border-radius:14px; padding-left:42px; padding-right:14px; background:var(--isp-card-surface); border:1.5px solid var(--isp-border); font-size:13.5px; font-weight:600; color:var(--isp-text-heading);" placeholder="Contoh: Rumah-2.4G" maxlength="32" required value="<%= currentWifiSsid24 %>">
                 </div>
                 <div class="text-muted mt-1" style="font-size:10.5px;">Cocok untuk HP, Smart TV, CCTV, dan perangkat pintar.</div>
               </div>
@@ -1536,8 +1541,8 @@
                   <span class="badge" style="background:rgba(255,255,255,0.06); color:var(--isp-text-muted); font-size:10px; border-radius:6px; font-weight:600;">Opsional</span>
                 </div>
                 <div style="position:relative;">
-                  <i class="bi bi-key-fill text-warning" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:16px; pointer-events:none;"></i>
-                  <input type="password" id="inputWifiPass24" class="form-control font-monospace" style="height:48px; border-radius:14px; padding-left:42px; padding-right:44px; background:var(--isp-card-surface); border:1.5px solid var(--isp-border); font-size:13.5px; color:var(--isp-text-heading);" placeholder="Kosongkan jika tak diubah" minlength="8" oninput="onCustPass24Input(this)">
+                  <i class="bi bi-key-fill text-warning" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:16px; pointer-events:none; z-index:5;"></i>
+                  <input type="password" id="inputWifiPass24" class="form-control font-monospace modern-input-with-icon" style="height:48px; border-radius:14px; padding-left:42px; padding-right:44px; background:var(--isp-card-surface); border:1.5px solid var(--isp-border); font-size:13.5px; color:var(--isp-text-heading);" placeholder="Kosongkan jika tak diubah" minlength="8" oninput="onCustPass24Input(this)">
                   <button type="button" onclick="toggleInputType('inputWifiPass24', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); border:none; background:transparent; color:var(--isp-text-muted); padding:4px; font-size:15px; cursor:pointer;">
                     <i class="bi bi-eye"></i>
                   </button>
@@ -1557,8 +1562,8 @@
                   <span class="text-muted" style="font-size:10.5px;">Maks. 32 karakter</span>
                 </div>
                 <div style="position:relative;">
-                  <i class="bi bi-broadcast text-info" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:16px; pointer-events:none;"></i>
-                  <input type="text" id="inputWifiSsid5" class="form-control" style="height:48px; border-radius:14px; padding-left:42px; padding-right:14px; background:var(--isp-card-surface); border:1.5px solid var(--isp-border); font-size:13.5px; font-weight:600; color:var(--isp-text-heading);" placeholder="Contoh: Rumah-5G" maxlength="32" required value="<%= currentWifiSsid5 || (currentWifiSsid24 ? currentWifiSsid24 + ' 5G' : '') %>">
+                  <i class="bi bi-broadcast text-info" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:16px; pointer-events:none; z-index:5;"></i>
+                  <input type="text" id="inputWifiSsid5" class="form-control modern-input-with-icon" style="height:48px; border-radius:14px; padding-left:42px; padding-right:14px; background:var(--isp-card-surface); border:1.5px solid var(--isp-border); font-size:13.5px; font-weight:600; color:var(--isp-text-heading);" placeholder="Contoh: Rumah-5G" maxlength="32" required value="<%= currentWifiSsid5 || (currentWifiSsid24 ? currentWifiSsid24 + ' 5G' : '') %>">
                 </div>
                 <div class="text-muted mt-1" style="font-size:10.5px;">Kecepatan maksimal untuk streaming 4K & game online.</div>
               </div>
@@ -1575,8 +1580,8 @@
                   </label>
                 </div>
                 <div style="position:relative;">
-                  <i class="bi bi-key-fill text-warning" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:16px; pointer-events:none;"></i>
-                  <input type="password" id="inputWifiPass5" class="form-control font-monospace" style="height:48px; border-radius:14px; padding-left:42px; padding-right:44px; background:var(--isp-card-surface); border:1.5px solid var(--isp-border); font-size:13.5px; color:var(--isp-text-heading);" placeholder="Kosongkan jika tak diubah" minlength="8">
+                  <i class="bi bi-key-fill text-warning" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:16px; pointer-events:none; z-index:5;"></i>
+                  <input type="password" id="inputWifiPass5" class="form-control font-monospace modern-input-with-icon" style="height:48px; border-radius:14px; padding-left:42px; padding-right:44px; background:var(--isp-card-surface); border:1.5px solid var(--isp-border); font-size:13.5px; color:var(--isp-text-heading);" placeholder="Kosongkan jika tak diubah" minlength="8">
                   <button type="button" onclick="toggleInputType('inputWifiPass5', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); border:none; background:transparent; color:var(--isp-text-muted); padding:4px; font-size:15px; cursor:pointer;">
                     <i class="bi bi-eye"></i>
                   </button>
