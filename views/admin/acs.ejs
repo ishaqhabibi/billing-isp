@@ -160,6 +160,40 @@
         .empty-icon { width: 64px; height: 64px; border-radius: 16px; background: var(--bg3); display: inline-flex; align-items: center; justify-content: center; font-size: 28px; color: var(--muted); margin-bottom: 14px; }
         .empty-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
         .empty-desc { font-size: 13px; color: var(--muted); max-width: 420px; margin: 0 auto 18px; }
+
+        /* ── DEVSTUDIO SCRIPT & NBI CONSOLE STYLES ── */
+        .console-container { display: flex; flex-direction: column; gap: 16px; }
+        .console-toolbar { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+        .console-workspace { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; min-height: 520px; }
+        @media(max-width: 992px) { .console-workspace { grid-template-columns: 1fr; } }
+        
+        .console-panel { background: #080d1a; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+        .console-panel-header { background: #0d1527; padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+        .console-panel-title { font-size: 12px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .console-editor-area { width: 100%; height: 420px; background: #070b14; color: #38bdf8; font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace; font-size: 13px; line-height: 1.6; padding: 16px; border: none; resize: vertical; outline: none; tab-size: 2; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .console-editor-area:focus { background: #090e1c; }
+        
+        .console-terminal-area { width: 100%; height: 420px; background: #050811; color: #cbd5e1; font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace; font-size: 12.5px; line-height: 1.6; padding: 16px; overflow-y: auto; overflow-x: auto; flex: 1; }
+        .console-statusbar { background: #0a101f; border-top: 1px solid rgba(255,255,255,0.08); padding: 8px 16px; font-size: 11px; font-family: monospace; display: flex; align-items: center; justify-content: space-between; color: var(--muted); }
+        
+        .terminal-log-line { display: flex; gap: 8px; margin-bottom: 4px; word-break: break-all; }
+        .terminal-log-time { color: #64748b; flex-shrink: 0; }
+        .terminal-log-text { color: #e2e8f0; }
+        .terminal-log-success { color: #34d399; font-weight: 600; }
+        .terminal-log-error { color: #f87171; font-weight: 600; }
+        .terminal-log-warn { color: #fbbf24; }
+        .terminal-log-info { color: #38bdf8; }
+        
+        .console-subtab-btn { background: transparent; border: none; color: var(--muted); font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 6px; }
+        .console-subtab-btn:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+        .console-subtab-btn.active { color: #fff; background: rgba(0,82,204,0.4); font-weight: 700; }
+        
+        .param-table-scroll { max-height: 410px; overflow-y: auto; }
+        .param-row-item { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 7px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 11.5px; }
+        .param-row-item:hover { background: rgba(255,255,255,0.03); }
+        .param-key { color: #94a3b8; font-family: monospace; word-break: break-all; }
+        .param-val { color: #38bdf8; font-family: monospace; font-weight: 700; word-break: break-all; text-align: right; }
     </style>
 </head>
 <body>
@@ -294,6 +328,10 @@
             <button class="seg-tab-btn" id="tabBtnServers" onclick="switchAcsTab('servers', this)">
                 <i class="bi bi-server"></i> Kelola Server ACS
                 <span class="seg-tab-count"><%= acsServers.length %></span>
+            </button>
+            <button class="seg-tab-btn" id="tabBtnConsole" onclick="switchAcsTab('console', this)">
+                <i class="bi bi-terminal-fill text-warning"></i> DevStudio Console
+                <span class="badge" style="background:rgba(245,158,11,0.18); color:#f59e0b; font-size:10px; padding:2px 7px; border-radius:999px;">PRO</span>
             </button>
         </div>
 
@@ -605,6 +643,206 @@
                             <% }); %>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- TAB 3: DEVSTUDIO SCRIPT & NBI CONSOLE -->
+            <div id="tab-console" class="tab-pane">
+                <div class="console-container">
+                    <!-- Top Control Toolbar -->
+                    <div class="console-toolbar">
+                        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; flex:1;">
+                            <!-- Target Device Selector -->
+                            <div style="min-width:280px; flex:1;">
+                                <label style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:4px;">
+                                    <i class="bi bi-router text-primary me-1"></i> Target Device (ONU/ONT)
+                                </label>
+                                <select id="consoleDeviceSelect" class="fc" style="height:38px; font-family:monospace; font-size:12px;" onchange="onConsoleDeviceChange()">
+                                    <% if (devices && devices.length > 0) { %>
+                                        <% devices.forEach((d, idx) => { %>
+                                            <option value="<%= d._id %>" 
+                                                    <%= idx === 0 ? 'selected' : '' %>
+                                                    data-sn="<%= d.serial_number || d._id %>" 
+                                                    data-model="<%= d.model || d.product_class || '-' %>" 
+                                                    data-vendor="<%= d.vendor || d.manufacturer || '-' %>" 
+                                                    data-online="<%= d.isOnline ? 'true' : 'false' %>"
+                                                    data-acsid="<%= d._acs_server_id || 'builtin' %>">
+                                                <%= (d.isOnline ? '🟢' : '⚪') %> <%= (d.vendor || '').toUpperCase() %> <%= d.serial_number || d._id %> &bull; <%= d.customer_name || d.pppoe_username || 'No Customer' %>
+                                            </option>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <option value="">-- Tidak ada perangkat terdaftar --</option>
+                                    <% } %>
+                                </select>
+                            </div>
+
+                            <!-- Target ACS Server -->
+                            <div style="min-width:180px;">
+                                <label style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:4px;">
+                                    <i class="bi bi-server text-info me-1"></i> ACS Server
+                                </label>
+                                <select id="consoleAcsSelect" class="fc" style="height:38px; font-size:12px;">
+                                    <option value="builtin">Built-in ACS (Local)</option>
+                                    <% acsServers.forEach(s => { %>
+                                        <% if (String(s.id) !== 'builtin') { %>
+                                            <option value="<%= s.id %>"><%= s.name %></option>
+                                        <% } %>
+                                    <% }); %>
+                                </select>
+                            </div>
+
+                            <!-- Preset Template Library -->
+                            <div style="min-width:280px; flex:1;">
+                                <label style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:4px;">
+                                    <i class="bi bi-magic text-warning me-1"></i> Pustaka Template Skrip
+                                </label>
+                                <select id="consoleTemplateSelect" class="fc" style="height:38px; font-size:12px;" onchange="onConsoleTemplateSelect(this.value)">
+                                    <option value="">-- Pilih Template Skrip Siap Pakai --</option>
+                                    <optgroup label="📡 Telemetri & Status Optik">
+                                        <option value="optics_all" selected>Kualitas Optik & Redaman (RX/TX Power, Temp)</option>
+                                        <option value="dev_info">Informasi Hardware & Firmware DeviceInfo</option>
+                                    </optgroup>
+                                    <optgroup label="🌐 WAN & Jaringan Internet">
+                                        <option value="wan_status">Status & Konfigurasi WAN PPPoE (IP, Gateway, DNS)</option>
+                                        <option value="wan_refresh">Refresh WAN Connection Device (refreshObject)</option>
+                                    </optgroup>
+                                    <optgroup label="📶 Wi-Fi & Klien Terhubung">
+                                        <option value="wifi_dualband">Audit Wi-Fi Dual-Band (SSID 2.4G & 5G + Sandi)</option>
+                                        <option value="lan_hosts">Pindai Perangkat Terhubung (Hosts / ARP)</option>
+                                        <option value="set_wifi_ssid">Ubah Nama Wi-Fi (SetParameterValues SSID)</option>
+                                        <option value="set_wifi_pass">Ubah Kata Sandi Wi-Fi (SetParameterValues Pass)</option>
+                                    </optgroup>
+                                    <optgroup label="⚙️ Manajemen CPE">
+                                        <option value="refresh_all">Refresh Seluruh Root Parameter (Full Refresh)</option>
+                                        <option value="reboot">Reboot / Nyalakan Ulang Modem</option>
+                                        <option value="factory_reset">Factory Reset (Kembalikan ke Setelan Pabrik)</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Device Quick Info Badge -->
+                        <div id="consoleDeviceBadge" style="display:flex; align-items:center; gap:8px; padding:7px 14px; background:rgba(255,255,255,0.04); border-radius:10px; border:1px solid var(--border); font-size:12px;">
+                            <span id="consoleBadgeDot" class="live-dot" style="background:#10b981;"></span>
+                            <span id="consoleBadgeText" class="font-monospace text-primary fw-bold">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Split-Screen Workspace (Editor vs Terminal) -->
+                    <div class="console-workspace">
+                        <!-- LEFT PANEL: SCRIPT / TASK JSON EDITOR -->
+                        <div class="console-panel">
+                            <div class="console-panel-header">
+                                <div class="console-panel-title">
+                                    <i class="bi bi-code-slash text-info"></i> Task / Script Editor
+                                    <span class="badge" style="background:rgba(56,189,248,0.15); color:#38bdf8; font-size:10px;">TR-069 Payload</span>
+                                </div>
+                                <div style="display:flex; gap:6px;">
+                                    <button type="button" class="btn btn-g btn-sm" onclick="formatConsoleJson()" title="Format Indentasi JSON">
+                                        <i class="bi bi-braces"></i> Format
+                                    </button>
+                                    <button type="button" class="btn btn-g btn-sm" onclick="clearConsoleEditor()" title="Bersihkan Editor">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-g btn-sm" onclick="copyConsoleEditor()" title="Salin Payload">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <textarea id="consoleEditor" class="console-editor-area" spellcheck="false" placeholder="// Masukkan payload TR-069 task atau pilih dari pustaka template di atas...">{
+  "name": "getParameterValues",
+  "parameterNames": [
+    "InternetGatewayDevice.WANDevice.1.X_GponInterfaceConfig.RXPower",
+    "InternetGatewayDevice.WANDevice.1.X_GponInterfaceConfig.TXPower",
+    "InternetGatewayDevice.WANDevice.1.X_GponInterfaceConfig.TransceiverTemperature",
+    "InternetGatewayDevice.WANDevice.1.X_GponInterfaceConfig.SupplyVoltage",
+    "Device.Optical.Interface.1.OpticalStatus"
+  ]
+}</textarea>
+
+                            <div style="background:#0d1527; padding:12px 16px; border-top:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; color:var(--text); margin:0;">
+                                    <input type="checkbox" id="chkConnectionRequest" checked style="accent-color:var(--primary); width:16px; height:16px;">
+                                    <span>Kirim Connection Request (Eksekusi Sekarang)</span>
+                                </label>
+                                <button type="button" class="btn btn-p" id="btnExecuteConsole" onclick="executeConsoleScript()" style="font-weight:700; padding:8px 20px; box-shadow:0 4px 14px rgba(0,82,204,0.4);">
+                                    <i class="bi bi-play-fill fs-5"></i> <span>JALANKAN KE MODEM</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT PANEL: LIVE OUTPUT TERMINAL -->
+                        <div class="console-panel">
+                            <div class="console-panel-header">
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <button type="button" class="console-subtab-btn active" id="btnSubtabLog" onclick="switchConsoleSubtab('log')">
+                                        <i class="bi bi-terminal"></i> Console Log
+                                    </button>
+                                    <button type="button" class="console-subtab-btn" id="btnSubtabTree" onclick="switchConsoleSubtab('tree')">
+                                        <i class="bi bi-diagram-3"></i> Parameter Tree
+                                    </button>
+                                    <button type="button" class="console-subtab-btn" id="btnSubtabRaw" onclick="switchConsoleSubtab('raw')">
+                                        <i class="bi bi-filetype-json"></i> Raw Response
+                                    </button>
+                                </div>
+                                <div style="display:flex; gap:6px;">
+                                    <button type="button" class="btn btn-g btn-sm" onclick="clearConsoleTerminal()" title="Bersihkan Terminal">
+                                        <i class="bi bi-eraser"></i> Bersihkan
+                                    </button>
+                                    <button type="button" class="btn btn-g btn-sm" onclick="copyConsoleOutput()" title="Salin Output">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Screen 1: Terminal Log Screen -->
+                            <div id="screenConsoleLog" class="console-terminal-area">
+                                <div class="terminal-log-line">
+                                    <span class="terminal-log-time">[System]</span>
+                                    <span class="terminal-log-info">GenieACS DevStudio Console siap digunakan.</span>
+                                </div>
+                                <div class="terminal-log-line">
+                                    <span class="terminal-log-time">[Ready]</span>
+                                    <span class="terminal-log-text">Pilih target perangkat dan template di atas, lalu klik <strong>JALANKAN KE MODEM</strong> untuk menguji skrip langsung.</span>
+                                </div>
+                            </div>
+
+                            <!-- Screen 2: Interactive Parameter Tree Screen -->
+                            <div id="screenConsoleTree" class="console-terminal-area" style="display:none; padding:0;">
+                                <div style="padding:10px 14px; background:#0a101f; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:8px;">
+                                    <i class="bi bi-search text-muted"></i>
+                                    <input type="text" id="filterTreeInput" placeholder="Cari nama parameter atau nilai..." onkeyup="filterParameterTree()" style="background:transparent; border:none; outline:none; color:#fff; font-size:12px; width:100%;">
+                                </div>
+                                <div class="param-table-scroll" id="paramTreeContainer">
+                                    <div style="padding:30px; text-align:center; color:var(--muted); font-size:12px;">
+                                        Belum ada data parameter. Jalankan perintah `getParameterValues` untuk memuat parameter live.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Screen 3: Raw JSON Screen -->
+                            <div id="screenConsoleRaw" class="console-terminal-area" style="display:none;">
+                                <pre id="rawJsonResponse" style="margin:0; font-family:inherit; color:#94a3b8; font-size:12px;">// Hasil raw response JSON akan tampil di sini...</pre>
+                            </div>
+
+                            <!-- Bottom Status Bar -->
+                            <div class="console-statusbar">
+                                <div style="display:flex; align-items:center; gap:12px;">
+                                    <span id="consoleStatusPill" style="display:inline-flex; align-items:center; gap:6px; color:#10b981;">
+                                        <span style="width:7px; height:7px; border-radius:50%; background:#10b981; display:inline-block;"></span>
+                                        <span id="consoleStatusText">Ready</span>
+                                    </span>
+                                    <span>&bull;</span>
+                                    <span>Latensi: <strong id="consoleLatencyText" style="color:var(--text);">-</strong></span>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <span id="consoleHttpStatusBadge" class="badge" style="background:rgba(255,255,255,0.08); color:var(--muted); font-size:10px;">HTTP -</span>
+                                    <span id="consoleTaskIdBadge" class="badge" style="background:rgba(56,189,248,0.1); color:#38bdf8; font-size:10px;">Task: -</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1985,6 +2223,387 @@ setInterval(() => {
         }
     });
 }, 1000);
+
+// ── GENIEACS DEVSTUDIO CONSOLE CONTROLLER ──
+const CONSOLE_TEMPLATES = {
+    optics_all: {
+        name: "getParameterValues",
+        parameterNames: [
+            "InternetGatewayDevice.WANDevice.1.X_GponInterfaceConfig.RXPower",
+            "InternetGatewayDevice.WANDevice.1.X_GponInterfaceConfig.TXPower",
+            "InternetGatewayDevice.WANDevice.1.X_GponInterfaceConfig.TransceiverTemperature",
+            "InternetGatewayDevice.WANDevice.1.X_GponInterfaceConfig.SupplyVoltage",
+            "Device.Optical.Interface.1.OpticalStatus"
+        ]
+    },
+    dev_info: {
+        name: "getParameterValues",
+        parameterNames: [
+            "InternetGatewayDevice.DeviceInfo.Manufacturer",
+            "InternetGatewayDevice.DeviceInfo.ModelName",
+            "InternetGatewayDevice.DeviceInfo.SoftwareVersion",
+            "InternetGatewayDevice.DeviceInfo.HardwareVersion",
+            "InternetGatewayDevice.DeviceInfo.SerialNumber",
+            "InternetGatewayDevice.DeviceInfo.UpTime"
+        ]
+    },
+    wan_status: {
+        name: "getParameterValues",
+        parameterNames: [
+            "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Username",
+            "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.ConnectionStatus",
+            "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.ExternalIPAddress",
+            "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.DefaultGateway",
+            "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.DNSServers",
+            "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Uptime"
+        ]
+    },
+    wan_refresh: {
+        name: "refreshObject",
+        objectName: "InternetGatewayDevice.WANDevice.1.WANConnectionDevice."
+    },
+    wifi_dualband: {
+        name: "getParameterValues",
+        parameterNames: [
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Enable",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Enable",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.KeyPassphrase"
+        ]
+    },
+    lan_hosts: {
+        name: "getParameterValues",
+        parameterNames: [
+            "InternetGatewayDevice.LANDevice.1.Hosts.HostNumberOfEntries",
+            "InternetGatewayDevice.LANDevice.1.Hosts.Host."
+        ]
+    },
+    set_wifi_ssid: {
+        name: "setParameterValues",
+        parameterValues: [
+            ["InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID", "BionFiber_2.4G", "xsd:string"],
+            ["InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID", "BionFiber_5G", "xsd:string"]
+        ]
+    },
+    set_wifi_pass: {
+        name: "setParameterValues",
+        parameterValues: [
+            ["InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase", "PasswordBaru123", "xsd:string"],
+            ["InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.KeyPassphrase", "PasswordBaru123", "xsd:string"]
+        ]
+    },
+    refresh_all: {
+        name: "refreshObject",
+        objectName: ""
+    },
+    reboot: {
+        name: "reboot"
+    },
+    factory_reset: {
+        name: "factoryReset"
+    }
+};
+
+let gLastConsoleResult = null;
+
+function onConsoleDeviceChange() {
+    const sel = document.getElementById('consoleDeviceSelect');
+    const badgeText = document.getElementById('consoleBadgeText');
+    const badgeDot = document.getElementById('consoleBadgeDot');
+    const acsSel = document.getElementById('consoleAcsSelect');
+    if (!sel || !sel.selectedIndex || sel.selectedIndex < 0) return;
+
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt) return;
+
+    const sn = opt.getAttribute('data-sn') || '-';
+    const vendor = (opt.getAttribute('data-vendor') || '').toUpperCase();
+    const model = opt.getAttribute('data-model') || '';
+    const isOnline = opt.getAttribute('data-online') === 'true';
+    const acsId = opt.getAttribute('data-acsid') || 'builtin';
+
+    if (badgeText) badgeText.innerText = `${vendor} ${model} (${sn})`;
+    if (badgeDot) badgeDot.style.background = isOnline ? '#10b981' : '#ef4444';
+    if (acsSel && acsId) {
+        acsSel.value = acsId;
+    }
+}
+
+function onConsoleTemplateSelect(key) {
+    if (!key || !CONSOLE_TEMPLATES[key]) return;
+    const editor = document.getElementById('consoleEditor');
+    if (editor) {
+        editor.value = JSON.stringify(CONSOLE_TEMPLATES[key], null, 2);
+    }
+    appendConsoleLog('info', `Template dimuat: ${key}`);
+}
+
+function formatConsoleJson() {
+    const editor = document.getElementById('consoleEditor');
+    if (!editor) return;
+    try {
+        const parsed = JSON.parse(editor.value);
+        editor.value = JSON.stringify(parsed, null, 2);
+        appendConsoleLog('success', 'JSON berhasil diformat rapi.');
+    } catch (e) {
+        appendConsoleLog('error', `Gagal format JSON: ${e.message}`);
+    }
+}
+
+function clearConsoleEditor() {
+    const editor = document.getElementById('consoleEditor');
+    if (editor) editor.value = '{\n  \n}';
+}
+
+function copyConsoleEditor() {
+    const editor = document.getElementById('consoleEditor');
+    if (!editor || !editor.value) return;
+    navigator.clipboard.writeText(editor.value).then(() => {
+        appendConsoleLog('info', 'Payload editor tersalin ke clipboard.');
+    });
+}
+
+function clearConsoleTerminal() {
+    const logScreen = document.getElementById('screenConsoleLog');
+    if (logScreen) logScreen.innerHTML = '';
+    const rawPre = document.getElementById('rawJsonResponse');
+    if (rawPre) rawPre.textContent = '// Kosong';
+    const treeCont = document.getElementById('paramTreeContainer');
+    if (treeCont) treeCont.innerHTML = '<div style="padding:30px; text-align:center; color:var(--muted); font-size:12px;">Terminal dibersihkan.</div>';
+}
+
+function copyConsoleOutput() {
+    let textToCopy = '';
+    const rawPre = document.getElementById('rawJsonResponse');
+    if (rawPre && rawPre.textContent) textToCopy = rawPre.textContent;
+    if (!textToCopy) {
+        const logScreen = document.getElementById('screenConsoleLog');
+        if (logScreen) textToCopy = logScreen.innerText;
+    }
+    if (textToCopy) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            appendConsoleLog('info', 'Output tersalin ke clipboard.');
+        });
+    }
+}
+
+function switchConsoleSubtab(subtab) {
+    document.querySelectorAll('.console-subtab-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById(`btnSubtab${subtab.charAt(0).toUpperCase() + subtab.slice(1)}`);
+    if (btn) btn.classList.add('active');
+
+    document.getElementById('screenConsoleLog').style.display = (subtab === 'log') ? 'block' : 'none';
+    document.getElementById('screenConsoleTree').style.display = (subtab === 'tree') ? 'block' : 'none';
+    document.getElementById('screenConsoleRaw').style.display = (subtab === 'raw') ? 'block' : 'none';
+}
+
+function appendConsoleLog(type, text) {
+    const logScreen = document.getElementById('screenConsoleLog');
+    if (!logScreen) return;
+
+    const row = document.createElement('div');
+    row.className = 'terminal-log-line';
+
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'terminal-log-time';
+    timeSpan.textContent = `[${new Date().toLocaleTimeString()}]`;
+
+    const textSpan = document.createElement('span');
+    let colorClass = 'terminal-log-text';
+    if (type === 'success') colorClass = 'terminal-log-success';
+    else if (type === 'error') colorClass = 'terminal-log-error';
+    else if (type === 'warn') colorClass = 'terminal-log-warn';
+    else if (type === 'info') colorClass = 'terminal-log-info';
+
+    textSpan.className = colorClass;
+    textSpan.textContent = text;
+
+    row.appendChild(timeSpan);
+    row.appendChild(textSpan);
+    logScreen.appendChild(row);
+    logScreen.scrollTop = logScreen.scrollHeight;
+}
+
+async function executeConsoleScript() {
+    const devSelect = document.getElementById('consoleDeviceSelect');
+    const acsSelect = document.getElementById('consoleAcsSelect');
+    const editor = document.getElementById('consoleEditor');
+    const chkCr = document.getElementById('chkConnectionRequest');
+    const btn = document.getElementById('btnExecuteConsole');
+    const latencyEl = document.getElementById('consoleLatencyText');
+    const statusPill = document.getElementById('consoleStatusPill');
+    const statusText = document.getElementById('consoleStatusText');
+    const httpBadge = document.getElementById('consoleHttpStatusBadge');
+    const taskIdBadge = document.getElementById('consoleTaskIdBadge');
+
+    const deviceId = devSelect ? devSelect.value : '';
+    const acsId = acsSelect ? acsSelect.value : 'builtin';
+    const connectionRequest = chkCr ? chkCr.checked : true;
+
+    if (!deviceId) {
+        alert('Silakan pilih target perangkat terlebih dahulu.');
+        return;
+    }
+
+    let payload = null;
+    try {
+        payload = JSON.parse(editor.value);
+    } catch (err) {
+        appendConsoleLog('error', `Syntax JSON tidak valid: ${err.message}`);
+        switchConsoleSubtab('log');
+        return;
+    }
+
+    // Safety confirmation for critical tasks
+    const taskName = payload.name || '';
+    if (taskName === 'reboot') {
+        if (!confirm('PERINGATAN: Anda akan mengirim perintah REBOOT ke perangkat ini. Koneksi internet pelanggan akan terputus sesaat. Lanjutkan?')) {
+            return;
+        }
+    } else if (taskName === 'factoryReset') {
+        if (!confirm('BAHAYA: Anda akan melakukan FACTORY RESET pada modem pelanggan. Seluruh konfigurasi akan terhapus. Lanjutkan?')) {
+            return;
+        }
+    }
+
+    // Set UI to loading state
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengirim ke Modem...';
+    }
+    if (statusPill) statusPill.style.color = '#38bdf8';
+    if (statusText) statusText.textContent = 'Executing...';
+    if (latencyEl) latencyEl.textContent = '...';
+
+    appendConsoleLog('info', `>>> Memulai eksekusi task '${taskName}' ke perangkat ${deviceId}...`);
+    switchConsoleSubtab('log');
+
+    try {
+        const res = await fetch('/admin/acs/api/console/execute', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                deviceId,
+                acsId,
+                taskPayload: payload,
+                connectionRequest
+            })
+        });
+
+        const data = await res.json().catch(() => ({}));
+        gLastConsoleResult = data;
+
+        if (latencyEl) latencyEl.textContent = `${data.durationMs || 0}ms`;
+        if (httpBadge) {
+            httpBadge.textContent = `HTTP ${data.httpStatus || res.status}`;
+            httpBadge.style.color = res.ok ? '#34d399' : '#f87171';
+            httpBadge.style.background = res.ok ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
+        }
+        if (taskIdBadge) {
+            const tId = data.taskResult?._id || data.taskResult?.id || '-';
+            taskIdBadge.textContent = `Task: ${tId}`;
+        }
+
+        if (Array.isArray(data.logs)) {
+            data.logs.forEach(l => appendConsoleLog(res.ok ? 'success' : 'warn', l));
+        }
+
+        const rawPre = document.getElementById('rawJsonResponse');
+        if (rawPre) rawPre.textContent = JSON.stringify(data, null, 2);
+
+        // Render parameter tree if available
+        renderParameterTree(data);
+
+        if (res.ok && data.success) {
+            if (statusPill) statusPill.style.color = '#10b981';
+            if (statusText) statusText.textContent = 'Success (200 OK)';
+            appendConsoleLog('success', `✓ Sukses dieksekusi dalam ${data.durationMs}ms`);
+
+            // If we have extracted params, auto-switch to parameter tree view
+            if (data.extractedParams && Object.keys(data.extractedParams).length > 0) {
+                switchConsoleSubtab('tree');
+            }
+        } else {
+            if (statusPill) statusPill.style.color = '#ef4444';
+            if (statusText) statusText.textContent = 'Error';
+            appendConsoleLog('error', `✖ Gagal: ${data.message || 'Error pada server ACS'}`);
+        }
+    } catch (netErr) {
+        if (statusPill) statusPill.style.color = '#ef4444';
+        if (statusText) statusText.textContent = 'Network Fail';
+        appendConsoleLog('error', `Kesalahan jaringan: ${netErr.message}`);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-play-fill fs-5"></i> <span>JALANKAN KE MODEM</span>';
+        }
+    }
+}
+
+function renderParameterTree(data) {
+    const container = document.getElementById('paramTreeContainer');
+    if (!container) return;
+
+    let items = [];
+    if (data.extractedParams && typeof data.extractedParams === 'object') {
+        for (const [k, v] of Object.entries(data.extractedParams)) {
+            items.push({ path: k, value: typeof v === 'object' ? JSON.stringify(v) : String(v) });
+        }
+    } else if (data.deviceSnapshot && typeof data.deviceSnapshot === 'object') {
+        function flatten(obj, prefix = '') {
+            for (const [k, v] of Object.entries(obj)) {
+                if (k.startsWith('_') && k !== '_value') continue;
+                const newKey = prefix ? `${prefix}.${k}` : k;
+                if (v && typeof v === 'object' && v._value !== undefined) {
+                    items.push({ path: newKey, value: String(v._value) });
+                } else if (v && typeof v === 'object') {
+                    flatten(v, newKey);
+                } else {
+                    items.push({ path: newKey, value: String(v) });
+                }
+            }
+        }
+        flatten(data.deviceSnapshot);
+    }
+
+    if (items.length === 0) {
+        container.innerHTML = '<div style="padding:30px; text-align:center; color:var(--muted); font-size:12px;">Tidak ada parameter yang terekstrak. Coba jalankan `getParameterValues` dengan path spesifik.</div>';
+        return;
+    }
+
+    let html = '';
+    items.forEach(it => {
+        html += `
+            <div class="param-row-item">
+                <span class="param-key">${escapeHtml(it.path)}</span>
+                <span class="param-val">${escapeHtml(it.value)}</span>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function filterParameterTree() {
+    const input = document.getElementById('filterTreeInput');
+    const q = (input ? input.value : '').toLowerCase().trim();
+    const rows = document.querySelectorAll('.param-row-item');
+    rows.forEach(r => {
+        const text = r.textContent.toLowerCase();
+        r.style.display = text.includes(q) ? 'flex' : 'none';
+    });
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    onConsoleDeviceChange();
+});
 </script>
 </body>
 </html>

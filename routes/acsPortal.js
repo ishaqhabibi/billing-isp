@@ -2008,6 +2008,160 @@ router.delete('/api/device/:deviceId', requireAdmin, async (req, res) => {
     }
 });
 
+// ── GENIEACS DEVSTUDIO CONSOLE API ──
+// POST /admin/acs/api/console/execute
+router.post('/api/console/execute', requireAdmin, async (req, res) => {
+    const startTime = Date.now();
+    try {
+        const { deviceId, acsId, taskPayload, connectionRequest = true, mode = 'task' } = req.body;
+        if (!deviceId) {
+            return res.status(400).json({ success: false, message: 'Target device ID wajib dipilih' });
+        }
+
+        const servers = getACSServers(acsId || 'all');
+        if (!servers || servers.length === 0) {
+            return res.status(404).json({ success: false, message: 'ACS server tidak ditemukan' });
+        }
+        const server = servers[0];
+        const isBuiltin = isBuiltinAcsEnabled() || server.id === 'builtin' || server.url === 'local';
+        const baseUrl = normalizeUrl(server.url);
+        const config = getAxiosConfig(server);
+
+        let taskResult = null;
+        let deviceData = null;
+        let extractedParams = {};
+        const logs = [];
+
+        logs.push(`[${new Date().toLocaleTimeString()}] Menghubungkan ke ACS Server: ${server.name} (${isBuiltin ? 'Built-in Local' : server.url})...`);
+        logs.push(`[${new Date().toLocaleTimeString()}] Target Device ID: ${deviceId}`);
+
+        if (mode === 'query_tree') {
+            logs.push(`[${new Date().toLocaleTimeString()}] Membaca parameter tree perangkat langsung dari ACS...`);
+            if (isBuiltin) {
+                const proxy = genieacsApi.createAxiosInstance(server);
+                const devRes = await proxy.get(`/devices/${encodeURIComponent(deviceId)}`);
+                deviceData = devRes.data;
+            } else {
+                const devRes = await axios.get(`${baseUrl}/devices/${encodeURIComponent(deviceId)}`, { ...config, timeout: 15000 });
+                deviceData = devRes.data;
+            }
+            logs.push(`[${new Date().toLocaleTimeString()}] Parameter tree berhasil diambil (${Object.keys(deviceData || {}).length} root branches).`);
+        } else {
+            const taskObj = (typeof taskPayload === 'string') ? JSON.parse(taskPayload) : (taskPayload || {});
+            const taskName = taskObj.name || 'customTask';
+
+            logs.push(`[${new Date().toLocaleTimeString()}] Menyiapkan TR-069 Task: ${taskName}`);
+
+            let querySuffix = connectionRequest ? '?connection_request' : '';
+            if (isBuiltin) {
+                const proxy = genieacsApi.createAxiosInstance(server);
+                const postRes = await proxy.post(`/devices/${encodeURIComponent(deviceId)}/tasks`, taskObj);
+                taskResult = postRes.data;
+                logs.push(`[${new Date().toLocaleTimeString()}] Task '${taskName}' berhasil dijadwalkan di Built-in ACS (Task ID: ${taskResult?._id || 'local'}).`);
+                
+                if (connectionRequest) {
+                    try {
+                        const acsService = require('../services/acsServerService');
+                        await acsService.triggerConnectionRequest(deviceId);
+                        logs.push(`[${new Date().toLocaleTimeString()}] Connection Request (Wake-Up UDP/HTTP) berhasil dikirim ke CPE.`);
+                    } catch (crErr) {
+                        logs.push(`[${new Date().toLocaleTimeString()}] Catatan Connection Request: ${crErr.message}`);
+                    }
+                }
+
+                try {
+                    const devRes = await proxy.get(`/devices/${encodeURIComponent(deviceId)}`);
+                    deviceData = devRes.data;
+                } catch (_) {}
+            } else {
+                const postUrl = `${baseUrl}/devices/${encodeURIComponent(deviceId)}/tasks${querySuffix}`;
+                const postRes = await axios.post(postUrl, taskObj, { ...config, timeout: 15000 });
+                taskResult = postRes.data;
+                logs.push(`[${new Date().toLocaleTimeString()}] Task '${taskName}' berhasil dikirim ke GenieACS NBI.`);
+                
+                try {
+                    const devRes = await axios.get(`${baseUrl}/devices/${encodeURIComponent(deviceId)}`, { ...config, timeout: 10000 });
+                    deviceData = devRes.data;
+                } catch (_) {}
+            }
+
+            // Extract requested parameters if getParameterValues
+            if (deviceData && taskObj.parameterNames && Array.isArray(taskObj.parameterNames)) {
+                taskObj.parameterNames.forEach(pName => {
+                    const parts = pName.split('.').filter(Boolean);
+                    let cur = deviceData;
+                    for (const part of parts) {
+                        if (cur && typeof cur === 'object' && part in cur) {
+                            cur = cur[part];
+                        } else {
+                            cur = undefined;
+                            break;
+                        }
+                    }
+                    if (cur !== undefined) {
+                        extractedParams[pName] = (cur && typeof cur === 'object' && cur._value !== undefined) ? cur._value : cur;
+                    }
+                });
+            }
+        }
+
+        const durationMs = Date.now() - startTime;
+        logs.push(`[${new Date().toLocaleTimeString()}] Eksekusi selesai dalam ${durationMs}ms (HTTP 200 OK).`);
+
+        return res.json({
+            success: true,
+            httpStatus: 200,
+            durationMs,
+            logs,
+            taskResult,
+            extractedParams: Object.keys(extractedParams).length > 0 ? extractedParams : null,
+            deviceSnapshot: deviceData
+        });
+    } catch (e) {
+        const durationMs = Date.now() - startTime;
+        return res.status(500).json({
+            success: false,
+            httpStatus: e.response?.status || 500,
+            durationMs,
+            message: e.message,
+            logs: [
+                `[${new Date().toLocaleTimeString()}] ERROR: ${e.message}`,
+                e.response?.data ? `[Detail Server]: ${typeof e.response.data === 'string' ? e.response.data : JSON.stringify(e.response.data)}` : null
+            ].filter(Boolean)
+        });
+    }
+});
+
+// GET /admin/acs/api/console/device-tree/:deviceId
+router.get('/api/console/device-tree/:deviceId', requireAdmin, async (req, res) => {
+    try {
+        const deviceId = String(req.params.deviceId || '');
+        const { acsId } = req.query;
+        const servers = getACSServers(acsId || 'all');
+        if (!servers || servers.length === 0) {
+            return res.status(404).json({ success: false, message: 'ACS server tidak ditemukan' });
+        }
+        const server = servers[0];
+        const isBuiltin = isBuiltinAcsEnabled() || server.id === 'builtin' || server.url === 'local';
+        let deviceData = null;
+
+        if (isBuiltin) {
+            const proxy = genieacsApi.createAxiosInstance(server);
+            const devRes = await proxy.get(`/devices/${encodeURIComponent(deviceId)}`);
+            deviceData = devRes.data;
+        } else {
+            const baseUrl = normalizeUrl(server.url);
+            const config = getAxiosConfig(server);
+            const devRes = await axios.get(`${baseUrl}/devices/${encodeURIComponent(deviceId)}`, { ...config, timeout: 15000 });
+            deviceData = devRes.data;
+        }
+
+        return res.json({ success: true, data: deviceData });
+    } catch (e) {
+        return res.status(500).json({ success: false, message: e.message });
+    }
+});
+
 // POST /admin/acs/api/remote-enable/:deviceId
 router.post('/api/remote-enable/:deviceId', requireAdmin, async (req, res) => {
     try {
