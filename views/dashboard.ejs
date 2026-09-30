@@ -1473,130 +1473,132 @@
     </div>
   </div>
 
-  <!-- 2. MODAL: UBAH PENGATURAN WIFI DUAL-BAND (2.4G & 5G SEKALIGUS) -->
+  <!-- 2. MODAL: UBAH PENGATURAN WIFI DUAL-BAND (MODERN APP DESIGN) -->
   <div class="modal fade bottom-sheet" id="editWifiModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content border-0 shadow-lg" style="border-radius:20px; overflow:hidden;">
-        <div class="bottom-sheet-handle d-block d-md-none"></div>
-        <div class="modal-header border-bottom px-4 py-3" style="background:var(--isp-card-surface); border-color:var(--isp-border) !important;">
-          <div class="d-flex align-items-center gap-3">
-            <div style="width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg, rgba(16,185,129,0.18), rgba(56,189,248,0.18)); border:1px solid rgba(56,189,248,0.3); display:flex; align-items:center; justify-content:center;">
-              <i class="bi bi-wifi fs-4" style="background:linear-gradient(135deg, #10b981, #38bdf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent;"></i>
+    <div class="modal-dialog modal-dialog-centered" style="max-width:480px;">
+      <div class="modal-content border-0 shadow-lg" style="border-radius:24px; overflow:hidden; background:var(--isp-card-bg); border:1px solid var(--isp-border-strong) !important;">
+        <div class="bottom-sheet-handle d-block d-md-none" style="width:38px; height:4px; border-radius:99px; background:rgba(255,255,255,0.25); margin:10px auto 0;"></div>
+        <div class="modal-header border-0 px-4 pt-3 pb-2 d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2.5">
+            <div style="width:38px; height:38px; border-radius:12px; background:linear-gradient(135deg, rgba(16,185,129,0.18), rgba(56,189,248,0.18)); border:1px solid rgba(56,189,248,0.3); display:flex; align-items:center; justify-content:center;">
+              <i class="bi bi-wifi fs-5" style="background:linear-gradient(135deg, #10b981, #38bdf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent;"></i>
             </div>
             <div>
-              <h6 class="modal-title fw-bold mb-0" style="color:var(--isp-text-heading); font-size:16px;">
-                Pengaturan Wi-Fi Dual-Band
+              <h6 class="modal-title fw-bold mb-0" style="color:var(--isp-text-heading); font-size:15.5px;">
+                Pengaturan Wi-Fi
               </h6>
-              <small class="text-muted" style="font-size:11.5px;">Atur nama Wi-Fi (SSID) & kata sandi 2.4 GHz dan 5 GHz sekaligus dalam satu klik</small>
+              <div class="text-muted" style="font-size:11px;">Kelola nama & kata sandi kedua frekuensi</div>
             </div>
           </div>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <form id="formEditWifi" onsubmit="handleUnifiedWifiSubmit(event)">
-          <div class="modal-body p-3 p-md-4">
+          <div class="modal-body px-4 py-2">
             <div id="wifiUnifiedAlertBox" class="alert d-none mb-3 py-2 small" role="alert"></div>
 
-            <div class="row g-3">
-              <!-- KARTU 1: WI-FI 2.4 GHZ -->
-              <div class="col-12 col-md-6">
-                <div class="h-100 p-3 rounded-4" style="background:rgba(16, 185, 129, 0.05); border:1.5px solid rgba(16, 185, 129, 0.25);">
-                  <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom" style="border-color:rgba(16,185,129,0.2) !important;">
-                    <div class="d-flex align-items-center gap-2">
-                      <i class="bi bi-broadcast text-success fs-5"></i>
-                      <span class="fw-bold" style="color:var(--isp-text-heading); font-size:13px;">Wi-Fi 2.4 GHz</span>
-                    </div>
-                    <span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; font-size:10px; border-radius:6px; font-weight:700;">Jangkauan Luas</span>
-                  </div>
+            <!-- MODERN SEGMENTED PILL SWITCHER -->
+            <div class="d-flex p-1 mb-3 rounded-pill" style="background:rgba(255,255,255,0.06); border:1px solid var(--isp-border);">
+              <button type="button" class="btn btn-sm flex-fill rounded-pill py-2 fw-bold d-flex align-items-center justify-content-center gap-2 transition-all" id="btnTabWifi24" onclick="switchCustomerWifiTab('2.4')" style="background:var(--isp-card-surface); color:#10b981; border:1px solid rgba(16,185,129,0.35); font-size:12px; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+                <span style="width:7px; height:7px; border-radius:50%; background:#10b981; display:inline-block; box-shadow:0 0 6px #10b981;"></span>
+                <span>2.4 GHz</span>
+                <span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; font-size:9.5px; font-weight:700;">Jangkauan Luas</span>
+              </button>
+              <button type="button" class="btn btn-sm flex-fill rounded-pill py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 text-muted transition-all" id="btnTabWifi5" onclick="switchCustomerWifiTab('5')" style="background:transparent; border:1px solid transparent; font-size:12px;">
+                <span style="width:7px; height:7px; border-radius:50%; background:#38bdf8; display:inline-block;"></span>
+                <span>5 GHz</span>
+                <span class="badge" style="background:rgba(56,189,248,0.15); color:#38bdf8; font-size:9.5px; font-weight:700;">Super Cepat</span>
+              </button>
+            </div>
 
-                  <!-- SSID 2.4G -->
-                  <div class="mb-3">
-                    <label for="inputWifiSsid24" class="form-label fw-bold small mb-1" style="color:var(--isp-text-heading); font-size:11.5px;">
-                      Nama Wi-Fi (SSID 2.4G) <span class="text-danger">*</span>
-                    </label>
-                    <div class="input-group input-group-sm">
-                      <span class="input-group-text"><i class="bi bi-wifi text-success"></i></span>
-                      <input type="text" id="inputWifiSsid24" class="form-control fw-semibold" placeholder="Nama SSID 2.4G" maxlength="32" required value="<%= currentWifiSsid24 %>">
-                    </div>
-                    <div class="text-muted mt-1" style="font-size:10.5px;">Kompatibel dengan semua jenis HP, smart TV, dan CCTV.</div>
-                  </div>
-
-                  <!-- PASSWORD 2.4G -->
-                  <div class="mb-1">
-                    <div class="d-flex align-items-center justify-content-between mb-1">
-                      <label for="inputWifiPass24" class="form-label fw-bold small mb-0" style="color:var(--isp-text-heading); font-size:11.5px;">
-                        Kata Sandi 2.4G
-                      </label>
-                      <span class="badge" style="background:var(--isp-card-surface); color:var(--isp-text-muted); font-size:9.5px; border:1px solid var(--isp-border);">Opsional</span>
-                    </div>
-                    <div class="input-group input-group-sm">
-                      <span class="input-group-text"><i class="bi bi-key-fill text-warning"></i></span>
-                      <input type="password" id="inputWifiPass24" class="form-control font-monospace" placeholder="Kosongkan jika tak diubah" minlength="8" oninput="onCustPass24Input(this)">
-                      <button type="button" class="btn btn-outline-secondary" onclick="toggleInputType('inputWifiPass24', this)">
-                        <i class="bi bi-eye"></i>
-                      </button>
-                    </div>
-                    <div class="text-muted mt-1" style="font-size:10.5px;">Minimal 8 karakter.</div>
-                  </div>
+            <!-- PANE 1: WI-FI 2.4 GHZ -->
+            <div id="wifiPane24">
+              <!-- SSID 2.4G -->
+              <div class="mb-3">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                  <label for="inputWifiSsid24" class="fw-bold small mb-0" style="color:var(--isp-text-heading); font-size:12px;">
+                    Nama Wi-Fi 2.4G (SSID) <span class="text-danger">*</span>
+                  </label>
+                  <span class="text-muted" style="font-size:10.5px;">Maks. 32 karakter</span>
                 </div>
+                <div style="position:relative;">
+                  <i class="bi bi-wifi" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:16px; color:#10b981; pointer-events:none;"></i>
+                  <input type="text" id="inputWifiSsid24" class="form-control" style="height:48px; border-radius:14px; padding-left:42px; padding-right:14px; background:var(--isp-card-surface); border:1.5px solid var(--isp-border); font-size:13.5px; font-weight:600; color:var(--isp-text-heading);" placeholder="Contoh: Rumah-2.4G" maxlength="32" required value="<%= currentWifiSsid24 %>">
+                </div>
+                <div class="text-muted mt-1" style="font-size:10.5px;">Cocok untuk HP, Smart TV, CCTV, dan perangkat pintar.</div>
               </div>
 
-              <!-- KARTU 2: WI-FI 5 GHZ -->
-              <div class="col-12 col-md-6">
-                <div class="h-100 p-3 rounded-4" style="background:rgba(56, 189, 248, 0.05); border:1.5px solid rgba(56, 189, 248, 0.25);">
-                  <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom" style="border-color:rgba(56,189,248,0.2) !important;">
-                    <div class="d-flex align-items-center gap-2">
-                      <i class="bi bi-lightning-charge-fill text-info fs-5"></i>
-                      <span class="fw-bold" style="color:var(--isp-text-heading); font-size:13px;">Wi-Fi 5 GHz</span>
-                    </div>
-                    <span class="badge" style="background:rgba(56,189,248,0.15); color:#38bdf8; font-size:10px; border-radius:6px; font-weight:700;">Super Cepat</span>
-                  </div>
-
-                  <!-- SSID 5G -->
-                  <div class="mb-3">
-                    <label for="inputWifiSsid5" class="form-label fw-bold small mb-1" style="color:var(--isp-text-heading); font-size:11.5px;">
-                      Nama Wi-Fi (SSID 5G) <span class="text-danger">*</span>
-                    </label>
-                    <div class="input-group input-group-sm">
-                      <span class="input-group-text"><i class="bi bi-broadcast text-info"></i></span>
-                      <input type="text" id="inputWifiSsid5" class="form-control fw-semibold" placeholder="Nama SSID 5G" maxlength="32" required value="<%= currentWifiSsid5 || (currentWifiSsid24 ? currentWifiSsid24 + ' 5G' : '') %>">
-                    </div>
-                    <div class="text-muted mt-1" style="font-size:10.5px;">Kecepatan maksimal untuk streaming 4K & game online.</div>
-                  </div>
-
-                  <!-- PASSWORD 5G -->
-                  <div class="mb-1">
-                    <div class="d-flex align-items-center justify-content-between mb-1">
-                      <label for="inputWifiPass5" class="form-label fw-bold small mb-0" style="color:var(--isp-text-heading); font-size:11.5px;">
-                        Kata Sandi 5G
-                      </label>
-                      <label class="d-flex align-items-center gap-1 text-primary small m-0" style="font-size:10.5px; cursor:pointer;">
-                        <input type="checkbox" id="chkSyncWifiPass" onchange="toggleSyncCustomerWifiPass(this)" class="form-check-input m-0" style="width:13px;height:13px;">
-                        <span>Samakan Sandi</span>
-                      </label>
-                    </div>
-                    <div class="input-group input-group-sm">
-                      <span class="input-group-text"><i class="bi bi-key-fill text-warning"></i></span>
-                      <input type="password" id="inputWifiPass5" class="form-control font-monospace" placeholder="Kosongkan jika tak diubah" minlength="8">
-                      <button type="button" class="btn btn-outline-secondary" onclick="toggleInputType('inputWifiPass5', this)">
-                        <i class="bi bi-eye"></i>
-                      </button>
-                    </div>
-                    <div class="text-muted mt-1" style="font-size:10.5px;">Minimal 8 karakter.</div>
-                  </div>
+              <!-- PASSWORD 2.4G -->
+              <div class="mb-2">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                  <label for="inputWifiPass24" class="fw-bold small mb-0" style="color:var(--isp-text-heading); font-size:12px;">
+                    Kata Sandi Baru (2.4 GHz)
+                  </label>
+                  <span class="badge" style="background:rgba(255,255,255,0.06); color:var(--isp-text-muted); font-size:10px; border-radius:6px; font-weight:600;">Opsional</span>
                 </div>
+                <div style="position:relative;">
+                  <i class="bi bi-key-fill text-warning" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:16px; pointer-events:none;"></i>
+                  <input type="password" id="inputWifiPass24" class="form-control font-monospace" style="height:48px; border-radius:14px; padding-left:42px; padding-right:44px; background:var(--isp-card-surface); border:1.5px solid var(--isp-border); font-size:13.5px; color:var(--isp-text-heading);" placeholder="Kosongkan jika tak diubah" minlength="8" oninput="onCustPass24Input(this)">
+                  <button type="button" onclick="toggleInputType('inputWifiPass24', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); border:none; background:transparent; color:var(--isp-text-muted); padding:4px; font-size:15px; cursor:pointer;">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+                <div class="text-muted mt-1" style="font-size:10.5px;">Minimal 8 karakter. Kosongkan jika sandi tidak diubah.</div>
               </div>
             </div>
 
-            <!-- INFO PERINGATAN -->
-            <div class="mt-3 p-2 px-3 rounded-3 small d-flex align-items-center gap-2" style="background:var(--isp-warning-subtle); color:var(--isp-warning); border:1px solid var(--isp-warning-border); font-size:11px;">
-              <i class="bi bi-info-circle-fill fs-6 flex-shrink-0"></i>
-              <div>Modem akan menerapkan pengaturan baru ke jaringan Wi-Fi secara instan. Perangkat HP & laptop akan terputus dan dapat langsung disambungkan kembali.</div>
+            <!-- PANE 2: WI-FI 5 GHZ -->
+            <div id="wifiPane5" style="display:none;">
+              <!-- SSID 5G -->
+              <div class="mb-3">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                  <label for="inputWifiSsid5" class="fw-bold small mb-0" style="color:var(--isp-text-heading); font-size:12px;">
+                    Nama Wi-Fi 5G (SSID) <span class="text-danger">*</span>
+                  </label>
+                  <span class="text-muted" style="font-size:10.5px;">Maks. 32 karakter</span>
+                </div>
+                <div style="position:relative;">
+                  <i class="bi bi-broadcast text-info" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:16px; pointer-events:none;"></i>
+                  <input type="text" id="inputWifiSsid5" class="form-control" style="height:48px; border-radius:14px; padding-left:42px; padding-right:14px; background:var(--isp-card-surface); border:1.5px solid var(--isp-border); font-size:13.5px; font-weight:600; color:var(--isp-text-heading);" placeholder="Contoh: Rumah-5G" maxlength="32" required value="<%= currentWifiSsid5 || (currentWifiSsid24 ? currentWifiSsid24 + ' 5G' : '') %>">
+                </div>
+                <div class="text-muted mt-1" style="font-size:10.5px;">Kecepatan maksimal untuk streaming 4K & game online.</div>
+              </div>
+
+              <!-- PASSWORD 5G -->
+              <div class="mb-2">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                  <label for="inputWifiPass5" class="fw-bold small mb-0" style="color:var(--isp-text-heading); font-size:12px;">
+                    Kata Sandi Baru (5 GHz)
+                  </label>
+                  <label class="d-flex align-items-center gap-1.5 text-primary small m-0 fw-bold" style="font-size:11px; cursor:pointer;">
+                    <input type="checkbox" id="chkSyncWifiPass" onchange="toggleSyncCustomerWifiPass(this)" class="form-check-input m-0" style="width:14px;height:14px;">
+                    <span>Samakan Sandi 2.4G</span>
+                  </label>
+                </div>
+                <div style="position:relative;">
+                  <i class="bi bi-key-fill text-warning" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:16px; pointer-events:none;"></i>
+                  <input type="password" id="inputWifiPass5" class="form-control font-monospace" style="height:48px; border-radius:14px; padding-left:42px; padding-right:44px; background:var(--isp-card-surface); border:1.5px solid var(--isp-border); font-size:13.5px; color:var(--isp-text-heading);" placeholder="Kosongkan jika tak diubah" minlength="8">
+                  <button type="button" onclick="toggleInputType('inputWifiPass5', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); border:none; background:transparent; color:var(--isp-text-muted); padding:4px; font-size:15px; cursor:pointer;">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+                <div class="text-muted mt-1" style="font-size:10.5px;">Minimal 8 karakter. Kosongkan jika sandi tidak diubah.</div>
+              </div>
+            </div>
+
+            <!-- STATUS INFO BANNER -->
+            <div class="mt-3 p-2.5 px-3 rounded-3 d-flex align-items-center justify-content-between" style="background:rgba(255,255,255,0.03); border:1px solid var(--isp-border); font-size:11px;">
+              <span class="text-muted"><i class="bi bi-shield-check text-success me-1"></i> Disinkronkan langsung ke modem via TR-069</span>
+              <span class="badge" style="background:rgba(56,189,248,0.12); color:#38bdf8; font-weight:700;">Dual-Band Sync</span>
             </div>
           </div>
-          <div class="modal-footer px-4 py-3 d-flex gap-2" style="background:var(--isp-card-surface); border-top:1px solid var(--isp-border);">
-            <button type="button" class="btn btn-outline-secondary px-3 py-2 fw-semibold" data-bs-dismiss="modal" style="border-radius:12px; font-size:13px;">Batal</button>
-            <button type="submit" id="btnSubmitUnifiedWifi" class="btn btn-primary fw-bold flex-grow-1 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm" style="border-radius:12px; font-size:13px; min-height:42px;">
-              <i class="bi bi-cloud-arrow-up-fill fs-6"></i> Simpan & Terapkan Sekaligus ke Modem
+
+          <!-- FOOTER ACTION -->
+          <div class="modal-footer border-0 px-4 pt-2 pb-3 d-flex flex-column gap-2">
+            <button type="submit" id="btnSubmitUnifiedWifi" class="btn btn-primary fw-bold w-100 py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-sm" style="border-radius:14px; background:linear-gradient(135deg, #0284c7, #2563eb); border:none; font-size:13.5px; min-height:46px; box-shadow:0 4px 14px rgba(37,99,235,0.35);">
+              <i class="bi bi-cloud-arrow-up-fill fs-5"></i> Simpan & Terapkan Sekaligus ke Modem
+            </button>
+            <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none py-1" data-bs-dismiss="modal" style="font-size:12px;">
+              Batal
             </button>
           </div>
         </form>
@@ -1933,7 +1935,52 @@
       m.show();
     }
 
-    // ── UNIFIED DUAL-BAND WIFI MODAL CONTROLLER ──
+    // ── UNIFIED DUAL-BAND WIFI MODAL CONTROLLER (APP STYLE) ──
+    function switchCustomerWifiTab(band) {
+      const p24 = document.getElementById('wifiPane24');
+      const p5 = document.getElementById('wifiPane5');
+      const b24 = document.getElementById('btnTabWifi24');
+      const b5 = document.getElementById('btnTabWifi5');
+
+      if (band === '5') {
+        if (p24) p24.style.display = 'none';
+        if (p5) p5.style.display = 'block';
+
+        if (b24) {
+          b24.className = 'btn btn-sm flex-fill rounded-pill py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 text-muted transition-all';
+          b24.style.background = 'transparent';
+          b24.style.borderColor = 'transparent';
+          b24.style.color = 'var(--isp-text-muted)';
+          b24.style.boxShadow = 'none';
+        }
+        if (b5) {
+          b5.className = 'btn btn-sm flex-fill rounded-pill py-2 fw-bold d-flex align-items-center justify-content-center gap-2 transition-all';
+          b5.style.background = 'var(--isp-card-surface)';
+          b5.style.borderColor = 'rgba(56,189,248,0.4)';
+          b5.style.color = '#38bdf8';
+          b5.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+        }
+      } else {
+        if (p24) p24.style.display = 'block';
+        if (p5) p5.style.display = 'none';
+
+        if (b24) {
+          b24.className = 'btn btn-sm flex-fill rounded-pill py-2 fw-bold d-flex align-items-center justify-content-center gap-2 transition-all';
+          b24.style.background = 'var(--isp-card-surface)';
+          b24.style.borderColor = 'rgba(16,185,129,0.4)';
+          b24.style.color = '#10b981';
+          b24.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+        }
+        if (b5) {
+          b5.className = 'btn btn-sm flex-fill rounded-pill py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 text-muted transition-all';
+          b5.style.background = 'transparent';
+          b5.style.borderColor = 'transparent';
+          b5.style.color = 'var(--isp-text-muted)';
+          b5.style.boxShadow = 'none';
+        }
+      }
+    }
+
     function openUnifiedWifiModal(defaultBand = 'all') {
       const s24 = document.getElementById('inputWifiSsid24');
       const s5 = document.getElementById('inputWifiSsid5');
@@ -1948,6 +1995,8 @@
       if (p24) { p24.value = ''; p24.type = 'password'; }
       if (p5) { p5.value = ''; p5.type = 'password'; }
       if (sync) sync.checked = false;
+
+      switchCustomerWifiTab(defaultBand === '5' ? '5' : '2.4');
 
       const m = bootstrap.Modal.getOrCreateInstance(document.getElementById('editWifiModal'));
       m.show();
@@ -1967,10 +2016,17 @@
       const p5 = document.getElementById('inputWifiPass5');
       if (!p24 || !p5) return;
       if (checkbox.checked) {
+        if (!p24.value) {
+          switchCustomerWifiTab('2.4');
+          p24.focus();
+          p24.placeholder = 'Ketik sandi baru 2.4G di sini...';
+        }
         p5.value = p24.value;
         p5.disabled = true;
+        p5.placeholder = '(Sama dengan sandi 2.4G)';
       } else {
         p5.disabled = false;
+        p5.placeholder = 'Kosongkan jika tak diubah';
       }
     }
 
