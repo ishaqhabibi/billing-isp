@@ -1165,7 +1165,7 @@
             <div>
               <label class="fl" style="font-size:11px;">Password (2.4G)</label>
               <div style="position:relative">
-                <input type="password" class="fc" id="acs_wifi_new_password" placeholder="Kosongkan jika tak diubah" minlength="8" style="padding-right:36px">
+                <input type="password" class="fc" id="acs_wifi_new_password" placeholder="Kosongkan jika tak diubah" minlength="8" style="padding-right:36px" oninput="onAdminPass24Input(this)">
                 <button type="button" onclick="togglePassVisibility('acs_wifi_new_password', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:var(--muted);cursor:pointer;padding:4px">
                   <i class="bi bi-eye"></i>
                 </button>
@@ -1351,10 +1351,28 @@ function resetClientFilters() {
 
 // ── WI-FI MODAL ACTIONS (DUAL BAND 2.4G & 5G) ──
 function syncWifi5gPassword(chk) {
-    const pass24 = document.getElementById('acs_wifi_new_password').value;
-    const pass5 = document.getElementById('acs_wifi_new_password_5g');
+    const p24 = document.getElementById('acs_wifi_new_password');
+    const p5 = document.getElementById('acs_wifi_new_password_5g');
+    if (!p24 || !p5) return;
     if (chk && chk.checked) {
-        pass5.value = pass24;
+        if (!p24.value) {
+            p24.focus();
+            p24.placeholder = 'Ketik sandi baru 2.4G di sini...';
+        }
+        p5.value = p24.value;
+        p5.disabled = true;
+        p5.placeholder = '(Sama dengan sandi 2.4G)';
+    } else {
+        p5.disabled = false;
+        p5.placeholder = 'Kosongkan jika tak diubah';
+    }
+}
+
+function onAdminPass24Input(input) {
+    const chk = document.getElementById('acs_wifi_sync_pass');
+    const p5 = document.getElementById('acs_wifi_new_password_5g');
+    if (chk && chk.checked && p5) {
+        p5.value = input.value;
     }
 }
 
