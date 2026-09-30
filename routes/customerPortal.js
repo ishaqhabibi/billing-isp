@@ -357,6 +357,37 @@ function tripayMethodCandidatesForAmount(tripayChannels, amount) {
   return Array.from(new Set(candidates));
 }
 
+function resolveTripayMethod(requestedMethod, tripayChannels, amount) {
+  const req = String(requestedMethod || 'QRIS').toUpperCase();
+  const isQris = req === 'QRIS' || req === 'QRIS2' || req === 'QRISC' || req.startsWith('QRIS');
+  
+  const allowedList = (tripayChannels || []).map(c => String(c?.code || '').toUpperCase()).filter(Boolean);
+  let candidates = tripayMethodCandidatesForAmount(tripayChannels, amount);
+  if (!candidates || candidates.length === 0) candidates = allowedList;
+
+  if (isQris) {
+    // Cari channel QRIS aktif di Tripay (QRIS2 didahulukan jika ada, lalu QRIS, QRISC, atau code yang berawalan QRIS)
+    const qrisCandidate =
+      candidates.find(c => c === 'QRIS2') ||
+      candidates.find(c => c === 'QRIS') ||
+      candidates.find(c => c === 'QRISC') ||
+      candidates.find(c => c.startsWith('QRIS')) ||
+      allowedList.find(c => c === 'QRIS2') ||
+      allowedList.find(c => c === 'QRIS') ||
+      allowedList.find(c => c.startsWith('QRIS'));
+    
+    return qrisCandidate || 'QRIS2';
+  }
+
+  // Jika bukan QRIS (misal bank transfer / virtual account)
+  const allowedSet = new Set(candidates);
+  if (allowedSet.has(req)) return req;
+
+  // Filter kandidat non-QRIS (misal VA: BNIVA, BRIVA, dsb)
+  const nonQris = candidates.filter(c => !c.startsWith('QRIS'));
+  return nonQris[0] || candidates[0] || 'BNIVA';
+}
+
 function getStaticQrisQrUrl(settings) {
   const enabledRaw = settings?.qris_static_enabled;
   if (enabledRaw === false || enabledRaw === 'false' || enabledRaw === 0 || enabledRaw === '0') return '';
@@ -1427,13 +1458,10 @@ router.post('/public/voucher/create-payment', async (req, res) => {
     if (gateway === 'tripay') {
       try {
         tripayChannels = await paymentSvc.getTripayChannels();
-        const allowedList = (tripayChannels || []).map(c => String(c?.code || '').toUpperCase()).filter(Boolean);
         tripayCandidates = tripayMethodCandidatesForAmount(tripayChannels, selected.price);
-        if (!tripayCandidates || tripayCandidates.length === 0) tripayCandidates = allowedList;
-        const allowed = new Set(tripayCandidates);
-        if (!allowed.has(method)) method = tripayCandidates[0] || 'QRIS';
+        method = resolveTripayMethod(method, tripayChannels, selected.price);
       } catch {
-        method = 'QRIS';
+        method = (method && (method === 'QRIS' || method.startsWith('QRIS'))) ? 'QRIS2' : 'BNIVA';
       }
     } else if (gateway === 'midtrans') {
       const allowed = new Set(['SNAP', 'QRIS', 'BCAVA', 'BNIVA', 'BRIVA', 'PERMATAVA', 'MANDIRIVA']);
@@ -2915,7 +2943,9 @@ router.post('/public/payment/create/:invoiceId', async (req, res) => {
       return redirectBack(payload.lookup, '', 'Tagihan ini sudah lunas.');
     }
 
-    const selectedMethod = String(req.body.method || 'QRIS').toUpperCase();
+    const selectedMethod = String(req.body.method || req.body.payment_method || 'QRIS').toUpperCase();
+    const isQrisRequested = selectedMethod === 'QRIS' || selectedMethod === 'QRIS2' || selectedMethod === 'QRISC' || selectedMethod.startsWith('QRIS');
+
     if (selectedMethod === 'QRIS_STATIC') {
       const { uniqueCode, amountUnique } = ensureInvoiceQrisUnique(inv, false);
       const qrisQrUrl = await getStaticQrisQrUrlForAmount(settings, amountUnique);
@@ -2941,13 +2971,15 @@ router.post('/public/payment/create/:invoiceId', async (req, res) => {
       });
     }
 
-    const force = String(req.query.force || '').toLowerCase() === '1' || String(req.query.force || '').toLowerCase() === 'true';
+    const force = String(req.query.force || req.body.force || '').toLowerCase() === '1' || String(req.query.force || req.body.force || '').toLowerCase() === 'true';
     if (!force && inv.payment_link) {
       let expiresAtMs = inv.payment_expires_at ? new Date(inv.payment_expires_at).getTime() : 0;
       let payloadExpiresAt = null;
+      let existingMethod = '';
       if (inv.payment_payload) {
         try {
           const parsedPayload = typeof inv.payment_payload === 'string' ? JSON.parse(inv.payment_payload) : inv.payment_payload;
+          existingMethod = String(parsedPayload?.payment_method || parsedPayload?.method || '').toUpperCase();
           payloadExpiresAt = resolvePaymentExpiresAt(inv.payment_gateway, { payload: parsedPayload });
           const ms = payloadExpiresAt ? new Date(payloadExpiresAt).getTime() : 0;
           if (Number.isFinite(ms) && ms > 0) expiresAtMs = ms;
@@ -2967,7 +2999,15 @@ router.post('/public/payment/create/:invoiceId', async (req, res) => {
         } catch {}
       }
 
-      if (Number.isFinite(expiresAtMs) && expiresAtMs > Date.now()) {
+      // Pastikan metode transaksi sebelumnya cocok dengan yang diminta
+      let methodMatches = true;
+      if (existingMethod) {
+        const existingIsQris = existingMethod.startsWith('QRIS');
+        if (isQrisRequested && !existingIsQris) methodMatches = false;
+        else if (!isQrisRequested && existingIsQris) methodMatches = false;
+      }
+
+      if (methodMatches && Number.isFinite(expiresAtMs) && expiresAtMs > Date.now()) {
         logger.info(`[Payment] Reusing existing link for INV-${inv.id} (public)`);
         return res.redirect(inv.payment_link);
       }
@@ -2987,13 +3027,10 @@ router.post('/public/payment/create/:invoiceId', async (req, res) => {
     if (gateway === 'tripay') {
       try {
         tripayChannels = await paymentSvc.getTripayChannels();
-        const allowedList = (tripayChannels || []).map(c => String(c?.code || '').toUpperCase()).filter(Boolean);
         tripayCandidates = tripayMethodCandidatesForAmount(tripayChannels, inv.amount);
-        if (!tripayCandidates || tripayCandidates.length === 0) tripayCandidates = allowedList;
-        const allowed = new Set(tripayCandidates);
-        if (!allowed.has(method)) method = tripayCandidates[0] || 'QRIS';
+        method = resolveTripayMethod(selectedMethod, tripayChannels, inv.amount);
       } catch {
-        method = 'QRIS';
+        method = isQrisRequested ? 'QRIS2' : 'BNIVA';
       }
     }
 
@@ -3009,20 +3046,42 @@ router.post('/public/payment/create/:invoiceId', async (req, res) => {
         result = await paymentSvc.createTripayTransaction(inv, cust, method, appUrl);
       } catch (e) {
         const msg = String(e?.message || e || '');
-        const canRetry =
-          (msg.includes('Payment channel is not enabled') || msg.includes('Minimum payment amount')) &&
-          Array.isArray(tripayChannels) &&
-          tripayChannels.length > 0;
-        if (!canRetry) throw e;
 
-        const pool = (tripayCandidates && tripayCandidates.length > 0)
-          ? tripayCandidates
-          : tripayMethodCandidatesForAmount(tripayChannels, inv.amount);
-        const fallback = (pool || []).filter(code => code && code !== method)[0];
-        if (!fallback) throw e;
+        if (isQrisRequested) {
+          if (method === 'QRIS2') {
+            try {
+              method = 'QRIS';
+              result = await paymentSvc.createTripayTransaction(inv, cust, method, appUrl);
+            } catch (err2) {
+              const msg2 = String(err2?.message || err2 || '');
+              if (msg2.includes('Payment channel is not enabled') || msg.includes('Payment channel is not enabled')) {
+                throw new Error('Metode pembayaran QRIS belum diaktifkan di akun Tripay Anda. Silakan aktifkan channel QRIS di menu Merchant > Channel Pembayaran pada dashboard Tripay.');
+              }
+              throw err2;
+            }
+          } else if (msg.includes('Payment channel is not enabled')) {
+            throw new Error('Metode pembayaran QRIS belum diaktifkan di akun Tripay Anda. Silakan aktifkan channel QRIS di menu Merchant > Channel Pembayaran pada dashboard Tripay.');
+          } else {
+            throw e;
+          }
+        }
 
-        method = fallback;
-        result = await paymentSvc.createTripayTransaction(inv, cust, method, appUrl);
+        if (!result) {
+          const canRetry =
+            (msg.includes('Payment channel is not enabled') || msg.includes('Minimum payment amount')) &&
+            Array.isArray(tripayChannels) &&
+            tripayChannels.length > 0;
+          if (!canRetry) throw e;
+
+          const pool = (tripayCandidates && tripayCandidates.length > 0)
+            ? tripayCandidates
+            : tripayMethodCandidatesForAmount(tripayChannels, inv.amount);
+          const fallback = (pool || []).filter(code => code && code !== method)[0];
+          if (!fallback) throw e;
+
+          method = fallback;
+          result = await paymentSvc.createTripayTransaction(inv, cust, method, appUrl);
+        }
       }
     }
 
@@ -3223,14 +3282,17 @@ router.get('/payment/create/:invoiceId', async (req, res) => {
     }
 
     const methodRaw = String(req.query.method || 'QRIS').toUpperCase();
+    const isQrisRequested = methodRaw === 'QRIS' || methodRaw === 'QRIS2' || methodRaw === 'QRISC' || methodRaw.startsWith('QRIS');
 
     const force = String(req.query.force || '').toLowerCase() === '1' || String(req.query.force || '').toLowerCase() === 'true';
     if (!force && inv.payment_link) {
       let expiresAtMs = inv.payment_expires_at ? new Date(inv.payment_expires_at).getTime() : 0;
       let payloadExpiresAt = null;
+      let existingMethod = '';
       if (inv.payment_payload) {
         try {
           const parsedPayload = typeof inv.payment_payload === 'string' ? JSON.parse(inv.payment_payload) : inv.payment_payload;
+          existingMethod = String(parsedPayload?.payment_method || parsedPayload?.method || '').toUpperCase();
           payloadExpiresAt = resolvePaymentExpiresAt(inv.payment_gateway, { payload: parsedPayload });
           const ms = payloadExpiresAt ? new Date(payloadExpiresAt).getTime() : 0;
           if (Number.isFinite(ms) && ms > 0) expiresAtMs = ms;
@@ -3250,7 +3312,15 @@ router.get('/payment/create/:invoiceId', async (req, res) => {
         } catch {}
       }
 
-      if (Number.isFinite(expiresAtMs) && expiresAtMs > Date.now()) {
+      // Pastikan metode transaksi sebelumnya cocok dengan yang diminta
+      let methodMatches = true;
+      if (existingMethod) {
+        const existingIsQris = existingMethod.startsWith('QRIS');
+        if (isQrisRequested && !existingIsQris) methodMatches = false;
+        else if (!isQrisRequested && existingIsQris) methodMatches = false;
+      }
+
+      if (methodMatches && Number.isFinite(expiresAtMs) && expiresAtMs > Date.now()) {
         logger.info(`[Payment] Reusing existing link for INV-${inv.id}`);
         return res.redirect(inv.payment_link);
       }
@@ -3304,13 +3374,10 @@ router.get('/payment/create/:invoiceId', async (req, res) => {
     if (gateway === 'tripay') {
       try {
         tripayChannels = await paymentSvc.getTripayChannels();
-        const allowedList = (tripayChannels || []).map(c => String(c?.code || '').toUpperCase()).filter(Boolean);
         tripayCandidates = tripayMethodCandidatesForAmount(tripayChannels, inv.amount);
-        if (!tripayCandidates || tripayCandidates.length === 0) tripayCandidates = allowedList;
-        const allowed = new Set(tripayCandidates);
-        if (!allowed.has(method)) method = tripayCandidates[0] || 'QRIS';
+        method = resolveTripayMethod(methodRaw, tripayChannels, inv.amount);
       } catch (e) {
-        throw new Error('Metode pembayaran Tripay tidak tersedia');
+        method = isQrisRequested ? 'QRIS2' : 'BNIVA';
       }
     }
 
@@ -3323,20 +3390,42 @@ router.get('/payment/create/:invoiceId', async (req, res) => {
         result = await paymentSvc.createTripayTransaction(inv, cust, method, appUrl);
       } catch (e) {
         const msg = String(e?.message || e || '');
-        const canRetry =
-          (msg.includes('Payment channel is not enabled') || msg.includes('Minimum payment amount')) &&
-          Array.isArray(tripayChannels) &&
-          tripayChannels.length > 0;
-        if (!canRetry) throw e;
 
-        const pool = (tripayCandidates && tripayCandidates.length > 0)
-          ? tripayCandidates
-          : tripayMethodCandidatesForAmount(tripayChannels, inv.amount);
-        const fallback = (pool || []).filter(code => code && code !== method)[0];
-        if (!fallback) throw e;
+        if (isQrisRequested) {
+          if (method === 'QRIS2') {
+            try {
+              method = 'QRIS';
+              result = await paymentSvc.createTripayTransaction(inv, cust, method, appUrl);
+            } catch (err2) {
+              const msg2 = String(err2?.message || err2 || '');
+              if (msg2.includes('Payment channel is not enabled') || msg.includes('Payment channel is not enabled')) {
+                throw new Error('Metode pembayaran QRIS belum diaktifkan di akun Tripay Anda. Silakan aktifkan channel QRIS di menu Merchant > Channel Pembayaran pada dashboard Tripay.');
+              }
+              throw err2;
+            }
+          } else if (msg.includes('Payment channel is not enabled')) {
+            throw new Error('Metode pembayaran QRIS belum diaktifkan di akun Tripay Anda. Silakan aktifkan channel QRIS di menu Merchant > Channel Pembayaran pada dashboard Tripay.');
+          } else {
+            throw e;
+          }
+        }
 
-        method = fallback;
-        result = await paymentSvc.createTripayTransaction(inv, cust, method, appUrl);
+        if (!result) {
+          const canRetry =
+            (msg.includes('Payment channel is not enabled') || msg.includes('Minimum payment amount')) &&
+            Array.isArray(tripayChannels) &&
+            tripayChannels.length > 0;
+          if (!canRetry) throw e;
+
+          const pool = (tripayCandidates && tripayCandidates.length > 0)
+            ? tripayCandidates
+            : tripayMethodCandidatesForAmount(tripayChannels, inv.amount);
+          const fallback = (pool || []).filter(code => code && code !== method)[0];
+          if (!fallback) throw e;
+
+          method = fallback;
+          result = await paymentSvc.createTripayTransaction(inv, cust, method, appUrl);
+        }
       }
     }
     
@@ -4185,13 +4274,10 @@ router.post('/topup/create', express.urlencoded({ extended: true }), async (req,
     if (gateway === 'tripay') {
       try {
         tripayChannels = await paymentSvc.getTripayChannels();
-        const allowedList = (tripayChannels || []).map(c => String(c?.code || '').toUpperCase()).filter(Boolean);
         tripayCandidates = tripayMethodCandidatesForAmount(tripayChannels, amount);
-        if (!tripayCandidates || tripayCandidates.length === 0) tripayCandidates = allowedList;
-        const allowed = new Set(tripayCandidates);
-        if (!allowed.has(method)) method = tripayCandidates[0] || 'QRIS';
+        method = resolveTripayMethod(method, tripayChannels, amount);
       } catch {
-        method = 'QRIS';
+        method = (method && (method === 'QRIS' || method.startsWith('QRIS'))) ? 'QRIS2' : 'BNIVA';
       }
     }
 
@@ -4267,13 +4353,10 @@ router.post('/agent-topup/create', express.urlencoded({ extended: true }), async
     if (gateway === 'tripay') {
       try {
         tripayChannels = await paymentSvc.getTripayChannels();
-        const allowedList = (tripayChannels || []).map(c => String(c?.code || '').toUpperCase()).filter(Boolean);
         tripayCandidates = tripayMethodCandidatesForAmount(tripayChannels, amount);
-        if (!tripayCandidates || tripayCandidates.length === 0) tripayCandidates = allowedList;
-        const allowed = new Set(tripayCandidates);
-        if (!allowed.has(method)) method = tripayCandidates[0] || 'QRIS';
+        method = resolveTripayMethod(method, tripayChannels, amount);
       } catch {
-        method = 'QRIS';
+        method = (method && (method === 'QRIS' || method.startsWith('QRIS'))) ? 'QRIS2' : 'BNIVA';
       }
     }
 

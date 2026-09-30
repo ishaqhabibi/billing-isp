@@ -2326,7 +2326,7 @@
 
     function submitPayment(method) {
       if (!currentInvId) return;
-      window.location.href = `/customer/payment/create/${currentInvId}?method=${method}`;
+      window.location.href = `/customer/payment/create/${currentInvId}?method=${method}&force=1`;
     }
 
     function filterInvoices(status, btnEl) {

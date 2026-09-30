@@ -911,7 +911,7 @@
                       let badgeClass = 'pb-bank';
                       let iconHtml = '<i class="bi bi-credit-card"></i>';
                       
-                      if (code === 'QRIS') {
+                      if (code === 'QRIS' || code === 'QRIS2' || code.startsWith('QRIS')) {
                         badgeClass = 'pb-qris';
                         iconHtml = '<i class="bi bi-qr-code-scan"></i>';
                       } else if (group.includes('e-wallet') || group.includes('ewallet')) {

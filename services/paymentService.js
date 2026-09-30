@@ -67,10 +67,11 @@ function normalizePhone(phone) {
  */
 async function createTripayTransaction(invoice, customer, method = 'QRIS', appUrl = '', opts = {}) {
   const settings = getSettingsWithCache();
-  const apiKey = settings.tripay_api_key;
-  const privateKey = settings.tripay_private_key;
-  const merchantCode = settings.tripay_merchant_code;
-  const isLive = settings.tripay_mode === 'live' || settings.tripay_mode === 'production';
+  const apiKey = String(settings.tripay_api_key || '').trim();
+  const privateKey = String(settings.tripay_private_key || '').trim();
+  const merchantCode = String(settings.tripay_merchant_code || '').trim();
+  const isSandboxKey = apiKey.startsWith('DEV-');
+  const isLive = !isSandboxKey && (settings.tripay_mode === 'live' || settings.tripay_mode === 'production');
   
   if (!apiKey || !privateKey || !merchantCode) {
     throw new Error('Tripay Error: Pengaturan API Key, Private Key, atau Merchant Code belum diisi.');
@@ -124,7 +125,7 @@ async function createTripayTransaction(invoice, customer, method = 'QRIS', appUr
   };
 
   try {
-    const res = await axios.post(baseUrl, payload, {
+    let res = await axios.post(baseUrl, payload, {
       headers: { Authorization: `Bearer ${apiKey}` }
     });
     
@@ -139,6 +140,30 @@ async function createTripayTransaction(invoice, customer, method = 'QRIS', appUr
     }
     throw new Error(res.data.message || 'Gagal membuat transaksi di Tripay');
   } catch (error) {
+    const errMsg = String(error?.response?.data?.message || error?.message || '');
+    // Jika gagal dengan channel not enabled untuk metode QRIS/QRIS2, coba varian lainnya
+    const isQrisVar = method === 'QRIS' || method === 'QRIS2';
+    if (isQrisVar && errMsg.includes('Payment channel is not enabled')) {
+      const altMethod = method === 'QRIS' ? 'QRIS2' : 'QRIS';
+      try {
+        const altPayload = { ...payload, method: altMethod };
+        const res2 = await axios.post(baseUrl, altPayload, {
+          headers: { Authorization: `Bearer ${apiKey}` }
+        });
+        if (res2.data && res2.data.success) {
+          logger.info(`[Tripay] Transaksi berhasil dengan varian channel ${altMethod} (sebelumnya ${method})`);
+          return {
+            success: true,
+            link: res2.data.data.checkout_url,
+            reference: res2.data.data.reference,
+            order_id: merchantRef,
+            payload: res2.data.data
+          };
+        }
+      } catch (err2) {
+        // Biarkan lanjut ke throw error awal
+      }
+    }
     throw formatGatewayError('Tripay', error);
   }
 }
@@ -434,8 +459,9 @@ function verifyDuitkuWebhook(body, apiKey) {
  */
 async function getTripayChannels() {
   const settings = getSettingsWithCache();
-  const apiKey = settings.tripay_api_key;
-  const isLive = settings.tripay_mode === 'live' || settings.tripay_mode === 'production';
+  const apiKey = String(settings.tripay_api_key || '').trim();
+  const isSandboxKey = apiKey.startsWith('DEV-');
+  const isLive = !isSandboxKey && (settings.tripay_mode === 'live' || settings.tripay_mode === 'production');
   
   if (!apiKey) return [];
 
@@ -446,7 +472,7 @@ async function getTripayChannels() {
   try {
     const res = await axios.get(baseUrl, {
       headers: { Authorization: `Bearer ${apiKey}` },
-      timeout: 3000
+      timeout: 5000
     });
     
     if (!res.data || !res.data.success) {
