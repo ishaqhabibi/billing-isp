@@ -472,29 +472,18 @@ function collectRefreshObjects(device) {
   const isTr181 = !!device?.Device;
 
   if (isTr181) {
-    // TR-181 Device - validate before pushing
-    if (device?.Device?.Hosts?.Host) {
-      objects.push('Device.Hosts.Host');
-    }
-    if (device?.Device?.WiFi?.AccessPoint?.['1']) {
-      objects.push('Device.WiFi.AccessPoint.1.AssociatedDevice');
-    }
-    if (device?.Device?.WiFi?.AccessPoint?.['2']) {
-      objects.push('Device.WiFi.AccessPoint.2.AssociatedDevice');
-    }
+    // TR-181 Device
+    objects.push('Device.Hosts.Host');
+    objects.push('Device.WiFi.AccessPoint.1.AssociatedDevice');
+    objects.push('Device.WiFi.AccessPoint.2.AssociatedDevice');
   } else {
-    // TR-098 Device (InternetGatewayDevice) - validate before pushing
-    // FIX for Error 9005: Only query objects that exist in device cache
-    // Some devices (e.g. ZTE GM220-S XPON) don't have LANDevice/WiFi support
-    if (device?.InternetGatewayDevice?.LANDevice?.['1']?.Hosts?.Host) {
-      objects.push('InternetGatewayDevice.LANDevice.1.Hosts.Host');
-    }
-    if (device?.InternetGatewayDevice?.LANDevice?.['1']?.WLANConfiguration?.['1']?.AssociatedDevice) {
-      objects.push('InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice');
-    }
-    if (device?.InternetGatewayDevice?.LANDevice?.['1']?.WLANConfiguration?.['5']) {
-      objects.push('InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice');
-    }
+    // TR-098 Device (InternetGatewayDevice - Fiberhome, ZTE, Huawei, etc.)
+    // Always poll Hosts.Host (where Fiberhome, ZTE, Huawei keep LAN/WLAN hosts)
+    objects.push('InternetGatewayDevice.LANDevice.1.Hosts.Host');
+    objects.push('InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice');
+    // Fiberhome / multi-AP dual band 5GHz
+    objects.push('InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.AssociatedDevice');
+    objects.push('InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice');
   }
 
   return Array.from(new Set(objects));
@@ -786,15 +775,25 @@ function mapDeviceData(device, tag, isPppoeActive = false) {
         let isReallyOnline = false;
         let ifaceLabel = 'Koneksi Kabel LAN';
 
+        const activeVal = typeof entry.Active === 'object' ? entry.Active?._value : entry.Active;
+        const isEntryActive = activeVal === true || activeVal === 'true' || activeVal === 1 || activeVal === '1';
+
         if (isWiFi) {
-          // Wi-Fi clients are ONLY genuinely active if currently associated to the radio
-          isReallyOnline = activeWifiMacs.has(macLower);
+          if (activeWifiMacs.has(macLower)) {
+            isReallyOnline = true;
+          } else if (activeWifiMacs.size > 0) {
+            // AssociatedDevice table exists and is populated, but this MAC isn't in it -> offline
+            isReallyOnline = false;
+          } else {
+            // AssociatedDevice table not supplied by ONT (e.g. Fiberhome) -> trust Host.Active
+            isReallyOnline = isEntryActive;
+          }
           const wifiDetail = activeWifiDetails.get(macLower);
-          ifaceLabel = wifiDetail ? `WiFi ${wifiDetail.ssidName}` : 'WiFi';
+          const is5G = ifaceRaw.includes('5') || (wifiDetail && wifiDetail.ssidName && wifiDetail.ssidName.includes('5G'));
+          ifaceLabel = wifiDetail ? `WiFi ${wifiDetail.ssidName}` : (is5G ? 'WiFi 5GHz' : 'WiFi 2.4GHz');
         } else {
           // Wired LAN Ethernet clients
-          const activeVal = typeof entry.Active === 'object' ? entry.Active?._value : entry.Active;
-          isReallyOnline = activeVal === true || activeVal === 'true' || activeVal === 1 || activeVal === '1';
+          isReallyOnline = isEntryActive;
           ifaceLabel = 'Koneksi Kabel LAN';
         }
 
@@ -854,8 +853,31 @@ function mapDeviceData(device, tag, isPppoeActive = false) {
   const uptimeRaw = getParameterWithPaths(device, parameterPaths.uptime);
 
   // Total active connected associations (WLAN + active LAN)
-  const onlineUsers = connectedUsers.filter(u => u.status === 'Online');
+  let onlineUsers = connectedUsers.filter(u => u.status === 'Online');
   let totalAssociations = onlineUsers.length;
+
+  // Fallback: check reported TotalAssociations if onlineUsers count is 0
+  if (totalAssociations === 0) {
+    const rawAssoc = getParameterWithPaths(device, [
+      'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.TotalAssociations',
+      'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.TotalAssociations',
+      'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.TotalAssociations',
+      'Device.WiFi.AccessPoint.1.AssociatedDeviceNumberOfEntries',
+      'Device.WiFi.AccessPoint.2.AssociatedDeviceNumberOfEntries'
+    ]);
+    const numAssoc = parseInt(rawAssoc, 10);
+    if (!isNaN(numAssoc) && numAssoc > 0) {
+      totalAssociations = numAssoc;
+      // If modem explicitly reports clients > 0 but Host.Active was omitted, mark top hosts as Online
+      let marked = 0;
+      for (const u of connectedUsers) {
+        if (marked < totalAssociations) {
+          u.status = 'Online';
+          marked++;
+        }
+      }
+    }
+  }
 
   function formatUptime(seconds) {
     if (!seconds || seconds === 'N/A' || seconds === '-') return seconds || 'N/A';

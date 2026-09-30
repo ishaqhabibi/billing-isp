@@ -2261,7 +2261,11 @@ router.get('/api/connected-devices', async (req, res) => {
   }
 
   const devices = (deviceData && Array.isArray(deviceData.connectedUsers)) ? deviceData.connectedUsers : [];
-  const onlineCount = devices.filter(d => String(d.status || '').toLowerCase() === 'online').length;
+  let onlineCount = devices.filter(d => String(d.status || '').toLowerCase() === 'online').length;
+  const reportedAssoc = Number(deviceData?.totalAssociations || 0);
+  if (reportedAssoc > onlineCount) {
+    onlineCount = reportedAssoc;
+  }
 
   return res.json({
     ok: true,

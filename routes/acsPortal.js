@@ -1018,18 +1018,42 @@ function extractClientCount(d) {
             const activeRaw = getVal('Active');
             const isWiFi = iface.includes('802.11') || iface.includes('wlan') || iface.includes('wifi');
 
+            const isEntryActive = activeRaw === true || activeRaw === 'true' || activeRaw === 1 || activeRaw === '1';
             let isActive = false;
             if (isWiFi) {
-                // Wi-Fi clients are ONLY genuinely active if currently associated to the radio
-                isActive = activeWifiMacs.has(mac);
+                if (activeWifiMacs.has(mac)) {
+                    isActive = true;
+                } else if (activeWifiMacs.size > 0) {
+                    isActive = false;
+                } else {
+                    // Fallback to Host.Active if ONT does not supply AssociatedDevice table (e.g. Fiberhome)
+                    isActive = isEntryActive;
+                }
             } else {
                 // Wired LAN Ethernet clients
-                isActive = activeRaw === true || activeRaw === 'true' || activeRaw === 1 || activeRaw === '1';
+                isActive = isEntryActive;
             }
 
             if (isActive) {
                 activeCount++;
             }
+        }
+
+        // If activeCount is 0, check TotalAssociations reported by ONT
+        if (activeCount === 0 && wlanConfig && typeof wlanConfig === 'object') {
+            let totalAssoc = 0;
+            for (const k of Object.keys(wlanConfig)) {
+                if (k.startsWith('_')) continue;
+                const band = wlanConfig[k];
+                if (band && typeof band === 'object') {
+                    const assoc = getNestedValue(band, 'TotalAssociations');
+                    if (assoc !== null && assoc !== undefined && assoc !== '-') {
+                        const num = parseInt(assoc, 10);
+                        if (!isNaN(num) && num > 0) totalAssoc += num;
+                    }
+                }
+            }
+            if (totalAssoc > 0) return totalAssoc;
         }
 
         return activeCount;
@@ -1218,12 +1242,20 @@ async function getLANHosts(deviceId, serverConfig) {
                 isAssociated = true;
             }
 
-            // Wi-Fi clients are only genuinely active if currently associated to the radio
+            // Wi-Fi clients are genuinely active if currently associated to the radio,
+            // or if AssociatedDevice table is not populated, if Host.Active is true
+            const isEntryActive = activeRaw === true || activeRaw === 'true' || activeRaw === 1;
             let isReallyActive = false;
             if (isWiFi) {
-                isReallyActive = isAssociated;
+                if (isAssociated) {
+                    isReallyActive = true;
+                } else if (wifiRssiMap.size > 0) {
+                    isReallyActive = false;
+                } else {
+                    isReallyActive = isEntryActive;
+                }
             } else {
-                isReallyActive = activeRaw === true || activeRaw === 'true' || activeRaw === 1;
+                isReallyActive = isEntryActive;
             }
 
             return {
@@ -1813,11 +1845,18 @@ router.get('/device/:deviceId', async (req, res) => {
                             const hMac = typeof entry?.MACAddress === 'object' ? entry?.MACAddress?._value || '-' : entry?.MACAddress || '-';
                             const hIface = typeof entry?.InterfaceType === 'object' ? entry?.InterfaceType?._value || '-' : entry?.InterfaceType || '-';
                             const isWiFi = hIface.toLowerCase().includes('wifi') || hIface.toLowerCase().includes('802.11') || hIface.toLowerCase().includes('wlan') || activeWifiMacs.has(String(hMac).toLowerCase());
+                            const isEntryActive = entry?.Active === true || entry?.Active === 'true' || entry?.Active === 1 || entry?.Active?._value === 'true' || entry?.Active?._value === '1';
                             let isActive = false;
                             if (isWiFi) {
-                                isActive = activeWifiMacs.has(String(hMac).toLowerCase());
+                                if (activeWifiMacs.has(String(hMac).toLowerCase())) {
+                                    isActive = true;
+                                } else if (activeWifiMacs.size > 0) {
+                                    isActive = false;
+                                } else {
+                                    isActive = isEntryActive;
+                                }
                             } else {
-                                isActive = entry?.Active === true || entry?.Active === 'true' || entry?.Active === 1 || entry?.Active?._value === 'true' || entry?.Active?._value === '1';
+                                isActive = isEntryActive;
                             }
                             if (hMac && hMac !== '-') {
                                 rawClients.push({
@@ -1835,6 +1874,30 @@ router.get('/device/:deviceId', async (req, res) => {
                     }
                 }
             } catch (e) {}
+        }
+
+        // Check if ONT reports TotalAssociations on WLAN
+        const totalWlanAssoc = (function() {
+            let sum = 0;
+            const wc = getNestedValue(deviceData, 'InternetGatewayDevice.LANDevice.1.WLANConfiguration');
+            if (wc && typeof wc === 'object') {
+                for (const b of Object.keys(wc)) {
+                    if (b.startsWith('_')) continue;
+                    const val = parseInt(getNestedValue(wc[b], 'TotalAssociations'), 10);
+                    if (!isNaN(val) && val > 0) sum += val;
+                }
+            }
+            return sum;
+        })();
+
+        if (totalWlanAssoc > 0 && Array.isArray(rawClients) && rawClients.length > 0 && !rawClients.some(c => c.active)) {
+            let marked = 0;
+            for (const c of rawClients) {
+                if (marked < totalWlanAssoc) {
+                    c.active = true;
+                    marked++;
+                }
+            }
         }
 
         const clients = (Array.isArray(rawClients) ? rawClients : []).map((c) => ({

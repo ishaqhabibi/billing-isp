@@ -600,23 +600,27 @@ function queueBootstrapTasksIfNeeded(deviceId, currentParams) {
         groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase']);
         groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase']);
         groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.PreSharedKey']);
+        groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.TotalAssociations']);
         
         // WLAN 5G (Index 5 - ZTE, Huawei, standard multi-AP)
         groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID']);
         groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.KeyPassphrase']);
         groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.PreSharedKey.1.KeyPassphrase']);
         groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.PreSharedKey.1.PreSharedKey']);
+        groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.TotalAssociations']);
 
         // WLAN 5G (Index 2 - Fiberhome alternative dual-band mapping)
         groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID']);
         groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.KeyPassphrase']);
         groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.PreSharedKey.1.KeyPassphrase']);
         groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.PreSharedKey.1.PreSharedKey']);
+        groups.push(['InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.TotalAssociations']);
 
         // WLAN 5G (LANDevice 2 - Dual LANDevice architecture)
         groups.push(['InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.SSID']);
         groups.push(['InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.KeyPassphrase']);
         groups.push(['InternetGatewayDevice.LANDevice.2.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase']);
+        groups.push(['InternetGatewayDevice.LANDevice.1.Hosts.HostNumberOfEntries']);
         
         // WAN / PPPoE (Extended indexes to check common interfaces only)
         // CIOT ONU hanya support max 3 WAN connections, reduce loop dari 5 ke 3
@@ -680,11 +684,14 @@ function queueBootstrapTasksIfNeeded(deviceId, currentParams) {
       const refreshObjects = isTr181
         ? [
             'Device.Hosts.Host',
-            'Device.WiFi.AccessPoint.1.AssociatedDevice'
+            'Device.WiFi.AccessPoint.1.AssociatedDevice',
+            'Device.WiFi.AccessPoint.2.AssociatedDevice'
           ]
         : [
             'InternetGatewayDevice.LANDevice.1.Hosts.Host',
-            'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice'
+            'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice',
+            'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.AssociatedDevice',
+            'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice'
           ];
       for (const objectName of refreshObjects) {
         db.prepare(
@@ -794,26 +801,33 @@ function queueRealtimeMonitoringTasks(deviceId, currentParams) {
       if (diffMs < 60_000) return;
     }
 
-    const isTr181 = Object.keys(currentParams || {}).some(k => String(k).startsWith('Device.'));
+    const paramKeys = Object.keys(currentParams || {});
+    const isTr181 = paramKeys.some(k => String(k).startsWith('Device.'));
     const now = nowLocal();
     
-    // FIX for Error 9005: Only queue tasks for objects that exist in device params
-    // Some devices (e.g. ZTE GM220-S XPON) don't support LANDevice/WiFi
+    // Robust detection: Only queue tasks for objects that the device architecture supports
     const refreshObjects = [];
     
     if (isTr181) {
-      if (currentParams?.['Device.Hosts.Host']) {
+      const hasHosts = paramKeys.some(k => k.startsWith('Device.Hosts.'));
+      const hasWifi = paramKeys.some(k => k.startsWith('Device.WiFi.'));
+      if (hasHosts || paramKeys.length === 0) {
         refreshObjects.push('Device.Hosts.Host');
       }
-      if (currentParams?.['Device.WiFi.AccessPoint.1.AssociatedDevice']) {
+      if (hasWifi || paramKeys.length === 0) {
         refreshObjects.push('Device.WiFi.AccessPoint.1.AssociatedDevice');
+        refreshObjects.push('Device.WiFi.AccessPoint.2.AssociatedDevice');
       }
     } else {
-      if (currentParams?.['InternetGatewayDevice.LANDevice.1.Hosts.Host']) {
+      const hasLan = paramKeys.some(k => k.startsWith('InternetGatewayDevice.LANDevice.'));
+      const hasWlan = paramKeys.some(k => k.includes('WLANConfiguration.'));
+      if (hasLan || paramKeys.length === 0) {
         refreshObjects.push('InternetGatewayDevice.LANDevice.1.Hosts.Host');
       }
-      if (currentParams?.['InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice']) {
+      if (hasWlan || paramKeys.length === 0) {
         refreshObjects.push('InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice');
+        refreshObjects.push('InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.AssociatedDevice');
+        refreshObjects.push('InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice');
       }
     }
     
@@ -1333,15 +1347,42 @@ function handleGetParameterNamesResponse(body, session, sid, res) {
         }
       } else {
         const wantedHostSuffixes = [
-          '.HostName', '.IPAddress', '.MACAddress', '.InterfaceType', '.Active', '.LeaseTimeRemaining', '.RemainingLeaseTime'
+          '.HostName', '.IPAddress', '.MACAddress', '.InterfaceType', '.Active', '.LeaseTimeRemaining', '.RemainingLeaseTime', '.Layer2Interface', '.Interface'
         ];
         const wantedAssocSuffixes = [
-          '.AssociatedDeviceMACAddress', '.MACAddress', '.IPAddress', '.HostName', '.DeviceName'
+          '.AssociatedDeviceMACAddress', '.MACAddress', '.IPAddress', '.HostName', '.DeviceName', '.AssociatedDeviceIPAddress', '.AssociatedDeviceAuthenticationState', '.LastDataTransmitRate', '.SignalStrength', '.X_HW_RSSI'
         ];
         let filtered = names;
         const obj = String(objectName || '');
         if (obj.includes('Hosts.Host')) {
           filtered = names.filter(n => wantedHostSuffixes.some(s => String(n).endsWith(s)));
+
+          // Prune obsolete Host instances from params if ONT removed them
+          if (Array.isArray(names)) {
+            const existingPrefixes = new Set();
+            for (const n of names) {
+              const m = n.match(/^(.*Hosts\.Host\.\d+\.)/);
+              if (m) existingPrefixes.add(m[1]);
+            }
+            try {
+              const devRow = db.prepare('SELECT params FROM acs_devices WHERE id = ?').get(session.deviceId);
+              if (devRow && devRow.params) {
+                const current = JSON.parse(devRow.params || '{}');
+                let changed = false;
+                for (const k of Object.keys(current)) {
+                  const m = k.match(/^(.*Hosts\.Host\.\d+\.)/);
+                  if (m && !existingPrefixes.has(m[1])) {
+                    delete current[k];
+                    changed = true;
+                  }
+                }
+                if (changed) {
+                  db.prepare('UPDATE acs_devices SET params = ?, updated_at = ? WHERE id = ?')
+                    .run(JSON.stringify(current), now, session.deviceId);
+                }
+              }
+            } catch {}
+          }
         } else if (obj.includes('AssociatedDevice')) {
           filtered = names.filter(n => wantedAssocSuffixes.some(s => String(n).endsWith(s)));
         }
