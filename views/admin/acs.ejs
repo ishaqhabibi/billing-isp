@@ -2359,21 +2359,16 @@ const CONSOLE_TEMPLATES = {
         ]
     },
     wifi_client_list: {
-        name: "getParameterValues",
-        parameterNames: [
-            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.TotalAssociations",
-            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDeviceNumberOfEntries",
-            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice.",
-            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.TotalAssociations",
-            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDeviceNumberOfEntries",
-            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice."
-        ]
+        name: "refreshObject",
+        objectName: "InternetGatewayDevice.LANDevice.1.Hosts.Host"
     },
     lan_hosts: {
         name: "getParameterValues",
         parameterNames: [
-            "InternetGatewayDevice.LANDevice.1.Hosts.HostNumberOfEntries",
-            "InternetGatewayDevice.LANDevice.1.Hosts.Host."
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.TotalAssociations",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.TotalAssociations",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.TotalAssociations",
+            "InternetGatewayDevice.LANDevice.1.Hosts.HostNumberOfEntries"
         ]
     },
     set_wifi_ssid: {
