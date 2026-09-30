@@ -660,14 +660,19 @@
                                 <select id="consoleDeviceSelect" class="fc" style="height:38px; font-family:monospace; font-size:12px;" onchange="onConsoleDeviceChange()">
                                     <% if (devices && devices.length > 0) { %>
                                         <% devices.forEach((d, idx) => { %>
-                                            <option value="<%= d._id %>" 
+                                            <% const devId = d.id || d._id || d.sn; %>
+                                            <% const devSn = d.sn || d.serial_number || devId; %>
+                                            <% const devMfg = d.manufacturer || d.vendor || '-'; %>
+                                            <% const devModel = d.model || d.product_class || '-'; %>
+                                            <% const devCust = d.customer_name || d.pppoe_user || d.pppoe_username || 'No Customer'; %>
+                                            <option value="<%= devId %>" 
                                                     <%= idx === 0 ? 'selected' : '' %>
-                                                    data-sn="<%= d.serial_number || d._id %>" 
-                                                    data-model="<%= d.model || d.product_class || '-' %>" 
-                                                    data-vendor="<%= d.vendor || d.manufacturer || '-' %>" 
+                                                    data-sn="<%= devSn %>" 
+                                                    data-model="<%= devModel %>" 
+                                                    data-vendor="<%= devMfg %>" 
                                                     data-online="<%= d.isOnline ? 'true' : 'false' %>"
-                                                    data-acsid="<%= d._acs_server_id || 'builtin' %>">
-                                                <%= (d.isOnline ? '🟢' : '⚪') %> <%= (d.vendor || '').toUpperCase() %> <%= d.serial_number || d._id %> &bull; <%= d.customer_name || d.pppoe_username || 'No Customer' %>
+                                                    data-acsid="<%= d.acs_server_id || d._acs_server_id || 'builtin' %>">
+                                                <%= (d.isOnline ? '🟢' : '⚪') %> <%= devMfg.toUpperCase() %> <%= devSn %> &bull; <%= devCust %>
                                             </option>
                                         <% }); %>
                                     <% } else { %>
@@ -2438,8 +2443,9 @@ async function executeConsoleScript() {
     const httpBadge = document.getElementById('consoleHttpStatusBadge');
     const taskIdBadge = document.getElementById('consoleTaskIdBadge');
 
-    const deviceId = devSelect ? devSelect.value : '';
-    const acsId = acsSelect ? acsSelect.value : 'builtin';
+    const opt = (devSelect && devSelect.selectedIndex >= 0) ? devSelect.options[devSelect.selectedIndex] : null;
+    const deviceId = opt ? (opt.value || opt.getAttribute('data-sn') || '') : (devSelect ? devSelect.value : '');
+    const acsId = acsSelect ? acsSelect.value : (opt ? opt.getAttribute('data-acsid') : 'builtin');
     const connectionRequest = chkCr ? chkCr.checked : true;
 
     if (!deviceId) {
