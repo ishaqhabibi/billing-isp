@@ -1209,10 +1209,11 @@
               <i class="bi bi-search"></i> Deteksi Parameter Modem
             </button>
           </div>
+          <div id="acs_wifi_action_alert" style="display:none; font-size:11.5px; padding:8px 12px; border-radius:8px; margin-bottom:8px;"></div>
           <div id="acs_wifi_diag_status" style="font-size:11px; color:var(--muted);">
             Memuat status parameter modem...
           </div>
-          <div id="acs_wifi_task_logs" style="margin-top:8px; max-height:110px; overflow-y:auto; font-family:monospace; font-size:10px; display:none; background:var(--bg); padding:6px 8px; border-radius:6px; border:1px solid var(--border);">
+          <div id="acs_wifi_task_logs" style="margin-top:8px; max-height:130px; overflow-y:auto; font-family:monospace; font-size:10.5px; display:none; background:var(--bg); padding:8px 10px; border-radius:8px; border:1px solid var(--border);">
           </div>
         </div>
 
@@ -1460,14 +1461,21 @@ async function loadWifiDiagnostics(deviceId) {
                         try {
                             const rawIso = String(t.updated_at).replace(' ', 'T');
                             const dt = new Date(rawIso.includes('Z') ? rawIso : rawIso + 'Z');
-                            time = !isNaN(dt.getTime()) 
-                                ? dt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) 
-                                : rawIso.slice(11, 19);
+                            if (!isNaN(dt.getTime())) {
+                                const day = String(dt.getDate()).padStart(2, '0');
+                                const month = String(dt.getMonth() + 1).padStart(2, '0');
+                                const hours = String(dt.getHours()).padStart(2, '0');
+                                const mins = String(dt.getMinutes()).padStart(2, '0');
+                                const secs = String(dt.getSeconds()).padStart(2, '0');
+                                time = `<span style="color:#94a3b8; font-weight:600;">${day}/${month} ${hours}:${mins}:${secs}</span>`;
+                            } else {
+                                time = rawIso.slice(5, 19).replace('T', ' ');
+                            }
                         } catch (_) {
-                            time = String(t.updated_at).slice(11, 19);
+                            time = String(t.updated_at).slice(5, 19);
                         }
                     }
-                    return `<div style="padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.05);">${time} ${badge} ${detail}</div>`;
+                    return `<div style="padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.05);">${time} ${badge} ${detail}</div>`;
                 }).join('');
             }
         }
@@ -1538,6 +1546,8 @@ async function triggerWlanDiscovery() {
     }
 }
 
+let wlanProgressPollingTimer = null;
+
 async function submitAcsWifi(e) {
     e.preventDefault();
     const deviceId = document.getElementById('acs_wifi_device_id').value;
@@ -1551,6 +1561,7 @@ async function submitAcsWifi(e) {
     }
     const notifyWa = document.getElementById('acs_wifi_notify_wa').checked;
     const btn = document.getElementById('btn_save_acs_wifi');
+    const alertBox = document.getElementById('acs_wifi_action_alert');
 
     if (!ssid24 && !password24 && !ssid5 && !password5) {
         return alert('Silakan masukkan nama SSID atau password baru.');
@@ -1559,7 +1570,15 @@ async function submitAcsWifi(e) {
     if (password5 && password5.length < 8) return alert('Password Wi-Fi 5G minimal 8 karakter.');
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Menerapkan ke Modem...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengirim ke Modem...';
+
+    if (alertBox) {
+        alertBox.style.display = 'block';
+        alertBox.style.background = 'rgba(56,189,248,0.12)';
+        alertBox.style.border = '1px solid rgba(56,189,248,0.3)';
+        alertBox.style.color = '#38bdf8';
+        alertBox.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Mengirim perintah Wi-Fi ke antrean TR-069...';
+    }
 
     try {
         const res = await fetch('/admin/api/device/' + encodeURIComponent(deviceId) + '/wifi', {
@@ -1575,14 +1594,45 @@ async function submitAcsWifi(e) {
         });
         const data = await res.json();
         if (data.success) {
-            alert(data.message || 'Perintah ubah Wi-Fi berhasil dikirim ke antrean TR-069!');
-            closeModal('acsWifiModal');
-            location.reload();
+            if (alertBox) {
+                alertBox.style.display = 'block';
+                alertBox.style.background = 'rgba(16,185,129,0.12)';
+                alertBox.style.border = '1px solid rgba(16,185,129,0.3)';
+                alertBox.style.color = '#10b981';
+                alertBox.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> <strong>Perintah Terkirim!</strong> Memantau proses eksekusi modem secara live di bawah...';
+            }
+
+            // Segera muat log diagnostik
+            await loadWifiDiagnostics(deviceId);
+
+            // Jalankan live polling setiap 2 detik selama 16 detik
+            if (wlanProgressPollingTimer) clearInterval(wlanProgressPollingTimer);
+            let pollCounter = 0;
+            wlanProgressPollingTimer = setInterval(async () => {
+                pollCounter++;
+                await loadWifiDiagnostics(deviceId);
+                if (pollCounter >= 8) {
+                    clearInterval(wlanProgressPollingTimer);
+                    wlanProgressPollingTimer = null;
+                }
+            }, 2000);
         } else {
-            alert('Gagal: ' + (data.error || 'Terjadi kesalahan'));
+            if (alertBox) {
+                alertBox.style.display = 'block';
+                alertBox.style.background = 'rgba(239,68,68,0.12)';
+                alertBox.style.border = '1px solid rgba(239,68,68,0.3)';
+                alertBox.style.color = '#ef4444';
+                alertBox.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i> Gagal: ' + (data.error || data.message || 'Terjadi kesalahan');
+            }
         }
     } catch (err) {
-        alert('Error: ' + err.message);
+        if (alertBox) {
+            alertBox.style.display = 'block';
+            alertBox.style.background = 'rgba(239,68,68,0.12)';
+            alertBox.style.border = '1px solid rgba(239,68,68,0.3)';
+            alertBox.style.color = '#ef4444';
+            alertBox.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i> Error: ' + err.message;
+        }
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-save"></i> Terapkan Pengaturan';
