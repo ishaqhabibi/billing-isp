@@ -713,7 +713,8 @@
                                     </optgroup>
                                     <optgroup label="📶 Wi-Fi & Klien Terhubung">
                                         <option value="wifi_dualband">Audit Wi-Fi Dual-Band (SSID 2.4G & 5G + Sandi)</option>
-                                        <option value="lan_hosts">Pindai Perangkat Terhubung (Hosts / ARP)</option>
+                                        <option value="wifi_client_list">Pindai Klien Wi-Fi Aktif (WIFI Client List Real-Time)</option>
+                                        <option value="lan_hosts">Pindai Seluruh Host DHCP / LAN (Hosts / ARP)</option>
                                         <option value="set_wifi_ssid">Ubah Nama Wi-Fi (SetParameterValues SSID)</option>
                                         <option value="set_wifi_pass">Ubah Kata Sandi Wi-Fi (SetParameterValues Pass)</option>
                                     </optgroup>
@@ -2355,6 +2356,17 @@ const CONSOLE_TEMPLATES = {
             "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID",
             "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Enable",
             "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.KeyPassphrase"
+        ]
+    },
+    wifi_client_list: {
+        name: "getParameterValues",
+        parameterNames: [
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.TotalAssociations",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDeviceNumberOfEntries",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice.",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.TotalAssociations",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDeviceNumberOfEntries",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice."
         ]
     },
     lan_hosts: {
