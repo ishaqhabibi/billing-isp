@@ -212,6 +212,10 @@ const parameterPaths = {
   rxPower: [
     'VirtualParameters.RXPower',
     'VirtualParameters.redaman',
+    'InternetGatewayDevice.X_FH_PON_MANAGE.RxPower',
+    'InternetGatewayDevice.X_FH_PON_MANAGE.RXPower',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_FH_WANGponLinkConfig.RXPower',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_FH_WANGponLinkConfig.RxPower',
     'InternetGatewayDevice.WANDevice.1.WANPONInterfaceConfig.RXPower',
     'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANOAM.RXPower',
     'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_HW_OpticalSignal.RXPower',
@@ -476,6 +480,8 @@ function collectRefreshObjects(device) {
     objects.push('Device.Hosts.Host');
     objects.push('Device.WiFi.AccessPoint.1.AssociatedDevice');
     objects.push('Device.WiFi.AccessPoint.2.AssociatedDevice');
+    objects.push('Device.PPP.Interface.1');
+    objects.push('Device.Optical.Interface.1');
   } else {
     // TR-098 Device (InternetGatewayDevice - Fiberhome, ZTE, Huawei, etc.)
     // Always poll Hosts.Host (where Fiberhome, ZTE, Huawei keep LAN/WLAN hosts)
@@ -484,6 +490,12 @@ function collectRefreshObjects(device) {
     // Fiberhome / multi-AP dual band 5GHz
     objects.push('InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.AssociatedDevice');
     objects.push('InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice');
+    // PPPoE WAN connection & Uptime
+    objects.push('InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection');
+    // Optical Redaman (Fiberhome & Generic GPON)
+    objects.push('InternetGatewayDevice.X_FH_PON_MANAGE');
+    objects.push('InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_FH_WANGponLinkConfig');
+    objects.push('InternetGatewayDevice.WANDevice.1.WANPONInterfaceConfig');
   }
 
   return Array.from(new Set(objects));
@@ -842,10 +854,16 @@ function mapDeviceData(device, tag, isPppoeActive = false) {
 
   let rxPower = getParameterWithPaths(device, parameterPaths.rxPower);
   if (rxPower !== 'N/A' && rxPower !== '-' && rxPower !== '') {
-    const num = parseFloat(rxPower);
-    if (!isNaN(num) && num > 0) {
-      const dbVal = 30 + (Math.log10(num * Math.pow(10, -7)) * 10);
-      rxPower = (Math.ceil(dbVal * 100) / 100).toFixed(2);
+    const num = parseFloat(String(rxPower).replace(/dBm/i, '').trim());
+    if (!isNaN(num)) {
+      if (Math.abs(num) >= 500 && Math.abs(num) <= 50000) {
+        rxPower = (-(Math.abs(num) / 100)).toFixed(2);
+      } else if (num > 1000) {
+        const dbVal = 30 + (Math.log10(num * Math.pow(10, -7)) * 10);
+        rxPower = (Math.ceil(dbVal * 100) / 100).toFixed(2);
+      } else {
+        rxPower = num.toFixed(2);
+      }
     }
   }
   const pppoeIP = extractPppoeIp(device);

@@ -15,10 +15,14 @@
         .status-banner { padding: 12px 20px; border-radius: 10px; margin-bottom: 20px; font-weight: 700; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
         .status-online { background: rgba(16, 185, 129, 0.12); color: var(--success); border-color: rgba(16, 185, 129, 0.25); }
         .status-offline { background: rgba(239, 68, 68, 0.12); color: var(--danger); border-color: rgba(239, 68, 68, 0.25); }
-        .client-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; }
+        .client-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; transition: border-color 0.15s ease; }
         .client-header { display: flex; align-items: center; gap: 12px; }
-        .client-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .client-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 17px; }
         .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block; box-shadow: 0 0 8px #10b981; }
+        .client-tab-btn { background: transparent; border: none; border-bottom: 2px solid transparent; padding: 8px 14px; font-size: 13px; font-weight: 700; color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease; border-radius: 6px 6px 0 0; }
+        .client-tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.02); }
+        .client-tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); background: rgba(59,130,246,0.06); }
+        .tab-pill { border-radius: 999px; padding: 2px 7px; font-size: 11px; font-weight: 700; background: var(--bg3); color: var(--text); }
     </style>
 </head>
 <body>
@@ -50,8 +54,8 @@
                 </span>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
-                <button type="button" class="btn btn-g btn-sm" onclick="location.reload()" title="Refresh Halaman">
-                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                <button type="button" class="btn btn-g btn-sm" id="btn_refresh_tr069" onclick="refreshDeviceTR069('<%= device.id || device.serialNumber %>')" title="Tarik pembaruan data real-time via TR-069">
+                    <i class="bi bi-arrow-repeat"></i> Sinkronkan TR-069
                 </button>
                 <button type="button" class="btn btn-p btn-sm" onclick="openDetailWifiModal()">
                     <i class="bi bi-wifi"></i> Ubah Sandi Wi-Fi
@@ -80,32 +84,33 @@
                 </div>
             </div>
 
-            <!-- Card 2: Sinyal Optik & PON Telemetry -->
+            <!-- Card 2: Sinyal Optik & PON Telemetry (FiberHome HG6145D2) -->
             <div class="card">
                 <div class="card-header">
-                    <span><i class="bi bi-activity text-info"></i> Sinyal Optik &amp; PON</span>
+                    <span><i class="bi bi-activity text-info"></i> Sinyal Optik &amp; PON (Fiberhome)</span>
                     <% 
                         const rxNum = parseFloat(device.rxPower);
                         let rxColor = '#10b981';
                         let rxText = 'Normal';
                         if (!isNaN(rxNum)) {
                             if (rxNum >= -22.0) { rxColor = '#10b981'; rxText = 'Sangat Baik'; }
-                            else if (rxNum >= -26.9) { rxColor = '#f59e0b'; rxText = 'Waspada'; }
-                            else { rxColor = '#ef4444'; rxText = 'Kritis'; }
+                            else if (rxNum >= -26.5) { rxColor = '#3b82f6'; rxText = 'Normal / Baik'; }
+                            else if (rxNum >= -28.0) { rxColor = '#f59e0b'; rxText = 'Waspada (Tinggi)'; }
+                            else { rxColor = '#ef4444'; rxText = 'Kritis (Redaman Los)'; }
                         }
                     %>
                     <span class="badge" style="background:<%= rxColor %>; color:white;"><%= rxText %></span>
                 </div>
                 <div class="info-row">
-                    <span>RX Power (Penerimaan)</span>
+                    <span>RX Power (Redaman Terima)</span>
                     <span class="badge" style="background:<%= rxColor %>; color:white; font-size:13px; font-weight:700;">
-                        <%= device.rxPower && device.rxPower !== '-' ? device.rxPower + ' dBm' : '-' %>
+                        <%= device.rxPower && device.rxPower !== '-' ? (device.rxPower.includes('dBm') ? device.rxPower : device.rxPower + ' dBm') : '-' %>
                     </span>
                 </div>
-                <div class="info-row"><span>TX Power (Pemancar)</span><span><strong><%= device.txPower && device.txPower !== '-' ? device.txPower + ' dBm' : '+2.4 dBm (Normal)' %></strong></span></div>
+                <div class="info-row"><span>TX Power (Pemancar Laser)</span><span><strong><%= device.txPower && device.txPower !== '-' ? (device.txPower.includes('dBm') ? device.txPower : device.txPower + ' dBm') : '+2.40 dBm (Normal)' %></strong></span></div>
                 <div class="info-row"><span>Suhu Transceiver Optik</span><span><%= device.temperature && device.temperature !== '-' ? device.temperature : '46 °C (Normal)' %></span></div>
-                <div class="info-row"><span>Tegangan Optik (Voltage)</span><span><%= device.voltage && device.voltage !== '-' ? device.voltage : '3.3 V' %></span></div>
-                <div class="info-row"><span>Batas Redaman Standar</span><span style="font-size:11px; color:var(--muted);">-18 dBm s/d -26.5 dBm</span></div>
+                <div class="info-row"><span>Tegangan Optik (Voltage)</span><span><%= device.voltage && device.voltage !== '-' ? device.voltage : '3.30 V' %></span></div>
+                <div class="info-row"><span>Batas Redaman Standar</span><span style="font-size:11px; color:var(--muted);">-18.0 dBm s/d -26.5 dBm</span></div>
                 <div class="info-row"><span>Status Laser OLT Link</span><span class="badge bs"><i class="bi bi-check-circle-fill me-1"></i> Terhubung (Sync)</span></div>
             </div>
 
@@ -113,7 +118,13 @@
             <div class="card">
                 <div class="card-header">
                     <span><i class="bi bi-diagram-3 text-warning"></i> Jaringan &amp; WAN Internet</span>
-                    <span class="badge bs">PPPoE Route</span>
+                    <% if (device && device.pppoeStability && device.pppoeStability.status === 'flapping_warning') { %>
+                        <span class="badge" style="background:rgba(239,68,68,0.2); color:#ef4444; border:1px solid rgba(239,68,68,0.4);"><i class="bi bi-exclamation-triangle-fill me-1"></i>Flapping / Reconnect</span>
+                    <% } else if (device && device.pppoeStability && device.pppoeStability.status === 'stable') { %>
+                        <span class="badge" style="background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4);"><i class="bi bi-shield-check me-1"></i>Sangat Stabil</span>
+                    <% } else { %>
+                        <span class="badge bs">PPPoE Route</span>
+                    <% } %>
                 </div>
                 <div class="info-row"><span>Pelanggan Tertaut</span><span><strong><%= device.customerName && device.customerName !== '-' ? device.customerName : 'Belum Ditautkan' %></strong></span></div>
                 <div class="info-row"><span>Username PPPoE Aktif</span><span style="color:#60a5fa; font-weight:700;"><i class="bi bi-key-fill me-1"></i><%= device.pppoeUsername || '-' %></span></div>
@@ -124,6 +135,30 @@
                         <i class="bi bi-stopwatch text-muted"></i> <strong class="ticker-text" style="font-family:monospace;"><%= device.pppoeUptime || '-' %></strong>
                     </span>
                 </div>
+                <div class="info-row">
+                    <span>Stabilitas Link PPPoE</span>
+                    <% if (device && device.pppoeStability && device.pppoeStability.status === 'flapping_warning') { %>
+                        <span class="badge" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); font-weight:700;"><i class="bi bi-exclamation-triangle-fill me-1"></i>Pernah Putus (Reconnect Baru)</span>
+                    <% } else if (device && device.pppoeStability && device.pppoeStability.status === 'stable') { %>
+                        <span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-weight:700;"><i class="bi bi-shield-check me-1"></i>Sangat Stabil (> 24 Jam)</span>
+                    <% } else if (device && device.pppoeStability && device.pppoeStability.status === 'connected') { %>
+                        <span class="badge bs"><i class="bi bi-check-circle me-1"></i>Terhubung Normal</span>
+                    <% } else { %>
+                        <span class="badge bm"><i class="bi bi-question-circle me-1"></i><%= device.pppoeStability ? device.pppoeStability.label : '-' %></span>
+                    <% } %>
+                </div>
+                <% if (device && device.pppoeStability && device.pppoeStability.desc) { %>
+                    <div style="margin:8px 18px; padding:10px 14px; border-radius:8px; font-size:12px; line-height:1.45;
+                         background: <%= device.pppoeStability.status === 'flapping_warning' ? 'rgba(239,68,68,0.08)' : (device.pppoeStability.status === 'stable' ? 'rgba(16,185,129,0.08)' : 'rgba(59,130,246,0.08)') %>;
+                         border: 1px solid <%= device.pppoeStability.status === 'flapping_warning' ? 'rgba(239,68,68,0.25)' : (device.pppoeStability.status === 'stable' ? 'rgba(16,185,129,0.25)' : 'rgba(59,130,246,0.25)') %>;
+                         color: var(--text);">
+                        <strong style="color: <%= device.pppoeStability.status === 'flapping_warning' ? '#ef4444' : (device.pppoeStability.status === 'stable' ? '#10b981' : '#60a5fa') %>; display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                            <i class="bi <%= device.pppoeStability.status === 'flapping_warning' ? 'bi-exclamation-octagon-fill' : 'bi-info-circle-fill' %>"></i>
+                            Analisis Stabilitas PPPoE
+                        </strong>
+                        <%= device.pppoeStability.desc %>
+                    </div>
+                <% } %>
                 <div class="info-row"><span>Gateway &amp; Subnet LAN</span><code><%= (device && device.lanIp) || '192.168.1.1' %> / <%= (device && device.lanMask) || '255.255.255.0' %></code></div>
                 <div class="info-row"><span>DHCP Server Lokal</span><span class="badge <%= (device && device.dhcpEnabled) ? 'bs' : 'bm' %>"><%= (device && device.dhcpEnabled) ? 'Aktif' : 'Nonaktif' %></span></div>
                 <% if (device && device.allWans && device.allWans.length > 1) { %>
@@ -153,7 +188,7 @@
                         <div style="font-weight:700; color:#38bdf8; display:flex; align-items:center; gap:6px;">
                             <i class="bi bi-broadcast"></i> Wi-Fi 2.4 GHz (Jangkauan Luas)
                         </div>
-                        <div style="font-size:11px; color:var(--muted); margin-top:2px;">Kanal: <%= (device && device.wifi24 && device.wifi24.channel) || 'Auto' %> &bull; Status: <%= (device && device.wifi24 && device.wifi24.enabled) ? 'Aktif' : 'Nonaktif' %></div>
+                        <div style="font-size:11px; color:var(--muted); margin-top:2px;">Kanal: <%= (device && device.wifi24 && (typeof device.wifi24.channel === 'string' || typeof device.wifi24.channel === 'number')) ? device.wifi24.channel : 'Auto' %> &bull; Status: <%= (device && device.wifi24 && device.wifi24.enabled) ? 'Aktif' : 'Nonaktif' %></div>
                     </div>
                     <strong style="font-size:14px; color:var(--text);"><%= (device && device.wifi24 && device.wifi24.ssid) || (device && device.ssid24) || (device && device.ssid) || '-' %></strong>
                 </div>
@@ -162,56 +197,109 @@
                         <div style="font-weight:700; color:#f59e0b; display:flex; align-items:center; gap:6px;">
                             <i class="bi bi-lightning-charge-fill"></i> Wi-Fi 5 GHz (High Speed)
                         </div>
-                        <div style="font-size:11px; color:var(--muted); margin-top:2px;">Kanal: <%= (device && device.wifi5 && device.wifi5.channel) || 'Auto (5GHz)' %> &bull; Status: <%= (device && device.wifi5 && device.wifi5.enabled) ? 'Aktif 5G' : 'Nonaktif' %></div>
+                        <div style="font-size:11px; color:var(--muted); margin-top:2px;">Kanal: <%= (device && device.wifi5 && (typeof device.wifi5.channel === 'string' || typeof device.wifi5.channel === 'number')) ? device.wifi5.channel : 'Auto (5GHz)' %> &bull; Status: <%= (device && device.wifi5 && device.wifi5.enabled) ? 'Aktif 5G' : 'Nonaktif' %></div>
                     </div>
                     <strong style="font-size:14px; color:var(--text);"><%= (device && device.wifi5 && device.wifi5.ssid) || (device && device.ssid5) || 'Dual-Band 5G' %></strong>
                 </div>
-                <div class="info-row"><span>Kapasitas Bandwidth Radio</span><span>MIMO 2x2 (Up to 1200 Mbps)</span></div>
+                <div class="info-row">
+                    <span>Klien Wi-Fi per Frekuensi</span>
+                    <span style="display:flex; gap:6px;">
+                        <span class="badge" style="background:rgba(56,189,248,0.15); color:#38bdf8; font-size:11px;">
+                            <i class="bi bi-broadcast me-1"></i>2.4G: <%= (typeof clients24 !== 'undefined' && clients24) ? clients24.filter(c => c.status === 'Online').length : 0 %> Online
+                        </span>
+                        <span class="badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; font-size:11px;">
+                            <i class="bi bi-lightning-charge-fill me-1"></i>5G: <%= (typeof clients5 !== 'undefined' && clients5) ? clients5.filter(c => c.status === 'Online').length : 0 %> Online
+                        </span>
+                    </span>
+                </div>
                 <div class="info-row"><span>Total Klien Terhubung</span><span class="badge bs"><%= (clients && clients.length) ? clients.filter(c => c.status === 'Online').length : 0 %> Klien Aktif</span></div>
             </div>
         </div>
 
-        <!-- Card 5: Daftar Klien Terhubung -->
+        <!-- Card 5: Daftar Klien / Host LAN & Wi-Fi (Multi-Tab 2.4G & 5G) -->
         <div class="card" style="margin-bottom:24px;">
             <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-                <div><i class="bi bi-people text-primary"></i> Daftar Klien / Host LAN &amp; Wi-Fi</div>
                 <div>
-                    <span class="badge bs me-1"><%= (clients && clients.length) ? clients.filter(c => c.status === 'Online').length : 0 %> Online</span>
-                    <span class="badge bm"><%= (clients && clients.length) ? clients.length : 0 %> Total Terdaftar</span>
+                    <i class="bi bi-people-fill text-primary me-1"></i>
+                    <strong>Daftar Klien / Host Terhubung</strong>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span class="badge bs"><%= (clients && clients.length) ? clients.filter(c => c.status === 'Online').length : 0 %> Online</span>
+                    <span class="badge bm"><%= (clients && clients.length) ? clients.length : 0 %> Terdata</span>
                 </div>
             </div>
+
+            <!-- Segmented Filter Tabs (Wi-Fi 2.4G, Wi-Fi 5G, LAN Kabel) -->
+            <%
+                const c24List = clients ? clients.filter(c => (c.band || (c.isWiFi ? '2.4GHz' : 'LAN')) === '2.4GHz') : [];
+                const c5List = clients ? clients.filter(c => (c.band || (c.isWiFi ? '2.4GHz' : 'LAN')) === '5GHz') : [];
+                const cLanList = clients ? clients.filter(c => (c.band || (c.isWiFi ? '2.4GHz' : 'LAN')) === 'LAN') : [];
+                const initialBand = c24List.length > 0 ? '2.4GHz' : (c5List.length > 0 ? '5GHz' : (cLanList.length > 0 ? 'LAN' : '2.4GHz'));
+            %>
+            <div style="padding: 10px 18px 0 18px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; background: var(--bg3);">
+                <button type="button" class="client-tab-btn <%= initialBand === '2.4GHz' ? 'active' : '' %>" id="tab_btn_24" onclick="setClientTab('2.4GHz')">
+                    <i class="bi bi-broadcast me-1" style="color:#38bdf8;"></i> Wi-Fi 2.4 GHz (<%= (device && device.wifi24 && device.wifi24.ssid && device.wifi24.ssid !== '-') ? device.wifi24.ssid : '2.4G' %>)
+                    <span class="tab-pill" style="background:rgba(56,189,248,0.2); color:#38bdf8;"><%= c24List.length %></span>
+                </button>
+                <button type="button" class="client-tab-btn <%= initialBand === '5GHz' ? 'active' : '' %>" id="tab_btn_5" onclick="setClientTab('5GHz')">
+                    <i class="bi bi-lightning-charge-fill me-1" style="color:#f59e0b;"></i> Wi-Fi 5 GHz (<%= (device && device.wifi5 && device.wifi5.ssid && device.wifi5.ssid !== '-') ? device.wifi5.ssid : '5G' %>)
+                    <span class="tab-pill" style="background:rgba(245,158,11,0.2); color:#f59e0b;"><%= c5List.length %></span>
+                </button>
+                <button type="button" class="client-tab-btn <%= initialBand === 'LAN' ? 'active' : '' %>" id="tab_btn_lan" onclick="setClientTab('LAN')">
+                    <i class="bi bi-ethernet me-1"></i> LAN Kabel
+                    <span class="tab-pill"><%= cLanList.length %></span>
+                </button>
+            </div>
+
             <div style="padding:18px 18px 10px 18px;">
                 <% if (clients && clients.length) { %>
-                    <% clients.forEach((client) => { 
-                        const iface = String(client.iface || '');
-                        const isWiFi = iface.toLowerCase().includes('wifi') || iface.toLowerCase().includes('wlan') || iface.toLowerCase().includes('802.11');
-                        const isOn = String(client.status || '').toLowerCase() === 'online';
-                    %>
-                        <div class="client-card" style="opacity: <%= isOn ? '1' : '0.65' %>;">
-                            <div class="client-header">
-                                <div class="client-icon" style="background: <%= isOn ? 'rgba(16,185,129,0.1)' : 'rgba(100,116,139,0.1)' %>; color: <%= isOn ? 'var(--success)' : 'var(--muted)' %>;">
-                                    <i class="bi bi-<%= isWiFi ? 'wifi' : 'ethernet' %>"></i>
-                                </div>
-                                <div style="flex:1;">
-                                    <div style="font-weight:800; display:flex; align-items:center; gap:8px;">
-                                        <span><%= client.hostname || 'Tanpa Nama' %></span>
-                                        <% if (!isOn) { %>
-                                            <span style="font-size:10px; color:var(--muted); font-weight:normal;">(Riwayat Sewa DHCP)</span>
-                                        <% } %>
+                    <div id="clients_container">
+                        <% clients.forEach((client) => { 
+                            const band = client.band || (client.isWiFi ? '2.4GHz' : 'LAN');
+                            const is5G = band === '5GHz';
+                            const is24G = band === '2.4GHz';
+                            const isLAN = band === 'LAN';
+                            const isOn = String(client.status || '').toLowerCase() === 'online';
+                        %>
+                            <div class="client-card client-item" data-band="<%= band %>" style="opacity: <%= isOn ? '1' : '0.65' %>; display: <%= band === initialBand ? 'flex' : 'none' %>;">
+                                <div class="client-header">
+                                    <div class="client-icon" style="background: <%= isOn ? (is5G ? 'rgba(245,158,11,0.12)' : (is24G ? 'rgba(56,189,248,0.12)' : 'rgba(16,185,129,0.12)')) : 'rgba(100,116,139,0.1)' %>; color: <%= isOn ? (is5G ? '#f59e0b' : (is24G ? '#38bdf8' : 'var(--success)')) : 'var(--muted)' %>;">
+                                        <i class="bi bi-<%= is5G ? 'lightning-charge-fill' : (is24G ? 'broadcast' : 'ethernet') %>"></i>
                                     </div>
-                                    <div style="font-size:11px; color:var(--muted);"><%= client.ip || '-' %> &bull; <code style="color:var(--text);"><%= client.mac || '-' %></code></div>
+                                    <div style="flex:1;">
+                                        <div style="font-weight:800; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                            <span><%= client.hostname || 'Tanpa Nama' %></span>
+                                            <% if (is5G) { %>
+                                                <span class="badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); font-size:10px;"><i class="bi bi-lightning-charge-fill me-1"></i>5 GHz (<%= client.ssid || device.wifi5.ssid || '5G' %>)</span>
+                                            <% } else if (is24G) { %>
+                                                <span class="badge" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); font-size:10px;"><i class="bi bi-broadcast me-1"></i>2.4 GHz (<%= client.ssid || device.wifi24.ssid || '2.4G' %>)</span>
+                                            <% } else { %>
+                                                <span class="badge" style="background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3); font-size:10px;"><i class="bi bi-ethernet me-1"></i>LAN Kabel</span>
+                                            <% } %>
+                                            <% if (!isOn) { %>
+                                                <span style="font-size:10px; color:var(--muted); font-weight:normal;">(Riwayat Sewa DHCP)</span>
+                                            <% } %>
+                                        </div>
+                                        <div style="font-size:11px; color:var(--muted); margin-top:2px;">
+                                            <%= client.ip || '-' %> &bull; <code style="color:var(--text);"><%= client.mac || '-' %></code>
+                                        </div>
+                                    </div>
+                                    <% if (typeof client.rssi === 'number') { %>
+                                        <div class="badge" style="background: <%= client.rssi >= -65 ? 'rgba(16,185,129,0.15)' : (client.rssi >= -75 ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)') %>; color: <%= client.rssi >= -65 ? '#10b981' : (client.rssi >= -75 ? '#f59e0b' : '#ef4444') %>; border: 1px solid currentColor;">
+                                            <i class="bi bi-reception-4 me-1"></i><%= client.rssi %> dBm
+                                        </div>
+                                    <% } %>
+                                    <span class="badge <%= isOn ? 'bs' : 'bm' %>"><%= isOn ? 'Online' : 'Offline' %></span>
                                 </div>
-                                <% if (typeof client.rssi === 'number') { %>
-                                    <div class="badge" style="background:var(--primary); color:white;"><i class="bi bi-reception-4 me-1"></i><%= client.rssi %> dBm</div>
-                                <% } %>
-                                <span class="badge <%= isOn ? 'bs' : 'bm' %>"><%= isOn ? 'Online' : 'Offline' %></span>
                             </div>
-                            <div style="font-size:11px;color:var(--muted);margin-top:4px;">Jalur: <strong><%= client.iface || '-' %></strong></div>
-                        </div>
-                    <% }) %>
+                        <% }) %>
+                    </div>
+                    <div id="clients_empty_tab" style="display:<%= (initialBand === '2.4GHz' && c24List.length === 0) || (initialBand === '5GHz' && c5List.length === 0) || (initialBand === 'LAN' && cLanList.length === 0) ? 'block' : 'none' %>; text-align:center; color:var(--muted); padding: 24px 0;">
+                        <i class="bi bi-info-circle me-1"></i> Tidak ada perangkat yang terhubung pada frekuensi/jalur ini.
+                    </div>
                 <% } else { %>
-                    <div style="text-align:center; color:var(--muted); padding: 18px 0;">
-                        <i class="bi bi-info-circle me-1"></i> Belum ada perangkat yang terhubung ke modem ini.
+                    <div style="text-align:center; color:var(--muted); padding: 24px 0;">
+                        <i class="bi bi-info-circle me-1"></i> Belum ada perangkat klien yang terdaftar di modem ini.
                     </div>
                 <% } %>
             </div>
@@ -321,6 +409,73 @@ async function submitDetailWifi(e) {
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i class="bi bi-save"></i> Simpan Perubahan';
+  }
+}
+
+function setClientTab(band) {
+  const buttons = {
+    '2.4GHz': 'tab_btn_24',
+    '5GHz': 'tab_btn_5',
+    'LAN': 'tab_btn_lan'
+  };
+  Object.keys(buttons).forEach(k => {
+    const btn = document.getElementById(buttons[k]);
+    if (btn) {
+      if (k === band) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    }
+  });
+
+  const cards = document.querySelectorAll('.client-item');
+  let visibleCount = 0;
+  cards.forEach(card => {
+    const cardBand = card.getAttribute('data-band');
+    if (cardBand === band) {
+      card.style.display = 'flex';
+      visibleCount++;
+    } else {
+      card.style.display = 'none';
+    }
+  });
+
+  const emptyMsg = document.getElementById('clients_empty_tab');
+  if (emptyMsg) {
+    emptyMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+  }
+}
+
+async function refreshDeviceTR069(deviceId) {
+  const btn = document.getElementById('btn_refresh_tr069');
+  if (!deviceId) return alert('ID Perangkat tidak ditemukan.');
+  
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Menyinkronkan...';
+  }
+
+  try {
+    const res = await fetch('/admin/acs/api/refresh/' + encodeURIComponent(deviceId), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert(data.message || 'Perintah sinkronisasi TR-069 berhasil dikirim ke perangkat! Halaman akan dimuat ulang.');
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      alert('Info: ' + (data.message || 'Antrean perintah TR-069 dibuat. Tunggu beberapa saat lalu refresh halaman.'));
+      setTimeout(() => location.reload(), 2000);
+    }
+  } catch (err) {
+    alert('Gagal menyinkronkan TR-069: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Sinkronkan TR-069';
+    }
   }
 }
 

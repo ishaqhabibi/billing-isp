@@ -685,13 +685,19 @@ function queueBootstrapTasksIfNeeded(deviceId, currentParams) {
         ? [
             'Device.Hosts.Host',
             'Device.WiFi.AccessPoint.1.AssociatedDevice',
-            'Device.WiFi.AccessPoint.2.AssociatedDevice'
+            'Device.WiFi.AccessPoint.2.AssociatedDevice',
+            'Device.PPP.Interface.1',
+            'Device.Optical.Interface.1'
           ]
         : [
             'InternetGatewayDevice.LANDevice.1.Hosts.Host',
             'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice',
             'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.AssociatedDevice',
-            'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice'
+            'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice',
+            'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection',
+            'InternetGatewayDevice.X_FH_PON_MANAGE',
+            'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_FH_WANGponLinkConfig',
+            'InternetGatewayDevice.WANDevice.1.WANPONInterfaceConfig'
           ];
       for (const objectName of refreshObjects) {
         db.prepare(
@@ -829,6 +835,10 @@ function queueRealtimeMonitoringTasks(deviceId, currentParams) {
         refreshObjects.push('InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.AssociatedDevice');
         refreshObjects.push('InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice');
       }
+      refreshObjects.push('InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection');
+      refreshObjects.push('InternetGatewayDevice.X_FH_PON_MANAGE');
+      refreshObjects.push('InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_FH_WANGponLinkConfig');
+      refreshObjects.push('InternetGatewayDevice.WANDevice.1.WANPONInterfaceConfig');
     }
     
     for (const objectName of refreshObjects) {

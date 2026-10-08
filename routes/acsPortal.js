@@ -361,6 +361,10 @@ function getNestedValue(obj, path) {
         if (current && typeof current === 'object' && current.hasOwnProperty('_value')) {
             return current._value;
         }
+        // If it is an unpopulated TR-069 node (e.g. { _object: false, _writable: true }), return null
+        if (current && typeof current === 'object' && ('_object' in current || '_writable' in current)) {
+            return null;
+        }
         return current;
     } catch (e) {
         return null;
@@ -373,7 +377,13 @@ const RX_POWER_PATHS = [
     'VirtualParameters.RXpower',
     'VirtualParameters.rx_power',
     'VirtualParameters.redaman',
+    'InternetGatewayDevice.X_FH_PON_MANAGE.RxPower',
+    'InternetGatewayDevice.X_FH_PON_MANAGE.RXPower',
+    'InternetGatewayDevice.X_FH_PON_MANAGE.OpticalPower',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_FH_WANGponLinkConfig.RXPower',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_FH_WANGponLinkConfig.RxPower',
     'InternetGatewayDevice.WANDevice.1.WANPONInterfaceConfig.RXPower',
+    'InternetGatewayDevice.WANDevice.1.WANPONInterfaceConfig.RxPower',
     'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANOAM.RXPower',
     'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_HW_OpticalSignal.RXPower',
     'InternetGatewayDevice.WANDevice.1.X_GponInterfaceConfig.RXPower',
@@ -388,6 +398,12 @@ const RX_POWER_PATHS = [
     'InternetGatewayDevice.WANDevice.1.X_HW_GponInterfaceConfig.RxPower',
     'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.RXPower',
     'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.RXPower',
+    'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.RxPower',
+    'InternetGatewayDevice.WANDevice.*.X_FH_GponInterfaceConfig.RXPower',
+    'InternetGatewayDevice.WANDevice.*.X_FH_GponInterfaceConfig.RxPower',
+    'InternetGatewayDevice.WANDevice.*.WANPONInterfaceConfig.RXPower',
+    'InternetGatewayDevice.WANDevice.*.X_GponInterfaceConfig.RXPower',
+    'InternetGatewayDevice.WANDevice.*.X_ZTE-COM_WANPONInterfaceConfig.RXPower',
     'InternetGatewayDevice.WANDevice.1.X_CMCC_EponInterfaceConfig.RXPower',
     'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.RXPower',
     'InternetGatewayDevice.WANDevice.1.X_CT-COM_EponInterfaceConfig.RXPower',
@@ -644,19 +660,33 @@ function extractPppoeUptime(d) {
 
 function formatRxPower(val) {
     if (val === undefined || val === null || val === '-' || val === '') return '-';
-    const num = parseFloat(val);
-    if (isNaN(num)) return val;
-    if (num > 0) {
+    let s = String(val).trim().replace(/\s*dBm/i, '');
+    const num = parseFloat(s);
+    if (isNaN(num)) return s;
+    if (Math.abs(num) >= 500 && Math.abs(num) <= 50000) {
+        // Scaled by 100 in FiberHome (e.g. -2185 -> -21.85 dBm)
+        const scaled = -(Math.abs(num) / 100);
+        return scaled.toFixed(2);
+    }
+    if (num > 1000) {
         const dbVal = 30 + (Math.log10(num * Math.pow(10, -7)) * 10);
         return (Math.ceil(dbVal * 100) / 100).toFixed(2);
     }
-    return String(num);
+    return num.toFixed(2);
 }
 
 function extractRxPower(d) {
     let rxPower = '-';
     for (const path of RX_POWER_PATHS) {
-        const val = getNestedValue(d, path);
+        let val;
+        if (path.includes('*')) {
+            const matches = getWildcardMatches(d, path);
+            if (matches.length > 0 && matches[0].value !== undefined && matches[0].value !== null && matches[0].value !== '' && matches[0].value !== '-') {
+                val = matches[0].value;
+            }
+        } else {
+            val = getNestedValue(d, path);
+        }
         if (val && val !== '-') {
             rxPower = val;
             break;
@@ -667,6 +697,16 @@ function extractRxPower(d) {
 
 const TX_POWER_PATHS = [
     'VirtualParameters.getponpower',
+    'VirtualParameters.tx_power',
+    'VirtualParameters.TXPower',
+    'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.TXPower',
+    'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.TxPower',
+    'InternetGatewayDevice.WANDevice.*.X_FH_GponInterfaceConfig.TXPower',
+    'InternetGatewayDevice.X_FH_PON_MANAGE.TxPower',
+    'InternetGatewayDevice.X_FH_PON_MANAGE.TXPower',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_FH_WANGponLinkConfig.TXPower',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_FH_WANGponLinkConfig.TxPower',
+    'InternetGatewayDevice.WANDevice.1.WANPONInterfaceConfig.TXPower',
     'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.TXPower',
     'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.TXPower',
     'InternetGatewayDevice.WANDevice.1.X_CU_WANEPONInterfaceConfig.OpticalTransceiver.TXPower',
@@ -676,7 +716,15 @@ const TX_POWER_PATHS = [
 
 function extractTxPower(d) {
     for (const path of TX_POWER_PATHS) {
-        const val = getNestedValue(d, path);
+        let val;
+        if (path.includes('*')) {
+            const matches = getWildcardMatches(d, path);
+            if (matches.length > 0 && matches[0].value !== undefined && matches[0].value !== null && matches[0].value !== '' && matches[0].value !== '-') {
+                val = matches[0].value;
+            }
+        } else {
+            val = getNestedValue(d, path);
+        }
         if (val && val !== '-' && val !== '') {
             return formatRxPower(val);
         }
@@ -687,12 +735,24 @@ function extractTxPower(d) {
 function extractTemperature(d) {
     const TEMP_PATHS = [
         'VirtualParameters.gettemp',
+        'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.TransceiverTemperature',
+        'InternetGatewayDevice.WANDevice.*.X_FH_GponInterfaceConfig.TransceiverTemperature',
+        'InternetGatewayDevice.X_FH_PON_MANAGE.Temperature',
+        'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_FH_WANGponLinkConfig.Temperature',
         'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.TransceiverTemperature',
         'InternetGatewayDevice.DeviceInfo.TemperatureStatus.TemperatureValue',
         'Device.DeviceInfo.TemperatureStatus.TemperatureValue'
     ];
     for (const path of TEMP_PATHS) {
-        const val = getNestedValue(d, path);
+        let val;
+        if (path.includes('*')) {
+            const matches = getWildcardMatches(d, path);
+            if (matches.length > 0 && matches[0].value !== undefined && matches[0].value !== null && matches[0].value !== '' && matches[0].value !== '-') {
+                val = matches[0].value;
+            }
+        } else {
+            val = getNestedValue(d, path);
+        }
         if (val !== undefined && val !== null && val !== '-' && val !== '') {
             const num = parseFloat(val);
             if (!isNaN(num)) return `${Math.round(num)} °C`;
@@ -704,11 +764,23 @@ function extractTemperature(d) {
 
 function extractVoltage(d) {
     const VOLT_PATHS = [
+        'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.SupplyVoltage',
+        'InternetGatewayDevice.WANDevice.*.X_FH_GponInterfaceConfig.SupplyVoltage',
+        'InternetGatewayDevice.X_FH_PON_MANAGE.Voltage',
+        'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_FH_WANGponLinkConfig.SupplyVoltage',
         'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.TransceiverSupplyVoltage',
         'Device.Optical.Interface.1.SupplyVoltage'
     ];
     for (const path of VOLT_PATHS) {
-        const val = getNestedValue(d, path);
+        let val;
+        if (path.includes('*')) {
+            const matches = getWildcardMatches(d, path);
+            if (matches.length > 0 && matches[0].value !== undefined && matches[0].value !== null && matches[0].value !== '' && matches[0].value !== '-') {
+                val = matches[0].value;
+            }
+        } else {
+            val = getNestedValue(d, path);
+        }
         if (val !== undefined && val !== null && val !== '-' && val !== '') {
             const num = parseFloat(val);
             if (!isNaN(num)) {
@@ -955,7 +1027,16 @@ function extractUptime(d) {
 function extractClientCount(d) {
     if (!d) return 0;
 
-    // 1. Collect MACs of genuinely associated Wi-Fi devices from active radio interfaces
+    // 1. Primary: Use parseLANHostsFromDevice so client count is 100% consistent with device detail page
+    try {
+        const parsed = parseLANHostsFromDevice(d);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            const active = parsed.filter(c => c.active);
+            if (active.length > 0) return active.length;
+        }
+    } catch (_) {}
+
+    // 2. Collect MACs of genuinely associated Wi-Fi devices from active radio interfaces
     const activeWifiMacs = new Set();
     const wlanConfig = getNestedValue(d, 'InternetGatewayDevice.LANDevice.1.WLANConfiguration');
     if (wlanConfig && typeof wlanConfig === 'object') {
@@ -999,7 +1080,7 @@ function extractClientCount(d) {
         }
     }
 
-    // 2. Check Hosts list (LAN & Wi-Fi) and count ONLY actively connected clients
+    // 3. Check Hosts list (LAN & Wi-Fi) and count ONLY actively connected clients
     const hostObj = getNestedValue(d, 'InternetGatewayDevice.LANDevice.1.Hosts.Host') ||
                     getNestedValue(d, 'Device.Hosts.Host');
     if (hostObj && typeof hostObj === 'object') {
@@ -1014,11 +1095,14 @@ function extractClientCount(d) {
             };
 
             const mac = String(getVal('MACAddress') || '').toLowerCase();
+            const ip = String(getVal('IPAddress') || '');
             const iface = String(getVal('InterfaceType') || getVal('Layer2Interface') || '').toLowerCase();
             const activeRaw = getVal('Active');
-            const isWiFi = iface.includes('802.11') || iface.includes('wlan') || iface.includes('wifi');
+            const hostname = String(getVal('HostName') || '').toLowerCase();
+            const isMobileName = /redmi|xiaomi|oppo|vivo|realme|infinix|poco|iphone|ipad|galaxy|samsung|android|huawei|honor/i.test(hostname);
+            const isWiFi = iface.includes('802.11') || iface.includes('wlan') || iface.includes('wifi') || isMobileName;
 
-            const isEntryActive = activeRaw === true || activeRaw === 'true' || activeRaw === 1 || activeRaw === '1';
+            const isEntryActive = activeRaw === true || activeRaw === 'true' || activeRaw === 1 || activeRaw === '1' || (ip && ip !== '-' && ip !== '0.0.0.0');
             let isActive = false;
             if (isWiFi) {
                 if (activeWifiMacs.has(mac)) {
@@ -1026,7 +1110,7 @@ function extractClientCount(d) {
                 } else if (activeWifiMacs.size > 0) {
                     isActive = false;
                 } else {
-                    // Fallback to Host.Active if ONT does not supply AssociatedDevice table (e.g. Fiberhome)
+                    // Fallback to Host.Active or IP if ONT does not supply AssociatedDevice table (e.g. Fiberhome)
                     isActive = isEntryActive;
                 }
             } else {
@@ -1136,136 +1220,220 @@ router.use((req, res, next) => {
 
 router.use(requireAdminSession, requireSidebarMenuAccess('acs_pro'));
 
+function parseLANHostsFromDevice(hostsDevice, wifiDevice = null) {
+    if (!hostsDevice) return [];
+
+    const hostsData = hostsDevice.InternetGatewayDevice?.LANDevice?.['1']?.Hosts 
+                   || hostsDevice.InternetGatewayDevice?.LANDevice?.Hosts
+                   || hostsDevice.Device?.Hosts;
+    if (!hostsData) return [];
+
+    let hostArray = [];
+    if (hostsData.Host) {
+        if (Array.isArray(hostsData.Host)) {
+            hostArray = hostsData.Host;
+        } else if (typeof hostsData.Host === 'object') {
+            hostArray = Object.values(hostsData.Host).filter(v => v && typeof v === 'object');
+        }
+    }
+
+    const wifiRssiMap = new Map();
+    const sourceWifiDev = wifiDevice || hostsDevice;
+    const wlanConfig = sourceWifiDev.InternetGatewayDevice?.LANDevice?.['1']?.WLANConfiguration 
+                    || sourceWifiDev.InternetGatewayDevice?.LANDevice?.WLANConfiguration;
+
+    if (wlanConfig && typeof wlanConfig === 'object') {
+        for (const bandKey of Object.keys(wlanConfig)) {
+            if (bandKey.startsWith('_')) continue;
+            const band = wlanConfig[bandKey];
+            if (!band || !band.AssociatedDevice) continue;
+
+            let devArray = [];
+            if (Array.isArray(band.AssociatedDevice)) {
+                devArray = band.AssociatedDevice;
+            } else if (typeof band.AssociatedDevice === 'object') {
+                devArray = Object.values(band.AssociatedDevice).filter(v => v && typeof v === 'object');
+            }
+
+            // On FiberHome HG6145D2 and similar dual-band ONTs:
+            // 1, 2, 3, 4 are 2.4 GHz; 5, 6, 7, 8 are 5 GHz
+            const numKey = parseInt(bandKey, 10);
+            const bandLabel = (numKey >= 5 && numKey <= 8) ? '5GHz' : '2.4GHz';
+            const bandSsid = band.SSID?._value || band.SSID || '';
+
+            devArray.forEach(dev => {
+                const mac = dev.AssociatedDeviceMACAddress?._value || dev.AssociatedDeviceMACAddress || dev.MACAddress?._value || dev.MACAddress || null;
+                const rssi = dev.X_FH_RSSI?._value || dev.X_FH_Rssi?._value || dev.X_HW_RSSI?._value || dev.SignalStrength?._value || dev.RSSI?._value || null;
+                const rate = dev.LastDataTransmitRate?._value || dev.LastDataTransmitRate || dev.X_HW_TxRate?._value || dev.NegoTxRate?._value || null;
+
+                if (mac) {
+                    wifiRssiMap.set(mac.toString().toLowerCase(), {
+                        rssi: rssi !== null ? parseInt(rssi, 10) : null,
+                        rate: rate,
+                        band: bandLabel,
+                        ssid: bandSsid
+                    });
+                }
+            });
+        }
+    }
+
+    // Check TR-181 WiFi AccessPoints if present
+    const apConfig = sourceWifiDev.Device?.WiFi?.AccessPoint;
+    if (apConfig && typeof apConfig === 'object') {
+        for (const apKey of Object.keys(apConfig)) {
+            if (apKey.startsWith('_')) continue;
+            const ap = apConfig[apKey];
+            const assoc = ap?.AssociatedDevice;
+            if (assoc) {
+                let devArray = Array.isArray(assoc) ? assoc : Object.values(assoc).filter(v => v && typeof v === 'object');
+                const numKey = parseInt(apKey, 10);
+                const bandLabel = numKey === 2 ? '5GHz' : '2.4GHz';
+                devArray.forEach(dev => {
+                    const mac = dev.MACAddress?._value || dev.MACAddress;
+                    const rssi = dev.SignalStrength?._value || dev.SignalStrength;
+                    if (mac) {
+                        wifiRssiMap.set(mac.toString().toLowerCase(), {
+                            rssi: rssi !== null ? parseInt(rssi, 10) : null,
+                            rate: null,
+                            band: bandLabel,
+                            ssid: ''
+                        });
+                    }
+                });
+            }
+        }
+    }
+
+    return hostArray.map((host, index) => {
+        const getHostVal = (key) => {
+            const val = host[key];
+            if (val && typeof val === 'object' && '_value' in val) return val._value;
+            if (val && typeof val === 'object' && ('_object' in val || '_writable' in val)) return '';
+            return typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean' ? val : '';
+        };
+
+        const mac = getHostVal('MACAddress') || '-';
+        const ip = getHostVal('IPAddress') || '-';
+        const hostname = getHostVal('HostName') || 'Unknown';
+        const activeRaw = getHostVal('Active');
+        const interfaceType = getHostVal('InterfaceType') || '';
+        const layer2Interface = getHostVal('Layer2Interface') || '';
+        
+        let bytesReceived = 0;
+        let bytesSent = 0;
+        const stats = host['X_HW_Stats'] || host['X_FH_Stats'];
+        if (stats && typeof stats === 'object') {
+            bytesReceived = parseInt(stats.BytesReceived?._value || stats.BytesReceived || 0, 10);
+            bytesSent = parseInt(stats.BytesSent?._value || stats.BytesSent || 0, 10);
+        }
+
+        const l2Str = layer2Interface.toString().toLowerCase();
+        const ifaceStr = interfaceType.toString().toLowerCase();
+        const macLower = mac.toString().toLowerCase();
+
+        let isWiFi = false;
+        let band = '2.4GHz';
+        let finalRssi = null;
+        let clientSsid = null;
+        let isAssociated = false;
+
+        if (wifiRssiMap.has(macLower)) {
+            const wifiInfo = wifiRssiMap.get(macLower);
+            isWiFi = true;
+            band = wifiInfo.band;
+            finalRssi = wifiInfo.rssi;
+            clientSsid = wifiInfo.ssid;
+            isAssociated = true;
+        } else if (ifaceStr.includes('802.11') || ifaceStr.includes('wifi') || ifaceStr.includes('wlan') || l2Str.includes('wlan') || l2Str.includes('wifi')) {
+            isWiFi = true;
+            if (l2Str.includes('.5') || l2Str.includes('.6') || l2Str.includes('.7') || l2Str.includes('.8') || l2Str.includes('5g') || ifaceStr.includes('5g')) {
+                band = '5GHz';
+            } else {
+                band = '2.4GHz';
+            }
+        } else if (l2Str.includes('eth') || l2Str.includes('lan') || ifaceStr.includes('ethernet')) {
+            isWiFi = false;
+            band = 'LAN';
+        } else {
+            // Heuristic for home users: mobile hostnames are Wi-Fi clients
+            const hnLower = hostname.toLowerCase();
+            const isMobileName = /redmi|xiaomi|oppo|vivo|realme|infinix|poco|iphone|ipad|galaxy|samsung|android|huawei|honor/i.test(hnLower);
+            if (isMobileName) {
+                isWiFi = true;
+                band = '2.4GHz';
+            } else {
+                band = 'LAN';
+            }
+        }
+
+        const isEntryActive = activeRaw === true || activeRaw === 'true' || activeRaw === 1 || (ip && ip !== '-' && ip !== '0.0.0.0');
+        let isReallyActive = false;
+        if (isWiFi) {
+            if (isAssociated) {
+                isReallyActive = true;
+            } else if (wifiRssiMap.size > 0) {
+                isReallyActive = false;
+            } else {
+                isReallyActive = isEntryActive;
+            }
+        } else {
+            isReallyActive = isEntryActive;
+        }
+
+        return {
+            index: index + 1,
+            mac,
+            ip,
+            hostname,
+            active: isReallyActive,
+            isWiFi,
+            band, // '2.4GHz' | '5GHz' | 'LAN'
+            rssi: finalRssi,
+            ssid: clientSsid,
+            bytesReceived,
+            bytesSent
+        };
+    });
+}
+
 async function getLANHosts(deviceId, serverConfig) {
     try {
+        if (!serverConfig || serverConfig.id === 'builtin' || serverConfig.url === 'local' || !serverConfig.url) {
+            const row = db.prepare('SELECT params FROM acs_devices WHERE id = ? OR serial_number = ? LIMIT 1').get(deviceId, deviceId);
+            if (row && row.params) {
+                const genieacs = require('../config/genieacs');
+                let pObj = {};
+                try { pObj = JSON.parse(row.params); } catch (_) {}
+                const dev = genieacs.inflateParams(pObj);
+                return parseLANHostsFromDevice(dev);
+            }
+            return [];
+        }
+
         const baseUrl = normalizeUrl(serverConfig.url);
         const [hostsResponse, wifiResponse] = await Promise.all([
             axios.get(`${baseUrl}/devices/`, {
                 ...getAxiosConfig(serverConfig),
                 params: {
                     query: JSON.stringify({ _id: deviceId }),
-                    projection: 'InternetGatewayDevice.LANDevice.1.Hosts'
+                    projection: 'InternetGatewayDevice.LANDevice.1.Hosts,Device.Hosts'
                 }
             }).catch(() => ({ data: [] })),
             axios.get(`${baseUrl}/devices/`, {
                 ...getAxiosConfig(serverConfig),
                 params: {
                     query: JSON.stringify({ _id: deviceId }),
-                    projection: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice,InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice'
+                    projection: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration,Device.WiFi.AccessPoint'
                 }
             }).catch(() => ({ data: [] }))
         ]);
 
-        const device = Array.isArray(hostsResponse.data) && hostsResponse.data.length > 0 ? hostsResponse.data[0] : null;
-        if (!device) return [];
-
-        const hostsData = device.InternetGatewayDevice?.LANDevice?.['1']?.Hosts;
-        if (!hostsData) return [];
-
-        let hostArray = [];
-        if (hostsData.Host) {
-            if (Array.isArray(hostsData.Host)) {
-                hostArray = hostsData.Host;
-            } else if (typeof hostsData.Host === 'object') {
-                hostArray = Object.values(hostsData.Host).filter(v => v && typeof v === 'object');
-            }
-        }
-
-        const wifiRssiMap = new Map();
+        const hostsDevice = Array.isArray(hostsResponse.data) && hostsResponse.data.length > 0 ? hostsResponse.data[0] : null;
         const wifiDevice = Array.isArray(wifiResponse.data) && wifiResponse.data.length > 0 ? wifiResponse.data[0] : null;
-        if (wifiDevice) {
-            const wlanConfig = wifiDevice.InternetGatewayDevice?.LANDevice?.['1']?.WLANConfiguration;
-            if (wlanConfig) {
-                for (const bandKey of ['1', '5']) {
-                    const band = wlanConfig[bandKey];
-                    if (!band || !band.AssociatedDevice) continue;
+        if (!hostsDevice) return [];
 
-                    let devArray = [];
-                    if (Array.isArray(band.AssociatedDevice)) {
-                        devArray = band.AssociatedDevice;
-                    } else if (typeof band.AssociatedDevice === 'object') {
-                        devArray = Object.values(band.AssociatedDevice).filter(v => v && typeof v === 'object');
-                    }
-
-                    const bandLabel = bandKey === '5' ? '5GHz' : '2.4GHz';
-                    devArray.forEach(dev => {
-                        const mac = dev.AssociatedDeviceMACAddress?._value || dev.MACAddress?._value || null;
-                        const rssi = dev.X_HW_RSSI?._value || dev.SignalStrength?._value || null;
-                        const rate = dev.LastDataTransmitRate?._value || dev.X_HW_TxRate?._value || null;
-
-                        if (mac) {
-                            wifiRssiMap.set(mac.toString().toLowerCase(), {
-                                rssi: rssi !== null ? parseInt(rssi) : null,
-                                rate: rate,
-                                band: bandLabel
-                            });
-                        }
-                    });
-                }
-            }
-        }
-
-        return hostArray.map((host, index) => {
-            const getHostVal = (key) => {
-                const val = host[key];
-                if (val && typeof val === 'object' && '_value' in val) return val._value;
-                return val;
-            };
-
-            const mac = getHostVal('MACAddress') || '-';
-            const ip = getHostVal('IPAddress') || '-';
-            const hostname = getHostVal('HostName') || 'Unknown';
-            const activeRaw = getHostVal('Active');
-            const interfaceType = getHostVal('InterfaceType') || '';
-            const layer2Interface = getHostVal('Layer2Interface') || '';
-            
-            let bytesReceived = 0;
-            let bytesSent = 0;
-            const stats = host['X_HW_Stats'];
-            if (stats && typeof stats === 'object') {
-                bytesReceived = parseInt(stats.BytesReceived?._value || stats.BytesReceived || 0);
-                bytesSent = parseInt(stats.BytesSent?._value || stats.BytesSent || 0);
-            }
-
-            const l2Str = layer2Interface.toString().toLowerCase();
-            const isWiFi = interfaceType.toString().toLowerCase().includes('802.11') || l2Str.includes('wlan') || l2Str.includes('wifi');
-            
-            let finalRssi = null;
-            let band = l2Str.includes('5') ? '5GHz' : '2.4GHz';
-            const macLower = mac.toString().toLowerCase();
-
-            let isAssociated = false;
-            if (isWiFi && wifiRssiMap.has(macLower)) {
-                const wifiInfo = wifiRssiMap.get(macLower);
-                finalRssi = wifiInfo.rssi;
-                band = wifiInfo.band;
-                isAssociated = true;
-            }
-
-            // Wi-Fi clients are genuinely active if currently associated to the radio,
-            // or if AssociatedDevice table is not populated, if Host.Active is true
-            const isEntryActive = activeRaw === true || activeRaw === 'true' || activeRaw === 1;
-            let isReallyActive = false;
-            if (isWiFi) {
-                if (isAssociated) {
-                    isReallyActive = true;
-                } else if (wifiRssiMap.size > 0) {
-                    isReallyActive = false;
-                } else {
-                    isReallyActive = isEntryActive;
-                }
-            } else {
-                isReallyActive = isEntryActive;
-            }
-
-            return {
-                index: index + 1,
-                mac, ip, hostname,
-                active: isReallyActive,
-                isWiFi, band, rssi: finalRssi,
-                bytesReceived, bytesSent
-            };
-        });
+        return parseLANHostsFromDevice(hostsDevice, wifiDevice);
     } catch (err) {
         console.error(`[getLANHosts] Error:`, err.message);
         return [];
@@ -1281,7 +1449,7 @@ async function fetchDevicesFromACS(server, vParams = [], paths = {}, options = {
     try {
         const baseUrl = normalizeUrl(server.url);
         // Gabungkan proyeksi dasar dengan path pencarian
-        let projection = '_id,_lastInform,_ip,_deviceId._Manufacturer,_deviceId._ProductClass,_deviceId._SerialNumber,VirtualParameters,InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1,InternetGatewayDevice.LANDevice.1.WLANConfiguration,InternetGatewayDevice.LANDevice.1.Hosts.Host,InternetGatewayDevice.LANDevice.1.Hosts.HostNumberOfEntries,InternetGatewayDevice.DeviceInfo.UpTime,Device.WiFi.SSID,Device.WiFi.AccessPoint,Device.Hosts.Host';
+        let projection = '_id,_lastInform,_ip,_deviceId._Manufacturer,_deviceId._ProductClass,_deviceId._SerialNumber,VirtualParameters,InternetGatewayDevice.WANDevice,InternetGatewayDevice.X_FH_PON_MANAGE,InternetGatewayDevice.LANDevice.1.WLANConfiguration,InternetGatewayDevice.LANDevice.1.Hosts,InternetGatewayDevice.LANDevice.1.Hosts.Host,InternetGatewayDevice.LANDevice.1.Hosts.HostNumberOfEntries,InternetGatewayDevice.DeviceInfo.UpTime,Device.WiFi.SSID,Device.WiFi.AccessPoint,Device.Hosts,Device.Hosts.Host,Device.Optical,Device.XPON';
         
         const params = { projection };
         if (limit !== null) {
@@ -1449,8 +1617,18 @@ function enrichDevicesWithCustomerNames(devices) {
         const finalName = matchedCust ? matchedCust.name : (d.customer_name && d.customer_name !== '-' ? d.customer_name : (d.customerName && d.customerName !== '-' ? d.customerName : '-'));
         const finalCode = matchedCust ? matchedCust.customer_code : (d.customer_code || null);
 
+        let finalRxPower = d.rx_power;
+        if ((!finalRxPower || finalRxPower === '-') && matchedCust) {
+            if (matchedCust.optical_rx_power !== undefined && matchedCust.optical_rx_power !== null && matchedCust.optical_rx_power !== '') {
+                finalRxPower = formatRxPower(matchedCust.optical_rx_power);
+            } else if (matchedCust.initial_rx_power !== undefined && matchedCust.initial_rx_power !== null && matchedCust.initial_rx_power !== '') {
+                finalRxPower = formatRxPower(matchedCust.initial_rx_power);
+            }
+        }
+
         return {
             ...d,
+            rx_power: finalRxPower,
             customer_name: finalName,
             customerName: finalName,
             customer_code: finalCode,
@@ -1492,10 +1670,10 @@ router.get('/', async (req, res) => {
                 
                 for (const server of targetServers) {
                     try {
-                        const baseUrl = normalizeUrl(server.url);
+                        let projection = '_id,_lastInform,_ip,_deviceId._Manufacturer,_deviceId._ProductClass,_deviceId._SerialNumber,VirtualParameters,InternetGatewayDevice.WANDevice,InternetGatewayDevice.X_FH_PON_MANAGE,InternetGatewayDevice.LANDevice.1.WLANConfiguration,InternetGatewayDevice.LANDevice.1.Hosts,InternetGatewayDevice.LANDevice.1.Hosts.Host,InternetGatewayDevice.LANDevice.1.Hosts.HostNumberOfEntries,InternetGatewayDevice.DeviceInfo.UpTime,Device.WiFi.SSID,Device.WiFi.AccessPoint,Device.Hosts,Device.Hosts.Host,Device.Optical,Device.XPON';
                         const response = await axios.get(`${baseUrl}/devices`, {
                             ...getAxiosConfig(server),
-                            params: { query }
+                            params: { query, projection }
                         });
                         
                         if (Array.isArray(response.data)) {
@@ -1580,6 +1758,20 @@ router.get('/', async (req, res) => {
             console.error('Failed to load customers for ACS page:', e.message);
         }
 
+        // Update device_count on activeServers dynamically so "Kelola Server ACS" displays accurate count
+        activeServers.forEach(s => {
+            let countForServer = allDevices.filter(d => String(d.acs_server_id) === String(s.id)).length;
+            if (countForServer === 0 && activeServers.length === 1 && allDevices.length > 0) {
+                countForServer = allDevices.length;
+            }
+            s.device_count = countForServer;
+            if (s.id !== 'legacy' && s.id !== 'builtin') {
+                try {
+                    db.prepare('UPDATE genieacs_servers SET device_count = ? WHERE id = ?').run(s.device_count, s.id);
+                } catch (_) {}
+            }
+        });
+
         res.render('admin/acs', {
             user: req.session,
             devices: allDevices,
@@ -1588,11 +1780,12 @@ router.get('/', async (req, res) => {
             searchQuery,
             pppoeProfiles,
             customers: customersList,
+            customersList: customersList,
             currentPage: 'acs_pro'
         });
     } catch (err) {
         console.error('ACS page error:', err);
-        res.render('admin/acs', { user: req.session, devices: [], acsServers: [], selectedAcsId: null, searchQuery: null, pppoeProfiles: [], customers: [], currentPage: 'acs_pro' });
+        res.render('admin/acs', { user: req.session, devices: [], acsServers: [], selectedAcsId: null, searchQuery: null, pppoeProfiles: [], customers: [], customersList: [], currentPage: 'acs_pro' });
     }
 });
 
@@ -1668,6 +1861,18 @@ router.get('/device/:deviceId', async (req, res) => {
                         const matchedS = targetServers.find(s => String(s.id) === String(fullDev._acs_server_id));
                         if (matchedS) selectedServer = matchedS;
                     }
+                }
+            } catch (e) {}
+        }
+
+        // 3b. Fallback to local acs_devices table (Built-in ACS / Local Cache)
+        if (!deviceData) {
+            try {
+                const row = db.prepare('SELECT * FROM acs_devices WHERE id = ? OR serial_number = ? LIMIT 1').get(deviceToken, deviceToken);
+                if (row) {
+                    const genieacs = require('../config/genieacs');
+                    deviceData = genieacs.builtinRowToDevice(row);
+                    selectedServer = { id: 'builtin', name: 'Built-in ACS / Local Cache', url: 'local' };
                 }
             } catch (e) {}
         }
@@ -1753,6 +1958,17 @@ router.get('/device/:deviceId', async (req, res) => {
                 ip = activeWan.ip;
             }
         }
+        // Fallback lookup PPPoE user from billing customers table if TR-069 WANPPPConnection not yet populated
+        if (!pppoeUser || pppoeUser === '-') {
+            try {
+                const devSn = deviceData._deviceId?._SerialNumber || deviceData._id;
+                const custRow = db.prepare('SELECT pppoe_username, name FROM customers WHERE ont_sn = ? LIMIT 1').get(devSn);
+                if (custRow && custRow.pppoe_username) {
+                    pppoeUser = custRow.pppoe_username;
+                }
+            } catch (e) {}
+        }
+
         if (pppoeUser && pppoeUser !== '-' && activeSessionsMap.has(pppoeUser.toLowerCase())) {
             const sess = activeSessionsMap.get(pppoeUser.toLowerCase());
             if (sess.ip) ip = sess.ip;
@@ -1762,10 +1978,44 @@ router.get('/device/:deviceId', async (req, res) => {
         const isOnline = (lastInform && (Date.now() - new Date(lastInform).getTime() < 900000)) ||
                          (pppoeUser && pppoeUser !== '-' && activeSessionsMap.has(pppoeUser.toLowerCase()));
 
-        const rxPower = extractRxPower(deviceData);
-        const txPower = extractTxPower(deviceData);
-        const temperature = extractTemperature(deviceData);
-        const voltage = extractVoltage(deviceData);
+        let rxPower = extractRxPower(deviceData);
+        let txPower = extractTxPower(deviceData);
+        let temperature = extractTemperature(deviceData);
+        let voltage = extractVoltage(deviceData);
+
+        // Fallback optical telemetry from local acs_devices or customers table if GenieACS leaf nodes pending
+        if (rxPower === '-' || !rxPower) {
+            try {
+                const sn = deviceData._deviceId?._SerialNumber || deviceData._id;
+                const localDev = db.prepare('SELECT params FROM acs_devices WHERE id = ? OR serial_number = ? LIMIT 1').get(deviceData._id, sn);
+                if (localDev && localDev.params) {
+                    const p = JSON.parse(localDev.params);
+                    const lRx = p['InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.RXPower'] ||
+                                p['InternetGatewayDevice.X_FH_PON_MANAGE.RxPower'] || 
+                                p['InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_FH_WANGponLinkConfig.RXPower'];
+                    if (lRx) rxPower = formatRxPower(lRx);
+                    const lTx = p['InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.TXPower'] ||
+                                p['InternetGatewayDevice.X_FH_PON_MANAGE.TxPower'] || 
+                                p['InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_FH_WANGponLinkConfig.TXPower'];
+                    if (lTx && (txPower === '-' || !txPower)) txPower = formatRxPower(lTx);
+                    const lTemp = p['InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.TransceiverTemperature'] ||
+                                  p['InternetGatewayDevice.X_FH_PON_MANAGE.Temperature'];
+                    if (lTemp && (temperature === '-' || !temperature)) temperature = `${Math.round(parseFloat(lTemp))} °C`;
+                    const lVolt = p['InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.SupplyVoltage'] ||
+                                  p['InternetGatewayDevice.X_FH_PON_MANAGE.Voltage'];
+                    if (lVolt && (voltage === '-' || !voltage)) {
+                        const vNum = parseFloat(lVolt);
+                        voltage = vNum > 100 ? `${(vNum / 1000).toFixed(2)} V` : `${vNum.toFixed(2)} V`;
+                    }
+                }
+                if (rxPower === '-' || !rxPower) {
+                    const custRow = db.prepare('SELECT optical_rx_power FROM customers WHERE ont_sn = ? OR pppoe_username = ? LIMIT 1').get(sn, pppoeUser || '');
+                    if (custRow && custRow.optical_rx_power && custRow.optical_rx_power !== '-') {
+                        rxPower = formatRxPower(custRow.optical_rx_power);
+                    }
+                }
+            } catch (e) {}
+        }
 
         let customerName = getNestedValue(deviceData, 'VirtualParameters.CustomerName') || 
                            getNestedValue(deviceData, 'VirtualParameters.customer_name') || 
@@ -1816,19 +2066,22 @@ router.get('/device/:deviceId', async (req, res) => {
         let rawClients = await getLANHosts(deviceData._id, selectedServer);
         if ((!rawClients || rawClients.length === 0) && deviceData) {
             try {
-                const activeWifiMacs = new Set();
+                const activeWifiMap = new Map();
                 const wlanCfg = getNestedValue(deviceData, 'InternetGatewayDevice.LANDevice.1.WLANConfiguration');
                 if (wlanCfg && typeof wlanCfg === 'object') {
                     for (const bKey of Object.keys(wlanCfg)) {
                         if (bKey.startsWith('_')) continue;
                         const band = wlanCfg[bKey];
                         const assoc = band?.AssociatedDevice;
+                        const numKey = parseInt(bKey, 10);
+                        const bLabel = (numKey >= 5 && numKey <= 8) ? '5GHz' : '2.4GHz';
+                        const bSsid = band?.SSID?._value || band?.SSID || '';
                         if (assoc && typeof assoc === 'object') {
                             const entries = Array.isArray(assoc) ? assoc : Object.values(assoc);
                             for (const item of entries) {
                                 const mac = item?.AssociatedDeviceMACAddress?._value || item?.AssociatedDeviceMACAddress || item?.MACAddress?._value || item?.MACAddress;
                                 if (mac && typeof mac === 'string' && mac.length >= 10) {
-                                    activeWifiMacs.add(mac.toLowerCase());
+                                    activeWifiMap.set(mac.toLowerCase(), { band: bLabel, ssid: bSsid });
                                 }
                             }
                         }
@@ -1844,13 +2097,43 @@ router.get('/device/:deviceId', async (req, res) => {
                             const hIp = typeof entry?.IPAddress === 'object' ? entry?.IPAddress?._value || '-' : entry?.IPAddress || '-';
                             const hMac = typeof entry?.MACAddress === 'object' ? entry?.MACAddress?._value || '-' : entry?.MACAddress || '-';
                             const hIface = typeof entry?.InterfaceType === 'object' ? entry?.InterfaceType?._value || '-' : entry?.InterfaceType || '-';
-                            const isWiFi = hIface.toLowerCase().includes('wifi') || hIface.toLowerCase().includes('802.11') || hIface.toLowerCase().includes('wlan') || activeWifiMacs.has(String(hMac).toLowerCase());
+                            const hL2 = typeof entry?.Layer2Interface === 'object' ? entry?.Layer2Interface?._value || '' : entry?.Layer2Interface || '';
+                            const macLower = String(hMac).toLowerCase();
+
+                            let isWiFi = false;
+                            let band = '2.4GHz';
+                            let clientSsid = null;
+
+                            if (activeWifiMap.has(macLower)) {
+                                isWiFi = true;
+                                band = activeWifiMap.get(macLower).band;
+                                clientSsid = activeWifiMap.get(macLower).ssid;
+                            } else if (hIface.toLowerCase().includes('wifi') || hIface.toLowerCase().includes('802.11') || hIface.toLowerCase().includes('wlan') || hL2.toLowerCase().includes('wlan') || hL2.toLowerCase().includes('wifi')) {
+                                isWiFi = true;
+                                if (hL2.includes('5') || hIface.includes('5g')) {
+                                    band = '5GHz';
+                                } else {
+                                    band = '2.4GHz';
+                                }
+                            } else if (hL2.toLowerCase().includes('eth') || hL2.toLowerCase().includes('lan') || hIface.toLowerCase().includes('ethernet')) {
+                                isWiFi = false;
+                                band = 'LAN';
+                            } else {
+                                const isMobile = /redmi|xiaomi|oppo|vivo|realme|infinix|poco|iphone|ipad|galaxy|samsung|android|huawei|honor/i.test(hName.toLowerCase());
+                                if (isMobile) {
+                                    isWiFi = true;
+                                    band = '2.4GHz';
+                                } else {
+                                    band = 'LAN';
+                                }
+                            }
+
                             const isEntryActive = entry?.Active === true || entry?.Active === 'true' || entry?.Active === 1 || entry?.Active?._value === 'true' || entry?.Active?._value === '1';
                             let isActive = false;
                             if (isWiFi) {
-                                if (activeWifiMacs.has(String(hMac).toLowerCase())) {
+                                if (activeWifiMap.has(macLower)) {
                                     isActive = true;
-                                } else if (activeWifiMacs.size > 0) {
+                                } else if (activeWifiMap.size > 0) {
                                     isActive = false;
                                 } else {
                                     isActive = isEntryActive;
@@ -1858,6 +2141,7 @@ router.get('/device/:deviceId', async (req, res) => {
                             } else {
                                 isActive = isEntryActive;
                             }
+
                             if (hMac && hMac !== '-') {
                                 rawClients.push({
                                     hostname: hName,
@@ -1866,7 +2150,8 @@ router.get('/device/:deviceId', async (req, res) => {
                                     iface: hIface,
                                     active: isActive,
                                     isWiFi,
-                                    band: '2.4GHz',
+                                    band,
+                                    ssid: clientSsid,
                                     rssi: null
                                 });
                             }
@@ -1904,10 +2189,54 @@ router.get('/device/:deviceId', async (req, res) => {
             hostname: c.hostname || 'Unknown',
             ip: c.ip || '-',
             mac: c.mac || '-',
-            iface: c.isWiFi ? `WiFi ${c.band || ''}`.trim() : 'LAN',
+            band: c.band || (c.isWiFi ? '2.4GHz' : 'LAN'),
+            iface: c.isWiFi ? `Wi-Fi ${c.band || ''}`.trim() : 'LAN (Kabel)',
             status: c.active ? 'Online' : 'Offline',
-            rssi: typeof c.rssi === 'number' ? c.rssi : null
+            rssi: typeof c.rssi === 'number' ? c.rssi : null,
+            ssid: c.ssid || (c.band === '5GHz' ? wifi5Ssid : wifi24Ssid)
         }));
+
+        // Stability indicator calculation
+        const sysSecs = uptimeInfo.seconds || 0;
+        const pppSecs = pppoeUptimeInfo.seconds || 0;
+        let pppoeStability = {
+            status: 'unknown',
+            label: 'Tidak Diketahui',
+            badgeClass: 'bm',
+            desc: 'Durasi sesi PPPoE belum terdeteksi dari TR-069 / MikroTik.'
+        };
+
+        if (pppSecs > 0) {
+            if (sysSecs > 7200 && pppSecs < 1800) {
+                pppoeStability = {
+                    status: 'flapping_warning',
+                    label: 'Pernah Terputus Baru-baru Ini (Flapping)',
+                    badgeClass: 'bw',
+                    desc: `Modem telah menyala selama ${uptimeInfo.formatted}, tetapi sesi internet baru aktif ${pppoeUptimeInfo.formatted}. Ada indikasi jalur internet sempat drop atau reconnect tanpa modem mati.`
+                };
+            } else if (pppSecs >= 86400) {
+                pppoeStability = {
+                    status: 'stable',
+                    label: 'Sangat Stabil (> 24 Jam)',
+                    badgeClass: 'bs',
+                    desc: 'Sesi PPPoE aktif konsisten tanpa interupsi diskoneksi.'
+                };
+            } else {
+                pppoeStability = {
+                    status: 'connected',
+                    label: 'Terhubung Normal',
+                    badgeClass: 'bs',
+                    desc: 'Sesi PPPoE aktif berjalan normal.'
+                };
+            }
+        } else if (isOnline && (!pppoeUser || pppoeUser === '-')) {
+            pppoeStability = {
+                status: 'disconnected',
+                label: 'PPPoE Belum Aktif',
+                badgeClass: 'bm',
+                desc: 'Tidak ada profil PPPoE aktif pada modem ini.'
+            };
+        }
 
         res.render('admin/acs_device', {
             user: req.session,
@@ -1934,6 +2263,7 @@ router.get('/device/:deviceId', async (req, res) => {
                 uptime_seconds: uptimeInfo.seconds,
                 pppoeUptime: pppoeUptimeInfo.formatted,
                 pppoe_uptime_seconds: pppoeUptimeInfo.seconds,
+                pppoeStability: pppoeStability,
                 lanIp: lanIp,
                 lanMask: lanMask,
                 dhcpEnabled: dhcpEnabled,
@@ -1951,6 +2281,9 @@ router.get('/device/:deviceId', async (req, res) => {
                 ssid: wifi24Ssid
             },
             clients,
+            clients24: clients.filter(c => c.band === '2.4GHz'),
+            clients5: clients.filter(c => c.band === '5GHz'),
+            clientsLAN: clients.filter(c => c.band === 'LAN' || (!c.isWiFi && c.band !== '2.4GHz' && c.band !== '5GHz')),
             isOnline,
             acsId: selectedServer.id,
             acsName: selectedServer.name,
@@ -2980,6 +3313,34 @@ router.post('/api/add-wan/:deviceId', requireAdmin, async (req, res) => {
         });
     } catch (err) {
         res.json({ success: false, message: err.message });
+    }
+});
+
+// POST /admin/acs/map-customer - Tautkan SN perangkat ke pelanggan billing
+router.post('/map-customer', requireAdminSession, async (req, res) => {
+    try {
+        const { sn, customerId } = req.body;
+        if (!sn || !customerId) {
+            return res.status(400).json({ success: false, message: 'SN perangkat dan Pelanggan wajib dipilih' });
+        }
+        db.prepare('UPDATE customers SET ont_sn = ? WHERE id = ?').run(String(sn).trim(), parseInt(customerId, 10));
+        return res.json({ success: true, message: 'Perangkat berhasil ditautkan ke data pelanggan' });
+    } catch (e) {
+        return res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// POST /admin/acs/unmap-customer - Lepas tautan SN dari pelanggan billing
+router.post('/unmap-customer', requireAdminSession, async (req, res) => {
+    try {
+        const { sn } = req.body;
+        if (!sn) {
+            return res.status(400).json({ success: false, message: 'SN perangkat wajib diisi' });
+        }
+        db.prepare('UPDATE customers SET ont_sn = NULL WHERE ont_sn = ?').run(String(sn).trim());
+        return res.json({ success: true, message: 'Tautan perangkat ke pelanggan berhasil dilepas' });
+    } catch (e) {
+        return res.status(500).json({ success: false, message: e.message });
     }
 });
 

@@ -20,9 +20,8 @@
         @media(max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
         @media(max-width: 640px) { .kpi-grid { grid-template-columns: 1fr; } }
 
-        .kpi-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 20px; position: relative; overflow: hidden; transition: all 0.22s ease; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; text-decoration: none; color: inherit; user-select: none; }
-        .kpi-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.2); box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
-        .kpi-card.active-filter { border-color: var(--primary) !important; background: rgba(0, 82, 204, 0.12) !important; box-shadow: 0 0 0 1px var(--primary); }
+        .kpi-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 20px; position: relative; overflow: hidden; transition: all 0.22s ease; display: flex; flex-direction: column; justify-content: space-between; text-decoration: none; color: inherit; user-select: none; }
+        .kpi-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.18); box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
         .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
         .kpi-card.c-primary::before { background: linear-gradient(90deg, #0052cc, #38bdf8); }
         .kpi-card.c-success::before { background: linear-gradient(90deg, #10b981, #34d399); }
@@ -194,6 +193,549 @@
         .param-row-item:hover { background: rgba(255,255,255,0.03); }
         .param-key { color: #94a3b8; font-family: monospace; word-break: break-all; }
         .param-val { color: #38bdf8; font-family: monospace; font-weight: 700; word-break: break-all; text-align: right; }
+
+        /* ── ENTERPRISE TR-069 WI-FI PROVISIONING MODAL ── */
+        .wifi-modal-box {
+            max-width: 580px;
+            width: 95%;
+            border-radius: 18px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: modalPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalPopIn {
+            from { opacity: 0; transform: scale(0.96) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .wifi-modal-head {
+            padding: 16px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg3);
+        }
+        .wifi-modal-head-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .wifi-modal-icon-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 19px;
+            background: rgba(0, 82, 204, 0.12);
+            color: #38bdf8;
+            border: 1px solid rgba(0, 82, 204, 0.25);
+            flex-shrink: 0;
+        }
+        .wifi-modal-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.25;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .wifi-modal-subtitle {
+            font-size: 11.5px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+        .wifi-modal-close-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+        .wifi-modal-close-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+        }
+
+        .wifi-modal-body {
+            padding: 18px 22px;
+            max-height: calc(88vh - 125px);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* Device Target Info Bar */
+        .wifi-target-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 11px 15px;
+            gap: 12px;
+        }
+        .wifi-target-left {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            min-width: 0;
+        }
+        .wifi-target-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: var(--muted);
+            flex-shrink: 0;
+        }
+        .wifi-target-details {
+            min-width: 0;
+        }
+        .wifi-target-cust {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .wifi-target-meta {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 3px;
+            flex-wrap: wrap;
+        }
+        .wifi-meta-pill {
+            font-size: 10.5px;
+            font-family: monospace;
+            font-weight: 600;
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.04);
+            padding: 2px 7px;
+            border-radius: 5px;
+            border: 1px solid var(--border);
+            display: inline-flex;
+            align-items: center;
+        }
+        .wifi-target-badge {
+            font-size: 11px;
+            font-weight: 700;
+            color: #38bdf8;
+            background: rgba(0, 82, 204, 0.12);
+            border: 1px solid rgba(0, 82, 204, 0.25);
+            padding: 4px 9px;
+            border-radius: 6px;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Radio Bands (2.4G & 5G) */
+        .wifi-radio-card {
+            border-radius: 13px;
+            border: 1px solid var(--border);
+            background: var(--bg3);
+            padding: 14px 15px;
+            transition: all 0.15s ease;
+        }
+        .wifi-radio-card.radio-24 {
+            border-color: rgba(16, 185, 129, 0.25);
+            background: linear-gradient(180deg, rgba(16, 185, 129, 0.035) 0%, transparent 100%), var(--bg3);
+        }
+        .wifi-radio-card.radio-5g {
+            border-color: rgba(56, 189, 248, 0.25);
+            background: linear-gradient(180deg, rgba(56, 189, 248, 0.035) 0%, transparent 100%), var(--bg3);
+        }
+        .wifi-radio-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .wifi-radio-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .radio-24 .wifi-radio-title { color: #10b981; }
+        .radio-5g .wifi-radio-title { color: #38bdf8; }
+
+        .wifi-band-tag {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .radio-24 .wifi-band-tag {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .radio-5g .wifi-band-tag {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .wifi-sync-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11.5px;
+            font-weight: 500;
+            color: var(--muted);
+            cursor: pointer;
+            user-select: none;
+        }
+        .wifi-sync-toggle input {
+            accent-color: #0052cc;
+            cursor: pointer;
+            width: 14px;
+            height: 14px;
+        }
+        .wifi-sync-toggle:hover {
+            color: var(--text);
+        }
+
+        .wifi-field-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        @media(max-width: 520px) {
+            .wifi-field-grid { grid-template-columns: 1fr; }
+        }
+        .wifi-field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .wifi-field-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .wifi-input-wrap {
+            position: relative;
+        }
+        .wifi-input-wrap .fc {
+            padding-right: 36px;
+            height: 38px;
+            font-size: 13px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .wifi-input-wrap .fc:focus {
+            border-color: #0052cc;
+            background: var(--bg2);
+            box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.18);
+        }
+        .wifi-eye-btn {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            border-radius: 4px;
+            transition: color 0.15s ease;
+        }
+        .wifi-eye-btn:hover {
+            color: var(--text);
+        }
+        .wifi-field-hint {
+            font-size: 10px;
+            color: var(--muted);
+            line-height: 1.3;
+        }
+
+        /* Telemetry Box */
+        .wifi-telemetry-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 14px;
+        }
+        .wifi-telemetry-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .wifi-telemetry-title {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .wifi-btn-sync {
+            background: rgba(56, 189, 248, 0.12);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.28);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s ease;
+        }
+        .wifi-btn-sync:hover {
+            background: rgba(56, 189, 248, 0.22);
+            border-color: #38bdf8;
+            color: #fff;
+        }
+        .wifi-btn-sync:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .wifi-diag-status {
+            font-size: 11.5px;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        .wifi-task-console {
+            margin-top: 10px;
+            max-height: 120px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', Consolas, monospace;
+            font-size: 10.5px;
+            line-height: 1.5;
+            background: #080d1a;
+            color: #cbd5e1;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* WhatsApp Option */
+        .wifi-notify-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            user-select: none;
+            transition: border-color 0.15s ease;
+        }
+        .wifi-notify-row:hover {
+            border-color: rgba(37, 211, 102, 0.45);
+        }
+        .wifi-notify-row input[type="checkbox"] {
+            accent-color: #25d366;
+            width: 17px;
+            height: 17px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .wifi-notify-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .wifi-notify-sub {
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: normal;
+            margin-top: 1px;
+        }
+
+        .wifi-alert {
+            padding: 9px 13px;
+            border-radius: 8px;
+            font-size: 12px;
+            line-height: 1.4;
+            display: none;
+            margin-bottom: 8px;
+        }
+
+        /* Footer */
+        .wifi-modal-foot {
+            padding: 14px 22px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg3);
+        }
+        .wifi-btn-cancel {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .wifi-btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        .wifi-btn-submit {
+            background: linear-gradient(135deg, #0052cc 0%, #0284c7 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(0, 82, 204, 0.35);
+            transition: all 0.18s ease;
+        }
+        .wifi-btn-submit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(0, 82, 204, 0.45);
+        }
+        .wifi-btn-submit:disabled {
+            opacity: 0.65;
+            transform: none;
+            cursor: not-allowed;
+        }
+
+        /* ── LIGHT THEME OVERRIDES FOR WI-FI MODAL ── */
+        html[data-theme="light"] .wifi-modal-box,
+        body.light-theme .wifi-modal-box {
+            background: #ffffff !important;
+            border-color: rgba(0, 52, 120, 0.12) !important;
+            box-shadow: 0 20px 50px rgba(0, 52, 120, 0.18) !important;
+        }
+        html[data-theme="light"] .wifi-modal-head,
+        body.light-theme .wifi-modal-head,
+        html[data-theme="light"] .wifi-modal-foot,
+        body.light-theme .wifi-modal-foot {
+            background: #f8fafc !important;
+            border-color: rgba(0, 52, 120, 0.08) !important;
+        }
+        html[data-theme="light"] .wifi-modal-close-btn:hover,
+        body.light-theme .wifi-modal-close-btn:hover {
+            background: rgba(0, 52, 120, 0.06) !important;
+        }
+        html[data-theme="light"] .wifi-target-card,
+        body.light-theme .wifi-target-card,
+        html[data-theme="light"] .wifi-telemetry-box,
+        body.light-theme .wifi-telemetry-box,
+        html[data-theme="light"] .wifi-notify-row,
+        body.light-theme .wifi-notify-row {
+            background: #f8fafc !important;
+            border-color: rgba(0, 52, 120, 0.09) !important;
+        }
+        html[data-theme="light"] .wifi-radio-card,
+        body.light-theme .wifi-radio-card {
+            background: #ffffff !important;
+        }
+        html[data-theme="light"] .wifi-radio-card.radio-24,
+        body.light-theme .wifi-radio-card.radio-24 {
+            border-color: rgba(16, 185, 129, 0.35) !important;
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.06);
+            background: linear-gradient(180deg, rgba(16, 185, 129, 0.02) 0%, #ffffff 100%) !important;
+        }
+        html[data-theme="light"] .wifi-radio-card.radio-5g,
+        body.light-theme .wifi-radio-card.radio-5g {
+            border-color: rgba(2, 132, 199, 0.35) !important;
+            box-shadow: 0 2px 10px rgba(2, 132, 199, 0.06);
+            background: linear-gradient(180deg, rgba(2, 132, 199, 0.02) 0%, #ffffff 100%) !important;
+        }
+        html[data-theme="light"] .wifi-radio-header,
+        body.light-theme .wifi-radio-header {
+            border-bottom-color: rgba(0, 52, 120, 0.06) !important;
+        }
+        html[data-theme="light"] .wifi-input-wrap .fc,
+        body.light-theme .wifi-input-wrap .fc {
+            background: #ffffff !important;
+            border-color: rgba(0, 52, 120, 0.16) !important;
+            color: #0f172a !important;
+        }
+        html[data-theme="light"] .wifi-input-wrap .fc:focus,
+        body.light-theme .wifi-input-wrap .fc:focus {
+            border-color: #0052cc !important;
+            box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.12) !important;
+        }
+        html[data-theme="light"] .wifi-meta-pill,
+        body.light-theme .wifi-meta-pill {
+            background: #e2e8f0 !important;
+            color: #334155 !important;
+            border-color: #cbd5e1 !important;
+        }
+        html[data-theme="light"] .wifi-target-avatar,
+        body.light-theme .wifi-target-avatar {
+            background: #e2e8f0 !important;
+            color: #475569 !important;
+        }
+        html[data-theme="light"] .wifi-btn-cancel,
+        body.light-theme .wifi-btn-cancel {
+            border-color: rgba(0, 52, 120, 0.16) !important;
+            color: #475569 !important;
+        }
+        html[data-theme="light"] .wifi-btn-cancel:hover,
+        body.light-theme .wifi-btn-cancel:hover {
+            background: #e2e8f0 !important;
+            color: #0f172a !important;
+        }
     </style>
 </head>
 <body>
@@ -256,9 +798,9 @@
             const onlinePercent = totalDev > 0 ? Math.round((onlineDev / totalDev) * 100) : 0;
         %>
 
-        <!-- KPI Telemetry Grid (4 Executive Cards with Click-to-Filter) -->
+        <!-- KPI Telemetry Grid (4 Executive Metrics) -->
         <div class="kpi-grid">
-            <div class="kpi-card c-primary active-filter" id="kpiCardAll" onclick="filterDevicesByStatus('all', this)" title="Klik untuk menampilkan semua perangkat">
+            <div class="kpi-card c-primary" id="kpiCardAll">
                 <div class="kpi-header">
                     <span class="kpi-label">Total Perangkat</span>
                     <div class="kpi-icon"><i class="bi bi-router"></i></div>
@@ -269,11 +811,10 @@
                 </div>
                 <div class="kpi-footer">
                     <span>Terdaftar di ACS Server</span>
-                    <span style="font-weight:700;"><i class="bi bi-chevron-right"></i></span>
                 </div>
             </div>
 
-            <div class="kpi-card c-success" id="kpiCardOnline" onclick="filterDevicesByStatus('online', this)" title="Klik untuk memfilter perangkat online">
+            <div class="kpi-card c-success" id="kpiCardOnline">
                 <div class="kpi-header">
                     <span class="kpi-label">Perangkat Online</span>
                     <div class="kpi-icon"><i class="bi bi-wifi"></i></div>
@@ -284,11 +825,10 @@
                 </div>
                 <div class="kpi-footer">
                     <span>Tersambung TR-069 & Sesi Aktif</span>
-                    <span style="font-weight:700;"><i class="bi bi-chevron-right"></i></span>
                 </div>
             </div>
 
-            <div class="kpi-card c-danger" id="kpiCardOffline" onclick="filterDevicesByStatus('offline', this)" title="Klik untuk memfilter perangkat offline">
+            <div class="kpi-card c-danger" id="kpiCardOffline">
                 <div class="kpi-header">
                     <span class="kpi-label">Perangkat Offline</span>
                     <div class="kpi-icon"><i class="bi bi-exclamation-octagon"></i></div>
@@ -299,11 +839,10 @@
                 </div>
                 <div class="kpi-footer">
                     <span>Mati listrik / Kabel FO Putus</span>
-                    <span style="font-weight:700;"><i class="bi bi-chevron-right"></i></span>
                 </div>
             </div>
 
-            <div class="kpi-card c-warning" id="kpiCardCritical" onclick="filterDevicesByStatus('critical', this)" title="Klik untuk memfilter redaman kritis (< -27 dBm)">
+            <div class="kpi-card c-warning" id="kpiCardCritical">
                 <div class="kpi-header">
                     <span class="kpi-label">Redaman Kritis</span>
                     <div class="kpi-icon"><i class="bi bi-broadcast-pin"></i></div>
@@ -314,7 +853,6 @@
                 </div>
                 <div class="kpi-footer">
                     <span>Rentan degradasi / Disconnect</span>
-                    <span style="font-weight:700;"><i class="bi bi-chevron-right"></i></span>
                 </div>
             </div>
         </div>
@@ -416,7 +954,7 @@
                                 </th>
                                 <th>Perangkat & SN</th>
                                 <th>Pelanggan & PPPoE</th>
-                                <th>Wi-Fi & Klien</th>
+                                <th>Total Perangkat Terhubung</th>
                                 <th>Kualitas Optik</th>
                                 <th>Status & Uptime</th>
                                 <th style="text-align:right;">Aksi Cepat</th>
@@ -500,10 +1038,22 @@
                                         <div class="cust-cell">
                                             <div class="cust-name">
                                                 <% if (d.customer_name && d.customer_name !== '-') { %>
-                                                    <i class="bi bi-person-circle text-primary" style="font-size:12px;"></i>
-                                                    <span><%= d.customer_name %></span>
+                                                    <div style="display:flex; align-items:center; gap:6px;">
+                                                        <i class="bi bi-person-circle text-primary" style="font-size:12px;"></i>
+                                                        <span style="font-weight:600;"><%= d.customer_name %></span>
+                                                        <button type="button" class="btn-act" onclick="unmapCustomer('<%= d.sn %>', '<%= d.customer_name %>')" style="border:none; background:transparent; padding:0; font-size:11px; color:var(--muted); cursor:pointer; opacity:0.6;" title="Lepas tautan pelanggan">
+                                                            <i class="bi bi-x-circle"></i>
+                                                        </button>
+                                                    </div>
                                                 <% } else { %>
-                                                    <span style="color:var(--muted); font-style:italic; font-size:12px;">Belum Terhubung Tagihan</span>
+                                                    <div style="display:flex; align-items:center; gap:6px;">
+                                                        <span class="badge" style="background:rgba(148,163,184,0.12); color:#94a3b8; font-weight:600; font-size:11px; padding:2px 7px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;" title="Modem belum ditautkan ke data pelanggan billing">
+                                                            <i class="bi bi-person-dash"></i> Belum Dimapping
+                                                        </span>
+                                                        <button type="button" class="btn btn-g btn-xs" onclick="openMapCustomerModal('<%= d.sn %>')" style="font-size:10px; padding:2px 7px; line-height:1.2; border-radius:4px;" title="Tautkan modem ini ke salah satu pelanggan billing">
+                                                            <i class="bi bi-link-45deg"></i> Tautkan
+                                                        </button>
+                                                    </div>
                                                 <% } %>
                                             </div>
                                             <div class="cust-sub">
@@ -517,16 +1067,10 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <div style="display:flex; flex-direction:column; gap:3px;">
-                                            <div style="font-size:12px; font-weight:600; color:var(--text); display:flex; align-items:center; gap:5px;">
-                                                <i class="bi bi-wifi text-primary"></i>
-                                                <span title="SSID Wi-Fi"><%= (d.ssid && d.ssid !== '-') ? d.ssid : 'Default SSID' %></span>
-                                            </div>
-                                            <div>
-                                                <span class="badge <%= (d.client_count && d.client_count > 0) ? 'bs' : 'bm' %>" style="font-size:10px; padding:2px 7px; font-weight:700;" title="Jumlah Klien Aktif di Wi-Fi">
-                                                    <i class="bi bi-people-fill me-1"></i><%= (d.client_count !== null && d.client_count !== undefined) ? (d.client_count + ' Klien') : '0 Klien' %>
-                                                </span>
-                                            </div>
+                                        <div>
+                                            <span class="badge <%= (d.client_count && d.client_count > 0) ? 'bs' : 'bm' %>" style="font-size:11px; padding:4px 9px; font-weight:700; display:inline-flex; align-items:center; gap:6px;" title="Total Perangkat Terhubung ke Modem (Klien LAN & Wi-Fi)">
+                                                <i class="bi bi-laptop"></i> <%= (d.client_count !== null && d.client_count !== undefined) ? d.client_count : 0 %> Perangkat
+                                            </span>
                                         </div>
                                     </td>
                                     <td>
@@ -611,8 +1155,13 @@
                                 <td><code style="font-size:12px; background:var(--bg3); padding:3px 8px; border-radius:6px;"><%= s.url %></code></td>
                                 <td><%= s.location || '-' %></td>
                                 <td>
+                                    <% 
+                                        const serverDevCount = (s.device_count !== undefined && s.device_count !== null && s.device_count > 0)
+                                            ? s.device_count 
+                                            : (devices.filter(d => String(d.acs_server_id) === String(s.id)).length || (acsServers.length === 1 ? devices.length : 0));
+                                    %>
                                     <span class="badge" style="background:rgba(255,255,255,0.08); font-size:11px; font-weight:700;">
-                                        <i class="bi bi-hdd-network me-1"></i><%= s.device_count || 0 %> Perangkat
+                                        <i class="bi bi-hdd-network me-1"></i><%= serverDevCount %> Perangkat
                                     </span>
                                 </td>
                                 <td>
@@ -1127,115 +1676,289 @@
 </div>
 
 <!-- ========================================== -->
-<!-- MODAL: KELOLA WI-FI PERANGKAT (TR-069)     -->
+<!-- MODAL: KONFIGURASI WI-FI PERANGKAT (TR-069)-->
 <!-- ========================================== -->
 <div class="mo" id="acsWifiModal">
-  <div class="mb" style="max-width:540px; border-radius:16px;">
-    <div class="mh" style="padding:16px 20px; border-bottom:1px solid var(--border);">
-      <h3 class="mt" style="font-size:16px; font-weight:700;"><i class="bi bi-wifi text-primary me-2"></i>Kelola Wi-Fi Perangkat (TR-069)</h3>
-      <button type="button" class="mc" onclick="closeModal('acsWifiModal')">&times;</button>
-    </div>
-    <form id="acsWifiForm" onsubmit="submitAcsWifi(event)">
-      <div class="mbody" style="padding:20px;">
-        <input type="hidden" id="acs_wifi_device_id" value="">
-        <input type="hidden" id="acs_wifi_acs_id" value="">
-        
-        <div style="font-size:12px; padding:10px 14px; background:rgba(0,82,204,0.08); border:1px solid rgba(0,82,204,0.25); border-radius:10px; color:var(--text); margin-bottom:16px;">
-          <i class="bi bi-info-circle-fill me-1 text-primary"></i> Perubahan konfigurasi Wi-Fi akan dikirimkan ke antrean TR-069 dan langsung diterapkan oleh modem.
+  <div class="wifi-modal-box">
+    <!-- Header -->
+    <div class="wifi-modal-head">
+      <div class="wifi-modal-head-left">
+        <div class="wifi-modal-icon-badge">
+          <i class="bi bi-broadcast-pin"></i>
         </div>
-
-        <div class="fg" style="margin-bottom:14px;">
-          <label class="fl" style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase;">Perangkat / Pelanggan</label>
-          <input type="text" class="fc" id="acs_wifi_device_label" readonly style="font-weight:700; background:var(--bg3);">
-        </div>
-
-        <div id="acs_wifi_loading" style="display:none; text-align:center; padding:10px; font-size:12px; color:var(--muted); margin-bottom:10px;">
-          <i class="bi bi-arrow-repeat spin me-1 text-primary"></i> Membaca konfigurasi SSID modem...
-        </div>
-
-        <!-- 2.4 GHz Section -->
-        <div style="background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:14px;">
-          <div style="font-size:12px; font-weight:700; color:#10b981; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-            <i class="bi bi-broadcast"></i> Wi-Fi 2.4 GHz (Default)
-          </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div>
-              <label class="fl" style="font-size:11px;">Nama SSID (2.4G)</label>
-              <input type="text" class="fc" id="acs_wifi_new_ssid" placeholder="Contoh: BIONFIBER">
-            </div>
-            <div>
-              <label class="fl" style="font-size:11px;">Password (2.4G)</label>
-              <div style="position:relative">
-                <input type="password" class="fc" id="acs_wifi_new_password" placeholder="Kosongkan jika tak diubah" minlength="8" style="padding-right:36px" oninput="onAdminPass24Input(this)">
-                <button type="button" onclick="togglePassVisibility('acs_wifi_new_password', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:var(--muted);cursor:pointer;padding:4px">
-                  <i class="bi bi-eye"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 5 GHz Section (Dual-Band) -->
-        <div id="acs_wifi_5g_container" style="background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:14px;">
-          <div style="font-size:12px; font-weight:700; color:#38bdf8; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between;">
-            <span style="display:flex; align-items:center; gap:6px;"><i class="bi bi-lightning-charge-fill"></i> Wi-Fi 5 GHz (Dual Band)</span>
-            <label style="font-size:11px; font-weight:normal; color:var(--muted); cursor:pointer; display:flex; align-items:center; gap:4px;">
-              <input type="checkbox" id="acs_wifi_sync_pass" onchange="syncWifi5gPassword(this)"> Samakan Password
-            </label>
-          </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div>
-              <label class="fl" style="font-size:11px;">Nama SSID (5G)</label>
-              <input type="text" class="fc" id="acs_wifi_new_ssid_5g" placeholder="Contoh: BIONFIBER-5G">
-            </div>
-            <div>
-              <label class="fl" style="font-size:11px;">Password (5G)</label>
-              <div style="position:relative">
-                <input type="password" class="fc" id="acs_wifi_new_password_5g" placeholder="Kosongkan jika tak diubah" minlength="8" style="padding-right:36px">
-                <button type="button" onclick="togglePassVisibility('acs_wifi_new_password_5g', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:var(--muted);cursor:pointer;padding:4px">
-                  <i class="bi bi-eye"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Status & Log TR-069 Section -->
-        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:14px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase;">
-              <i class="bi bi-cpu me-1"></i> Status Parameter & Antrean TR-069
-            </span>
-            <button type="button" class="btn btn-sm" id="btn_detect_wlan" onclick="triggerWlanDiscovery()" style="font-size:11px; padding:2px 8px; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:6px; cursor:pointer;">
-              <i class="bi bi-search"></i> Deteksi Parameter Modem
-            </button>
-          </div>
-          <div id="acs_wifi_action_alert" style="display:none; font-size:11.5px; padding:8px 12px; border-radius:8px; margin-bottom:8px;"></div>
-          <div id="acs_wifi_diag_status" style="font-size:11px; color:var(--muted);">
-            Memuat status parameter modem...
-          </div>
-          <div id="acs_wifi_task_logs" style="margin-top:8px; max-height:130px; overflow-y:auto; font-family:monospace; font-size:10.5px; display:none; background:var(--bg); padding:8px 10px; border-radius:8px; border:1px solid var(--border);">
-          </div>
-        </div>
-
-        <div class="fg" style="margin-bottom:6px;">
-          <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
-            <input type="checkbox" id="acs_wifi_notify_wa" checked style="width:16px; height:16px;">
-            <span>Kirim notifikasi otomatis ke WhatsApp pelanggan</span>
-          </label>
+        <div>
+          <h3 class="wifi-modal-title">Konfigurasi Radio Wi-Fi</h3>
+          <div class="wifi-modal-subtitle">Provisi parameter WLAN CPE melalui protokol TR-069</div>
         </div>
       </div>
-      <div class="mf" style="padding:14px 20px; border-top:1px solid var(--border); display:flex; justify-content:space-between;">
-        <button type="button" class="btn btn-g btn-sm" onclick="closeModal('acsWifiModal')">Batal</button>
-        <button type="submit" class="btn btn-p btn-sm" id="btn_save_acs_wifi">
-          <i class="bi bi-save"></i> Terapkan Pengaturan
+      <button type="button" class="wifi-modal-close-btn" onclick="closeModal('acsWifiModal')" title="Tutup">&times;</button>
+    </div>
+
+    <form id="acsWifiForm" onsubmit="submitAcsWifi(event)">
+      <div class="wifi-modal-body">
+        <!-- Hidden Inputs for logic & compatibility -->
+        <input type="hidden" id="acs_wifi_device_id" value="">
+        <input type="hidden" id="acs_wifi_acs_id" value="">
+        <input type="hidden" id="acs_wifi_device_label" value="">
+
+        <!-- Device Identity Banner -->
+        <div class="wifi-target-card">
+          <div class="wifi-target-left">
+            <div class="wifi-target-avatar">
+              <i class="bi bi-router"></i>
+            </div>
+            <div class="wifi-target-details">
+              <div class="wifi-target-cust" id="acs_wifi_display_cust">Memuat perangkat...</div>
+              <div class="wifi-target-meta">
+                <span class="wifi-meta-pill" title="Serial Number ONT"><i class="bi bi-upc-scan me-1"></i><span id="acs_wifi_display_sn">-</span></span>
+                <span class="wifi-meta-pill" id="acs_wifi_display_ip" style="display:none;"><i class="bi bi-globe me-1"></i>-</span>
+                <span class="wifi-meta-pill" style="color:#38bdf8; border-color:rgba(56,189,248,0.25); background:rgba(56,189,248,0.06);"><i class="bi bi-diagram-3 me-1"></i>TR-069 CWMP</span>
+              </div>
+            </div>
+          </div>
+          <div class="wifi-target-right">
+            <span class="wifi-target-badge">
+              <span class="live-dot" style="width:6px; height:6px;"></span> Dual-Band Ready
+            </span>
+          </div>
+        </div>
+
+        <!-- Inline Loading Indicator -->
+        <div id="acs_wifi_loading" style="display:none; text-align:center; padding:9px 14px; font-size:12px; color:var(--muted); background:rgba(0,82,204,0.06); border-radius:10px; border:1px solid rgba(0,82,204,0.18);">
+          <i class="bi bi-arrow-repeat spin me-1 text-primary"></i> Membaca konfigurasi SSID aktif dari modem...
+        </div>
+
+        <!-- 2.4 GHz Band Card -->
+        <div class="wifi-radio-card radio-24">
+          <div class="wifi-radio-header">
+            <div class="wifi-radio-title">
+              <i class="bi bi-wifi"></i>
+              <span>Radio 2.4 GHz</span>
+              <span class="wifi-band-tag">802.11 b/g/n</span>
+            </div>
+            <span style="font-size:11px; color:var(--muted); font-weight:500;">Frekuensi Utama</span>
+          </div>
+
+          <div class="wifi-field-grid">
+            <div class="wifi-field-group">
+              <label class="wifi-field-label">
+                <i class="bi bi-broadcast"></i> Nama SSID (2.4G)
+              </label>
+              <div class="wifi-input-wrap">
+                <input type="text" class="fc" id="acs_wifi_new_ssid" placeholder="Contoh: BIONFIBER" autocomplete="off" spellcheck="false">
+              </div>
+            </div>
+
+            <div class="wifi-field-group">
+              <label class="wifi-field-label">
+                <i class="bi bi-shield-lock"></i> Kunci Keamanan (2.4G)
+              </label>
+              <div class="wifi-input-wrap">
+                <input type="password" class="fc" id="acs_wifi_new_password" placeholder="Biarkan kosong jika tidak diubah" minlength="8" oninput="onAdminPass24Input(this)" autocomplete="new-password">
+                <button type="button" class="wifi-eye-btn" onclick="togglePassVisibility('acs_wifi_new_password', this)" title="Lihat Kata Sandi">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+              <div class="wifi-field-hint">Minimal 8 karakter jika ingin mengganti sandi.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5 GHz Band Card -->
+        <div id="acs_wifi_5g_container" class="wifi-radio-card radio-5g">
+          <div class="wifi-radio-header">
+            <div class="wifi-radio-title">
+              <i class="bi bi-lightning-charge-fill"></i>
+              <span>Radio 5 GHz</span>
+              <span class="wifi-band-tag">802.11 a/n/ac/ax</span>
+            </div>
+            <label class="wifi-sync-toggle" title="Samakan kata sandi 5G dengan 2.4G">
+              <input type="checkbox" id="acs_wifi_sync_pass" onchange="syncWifi5gPassword(this)">
+              <span>Samakan Kata Sandi</span>
+            </label>
+          </div>
+
+          <div class="wifi-field-grid">
+            <div class="wifi-field-group">
+              <label class="wifi-field-label">
+                <i class="bi bi-broadcast"></i> Nama SSID (5G)
+              </label>
+              <div class="wifi-input-wrap">
+                <input type="text" class="fc" id="acs_wifi_new_ssid_5g" placeholder="Contoh: BIONFIBER-5G" autocomplete="off" spellcheck="false">
+              </div>
+            </div>
+
+            <div class="wifi-field-group">
+              <label class="wifi-field-label">
+                <i class="bi bi-shield-lock"></i> Kunci Keamanan (5G)
+              </label>
+              <div class="wifi-input-wrap">
+                <input type="password" class="fc" id="acs_wifi_new_password_5g" placeholder="Biarkan kosong jika tidak diubah" minlength="8" autocomplete="new-password">
+                <button type="button" class="wifi-eye-btn" onclick="togglePassVisibility('acs_wifi_new_password_5g', this)" title="Lihat Kata Sandi">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+              <div class="wifi-field-hint">Minimal 8 karakter jika ingin mengganti sandi.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TR-069 Telemetry & Task Diagnostics -->
+        <div class="wifi-telemetry-box">
+          <div class="wifi-telemetry-head">
+            <span class="wifi-telemetry-title">
+              <i class="bi bi-hdd-network text-primary"></i>
+              Status Jalur TR-069 & Antrean CPE
+            </span>
+            <button type="button" class="wifi-btn-sync" id="btn_detect_wlan" onclick="triggerWlanDiscovery()" title="Kueri ulang pohon parameter WLAN modem">
+              <i class="bi bi-arrow-repeat"></i> Sinkronkan Parameter
+            </button>
+          </div>
+
+          <div id="acs_wifi_action_alert" class="wifi-alert"></div>
+          
+          <div id="acs_wifi_diag_status" class="wifi-diag-status">
+            <span class="text-muted"><i class="bi bi-arrow-repeat spin me-1"></i> Memeriksa status parameter modem...</span>
+          </div>
+
+          <div id="acs_wifi_task_logs" class="wifi-task-console" style="display:none;"></div>
+        </div>
+
+        <!-- WhatsApp Notification Option -->
+        <label class="wifi-notify-row" for="acs_wifi_notify_wa">
+          <input type="checkbox" id="acs_wifi_notify_wa" checked>
+          <div>
+            <div class="wifi-notify-label">
+              <i class="bi bi-whatsapp" style="color:#25d366; font-size:15px;"></i>
+              Kirim rincian Wi-Fi baru ke WhatsApp pelanggan
+            </div>
+            <div class="wifi-notify-sub">Pesan notifikasi rincian SSID dan sandi baru otomatis dikirimkan ke kontak terdaftar.</div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="wifi-modal-foot">
+        <button type="button" class="wifi-btn-cancel" onclick="closeModal('acsWifiModal')">Batal</button>
+        <button type="submit" class="wifi-btn-submit" id="btn_save_acs_wifi">
+          <i class="bi bi-cloud-arrow-up-fill"></i> Terapkan ke Modem
         </button>
       </div>
     </form>
   </div>
 </div>
 
+<!-- ========================================== -->
+<!-- MODAL: TAUTKAN MODEM KE PELANGGAN          -->
+<!-- ========================================== -->
+<div class="mo" id="mapCustomerModal">
+  <div class="mb" style="max-width:480px">
+    <div class="mh">
+      <h3 class="mt"><i class="bi bi-person-plus text-primary"></i> Tautkan Modem ke Pelanggan</h3>
+      <button class="mc" onclick="closeModal('mapCustomerModal')">&times;</button>
+    </div>
+    <div class="mbody">
+      <form id="mapCustomerForm" onsubmit="submitMapCustomer(event)">
+        <div style="background:var(--bg3); padding:12px 16px; border-radius:10px; margin-bottom:16px; border:1px solid var(--border);">
+          <div style="font-size:12px; color:var(--muted); margin-bottom:4px;">Serial Number Perangkat:</div>
+          <div style="font-size:16px; font-weight:700; font-family:monospace; color:var(--text);" id="lblMapSn">-</div>
+          <input type="hidden" id="inputMapSn" value="">
+        </div>
+
+        <div class="fg" style="margin-bottom:18px;">
+          <label class="fl" style="font-weight:600; font-size:13px;">Pilih Pelanggan Billing</label>
+          <select id="selectMapCustomer" class="fc" style="height:42px; font-size:13px;" required>
+            <option value="">-- Pilih Pelanggan --</option>
+            <% const mapCustList = (typeof customers !== 'undefined' && Array.isArray(customers)) ? customers : ((typeof customersList !== 'undefined' && Array.isArray(customersList)) ? customersList : []); %>
+            <% mapCustList.forEach(c => { %>
+              <option value="<%= c.id %>"><%= c.name %> (<%= c.pppoe_username ? c.pppoe_username : (c.customer_code || 'ID: ' + c.id) %>)</option>
+            <% }) %>
+          </select>
+          <small style="color:var(--muted); font-size:11px; margin-top:4px; display:block;">
+            SN modem akan tersimpan di profil pelanggan dan otomatis sinkron dengan nama pelanggan di tabel.
+          </small>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+          <button type="button" class="btn btn-g btn-sm" onclick="closeModal('mapCustomerModal')">Batal</button>
+          <button type="submit" class="btn btn-p btn-sm" id="btnSubmitMapCustomer">
+            <i class="bi bi-check-circle"></i> Simpan Tautan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
+// ── CUSTOMER MAPPING HELPERS ──
+function openMapCustomerModal(sn) {
+    const inputSn = document.getElementById('inputMapSn');
+    const lblSn = document.getElementById('lblMapSn');
+    const select = document.getElementById('selectMapCustomer');
+    if (inputSn) inputSn.value = sn;
+    if (lblSn) lblSn.textContent = sn;
+    if (select) select.value = '';
+    openModal('mapCustomerModal');
+}
+
+async function submitMapCustomer(e) {
+    e.preventDefault();
+    const sn = document.getElementById('inputMapSn').value;
+    const customerId = document.getElementById('selectMapCustomer').value;
+    const btn = document.getElementById('btnSubmitMapCustomer');
+
+    if (!sn || !customerId) {
+        alert('Silakan pilih pelanggan terlebih dahulu.');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Menyimpan...';
+
+    try {
+        const res = await fetch('/admin/acs/map-customer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sn, customerId })
+        });
+        const data = await res.json();
+        if (data.success) {
+            closeModal('mapCustomerModal');
+            window.location.reload();
+        } else {
+            alert(data.message || 'Gagal menyimpan tautan.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-circle"></i> Simpan Tautan';
+        }
+    } catch (err) {
+        alert('Terjadi kesalahan: ' + err.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Simpan Tautan';
+    }
+}
+
+async function unmapCustomer(sn, custName) {
+    if (!confirm(`Lepas tautan perangkat SN ${sn} dari pelanggan "${custName || ''}"?`)) {
+        return;
+    }
+    try {
+        const res = await fetch('/admin/acs/unmap-customer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sn })
+        });
+        const data = await res.json();
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Gagal melepas tautan.');
+        }
+    } catch (err) {
+        alert('Terjadi kesalahan: ' + err.message);
+    }
+}
+
 // ── TAB SWITCHING ──
 function switchAcsTab(tabName, btn) {
     document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
@@ -1265,22 +1988,29 @@ document.querySelectorAll('.mo').forEach(m => m.addEventListener('click', e => {
 let currentActiveFilter = 'all';
 
 function filterDevicesByStatus(status, el) {
+    // 1. Jika pengguna sedang di tab lain (Kelola Server ACS / Console), otomatis alihkan ke tab Perangkat
+    const tabBtnDev = document.getElementById('tabBtnDevices');
+    if (tabBtnDev && !tabBtnDev.classList.contains('active')) {
+        switchAcsTab('devices', tabBtnDev);
+    }
+
     currentActiveFilter = status;
     
-    // Update KPI card active style
-    document.querySelectorAll('.kpi-card').forEach(c => c.classList.remove('active-filter'));
-    if (status === 'all') document.getElementById('kpiCardAll')?.classList.add('active-filter');
-    else if (status === 'online') document.getElementById('kpiCardOnline')?.classList.add('active-filter');
-    else if (status === 'offline') document.getElementById('kpiCardOffline')?.classList.add('active-filter');
-    else if (status === 'critical') document.getElementById('kpiCardCritical')?.classList.add('active-filter');
 
-    // Update status pills active style
+
+    // 3. Update status pills active style
     document.querySelectorAll('.status-pill-btn').forEach(b => {
         if (b.dataset.filter === status) b.classList.add('active');
         else b.classList.remove('active');
     });
 
+    // 4. Terapkan filter ke baris tabel
     applyCombinedFilters();
+
+    // 5. Scroll halus ke tabel jika posisi layar sudah scroll ke bawah
+    if (window.scrollY > 300) {
+        document.querySelector('.segmented-tabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 function instantFilterTable(query) {
@@ -1358,14 +2088,14 @@ function syncWifi5gPassword(chk) {
     if (chk && chk.checked) {
         if (!p24.value) {
             p24.focus();
-            p24.placeholder = 'Ketik sandi baru 2.4G di sini...';
+            p24.placeholder = 'Ketik kata sandi 2.4 GHz di sini...';
         }
         p5.value = p24.value;
         p5.disabled = true;
-        p5.placeholder = '(Sama dengan sandi 2.4G)';
+        p5.placeholder = '(Mengikuti kata sandi 2.4 GHz)';
     } else {
         p5.disabled = false;
-        p5.placeholder = 'Kosongkan jika tak diubah';
+        p5.placeholder = 'Biarkan kosong jika tidak diubah';
     }
 }
 
@@ -1380,13 +2110,30 @@ function onAdminPass24Input(input) {
 async function openAcsWifiModal(id, sn, currentSsid, custName, acsId) {
     document.getElementById('acs_wifi_device_id').value = id;
     document.getElementById('acs_wifi_acs_id').value = acsId || 'builtin';
-    document.getElementById('acs_wifi_device_label').value = (custName && custName !== '-' ? (custName + ' — ') : '') + (sn || id);
+    const labelVal = (custName && custName !== '-' ? (custName + ' — ') : '') + (sn || id);
+    const labelEl = document.getElementById('acs_wifi_device_label');
+    if (labelEl) labelEl.value = labelVal;
+    
+    // Update modern device identity strip
+    const custDisp = document.getElementById('acs_wifi_display_cust');
+    const snDisp = document.getElementById('acs_wifi_display_sn');
+    const ipDisp = document.getElementById('acs_wifi_display_ip');
+    if (custDisp) custDisp.textContent = (custName && custName !== '-' && custName.trim() !== '') ? custName : 'Pelanggan Umum';
+    if (snDisp) snDisp.textContent = sn || id;
+    if (ipDisp) ipDisp.style.display = 'none';
+
+    // Reset alert
+    const alertBox = document.getElementById('acs_wifi_action_alert');
+    if (alertBox) {
+        alertBox.style.display = 'none';
+        alertBox.innerHTML = '';
+    }
     
     const initial24 = (currentSsid && currentSsid !== '-' ? currentSsid : '');
     document.getElementById('acs_wifi_new_ssid').value = initial24;
     document.getElementById('acs_wifi_new_password').value = '';
     
-    // Sensible default for 5G so it is never empty by accident
+    // Sensible default for 5G
     let default5g = '';
     if (initial24) {
         if (/5g/i.test(initial24)) default5g = initial24;
@@ -1423,7 +2170,7 @@ async function openAcsWifiModal(id, sn, currentSsid, custName, acsId) {
             });
         }
     } catch (e) {
-        console.error('Gagal mengambil detail WiFi perangkat:', e);
+        console.error('Gagal membaca detail Wi-Fi CPE:', e);
     } finally {
         if (loading) loading.style.display = 'none';
     }
@@ -1443,13 +2190,19 @@ async function loadWifiDiagnostics(deviceId) {
             let statusHtml = '';
             if (data.detected5gPath) {
                 const shortPath = data.detected5gPath.split('.').slice(-2).join('.');
-                statusHtml = `<span style="color:#10b981; font-weight:700;"><i class="bi bi-check-circle-fill"></i> 2.4G & 5G Terdeteksi</span> &bull; <span style="color:var(--muted); font-size:11px;">Path 5G: <code>${shortPath}</code></span>`;
+                statusHtml = `<span style="color:#10b981; font-weight:700;"><i class="bi bi-check-circle-fill me-1"></i> Jalur WLAN Terpetakan (2.4G & 5G)</span> &bull; <span style="color:var(--muted); font-size:11px;">Objek: <code>${shortPath}</code></span>`;
             } else {
-                statusHtml = `<span style="color:#f59e0b; font-weight:700;"><i class="bi bi-exclamation-triangle-fill"></i> Jalur 5GHz Belum Terpetakan</span> &bull; <span style="font-size:11px; color:var(--muted);">Klik "Deteksi Parameter Modem" di samping untuk sinkronisasi otomatis.</span>`;
+                statusHtml = `<span style="color:#f59e0b; font-weight:700;"><i class="bi bi-exclamation-triangle-fill me-1"></i> Parameter 5 GHz Belum Terpetakan</span> &bull; <span style="font-size:11px; color:var(--muted);">Gunakan tombol sinkronisasi untuk kueri tree parameter CPE.</span>`;
             }
 
             if (data.ip_address) {
-                statusHtml += ` <span class="badge" style="font-size:10px; background:var(--bg); color:var(--muted); margin-left:6px;">IP: ${data.ip_address}</span>`;
+                statusHtml += ` <span class="badge" style="font-size:10.5px; background:rgba(255,255,255,0.06); color:var(--muted); border:1px solid var(--border); margin-left:6px;">IP: ${data.ip_address}</span>`;
+                
+                const ipDisp = document.getElementById('acs_wifi_display_ip');
+                if (ipDisp) {
+                    ipDisp.innerHTML = `<i class="bi bi-globe me-1"></i>${data.ip_address}`;
+                    ipDisp.style.display = 'inline-flex';
+                }
             }
             statusEl.innerHTML = statusHtml;
 
@@ -1499,7 +2252,7 @@ async function loadWifiDiagnostics(deviceId) {
             }
         }
     } catch (e) {
-        console.warn('Gagal memuat diagnostik WiFi:', e.message);
+        console.warn('Gagal memuat telemetri Wi-Fi:', e.message);
     }
 }
 
@@ -1510,8 +2263,8 @@ async function triggerWlanDiscovery() {
     if (!deviceId || !btn) return;
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Mendeteksi...';
-    if (statusEl) statusEl.innerHTML = '<span style="color:#38bdf8;"><i class="bi bi-arrow-repeat spin"></i> Mengirim perintah deteksi parameter ke modem via TR-069...</span>';
+    btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Menyinkronkan...';
+    if (statusEl) statusEl.innerHTML = '<span style="color:#38bdf8;"><i class="bi bi-arrow-repeat spin me-1"></i> Mengirim task query parameter ke CPE via TR-069...</span>';
 
     try {
         const res = await fetch(`/admin/acs/api/discover-wlan/${encodeURIComponent(deviceId)}`, {
@@ -1540,8 +2293,8 @@ async function triggerWlanDiscovery() {
                             clearInterval(wlanDiscoveryTimer);
                             wlanDiscoveryTimer = null;
                             btn.disabled = false;
-                            btn.innerHTML = '<i class="bi bi-check-lg text-success"></i> Berhasil';
-                            setTimeout(() => { btn.innerHTML = '<i class="bi bi-search"></i> Deteksi Parameter Modem'; }, 3000);
+                            btn.innerHTML = '<i class="bi bi-check-lg text-success"></i> Sinkron';
+                            setTimeout(() => { btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Sinkronkan Parameter'; }, 3000);
                         }
                     }
                 } catch (_) {}
@@ -1550,18 +2303,18 @@ async function triggerWlanDiscovery() {
                     clearInterval(wlanDiscoveryTimer);
                     wlanDiscoveryTimer = null;
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-search"></i> Deteksi Parameter Modem';
+                    btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Sinkronkan Parameter';
                 }
             }, 2000);
         } else {
-            alert('Gagal: ' + (data.message || 'Terjadi kesalahan'));
+            alert('Gagal: ' + (data.message || 'Terjadi kesalahan sistem'));
             btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-search"></i> Deteksi Parameter Modem';
+            btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Sinkronkan Parameter';
         }
     } catch (e) {
         alert('Error: ' + e.message);
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-search"></i> Deteksi Parameter Modem';
+        btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Sinkronkan Parameter';
     }
 }
 
@@ -1583,20 +2336,20 @@ async function submitAcsWifi(e) {
     const alertBox = document.getElementById('acs_wifi_action_alert');
 
     if (!ssid24 && !password24 && !ssid5 && !password5) {
-        return alert('Silakan masukkan nama SSID atau password baru.');
+        return alert('Silakan masukkan nama SSID atau kata sandi baru.');
     }
-    if (password24 && password24.length < 8) return alert('Password Wi-Fi 2.4G minimal 8 karakter.');
-    if (password5 && password5.length < 8) return alert('Password Wi-Fi 5G minimal 8 karakter.');
+    if (password24 && password24.length < 8) return alert('Kata sandi Wi-Fi 2.4 GHz minimal 8 karakter.');
+    if (password5 && password5.length < 8) return alert('Kata sandi Wi-Fi 5 GHz minimal 8 karakter.');
 
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengirim ke Modem...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1 spin"></span> Menerapkan ke Modem...';
 
     if (alertBox) {
         alertBox.style.display = 'block';
         alertBox.style.background = 'rgba(56,189,248,0.12)';
         alertBox.style.border = '1px solid rgba(56,189,248,0.3)';
         alertBox.style.color = '#38bdf8';
-        alertBox.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Mengirim perintah Wi-Fi ke antrean TR-069...';
+        alertBox.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Mengirim task SetParameterValues ke antrean TR-069 CPE...';
     }
 
     try {
@@ -1618,7 +2371,7 @@ async function submitAcsWifi(e) {
                 alertBox.style.background = 'rgba(16,185,129,0.12)';
                 alertBox.style.border = '1px solid rgba(16,185,129,0.3)';
                 alertBox.style.color = '#10b981';
-                alertBox.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> <strong>Perintah Terkirim!</strong> Memantau proses eksekusi modem secara live di bawah...';
+                alertBox.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> <strong>Konfigurasi Berhasil Terkirim.</strong> Task dalam antrean TR-069 dan sedang diterapkan ke modem.';
             }
 
             // Segera muat log diagnostik
@@ -1641,7 +2394,7 @@ async function submitAcsWifi(e) {
                 alertBox.style.background = 'rgba(239,68,68,0.12)';
                 alertBox.style.border = '1px solid rgba(239,68,68,0.3)';
                 alertBox.style.color = '#ef4444';
-                alertBox.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i> Gagal: ' + (data.error || data.message || 'Terjadi kesalahan');
+                alertBox.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i> Gagal: ' + (data.error || data.message || 'Terjadi kesalahan sistem');
             }
         }
     } catch (err) {
@@ -1654,7 +2407,7 @@ async function submitAcsWifi(e) {
         }
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-save"></i> Terapkan Pengaturan';
+        btn.innerHTML = '<i class="bi bi-cloud-arrow-up-fill"></i> Terapkan ke Modem';
     }
 }
 

@@ -135,6 +135,10 @@ async function syncCustomerOpticalPowerFromGenieACS() {
   const rxPowerPaths = [
     'VirtualParameters.RXPower',
     'VirtualParameters.redaman',
+    'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.RXPower',
+    'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.RxPower',
+    'InternetGatewayDevice.WANDevice.1.X_HW_GponInterfaceConfig.RXPower',
+    'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.RXPower',
     'InternetGatewayDevice.WANDevice.1.WANPONInterfaceConfig.RXPower',
     'InternetGatewayDevice.WANDevice.1.WANEponInterfaceConfig.OpticalPower.RxPower',
     'InternetGatewayDevice.WANDevice.1.WANGponInterfaceConfig.OpticalPower.RxPower',
@@ -172,7 +176,8 @@ async function syncCustomerOpticalPowerFromGenieACS() {
       });
     }
     // Serial number
-    const sn = device.DeviceID?._SerialNumber?._value || 
+    const sn = device._deviceId?._SerialNumber ||
+               device.DeviceID?._SerialNumber?._value || 
                device.InternetGatewayDevice?.DeviceInfo?.SerialNumber?._value ||
                device.Device?.DeviceInfo?.SerialNumber?._value;
     if (sn) list.push(String(sn).toLowerCase());
