@@ -11,6 +11,7 @@ const customerSvc = require('../services/customerService');
 const billingSvc = require('../services/billingService');
 const pdfSvc = require('../services/pdfInvoiceService');
 const mikrotikService = require('../services/mikrotikService');
+const mikrotikSnmpService = require('../services/mikrotikSnmpService');
 const adminSvc = require('../services/adminService');
 const agentSvc = require('../services/agentService');
 const oltSvc = require('../services/oltService');
@@ -5599,8 +5600,8 @@ router.get('/api/mikrotik/users', requireAdmin, async (req, res) => {
   }
 });
 
-// ─── MIKROTIK MONITORING ───────────────────────────────────────────────────
-router.get('/mikrotik', requireAdminSession, requireSidebarMenuAccess('mikrotik'), (req, res) => {
+// ─── MIKROTIK MONITORING & MODULAR PAGES ───────────────────────────────────
+function getMikrotikViewContext(req, title = 'Monitoring MikroTik') {
   const dbRouters = mikrotikService.getAllRouters();
   const settings = getSettings();
   const settingsRouter = {
@@ -5615,10 +5616,32 @@ router.get('/mikrotik', requireAdminSession, requireSidebarMenuAccess('mikrotik'
   const routers = dbRouters.length > 0 ? dbRouters : [settingsRouter];
   const activeRouterId = req.selectedRouterId || (routers[0] ? routers[0].id : '');
 
-  res.render('admin/mikrotik', {
-    title: 'Monitoring MikroTik', company: company(), activePage: 'mikrotik',
-    routers, activeRouterId, selectedRouterId: req.selectedRouterId, msg: flashMsg(req)
-  });
+  return {
+    title,
+    company: company(),
+    activePage: 'mikrotik',
+    routers,
+    activeRouterId,
+    selectedRouterId: req.selectedRouterId,
+    selectedInterface: (req.query.iface && req.query.iface !== '__total__') ? req.query.iface : 'sfp-wan-metro',
+    msg: flashMsg(req)
+  };
+}
+
+router.get('/mikrotik', requireAdminSession, requireSidebarMenuAccess('mikrotik'), (req, res) => {
+  res.render('admin/mikrotik', getMikrotikViewContext(req, 'Dashboard NOC MikroTik'));
+});
+
+router.get('/mikrotik/interfaces', requireAdminSession, requireSidebarMenuAccess('mikrotik'), (req, res) => {
+  res.render('admin/mikrotik_interfaces', getMikrotikViewContext(req, 'Telemetri Interface MikroTik'));
+});
+
+router.get('/mikrotik/pppoe', requireAdminSession, requireSidebarMenuAccess('mikrotik'), (req, res) => {
+  res.render('admin/mikrotik_pppoe', getMikrotikViewContext(req, 'Manajemen Akun PPPoE MikroTik'));
+});
+
+router.get('/mikrotik/hotspot', requireAdminSession, requireSidebarMenuAccess('mikrotik'), (req, res) => {
+  res.render('admin/mikrotik_hotspot', getMikrotikViewContext(req, 'Manajemen Hotspot MikroTik'));
 });
 
 router.get('/mikrotik/display', requireAdminSession, (req, res) => {
@@ -6643,6 +6666,39 @@ router.get('/api/mikrotik/backup', requireAdmin, async (req, res) => {
     res.send(backup);
   } catch (e) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── MIKROTIK SNMP TELEMETRY & LIVE MONITORING ────────────────────────────
+router.get('/api/mikrotik/snmp-telemetry', requireAdmin, async (req, res) => {
+  try {
+    const routerId = req.query.routerId ? Number(req.query.routerId) : null;
+    const telemetry = await mikrotikSnmpService.getRouterTelemetry(routerId);
+    res.json(telemetry);
+  } catch (err) {
+    logger.error(`[AdminPortal] SNMP telemetry error: ${err.message}`);
+    res.status(500).json({ isOnline: false, error: err.message });
+  }
+});
+
+router.get('/api/mikrotik/snmp-traffic', requireAdmin, async (req, res) => {
+  try {
+    const routerId = req.query.routerId ? Number(req.query.routerId) : null;
+    const ifaceName = req.query.interface || null;
+    const sample = await mikrotikSnmpService.getInterfaceTrafficSample(routerId, ifaceName);
+    res.json(sample);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/api/mikrotik/snmp-interfaces', requireAdmin, async (req, res) => {
+  try {
+    const routerId = req.query.routerId ? Number(req.query.routerId) : null;
+    const data = await mikrotikSnmpService.getInterfacesTelemetry(routerId);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ isOnline: false, error: err.message });
   }
 });
 

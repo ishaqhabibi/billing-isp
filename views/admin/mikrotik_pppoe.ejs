@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="<%= lang || 'id' %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Manajemen PPPoE | <%= company %></title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/admin.css?v=2.7">
+  <style>
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.85); } }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .spin { animation: spin 1s linear infinite; display: inline-block; }
+
+    /* Summary KPI Bar */
+    .pppoe-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+    @media(max-width: 992px) { .pppoe-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media(max-width: 480px) { .pppoe-kpi-grid { grid-template-columns: 1fr; } }
+
+    .pppoe-kpi-card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+      padding: 16px 18px; display: flex; flex-direction: column; justify-content: space-between;
+      position: relative; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      cursor: pointer; transition: all 0.2s ease;
+    }
+    .pppoe-kpi-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.2); }
+    .pppoe-kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .pppoe-kpi-card.c-green::before { background: linear-gradient(90deg, #10b981, #34d399); }
+    .pppoe-kpi-card.c-amber::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .pppoe-kpi-card.c-blue::before { background: linear-gradient(90deg, #0052cc, #38bdf8); }
+    .pppoe-kpi-card.c-purple::before { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+
+    .pppoe-kpi-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .pppoe-kpi-lbl { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .pppoe-kpi-val { font-size: 26px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+    .pppoe-kpi-sub { font-size: 11px; color: var(--muted); margin-top: 6px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* Segmented Sub-Tabs */
+    .segmented-control {
+      display: inline-flex; background: var(--bg3); padding: 4px; border-radius: 12px;
+      border: 1px solid var(--border); margin-bottom: 18px;
+    }
+    .seg-btn {
+      background: transparent; border: none; outline: none; padding: 8px 18px;
+      border-radius: 9px; font-size: 13px; font-weight: 600; color: var(--muted);
+      cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .seg-btn:hover { color: var(--text); }
+    .seg-btn.active { background: var(--bg2); color: var(--text); font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,0.25); border: 1px solid var(--border); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Card & Tables */
+    .card-modern { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+    .card-modern-hd { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .card-modern-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; margin: 0; }
+
+    .status-filter-pills { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .status-filter-btn {
+      border: 1px solid var(--border); background: var(--bg3); color: var(--muted);
+      padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s ease;
+    }
+    .status-filter-btn:hover { border-color: rgba(255,255,255,0.25); color: var(--text); }
+    .status-filter-btn.active { background: rgba(0,82,204,0.18); border-color: var(--primary); color: #38bdf8; font-weight: 700; }
+
+    /* Action Buttons in Table */
+    .action-group { display: flex; align-items: center; gap: 5px; }
+    .btn-act {
+      width: 30px; height: 30px; border-radius: 7px; display: inline-flex;
+      align-items: center; justify-content: center; border: 1px solid var(--border);
+      background: var(--bg3); color: var(--muted); cursor: pointer; transition: all 0.15s ease; font-size: 13px;
+    }
+    .btn-act:hover { color: var(--text); border-color: rgba(255,255,255,0.25); transform: translateY(-1px); }
+    .btn-act.btn-kick { color: #f87171; }
+    .btn-act.btn-kick:hover { background: rgba(239,68,68,0.2); border-color: #ef4444; color: #fff; }
+    .btn-act.btn-ping:hover { background: rgba(56,189,248,0.15); border-color: #38bdf8; color: #38bdf8; }
+    .btn-act.btn-toggle:hover { background: rgba(245,158,11,0.15); border-color: #f59e0b; color: #fbbf24; }
+    .btn-act.btn-edit:hover { background: rgba(0,82,204,0.2); border-color: var(--primary); color: #38bdf8; }
+    .btn-act.btn-del:hover { background: rgba(239,68,68,0.2); border-color: #ef4444; color: #ef4444; }
+
+    /* Modals */
+    .mo { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+    .mo.show { display: flex; animation: fadeIn 0.2s ease; }
+    .mb { background: var(--bg2); border: 1px solid var(--border); border-radius: 18px; width: 100%; box-shadow: 0 16px 40px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; }
+    .mh { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--bg3); }
+    .mt { font-size: 15px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; margin: 0; }
+    .mc { background: transparent; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 4px; }
+    .mc:hover { color: var(--text); }
+    .mbody { padding: 20px; overflow-y: auto; }
+    .mf { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: flex-end; gap: 10px; background: var(--bg3); }
+
+    .ping-terminal {
+      background: #090d16; border: 1px solid #1e293b; border-radius: 10px;
+      padding: 14px; font-family: monospace; font-size: 12px; color: #38bdf8;
+      max-height: 240px; overflow-y: auto; line-height: 1.6; white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+<%- include('partials/sidebar', { activePage: 'mikrotik', company }) %>
+<div class="mw">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-title">
+      <button class="hb-menu" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+      <i class="bi bi-ethernet text-primary"></i>
+      <span>Manajemen PPPoE MikroTik</span>
+    </div>
+    <div class="tb-right" style="display:flex;align-items:center;gap:12px">
+      <!-- Router Selector -->
+      <div style="display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);padding:4px 10px;border-radius:9px;">
+        <i class="bi bi-hdd-network text-primary" style="font-size:13px;"></i>
+        <select id="global-router-id" class="fs" style="background:transparent;border:none;color:var(--text);font-size:12.5px;cursor:pointer;padding:0;" onchange="changeRouter()">
+          <option value="" <%= (!selectedRouterId) ? 'selected' : '' %>><%= t('admin.mikrotik.default_router', '-- Default Core Router --') %></option>
+          <% routers.forEach(r => { %>
+            <option value="<%= r.id %>" <%= (String(selectedRouterId || activeRouterId || '') === String(r.id)) ? 'selected' : '' %>><%= r.name %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <!-- Auto Refresh Toggle -->
+      <button id="auto-refresh-toggle" onclick="toggleAutoRefresh()" class="btn btn-sm" style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);font-size:12px;" title="Auto-refresh live (10 detik)">
+        <i class="bi bi-arrow-clockwise"></i>
+        <span id="refresh-status">Auto</span>
+      </button>
+
+      <!-- Ping Tool -->
+      <button onclick="openPingModal()" class="btn btn-g btn-sm" title="Uji Diagnostik Ping ke Pelanggan">
+        <i class="bi bi-broadcast-pin text-primary"></i> Ping Tool
+      </button>
+
+      <!-- Backup RSC -->
+      <a href="#" onclick="downloadBackup(event)" class="btn btn-p btn-sm" title="Download Script Backup .rsc RouterOS">
+        <i class="bi bi-download"></i> Backup RSC
+      </a>
+
+      <!-- Theme Toggle Quick Button -->
+      <button type="button" class="btn btn-g btn-sm theme-toggle-btn" onclick="toggleAppTheme()" title="Ganti Mode Terang / Gelap" style="padding:4px 9px;">
+        <i class="bi bi-moon-stars-fill theme-toggle-icon" style="color:#fbbf24"></i>
+      </button>
+
+      <span class="adm-badge"><i class="bi bi-person-fill"></i> <%= (typeof session !== 'undefined' && session && session.isCashier) ? 'Kasir' : 'Admin' %></span>
+      <a href="/admin/logout" class="btn btn-g btn-sm" title="Logout"><i class="bi bi-box-arrow-left"></i></a>
+    </div>
+  </div>
+
+  <div class="page">
+    <% const mTab = 'pppoe'; %>
+
+    <!-- MIKROTIK MODULAR SUB-NAVIGATION -->
+    <div class="mtabs" style="margin-bottom:20px; overflow-x:auto; white-space:nowrap;">
+      <a href="/admin/mikrotik" class="mtab <%= mTab==='mikrotik' ? 'active' : '' %>"><i class="bi bi-speedometer2"></i> Dashboard NOC</a>
+      <a href="/admin/mikrotik/interfaces" class="mtab <%= mTab==='interfaces' ? 'active' : '' %>"><i class="bi bi-broadcast"></i> Interface &amp; Port</a>
+      <a href="/admin/mikrotik/pppoe" class="mtab <%= mTab==='pppoe' ? 'active' : '' %>"><i class="bi bi-ethernet"></i> Akun PPPoE</a>
+      <a href="/admin/mikrotik/hotspot" class="mtab <%= mTab==='hotspot' ? 'active' : '' %>"><i class="bi bi-wifi"></i> Hotspot Users</a>
+      <a href="/admin/routers" class="mtab <%= mTab==='routers' ? 'active' : '' %>"><i class="bi bi-hdd-network"></i> Manajemen Router</a>
+      <a href="/admin/vouchers" class="mtab <%= mTab==='vouchers' ? 'active' : '' %>"><i class="bi bi-ticket-perforated"></i> Voucher Hotspot</a>
+      <a href="/admin/vouchers/packages" class="mtab <%= mTab==='packages' ? 'active' : '' %>"><i class="bi bi-tags"></i> Paket Voucher</a>
+    </div>
+
+    <!-- SUMMARY KPI BAR -->
+    <div class="pppoe-kpi-grid">
+      <!-- 1. PPPoE Online -->
+      <div class="pppoe-kpi-card c-green" onclick="filterPppoeFromKpi('online')">
+        <div class="pppoe-kpi-top">
+          <span class="pppoe-kpi-lbl">PPPoE Online</span>
+          <i class="bi bi-ethernet text-success" style="font-size:18px;"></i>
+        </div>
+        <div class="pppoe-kpi-val" id="pppoe-online-count">0</div>
+        <div class="pppoe-kpi-sub">
+          <span>Sesi Aktif Tersambung</span>
+          <span><span class="live-dot"></span> Live</span>
+        </div>
+      </div>
+
+      <!-- 2. PPPoE Offline -->
+      <div class="pppoe-kpi-card c-amber" onclick="filterPppoeFromKpi('offline')">
+        <div class="pppoe-kpi-top">
+          <span class="pppoe-kpi-lbl">PPPoE Offline</span>
+          <i class="bi bi-plug text-warning" style="font-size:18px;"></i>
+        </div>
+        <div class="pppoe-kpi-val" id="pppoe-offline-count">0</div>
+        <div class="pppoe-kpi-sub">
+          <span>Secret Belum Terhubung</span>
+          <i class="bi bi-chevron-right"></i>
+        </div>
+      </div>
+
+      <!-- 3. Total Secrets -->
+      <div class="pppoe-kpi-card c-blue" onclick="filterPppoeFromKpi('all')">
+        <div class="pppoe-kpi-top">
+          <span class="pppoe-kpi-lbl">Total Secrets</span>
+          <i class="bi bi-key-fill text-primary" style="font-size:18px;"></i>
+        </div>
+        <div class="pppoe-kpi-val" id="total-secrets-count">0</div>
+        <div class="pppoe-kpi-sub">
+          <span>Database Akun Router</span>
+          <i class="bi bi-chevron-right"></i>
+        </div>
+      </div>
+
+      <!-- 4. Total Profiles -->
+      <div class="pppoe-kpi-card c-purple" onclick="switchInnerTab('profiles')">
+        <div class="pppoe-kpi-top">
+          <span class="pppoe-kpi-lbl">PPPoE Profiles</span>
+          <i class="bi bi-speedometer2 text-info" style="font-size:18px;"></i>
+        </div>
+        <div class="pppoe-kpi-val" id="total-profiles-count">0</div>
+        <div class="pppoe-kpi-sub">
+          <span>Paket Bandwidth &amp; Pool</span>
+          <i class="bi bi-chevron-right"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEGMENTED TABS -->
+    <div class="segmented-control">
+      <button class="seg-btn active" id="seg-btn-secrets" onclick="switchInnerTab('secrets')">
+        <i class="bi bi-key-fill"></i> Akun Secrets (<span id="tab-count-secrets">0</span>)
+      </button>
+      <button class="seg-btn" id="seg-btn-profiles" onclick="switchInnerTab('profiles')">
+        <i class="bi bi-speedometer2"></i> PPPoE Profiles (<span id="tab-count-profiles">0</span>)
+      </button>
+      <button class="seg-btn" id="seg-btn-active" onclick="switchInnerTab('active')">
+        <i class="bi bi-activity"></i> Sesi Aktif Online (<span id="tab-count-active">0</span>)
+      </button>
+    </div>
+
+    <!-- TAB 1: PPPOE SECRETS -->
+    <div id="tab-secrets" class="tab-content active">
+      <div class="card-modern">
+        <div class="card-modern-hd">
+          <div class="card-modern-title">
+            <i class="bi bi-ethernet text-primary"></i> Daftar PPPoE Secrets &amp; Pelanggan
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <!-- Filter Pills -->
+            <div class="status-filter-pills">
+              <button type="button" class="status-filter-btn active" data-filter="all" onclick="filterPppoeStatus('all', this)">Semua</button>
+              <button type="button" class="status-filter-btn" data-filter="online" onclick="filterPppoeStatus('online', this)">Online</button>
+              <button type="button" class="status-filter-btn" data-filter="offline" onclick="filterPppoeStatus('offline', this)">Offline</button>
+              <button type="button" class="status-filter-btn" data-filter="disabled" onclick="filterPppoeStatus('disabled', this)">Disabled</button>
+            </div>
+            <!-- Search -->
+            <div class="sinput" style="max-width:240px;">
+              <i class="bi bi-search"></i>
+              <input type="text" id="pppoeSearchInput" class="fc" placeholder="Cari nama, profile, IP..." onkeyup="filterTable('pppoe-list', this.value)">
+            </div>
+            <button class="btn btn-p btn-sm" onclick="openAddSecret()"><i class="bi bi-plus-lg"></i> Tambah Secret</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="dtbl">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Profile</th>
+                <th>Local Address</th>
+                <th>Remote Address / IP</th>
+                <th>Live Uptime</th>
+                <th>Status</th>
+                <th style="text-align:right;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="pppoe-list">
+              <tr><td colspan="7" class="text-center text-muted" style="padding:28px;"><i class="bi bi-arrow-clockwise spin me-1"></i> Memuat data PPPoE Secrets...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: PPPOE PROFILES -->
+    <div id="tab-profiles" class="tab-content">
+      <div class="card-modern">
+        <div class="card-modern-hd">
+          <div class="card-modern-title">
+            <i class="bi bi-speedometer2 text-primary"></i> Daftar PPPoE Profiles (Rate Limit &amp; IP Pool)
+          </div>
+          <button class="btn btn-p btn-sm" onclick="openAddPppoeProfile()"><i class="bi bi-plus-lg"></i> Tambah Profile</button>
+        </div>
+        <div class="table-responsive">
+          <table class="dtbl">
+            <thead>
+              <tr>
+                <th>Nama Profile</th>
+                <th>Local Address</th>
+                <th>Remote Address / Pool</th>
+                <th>Rate Limit (Upload/Download)</th>
+                <th style="text-align:right;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="pppoe-profiles-list">
+              <tr><td colspan="5" class="text-center text-muted" style="padding:28px;"><i class="bi bi-arrow-clockwise spin me-1"></i> Memuat data PPPoE Profiles...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: ACTIVE ONLINE SESSIONS -->
+    <div id="tab-active" class="tab-content">
+      <div class="card-modern">
+        <div class="card-modern-hd">
+          <div class="card-modern-title">
+            <i class="bi bi-activity text-success"></i> Sesi PPPoE Aktif Real-Time
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <div class="sinput" style="max-width:240px;">
+              <i class="bi bi-search"></i>
+              <input type="text" id="activeSearchInput" class="fc" placeholder="Cari user aktif..." onkeyup="filterTable('active-sessions-list', this.value)">
+            </div>
+            <button class="btn btn-g btn-sm" onclick="loadSecrets()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="dtbl">
+            <thead>
+              <tr>
+                <th style="width:40px;">#</th>
+                <th>Username</th>
+                <th>Profile</th>
+                <th>IP Address</th>
+                <th>Caller ID / MAC</th>
+                <th>Uptime</th>
+                <th style="text-align:right;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="active-sessions-list">
+              <tr><td colspan="7" class="text-center text-muted" style="padding:28px;"><i class="bi bi-arrow-clockwise spin me-1"></i> Memuat sesi aktif...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <%- include('partials/footer') %>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL: ADD / EDIT PPPOE SECRET             -->
+<!-- ========================================== -->
+<div class="mo" id="secretModal">
+  <div class="mb" style="max-width:540px;">
+    <div class="mh">
+      <span class="mt" id="secretModalTitle"><i class="bi bi-key-fill text-primary"></i> Tambah Secret</span>
+      <button class="mc" onclick="closeModal('secretModal')">&times;</button>
+    </div>
+    <form id="secretForm">
+      <input type="hidden" id="secret_id">
+      <div class="mbody">
+        <div class="form-row2 mb16">
+          <div class="fg" style="margin:0;"><label class="fl">Username</label><input class="fc" id="s_name" required placeholder="user@domain"></div>
+          <div class="fg" style="margin:0;"><label class="fl">Password</label><input class="fc" id="s_password" type="text" placeholder="Password rahasia"></div>
+        </div>
+        <div class="form-row2 mb16">
+          <div class="fg" style="margin:0;">
+            <label class="fl">Service</label>
+            <select class="fc" id="s_service"><option value="pppoe">pppoe</option><option value="any">any</option></select>
+          </div>
+          <div class="fg" style="margin:0;">
+            <label class="fl">Profile</label>
+            <select class="fc" id="s_profile"><option value="default">default</option></select>
+          </div>
+        </div>
+        <div class="form-row2 mb16">
+          <div class="fg" style="margin:0;"><label class="fl">Local Address</label><input class="fc" id="s_local" placeholder="Opsional (Gateway)"></div>
+          <div class="fg" style="margin:0;"><label class="fl">Remote Address</label><input class="fc" id="s_remote" placeholder="Opsional (Static IP / Pool)"></div>
+        </div>
+        <div class="fg" style="margin:0;"><label class="fl">Komentar</label><input class="fc" id="s_comment" placeholder="Catatan / Nama Pelanggan"></div>
+      </div>
+      <div class="mf">
+        <button type="button" class="btn btn-g btn-sm" onclick="closeModal('secretModal')">Batal</button>
+        <button type="submit" class="btn btn-p btn-sm" id="secretSubmitBtn"><i class="bi bi-save"></i> Simpan Secret</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL: PPPOE PROFILE MODAL                 -->
+<!-- ========================================== -->
+<div class="mo" id="pppoeProfileModal">
+  <div class="mb" style="max-width:540px;">
+    <div class="mh">
+      <span class="mt" id="pppoeProfileModalTitle"><i class="bi bi-speedometer2 text-primary"></i> Kelola PPPoE Profile</span>
+      <button class="mc" onclick="closeModal('pppoeProfileModal')">&times;</button>
+    </div>
+    <form id="pppoeProfileForm">
+      <input type="hidden" id="pp_id">
+      <div class="mbody">
+        <div class="fg mb16">
+          <label class="fl">Nama Profile</label>
+          <input class="fc" id="pp_name" required placeholder="Contoh: paket-20mbps">
+        </div>
+        <div class="form-row2 mb16">
+          <div class="fg" style="margin:0;"><label class="fl">Local Address (Gateway)</label><input class="fc" id="pp_local" placeholder="Contoh: 192.168.10.1"></div>
+          <div class="fg" style="margin:0;">
+            <label class="fl">Remote Address (IP Pool)</label>
+            <select class="fc" id="pp_remote_pool"></select>
+            <input class="fc mt-2" id="pp_remote_manual" style="display:none;margin-top:6px;" placeholder="Ketik IP remote manual">
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:5px;cursor:pointer;">
+              <input type="checkbox" id="pp_remote_manual_toggle"> Input IP Manual
+            </label>
+          </div>
+        </div>
+        <div class="fg" style="margin:0;">
+          <label class="fl">Rate Limit (Upload/Download)</label>
+          <input class="fc" id="pp_rate" placeholder="Contoh: 10M/20M">
+        </div>
+      </div>
+      <div class="mf">
+        <button type="button" class="btn btn-g btn-sm" onclick="closeModal('pppoeProfileModal')">Batal</button>
+        <button type="submit" class="btn btn-p btn-sm"><i class="bi bi-save"></i> Simpan Profile</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL: PING DIAGNOSTIC TOOL                -->
+<!-- ========================================== -->
+<div class="mo" id="pingModal">
+  <div class="mb" style="max-width:540px;">
+    <div class="mh">
+      <span class="mt"><i class="bi bi-broadcast-pin text-primary"></i> Diagnostik Ping MikroTik</span>
+      <button class="mc" onclick="closeModal('pingModal')">&times;</button>
+    </div>
+    <div class="mbody">
+      <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;">
+        <div class="fg" style="margin:0;flex:1;">
+          <label class="fl">Host / IP Address Tujuan</label>
+          <input type="text" id="pingHostInput" class="fc" placeholder="192.168.1.1 atau 8.8.8.8" value="8.8.8.8">
+        </div>
+        <div class="fg" style="margin:0;width:90px;">
+          <label class="fl">Paket</label>
+          <select id="pingCountInput" class="fc">
+            <option value="4" selected>4 Paket</option>
+            <option value="8">8 Paket</option>
+          </select>
+        </div>
+        <button type="button" class="btn btn-p" id="btnExecutePing" onclick="executePing()" style="height:38px;padding:0 16px;">
+          <i class="bi bi-send-fill"></i> Ping
+        </button>
+      </div>
+
+      <div class="ping-terminal" id="pingTerminalOutput"># Siap menjalankan ICMP ping test dari router MikroTik...
+Ketik alamat IP atau klik IP pelanggan di tabel untuk menguji konektivitas &amp; latency.</div>
+    </div>
+    <div class="mf">
+      <button type="button" class="btn btn-g btn-sm" onclick="closeModal('pingModal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let pppoeData = [];
+  let onlineUsersData = [];
+  let offlineUsersData = [];
+  let pppoeProfilesData = [];
+  let ipPoolsData = [];
+  let currentPppoeFilter = 'all';
+
+  function getRouterId() {
+    return document.getElementById('global-router-id')?.value || '';
+  }
+
+  function changeRouter() {
+    const rId = getRouterId();
+    window.location.href = '/admin/set-active-router?router_id=' + (rId || 'all');
+  }
+
+  function downloadBackup(e) {
+    e.preventDefault();
+    const routerId = getRouterId();
+    window.location.href = `/admin/api/mikrotik/backup?routerId=${routerId}`;
+  }
+
+  function escapeHtmlAttr(s) {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function switchInnerTab(tabName) {
+    document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const btn = document.getElementById('seg-btn-' + tabName);
+    const content = document.getElementById('tab-' + tabName);
+    if (btn) btn.classList.add('active');
+    if (content) content.classList.add('active');
+
+    if (tabName === 'profiles') loadPppoeProfiles();
+    else if (tabName === 'active') renderActiveSessionsTable();
+    else renderPppoeTable();
+  }
+
+  function filterPppoeFromKpi(filterType) {
+    switchInnerTab('secrets');
+    const btn = document.querySelector(`.status-filter-btn[data-filter="${filterType}"]`);
+    filterPppoeStatus(filterType, btn);
+  }
+
+  function filterPppoeStatus(status, btn) {
+    currentPppoeFilter = status;
+    document.querySelectorAll('.status-filter-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderPppoeTable();
+  }
+
+  function filterTable(id, val) {
+    const q = val.toLowerCase();
+    const tbody = document.getElementById(id);
+    if (!tbody) return;
+    const rows = tbody.getElementsByTagName('tr');
+    for (let i = 0; i < rows.length; i++) {
+      const text = rows[i].textContent.toLowerCase();
+      rows[i].style.display = text.includes(q) ? '' : 'none';
+    }
+  }
+
+  function openModal(id) {
+    pauseAutoRefresh();
+    const el = document.getElementById(id);
+    if (el) el.classList.add('show');
+  }
+
+  function closeModal(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('show');
+    resumeAutoRefresh();
+  }
+
+  document.querySelectorAll('.mo').forEach(m => m.addEventListener('click', e => {
+    if (e.target === m) closeModal(m.id);
+  }));
+
+  // ── LOAD & RENDER SECRETS ──
+  async function loadSecrets() {
+    try {
+      const routerId = getRouterId();
+      const [sRes, aRes] = await Promise.all([
+        fetch(`/admin/api/mikrotik/secrets?routerId=${routerId}`),
+        fetch(`/admin/api/mikrotik/active-pppoe?routerId=${routerId}`)
+      ]);
+      const tbody = document.getElementById('pppoe-list');
+      if (!sRes.ok || !aRes.ok) {
+        pppoeData = [];
+        offlineUsersData = [];
+        if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Gagal memuat data dari router</td></tr>`;
+        return;
+      }
+      pppoeData = await sRes.json();
+      const activeSessions = await aRes.json();
+
+      onlineUsersData = activeSessions.map(active => {
+        const secret = pppoeData.find(s => s.name === active.name);
+        return { ...active, profile: secret ? secret.profile : '-' };
+      });
+
+      offlineUsersData = pppoeData.filter(s => {
+        const isOnline = activeSessions.some(a => a.name === s.name);
+        const isDisabled = s.disabled === true || s.disabled === 'true';
+        return !isOnline && !isDisabled;
+      });
+
+      // Update Counters
+      const onEl = document.getElementById('pppoe-online-count');
+      const offEl = document.getElementById('pppoe-offline-count');
+      const totEl = document.getElementById('total-secrets-count');
+      const tabSec = document.getElementById('tab-count-secrets');
+      const tabAct = document.getElementById('tab-count-active');
+      if (onEl) onEl.textContent = activeSessions.length;
+      if (offEl) offEl.textContent = offlineUsersData.length;
+      if (totEl) totEl.textContent = pppoeData.length;
+      if (tabSec) tabSec.textContent = pppoeData.length;
+      if (tabAct) tabAct.textContent = activeSessions.length;
+
+      renderPppoeTable();
+      renderActiveSessionsTable();
+    } catch (err) {
+      console.error('Error loadSecrets:', err);
+    }
+  }
+
+  function renderPppoeTable() {
+    const tbody = document.getElementById('pppoe-list');
+    if (!tbody) return;
+
+    if (!pppoeData || pppoeData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:28px;">Tidak ada data secret PPPoE.</td></tr>';
+      return;
+    }
+
+    const filtered = pppoeData.filter(s => {
+      const isOnline = onlineUsersData.some(a => a.name === s.name);
+      const isDisabled = s.disabled === true || s.disabled === 'true';
+      if (currentPppoeFilter === 'online') return isOnline;
+      if (currentPppoeFilter === 'offline') return !isOnline && !isDisabled;
+      if (currentPppoeFilter === 'disabled') return isDisabled;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:24px;">Tidak ada secret yang cocok dengan filter.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = filtered.map((s, i) => {
+      const active = onlineUsersData.find(a => a.name === s.name);
+      const isOnline = !!active;
+      const isDisabled = s.disabled === true || s.disabled === 'true';
+
+      let statusHtml = '';
+      if (isOnline) {
+        statusHtml = '<span class="badge bs" style="display:inline-flex;align-items:center;gap:4px;"><span class="live-dot" style="width:6px;height:6px;"></span> Online</span>';
+      } else if (isDisabled) {
+        statusHtml = '<span class="badge bd">Disabled</span>';
+      } else {
+        statusHtml = '<span class="badge bw">Offline</span>';
+      }
+
+      const remoteIp = s.remoteAddress || s['remote-address'] || (active ? active.address : '-');
+
+      return `
+        <tr>
+          <td class="fw6" style="color:var(--text);font-family:monospace;">
+            <i class="bi bi-person-fill text-muted me-1"></i>${escapeHtmlAttr(s.name)}
+          </td>
+          <td><span class="badge bp">${escapeHtmlAttr(s.profile)}</span></td>
+          <td><span style="font-size:12px;font-family:monospace;color:var(--muted);">${escapeHtmlAttr(s.localAddress || s['local-address'] || '-')}</span></td>
+          <td>
+            <a href="javascript:void(0)" onclick="openPingModal('${escapeHtmlAttr(remoteIp)}')" title="Klik untuk Ping IP ini" style="font-size:12px;font-family:monospace;color:var(--primary);text-decoration:none;">
+              <i class="bi bi-hdd-network me-1"></i>${escapeHtmlAttr(remoteIp)}
+            </a>
+          </td>
+          <td style="font-size:12px;font-family:monospace;">${active ? escapeHtmlAttr(active.uptime) : '-'}</td>
+          <td>${statusHtml}</td>
+          <td style="text-align:right;">
+            <div class="action-group" style="justify-content:flex-end;">
+              ${isOnline ? `
+                <button class="btn-act btn-kick" onclick="kickPppoeUser('${escapeHtmlAttr(s.name)}', this)" title="Putuskan Sesi Aktif (Kick)">
+                  <i class="bi bi-power"></i>
+                </button>
+              ` : ''}
+              <button class="btn-act btn-toggle" onclick="toggleSecretStatus('${escapeHtmlAttr(s.id)}', ${isDisabled}, this)" title="${isDisabled ? 'Aktifkan Secret' : 'Non-aktifkan Secret'}">
+                <i class="bi bi-${isDisabled ? 'play-circle text-success' : 'pause-circle text-warning'}"></i>
+              </button>
+              <button class="btn-act btn-ping" onclick="openPingModal('${escapeHtmlAttr(remoteIp)}')" title="Diagnostik Ping ke Pelanggan">
+                <i class="bi bi-broadcast-pin"></i>
+              </button>
+              <button class="btn-act btn-edit" onclick="editSecret(${i})" title="Edit Secret">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn-act btn-del" onclick="deleteSecret('${escapeHtmlAttr(s.id)}')" title="Hapus Secret">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function renderActiveSessionsTable() {
+    const tbody = document.getElementById('active-sessions-list');
+    if (!tbody) return;
+
+    if (!onlineUsersData || onlineUsersData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:28px;">Tidak ada sesi PPPoE aktif saat ini.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = onlineUsersData.map((a, idx) => `
+      <tr>
+        <td style="font-family:monospace;color:var(--muted);">${idx + 1}</td>
+        <td class="fw6" style="color:var(--text);font-family:monospace;">
+          <i class="bi bi-person-check-fill text-success me-1"></i>${escapeHtmlAttr(a.name)}
+        </td>
+        <td><span class="badge bp">${escapeHtmlAttr(a.profile || '-')}</span></td>
+        <td>
+          <a href="javascript:void(0)" onclick="openPingModal('${escapeHtmlAttr(a.address)}')" title="Ping IP ini" style="font-size:12px;font-family:monospace;color:var(--primary);text-decoration:none;">
+            ${escapeHtmlAttr(a.address || '-')}
+          </a>
+        </td>
+        <td style="font-size:12px;font-family:monospace;color:var(--muted);">${escapeHtmlAttr(a.callerId || a['caller-id'] || '-')}</td>
+        <td style="font-size:12px;font-family:monospace;color:#10b981;font-weight:700;">${escapeHtmlAttr(a.uptime || '-')}</td>
+        <td style="text-align:right;">
+          <button class="btn btn-d btn-sm py-0 px-2" style="font-size:11px;" onclick="kickPppoeUser('${escapeHtmlAttr(a.name)}', this)" title="Putuskan Sesi">
+            <i class="bi bi-power"></i> Putus
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // ── LOAD & RENDER PPPOE PROFILES ──
+  async function loadPppoeProfiles() {
+    try {
+      const tbody = document.getElementById('pppoe-profiles-list');
+      const res = await fetch(`/admin/api/mikrotik/profiles?routerId=${getRouterId()}`);
+      if (!res.ok) {
+        if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Gagal memuat profile</td></tr>`;
+        return;
+      }
+      pppoeProfilesData = await res.json();
+      const pCountEl = document.getElementById('total-profiles-count');
+      const tabProf = document.getElementById('tab-count-profiles');
+      if (pCountEl) pCountEl.textContent = pppoeProfilesData.length;
+      if (tabProf) tabProf.textContent = pppoeProfilesData.length;
+
+      if (!Array.isArray(pppoeProfilesData) || pppoeProfilesData.length === 0) {
+        if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Tidak ada profile PPPoE.</td></tr>`;
+        return;
+      }
+      if (tbody) {
+        tbody.innerHTML = pppoeProfilesData.map((p, i) => `
+          <tr>
+            <td class="fw6" style="color:var(--text);font-family:monospace;">${escapeHtmlAttr(p.name)}</td>
+            <td><span style="font-size:12px;font-family:monospace;">${escapeHtmlAttr(p.localAddress || '-')}</span></td>
+            <td><span style="font-size:12px;font-family:monospace;color:var(--primary);">${escapeHtmlAttr(p.remoteAddress || '-')}</span></td>
+            <td><span class="badge bp">${escapeHtmlAttr(p.rateLimit || '-')}</span></td>
+            <td style="text-align:right;">
+              <div class="action-group" style="justify-content:flex-end;">
+                <button class="btn-act btn-edit" onclick="editPppoeProfile(${i})" title="Edit Profile"><i class="bi bi-pencil"></i></button>
+                <button class="btn-act btn-del" onclick="deletePppoeProfile('${escapeHtmlAttr(p.id || p.name)}')" title="Hapus Profile"><i class="bi bi-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // ── KICK & TOGGLE & ACTIONS ──
+  async function kickPppoeUser(username, btn) {
+    if (!confirm(`Putuskan paksa sesi PPPoE aktif untuk user "${username}"?`)) return;
+    let oldHtml = '';
+    if (btn) { oldHtml = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i>'; }
+    try {
+      const res = await fetch('/admin/api/mikrotik/kick-pppoe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, routerId: getRouterId() })
+      });
+      const d = await res.json();
+      if (d && d.success) {
+        alert(d.message || 'Sesi PPPoE berhasil diputus!');
+        loadSecrets();
+      } else {
+        alert('Gagal: ' + (d.error || 'Terjadi kesalahan'));
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = oldHtml; }
+    }
+  }
+
+  async function toggleSecretStatus(id, isCurrentlyDisabled, btn) {
+    const actionName = isCurrentlyDisabled ? 'Mengaktifkan' : 'Menonaktifkan';
+    if (!confirm(`${actionName} secret PPPoE ini?`)) return;
+    let oldHtml = '';
+    if (btn) { oldHtml = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i>'; }
+    try {
+      const res = await fetch(`/admin/api/mikrotik/secrets/${encodeURIComponent(id)}/toggle?routerId=${getRouterId()}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ disabled: !isCurrentlyDisabled, routerId: getRouterId() })
+      });
+      const d = await res.json();
+      if (d && d.success) {
+        loadSecrets();
+      } else {
+        alert('Gagal mengubah status: ' + (d.error || 'Terjadi kesalahan'));
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = oldHtml; }
+    }
+  }
+
+  // ── SECRET FORM (ADD / EDIT) ──
+  async function loadProfilesForSecretSelect() {
+    const routerId = getRouterId();
+    try {
+      const res = await fetch(`/admin/api/mikrotik/profiles?routerId=${routerId}`);
+      const pProfiles = res.ok ? await res.json() : [];
+      const pSel = document.getElementById('s_profile');
+      if (pSel && Array.isArray(pProfiles)) {
+        pSel.innerHTML = pProfiles.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+  }
+
+  async function openAddSecret() {
+    document.getElementById('secretForm').reset();
+    document.getElementById('secret_id').value = '';
+    document.getElementById('secretModalTitle').innerHTML = '<i class="bi bi-key-fill text-primary"></i> Tambah Secret PPPoE';
+    await loadProfilesForSecretSelect();
+    openModal('secretModal');
+  }
+
+  async function editSecret(idx) {
+    const s = pppoeData[idx];
+    document.getElementById('secret_id').value = s.id;
+    document.getElementById('s_name').value = s.name;
+    document.getElementById('s_password').value = s.password || '';
+    document.getElementById('s_service').value = s.service;
+    await loadProfilesForSecretSelect();
+    document.getElementById('s_profile').value = s.profile;
+    document.getElementById('s_local').value = s['local-address'] || '';
+    document.getElementById('s_remote').value = s['remote-address'] || '';
+    document.getElementById('s_comment').value = s.comment || '';
+    document.getElementById('secretModalTitle').innerHTML = '<i class="bi bi-pencil-square text-primary"></i> Edit Secret PPPoE';
+    openModal('secretModal');
+  }
+
+  document.getElementById('secretForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const submitBtn = e.currentTarget.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+    const id = document.getElementById('secret_id').value;
+    const name = document.getElementById('s_name').value;
+    const password = document.getElementById('s_password').value;
+    const service = document.getElementById('s_service').value;
+    const profile = document.getElementById('s_profile').value;
+    const local = document.getElementById('s_local').value.trim();
+    const remote = document.getElementById('s_remote').value.trim();
+    const comment = document.getElementById('s_comment').value.trim();
+
+    const data = { name, password, service, profile };
+    if (local) data['local-address'] = local;
+    if (remote) data['remote-address'] = remote;
+    if (comment) data['comment'] = comment;
+
+    const routerId = getRouterId();
+    const url = id ? `/admin/api/mikrotik/secrets/${id}/update?routerId=${routerId}` : `/admin/api/mikrotik/secrets?routerId=${routerId}`;
+    try {
+      const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+      if (res.ok) {
+        closeModal('secretModal');
+        loadSecrets();
+        return;
+      }
+      alert('Gagal menyimpan secret');
+    } catch (err) {
+      alert('Gagal menyimpan: ' + err.message);
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  };
+
+  async function deleteSecret(id) {
+    if(!confirm('Hapus secret PPPoE ini dari router?')) return;
+    const res = await fetch(`/admin/api/mikrotik/secrets/${id}/delete?routerId=${getRouterId()}`, { method: 'POST' });
+    if(res.ok) loadSecrets(); else alert('Gagal menghapus data');
+  }
+
+  // ── PPPOE PROFILE FORM ──
+  async function ensureIpPoolsLoaded() {
+    const routerId = getRouterId() || '';
+    try {
+      const res = await fetch(`/admin/api/mikrotik/ip-pools?routerId=${routerId}`);
+      const data = await res.json();
+      ipPoolsData = Array.isArray(data) ? data : [];
+    } catch (e) {
+      ipPoolsData = [];
+    }
+  }
+
+  function renderIpPoolsSelect(selectedValue) {
+    const sel = document.getElementById('pp_remote_pool');
+    if (!sel) return;
+    const options = [
+      '<option value="">- Pilih Dynamic Pool -</option>',
+      ...(ipPoolsData || []).map((p) => `<option value="${escapeHtmlAttr(p.name)}">${escapeHtmlAttr(p.name)}</option>`)
+    ];
+    sel.innerHTML = options.join('');
+    if (selectedValue) sel.value = selectedValue;
+  }
+
+  function setRemoteManualMode(enabled) {
+    const toggle = document.getElementById('pp_remote_manual_toggle');
+    const poolSel = document.getElementById('pp_remote_pool');
+    const manualInput = document.getElementById('pp_remote_manual');
+    if (toggle) toggle.checked = !!enabled;
+    if (poolSel) poolSel.disabled = !!enabled;
+    if (manualInput) manualInput.style.display = enabled ? 'block' : 'none';
+  }
+
+  document.getElementById('pp_remote_manual_toggle')?.addEventListener('change', (e) => {
+    setRemoteManualMode(!!e.target.checked);
+  });
+
+  async function openAddPppoeProfile() {
+    document.getElementById('pppoeProfileForm').reset();
+    document.getElementById('pp_id').value = '';
+    document.getElementById('pppoeProfileModalTitle').innerHTML = '<i class="bi bi-speedometer2 text-primary"></i> Tambah PPPoE Profile';
+    await ensureIpPoolsLoaded();
+    renderIpPoolsSelect('');
+    setRemoteManualMode(false);
+    openModal('pppoeProfileModal');
+  }
+
+  async function editPppoeProfile(idx) {
+    const p = pppoeProfilesData[idx];
+    document.getElementById('pp_id').value = p.id || '';
+    document.getElementById('pp_name').value = p.name;
+    document.getElementById('pp_local').value = p.localAddress || '';
+    const remote = (p.remoteAddress && p.remoteAddress !== '-') ? p.remoteAddress : '';
+    await ensureIpPoolsLoaded();
+    renderIpPoolsSelect(remote);
+    const inPool = remote && (ipPoolsData || []).some(pool => String(pool?.name || '').trim() === String(remote).trim());
+    document.getElementById('pp_remote_manual').value = inPool ? '' : remote;
+    setRemoteManualMode(!!(remote && !inPool));
+    document.getElementById('pp_rate').value = p.rateLimit || '';
+    document.getElementById('pppoeProfileModalTitle').innerHTML = '<i class="bi bi-pencil-square text-primary"></i> Edit PPPoE Profile';
+    openModal('pppoeProfileModal');
+  }
+
+  document.getElementById('pppoeProfileForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const submitBtn = e.currentTarget.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+    const id = document.getElementById('pp_id').value;
+    const name = document.getElementById('pp_name').value;
+    const local = String(document.getElementById('pp_local').value || '').trim();
+    const remoteManual = String(document.getElementById('pp_remote_manual').value || '').trim();
+    const remotePool = String(document.getElementById('pp_remote_pool').value || '').trim();
+    const remote = remoteManual || remotePool;
+    const rate = String(document.getElementById('pp_rate').value || '').trim();
+    const data = { name };
+    if (local) data['local-address'] = local;
+    if (remote) data['remote-address'] = remote;
+    if (rate) data['rate-limit'] = rate;
+    const routerId = getRouterId();
+    const url = id && id !== data.name ? `/admin/api/mikrotik/pppoe-profiles/${id}/update?routerId=${routerId}` : `/admin/api/mikrotik/pppoe-profiles?routerId=${routerId}`;
+    try {
+      const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+      if (res.ok) {
+        closeModal('pppoeProfileModal');
+        loadPppoeProfiles();
+        return;
+      }
+      alert('Gagal menyimpan profile');
+    } catch (err) {
+      alert('Gagal: ' + err.message);
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  };
+
+  async function deletePppoeProfile(id) {
+    if(!confirm('Hapus profile ini dari router?')) return;
+    const res = await fetch(`/admin/api/mikrotik/pppoe-profiles/${id}/delete?routerId=${getRouterId()}`, { method: 'POST' });
+    if(res.ok) loadPppoeProfiles(); else alert('Gagal menghapus data');
+  }
+
+  // ── PING DIAGNOSTIC MODAL ──
+  function openPingModal(targetIp = '') {
+    if (targetIp && targetIp !== '-') {
+      const input = document.getElementById('pingHostInput');
+      if (input) input.value = targetIp;
+    }
+    openModal('pingModal');
+  }
+
+  async function executePing() {
+    const host = document.getElementById('pingHostInput').value.trim();
+    const count = document.getElementById('pingCountInput').value;
+    const btn = document.getElementById('btnExecutePing');
+    const term = document.getElementById('pingTerminalOutput');
+
+    if (!host) return alert('Silakan masukkan Host / IP tujuan.');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Menguji...';
+    term.textContent = `Mengirim ${count} paket ICMP ping ke ${host} via MikroTik...\n`;
+
+    try {
+      const res = await fetch('/admin/api/mikrotik/ping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ host, count, routerId: getRouterId() })
+      });
+      const data = await res.json();
+      if (data && data.success && Array.isArray(data.results)) {
+        let out = `PING ${host} (${data.results.length} respons diterima):\n\n`;
+        data.results.forEach((p, idx) => {
+          const seq = p.seq || (idx + 1);
+          const time = p.time || p['round-trip-time'] || '-';
+          const size = p.size || '56';
+          const ttl = p.ttl || '-';
+          const status = p.status ? `[${p.status}]` : '';
+          out += `  seq=${seq}  size=${size} bytes  ttl=${ttl}  time=${time} ${status}\n`;
+        });
+        term.textContent = out;
+      } else {
+        term.textContent = `Gagal menjalankan ping: ${data.error || 'Router tidak merespons'}`;
+      }
+    } catch (e) {
+      term.textContent = `Error: ${e.message}`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-send-fill"></i> Ping';
+    }
+  }
+
+  // ── AUTO REFRESH ──
+  let autoRefreshInterval = null;
+  let isAutoRefreshEnabled = true;
+
+  function toggleAutoRefresh() {
+    isAutoRefreshEnabled = !isAutoRefreshEnabled;
+    const btn = document.getElementById('auto-refresh-toggle');
+    const status = document.getElementById('refresh-status');
+    if (isAutoRefreshEnabled) {
+      btn.style.background = 'rgba(34,197,94,0.15)';
+      btn.style.color = '#22c55e';
+      btn.style.borderColor = 'rgba(34,197,94,0.3)';
+      if (status) status.textContent = 'Auto';
+      startAutoRefresh();
+    } else {
+      btn.style.background = 'rgba(239,68,68,0.15)';
+      btn.style.color = '#ef4444';
+      btn.style.borderColor = 'rgba(239,68,68,0.3)';
+      if (status) status.textContent = 'Manual';
+      stopAutoRefresh();
+    }
+  }
+
+  function startAutoRefresh() {
+    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+    autoRefreshInterval = setInterval(() => {
+      if (!isAutoRefreshEnabled) return;
+      loadSecrets();
+    }, 10000);
+  }
+
+  function stopAutoRefresh() {
+    if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; }
+  }
+
+  function pauseAutoRefresh() { isAutoRefreshEnabled = false; }
+  function resumeAutoRefresh() { isAutoRefreshEnabled = true; }
+
+  // Initial Load
+  document.addEventListener('DOMContentLoaded', () => {
+    // Check URL query parameters (e.g. ?filter=online or ?tab=profiles)
+    const urlParams = new URLSearchParams(window.location.search);
+    const filterParam = urlParams.get('filter');
+    const tabParam = urlParams.get('tab');
+
+    loadSecrets();
+    loadPppoeProfiles();
+    startAutoRefresh();
+
+    if (tabParam === 'profiles') {
+      switchInnerTab('profiles');
+    } else if (tabParam === 'active') {
+      switchInnerTab('active');
+    } else if (filterParam) {
+      filterPppoeFromKpi(filterParam);
+    }
+  });
+</script>
+</body>
+</html>

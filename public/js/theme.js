@@ -16,6 +16,10 @@ function applyAppTheme(theme) {
   }
 
   updateThemeToggleIcons(theme);
+
+  try {
+    window.dispatchEvent(new CustomEvent('appThemeChanged', { detail: { theme, isLight } }));
+  } catch (e) {}
 }
 
 function toggleAppTheme() {

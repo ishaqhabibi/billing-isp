@@ -2031,7 +2031,7 @@ function startServer(portToUse) {
             if (err.code === 'EADDRINUSE') {
                 logger.warn(`PERINGATAN: Port ${portToUse} sudah digunakan, mencoba port alternatif...`);
                 // Coba port alternatif (port + 1000)
-                const alternativePort = portToUse + 1000;
+                const alternativePort = Number(portToUse) + 1;
                 logger.info(`Mencoba port alternatif: ${alternativePort}`);
                 
                 // Buat server baru dengan port alternatif

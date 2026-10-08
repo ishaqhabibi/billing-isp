@@ -16,10 +16,12 @@ try {
 
   // 1. Prevent onUnknown from throwing a synchronous exception which crashes the process.
   Channel.prototype.onUnknown = function(reply) {
-    logger.warn(`[MikroTik Channel] Received unknown reply: ${reply}`);
+    if (reply !== '!empty') {
+      logger.warn(`[MikroTik Channel] Received unknown reply: ${reply}`);
+    }
   };
 
-  // 2. Reject the write promise when receiving an unknown reply, so it can be handled by try-catch.
+  // 2. Reject or resolve write promise properly on RouterOS v7 replies
   const originalWrite = Channel.prototype.write;
   Channel.prototype.write = function(params, isStream = false, returnPromise = true) {
     if (returnPromise) {
@@ -30,7 +32,11 @@ try {
         this.once('done', (data) => resolve(data));
         this.once('trap', (data) => reject(new Error(data.message)));
         this.once('unknown', (reply) => {
-          reject(new RosException('UNKNOWNREPLY', { reply: reply }));
+          if (reply === '!empty') {
+            resolve([]);
+          } else {
+            reject(new RosException('UNKNOWNREPLY', { reply: reply }));
+          }
         });
         this.readAndWrite(params);
       });
@@ -44,7 +50,7 @@ try {
     if (tag) {
       tag.callback(this.currentPacket);
     } else {
-      logger.warn(`[MikroTik Receiver] Received data for unregistered tag: ${currentTag}`);
+      logger.debug(`[MikroTik Receiver] Received data for unregistered tag: ${currentTag}`);
     }
     this.cleanUp();
   };
@@ -937,11 +943,12 @@ async function getHotspotActive(routerId = null) {
       5000, // 5 second timeout
       'getHotspotActive'
     );
-    setCachedList(ck, rows);
-    return rows;
+    const result = Array.isArray(rows) ? rows : [];
+    setCachedList(ck, result);
+    return result;
   } catch (e) {
-    logger.error('Error getting active Hotspot sessions:', e.message);
-    throw e;
+    logger.warn('Warning getting active Hotspot sessions: ' + e.message);
+    return cached || [];
   } finally {
     if (conn && conn.api) conn.api.close();
   }
