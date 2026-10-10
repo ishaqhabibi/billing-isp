@@ -820,8 +820,8 @@
                 <div style="font-size: 13px; color: var(--muted); margin-top: 3px; font-weight: 500;">
                   <strong style="color:var(--primary);"><%= inv.package_name || 'Internet' %></strong>
                   &bull; <%= invId ? ('Inv #' + invId) : 'Belum Ada Invoice' %>
-                  <% if (inv.isolate_day) { %>
-                    &bull; <span class="text-warning fw-bold">Jatuh Tempo: Tgl <%= inv.isolate_day %></span>
+                  <% if (inv.billing_day || inv.isolate_day) { %>
+                    &bull; <span class="text-warning fw-bold"><i class="bi bi-bicycle"></i> Jadwal Tagih: Tgl <%= inv.billing_day || inv.isolate_day %></span>
                   <% } %>
                 </div>
               </div>

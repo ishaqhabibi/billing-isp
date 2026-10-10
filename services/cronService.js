@@ -120,7 +120,9 @@ function startCronJobs() {
           }
         } else {
           // PASCABAYAR
-          const customerIsolirDay = c.isolate_day != null ? parseInt(c.isolate_day, 10) : defaultIsolirDay;
+          // Tanggal eksekusi pemutusan/isolir diambil secara dinamis dari pengaturan global (settings.isolir_day, default tgl 1).
+          // Tanggal penagihan kolektor (billing_day) khusus untuk jadwal kunjungan dan tidak menunda isolir otomatis.
+          const effectiveIsolirDay = defaultIsolirDay;
 
           // Ambil semua tagihan yang belum lunas (unpaid) untuk pelanggan ini
           const unpaidInvoices = db.prepare(
@@ -142,27 +144,25 @@ function startCronJobs() {
           let shouldIsolate = false;
 
           if (isolirMode === 'next_month') {
-            // Mode Rekomendasi (Jatuh tempo tgl 20, isolir tgl 1 bulan berikutnya):
+            // Mode Rekomendasi (Jatuh tempo dinamis misal tgl 20, isolir dinamis tgl 1 bulan berikutnya):
             // Pelanggan HANYA diisolir jika memiliki tagihan tertunggak dari periode sebelumnya (bulan lalu)
             // DAN tanggal hari ini sudah mencapai tanggal isolir (misal tgl >= 1).
             // Tagihan bulan berjalan yang baru terbit tgl 1 TIDAK akan langsung mengisolir pelanggan!
-            if (hasOverduePrevious && today >= customerIsolirDay) {
+            if (hasOverduePrevious && today >= effectiveIsolirDay) {
               shouldIsolate = true;
             }
           } else {
             // Mode Same Month (Ketat):
-            // Jika ada tunggakan lama -> isolir saat today >= customerIsolirDay
-            // ATAU jika hanya tagihan bulan ini tapi today >= customerIsolirDay -> isolir
-            if (hasOverduePrevious && today >= customerIsolirDay) {
+            if (hasOverduePrevious && today >= effectiveIsolirDay) {
               shouldIsolate = true;
-            } else if (hasCurrentMonthUnpaid && today >= customerIsolirDay) {
+            } else if (hasCurrentMonthUnpaid && today >= effectiveIsolirDay) {
               shouldIsolate = true;
             }
           }
 
           if (shouldIsolate) {
             try {
-              logger.info(`[CRON] Isolir otomatis PASCABAYAR: ${c.name} (${c.pppoe_username || c.hotspot_username || '-'}) - Tgl Isolir: ${customerIsolirDay}, Tunggakan: ${unpaidInvoices.length} tagihan`);
+              logger.info(`[CRON] Isolir otomatis PASCABAYAR: ${c.name} (${c.pppoe_username || c.hotspot_username || '-'}) - Tgl Eksekusi Isolir: ${effectiveIsolirDay}, Tunggakan: ${unpaidInvoices.length} tagihan`);
               await customerSvc.suspendCustomer(c.id);
               isolatedCount++;
             } catch (err) {
@@ -285,11 +285,11 @@ function startCronJobs() {
         const unpaidCount = Number(c.unpaid_count || 0) || 0;
         if (unpaidCount > 0) {
           const globalDueDay = Number(getSetting('due_date_day', 20) || 20);
-          const customerIsolirDay = Number(c.isolate_day != null ? c.isolate_day : getSetting('isolir_day', 1) || 1);
+          const globalIsolirDay = Number(getSetting('isolir_day', 1) || 1);
 
           // Cek tanggal akhir bulan ini untuk H-1 isolir (jika isolir tgl 1)
           const daysInMonth = new Date(year, month, 0).getDate();
-          const isBeforeIsolir = (customerIsolirDay === 1 && day === daysInMonth) || (customerIsolirDay > 1 && day === (customerIsolirDay - 1));
+          const isBeforeIsolir = (globalIsolirDay === 1 && day === daysInMonth) || (globalIsolirDay > 1 && day === (globalIsolirDay - 1));
 
           // Kirim pengingat pada H-3, H-1, Hari H Jatuh Tempo, atau H-1 Sebelum Isolir
           shouldSend = (day === (globalDueDay - 3)) || (day === (globalDueDay - 1)) || (day === globalDueDay) || isBeforeIsolir;
@@ -394,12 +394,19 @@ function startCronJobs() {
             }
           }
 
+          const globalDueDay = Number(getSetting('due_date_day', 20) || 20);
+          const globalIsolirDay = Number(getSetting('isolir_day', 1) || 1);
+          const collectorDay = c.billing_day || c.isolate_day || globalDueDay;
+
           // Format pesan dengan Spintax & variation untuk anti-spam
           let formattedMsg = template
             .replace(/{{nama}}/gi, c.name || 'Pelanggan')
             .replace(/{{tagihan}}/gi, finalTagihanStr)
             .replace(/{{rincian}}/gi, rincianBulan || '-')
             .replace(/{{paket}}/gi, c.package_name || '-')
+            .replace(/{{jatuh_tempo}}/gi, String(globalDueDay))
+            .replace(/{{tgl_isolir}}/gi, String(globalIsolirDay))
+            .replace(/{{tgl_tagih}}/gi, String(collectorDay))
             .replace(/{{link}}/gi, loginLink);
 
           const { parseSpintax } = await import('./whatsappBot.mjs');

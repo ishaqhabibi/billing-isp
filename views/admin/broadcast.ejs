@@ -128,7 +128,7 @@
                 Jalankan pengingat tagihan otomatis (CRON)
               </label>
               <div style="font-size: 11px; color: var(--muted); margin-top: 6px;">
-                Sistem akan mengirim pengingat ke pelanggan yang punya tunggakan pada H-1 sebelum tanggal isolir (isolate_day).
+                Sistem akan mengirim pengingat otomatis ke pelanggan yang memiliki tunggakan pada H-3, H-1, Hari-H Jatuh Tempo (Tgl <%= getSetting('due_date_day', 20) %>), serta H-1 sebelum Isolir Otomatis (Tgl <%= getSetting('isolir_day', 1) %>).
               </div>
             </div>
           </div>

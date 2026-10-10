@@ -12,7 +12,31 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.Editable/1.2.0/Leaflet.Editable.js"></script>
+  <script>
+    window.openModal = function(id) {
+      var el = document.getElementById(id);
+      if (el) { el.style.display = 'flex'; el.classList.add('show'); document.body.style.overflow = 'hidden'; }
+    };
+    window.closeModal = function(id) {
+      var el = document.getElementById(id);
+      if (el) { el.style.display = 'none'; el.classList.remove('show'); }
+      if (!document.querySelector('.mo.show, .mo[style*="display: flex"]')) document.body.style.overflow = '';
+    };
+    function openModal(id) { window.openModal(id); }
+    function closeModal(id) { window.closeModal(id); }
+    function openAddOltModal() { openModal('addOltModal'); }
+    function openAddOdcModal() { openModal('addOdcModal'); }
+    function openAddOdpModal() { openModal('addOdpModal'); }
+  </script>
   <style>
+    /* Modal Layering over Leaflet and Topbar */
+    .mo {
+      z-index: 99999 !important;
+    }
+    .mo.show {
+      display: flex !important;
+    }
+
     /* Topbar Modernization */
     .topbar .tb-title {
       display: flex;
@@ -1189,6 +1213,396 @@
     }
     .smart-delete-opt:hover { border-color: var(--primary); }
     .smart-delete-opt input[type="radio"] { margin-top: 3px; }
+
+    /* =========================================================
+       FTTH TOPOLOGY & SUB-PAGE NAVIGATION MODERNIZATION
+       ========================================================= */
+    
+    /* Pulsing Beacon & Radar Keyframes */
+    @keyframes ftth-pulse-green {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 9px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    @keyframes ftth-pulse-cyan {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 9px rgba(14, 165, 233, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+    }
+    @keyframes ftth-pulse-purple {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 9px rgba(168, 85, 247, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+    }
+    @keyframes ftth-pulse-amber {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 9px rgba(245, 158, 11, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+    }
+    @keyframes ftth-pulse-red {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 9px rgba(239, 68, 68, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    @keyframes ftthFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Live Pulse Dots */
+    .live-pulse-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .pulse-green { background: #10b981; animation: ftth-pulse-green 2.2s infinite; }
+    .pulse-cyan { background: #0ea5e9; animation: ftth-pulse-cyan 2.2s infinite; }
+    .pulse-purple { background: #a855f7; animation: ftth-pulse-purple 2.2s infinite; }
+    .pulse-amber { background: #f59e0b; animation: ftth-pulse-amber 2.2s infinite; }
+    .pulse-red { background: #ef4444; animation: ftth-pulse-red 2s infinite; }
+
+    /* Map Marker Pin Ripple Enhancement */
+    .onu-marker-node.is-active .onu-marker-pin {
+      animation: ftth-pulse-green 2.5s infinite !important;
+    }
+    .olt-marker-node .olt-marker-pin {
+      animation: ftth-pulse-cyan 2.8s infinite !important;
+    }
+    .odc-marker-node .odc-marker-pin {
+      animation: ftth-pulse-purple 3s infinite !important;
+    }
+    .odp-marker-node .odp-marker-pin {
+      animation: ftth-pulse-amber 2.6s infinite !important;
+    }
+
+    /* Top Sub-page Navigation Tabs Bar */
+    .ftth-nav-tabs {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      scrollbar-width: thin;
+    }
+    .ftth-tab-btn {
+      padding: 9px 15px;
+      border-radius: 12px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      color: var(--text);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      white-space: nowrap;
+      text-decoration: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+    .ftth-tab-btn:hover {
+      background: var(--bg3);
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
+    .ftth-tab-btn.active {
+      background: var(--bg) !important;
+      border-color: var(--primary) !important;
+      box-shadow: 0 4px 16px rgba(2, 132, 199, 0.18) !important;
+    }
+    .ftth-tab-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+    .ftth-tab-btn:hover .ftth-tab-icon {
+      transform: scale(1.08);
+    }
+    .ftth-tab-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      line-height: 1.2;
+    }
+    .ftth-tab-title {
+      font-weight: 800;
+      font-size: 12.5px;
+      color: var(--text);
+    }
+    .ftth-tab-btn.active .ftth-tab-title {
+      color: var(--primary);
+    }
+    .ftth-tab-sub {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .ftth-tab-badge {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      margin-left: 2px;
+    }
+
+    /* Sub-page Containers */
+    .ftth-subpage {
+      display: none;
+    }
+    .ftth-subpage.active {
+      display: block;
+      animation: ftthFadeIn 0.25s ease-out;
+    }
+
+    /* Sub-page Section Headers */
+    .subpage-header-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 18px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .subpage-title-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .subpage-title-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .subpage-title-h {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .subpage-title-d {
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    /* Hero CTA Card for GIS Map */
+    .ftth-map-hero {
+      background: linear-gradient(135deg, rgba(2, 132, 199, 0.08), rgba(99, 102, 241, 0.08));
+      border: 1.5px solid rgba(2, 132, 199, 0.28);
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+      box-shadow: 0 4px 16px rgba(2, 132, 199, 0.08);
+    }
+    .ftth-map-hero-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-width: 280px;
+      flex: 1;
+    }
+    .ftth-map-hero-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+      box-shadow: 0 6px 18px rgba(2, 132, 199, 0.35);
+      animation: ftth-pulse-cyan 2.6s infinite;
+    }
+
+    /* Interactive Topology Hierarchy Explorer */
+    .topo-explorer-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+    .topo-tree-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .topo-tree-olt-block {
+      background: var(--bg3);
+      border: 1.5px solid rgba(14, 165, 233, 0.35);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+      transition: border-color 0.2s ease;
+    }
+    .topo-tree-olt-block:hover {
+      border-color: #0284c7;
+    }
+    .topo-olt-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .topo-olt-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .topo-olt-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: rgba(2, 132, 199, 0.18);
+      color: #0284c7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      border: 1px solid rgba(2, 132, 199, 0.3);
+    }
+    .topo-odc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+    @media (max-width: 768px) {
+      .topo-odc-grid { grid-template-columns: 1fr; }
+    }
+    .topo-odc-box {
+      background: var(--bg2);
+      border: 1.5px solid rgba(139, 92, 246, 0.3);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+    .topo-odc-box:hover {
+      border-color: #8b5cf6;
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.15);
+    }
+    .topo-odc-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .topo-odc-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      font-size: 13.5px;
+      color: var(--text);
+    }
+    .topo-odp-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+    }
+    .topo-odp-item {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      transition: all 0.15s ease;
+    }
+    .topo-odp-item:hover {
+      border-color: #f59e0b;
+      background: var(--bg);
+    }
+    .topo-odp-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex: 1;
+    }
+    .topo-port-gauge {
+      width: 80px;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.2);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .topo-port-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+    .topo-cust-preview {
+      margin-top: 8px;
+      padding-top: 6px;
+      border-top: 1px dotted var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .topo-cust-chip {
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
   </style>
 </head>
 <body>
@@ -1198,23 +1612,23 @@
   <div class="topbar">
     <div class="tb-title">
       <button class="hb-menu" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
-      <i class="bi bi-geo-alt-fill text-primary" style="font-size: 20px;"></i>
+      <i class="bi bi-diagram-3-fill text-primary" style="font-size: 22px;"></i>
       <div>
-        <div style="font-weight: 800; font-size: 16px; line-height: 1.2;"><%= t('admin.map.title', 'Peta Topologi ODN & FTTH') %></div>
-        <div style="font-size: 11.5px; color: var(--muted); font-weight: 500;">Geospasial Distribusi Jaringan & Monitoring Redaman Optik</div>
+        <div style="font-weight: 800; font-size: 16px; line-height: 1.2;"><%= t('admin.map.title', 'Topologi Jaringan FTTH & ODN') %></div>
+        <div style="font-size: 11.5px; color: var(--muted); font-weight: 500;">Hirarki Distribusi (OLT ➔ ODC ➔ ODP ➔ Pelanggan) & Pemetaan GIS Geospasial</div>
       </div>
     </div>
     <div class="tb-right" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
       <button class="btn btn-sm" id="btnSyncGenieacs" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; border: 1px solid #0284c7; font-weight: 700; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);" onclick="triggerGenieacsOpticalSync()" title="Sinkronisasi redaman Rx dari ACS TR-069">
         <i class="bi bi-broadcast-pin me-1"></i> Sinkron Redaman ACS
       </button>
-      <button class="btn btn-sm" style="background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #0284c7; color:#fff; font-weight: 700;" onclick="openAddOltModal()">
+      <button type="button" class="btn btn-sm" style="background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #0284c7; color:#fff; font-weight: 700;" onclick="openModal('addOltModal')">
         <i class="bi bi-hdd-rack-fill me-1"></i> Tambah OLT
       </button>
-      <button class="btn btn-sm" style="background:#8b5cf6; border:1px solid #7c3aed; color:#fff; font-weight: 700;" onclick="openAddOdcModal()">
+      <button type="button" class="btn btn-sm" style="background:#8b5cf6; border:1px solid #7c3aed; color:#fff; font-weight: 700;" onclick="openModal('addOdcModal')">
         <i class="bi bi-diagram-3-fill me-1"></i> Tambah ODC
       </button>
-      <button class="btn btn-p btn-sm" style="font-weight: 700;" onclick="openAddOdpModal()">
+      <button type="button" class="btn btn-p btn-sm" style="font-weight: 700;" onclick="openModal('addOdpModal')">
         <i class="bi bi-box-seam-fill me-1"></i> Tambah ODP
       </button>
     </div>
@@ -1225,577 +1639,951 @@
       <div class="alert alert-<%= msg.type==='error'?'d':'s' %>"><%= msg.text %></div>
     <% } %>
 
-    <!-- Executive ODN Telemetry & Status HUD: 4 Cards -->
-    <div class="odn-hud-grid">
-      <div class="odn-hud-card">
-        <div class="odn-hud-icon msc-s" style="box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);">
-          <i class="bi bi-router-fill"></i>
-        </div>
-        <div class="odn-hud-info">
-          <div class="odn-hud-lbl">ONU Aktif (Online)</div>
-          <div class="odn-hud-val text-success"><%= customers.filter(c => c.status === 'active').length %></div>
-          <div class="odn-hud-sub" style="color: #10b981;">
-            <i class="bi bi-broadcast"></i> Terhubung ke Jaringan
-          </div>
-        </div>
-      </div>
-
-      <div class="odn-hud-card">
-        <div class="odn-hud-icon msc-d" style="box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);">
-          <i class="bi bi-slash-circle-fill"></i>
-        </div>
-        <div class="odn-hud-info">
-          <div class="odn-hud-lbl">ONU Isolir / Nonaktif</div>
-          <div class="odn-hud-val text-danger"><%= customers.filter(c => c.status !== 'active').length %></div>
-          <div class="odn-hud-sub" style="color: #ef4444;">
-            <i class="bi bi-pause-circle"></i> Layanan Dihentikan
-          </div>
-        </div>
-      </div>
-
-      <div class="odn-hud-card">
-        <div class="odn-hud-icon" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; box-shadow: 0 0 10px rgba(14, 165, 233, 0.25);">
+    <!-- FTTH Sub-page Navigation Tabs -->
+    <div class="ftth-nav-tabs">
+      <button type="button" class="ftth-tab-btn active" id="btnTabTopology" onclick="switchMainTab('tab-topology', this)">
+        <div class="ftth-tab-icon" style="background: rgba(2, 132, 199, 0.15); color: #0284c7;">
           <i class="bi bi-diagram-3-fill"></i>
         </div>
-        <div class="odn-hud-info">
-          <div class="odn-hud-lbl">Topologi ODN Fisik</div>
-          <div class="odn-hud-val" style="color: #0ea5e9; font-size: 15px; font-weight: 700;">
-            <%= (typeof olts !== 'undefined' && olts ? olts.length : 0) %> OLT • <%= (typeof odcs !== 'undefined' && odcs ? odcs.length : 0) %> ODC • <%= odps.length %> ODP
-          </div>
-          <div class="odn-hud-sub" style="color: #0284c7;">
-            <i class="bi bi-layers-half"></i> Sentral ➔ Feeder ➔ Distribusi
-          </div>
+        <div class="ftth-tab-text">
+          <span class="ftth-tab-title">Hirarki Topologi</span>
+          <span class="ftth-tab-sub">Diagram & Struktur</span>
         </div>
-      </div>
+      </button>
 
-      <div class="odn-hud-card">
-        <div class="odn-hud-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);">
-          <i class="bi bi-exclamation-octagon-fill"></i>
+      <button type="button" class="ftth-tab-btn" id="btnTabOlts" onclick="switchMainTab('tab-olts', this)">
+        <div class="ftth-tab-icon" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9;">
+          <i class="bi bi-hdd-rack-fill"></i>
         </div>
-        <div class="odn-hud-info">
-          <div class="odn-hud-lbl">Redaman Kritis (&le; -27 dBm)</div>
-          <div class="odn-hud-val text-danger">
-            <%= customers.filter(c => c.optical_status === 'critical' || (c.optical_rx_power && Number(c.optical_rx_power) <= -27)).length %>
-          </div>
-          <div class="odn-hud-sub" style="color: #f43f5e;">
-            <i class="bi bi-activity"></i> Potensi Gangguan Serat
-          </div>
+        <div class="ftth-tab-text">
+          <span class="ftth-tab-title">Perangkat OLT</span>
+          <span class="ftth-tab-sub">Sentral NOC</span>
         </div>
-      </div>
-    </div>
+        <span class="ftth-tab-badge" style="background: rgba(14, 165, 233, 0.18); color: #0284c7;"><%= (typeof olts !== 'undefined' && olts) ? olts.length : 0 %></span>
+      </button>
 
-    <!-- Banner Peringatan OLT Belum Berkoordinat -->
-    <% const unlocatedOlts = (typeof olts !== 'undefined' && olts) ? olts.filter(o => !o.lat || !o.lng) : []; %>
-    <% if (unlocatedOlts.length > 0) { %>
-      <div class="alert alert-w" style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; border-radius:12px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.35);">
-        <div style="font-size:13px; color:var(--text);">
-          <i class="bi bi-geo-alt-fill text-warning me-2" style="font-size:16px;"></i>
-          <strong>Pemberitahuan ODN:</strong> Terdapat <%= unlocatedOlts.length %> perangkat OLT yang belum memiliki titik lokasi di peta: <strong><%= unlocatedOlts.map(o => o.name).join(', ') %></strong>.
+      <button type="button" class="ftth-tab-btn" id="btnTabOdcs" onclick="switchMainTab('tab-odcs', this)">
+        <div class="ftth-tab-icon" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">
+          <i class="bi bi-archive-fill"></i>
         </div>
-        <button type="button" class="btn btn-sm btn-warning" onclick="openSetOltLocationModal('<%= unlocatedOlts[0].id %>', '<%= unlocatedOlts[0].name.replace(/'/g, "\\'") %>')">
-          <i class="bi bi-pin-map-fill me-1"></i> Tentukan Lokasi OLT
-        </button>
-      </div>
-    <% } %>
-
-    <!-- Map Search & Layer Controls Toolbar -->
-    <div class="map-toolbar">
-      <div class="map-search-box">
-        <i class="bi bi-search map-search-icon"></i>
-        <input 
-          id="mapGlobalSearch" 
-          class="map-search-input" 
-          type="text" 
-          placeholder="Cari pelanggan, PPPoE, No HP, SN ONU, alamat, ODC, ODP... (Ctrl+K)"
-          autocomplete="off"
-        >
-        <button id="mapSearchClearBtn" class="map-search-clear" onclick="clearMapSearch()" title="Hapus pencarian">&times;</button>
-        
-        <!-- Auto-Suggest Dropdown Results -->
-        <div id="mapSearchDropdown" class="map-search-dropdown">
-          <div class="ms-header">
-            <span id="msHeaderCount">Hasil Pencarian</span>
-            <span><kbd style="background:var(--bg); border:1px solid var(--border); padding:2px 5px; border-radius:4px; font-size:10px;">ESC</kbd> tutup</span>
-          </div>
-          <div id="msResultsList"></div>
+        <div class="ftth-tab-text">
+          <span class="ftth-tab-title">Distribusi ODC</span>
+          <span class="ftth-tab-sub">Kabinet Feeder</span>
         </div>
-      </div>
+        <span class="ftth-tab-badge" style="background: rgba(139, 92, 246, 0.18); color: #8b5cf6;"><%= (typeof odcs !== 'undefined' && odcs) ? odcs.length : 0 %></span>
+      </button>
 
-      <!-- Quick Filter Pills: ODC, ODP, Pelanggan, Aktif, Non-Aktif, Label, Fit Peta -->
-      <div class="map-filter-group">
-        <button type="button" class="map-pill-btn active" id="pillEntAll" onclick="setEntityFilter('all')" title="Tampilkan semua entitas">
-          <i class="bi bi-grid-fill"></i> Semua
-        </button>
-        <button type="button" class="map-pill-btn" id="pillEntOlt" onclick="setEntityFilter('olt')" title="Hanya OLT">
-          <i class="bi bi-hdd-rack-fill" style="color: #0ea5e9;"></i> OLT (<%= (typeof olts !== 'undefined' && olts) ? olts.length : 0 %>)
-        </button>
-        <button type="button" class="map-pill-btn" id="pillEntOdc" onclick="setEntityFilter('odc')" title="Hanya ODC">
-          <i class="bi bi-diagram-3-fill" style="color: #a855f7;"></i> ODC (<%= (typeof odcs !== 'undefined' && odcs) ? odcs.length : 0 %>)
-        </button>
-        <button type="button" class="map-pill-btn" id="pillEntOdp" onclick="setEntityFilter('odp')" title="Hanya ODP">
-          <i class="bi bi-box-seam-fill text-warning"></i> ODP (<%= odps.length %>)
-        </button>
-        <button type="button" class="map-pill-btn" id="pillEntCust" onclick="setEntityFilter('customer')" title="Hanya Pelanggan">
-          <i class="bi bi-router-fill text-info"></i> Pelanggan (<%= customers.length %>)
-        </button>
-
-        <span class="filter-divider"></span>
-
-        <button type="button" class="map-pill-btn" id="pillStatActive" onclick="setStatusFilter('active')" title="Hanya pelanggan aktif">
-          <i class="bi bi-check-circle-fill text-success"></i> Aktif (<%= customers.filter(c => c.status === 'active').length %>)
-        </button>
-        <button type="button" class="map-pill-btn" id="pillStatSuspended" onclick="setStatusFilter('suspended')" title="Hanya pelanggan non-aktif / isolir">
-          <i class="bi bi-x-circle-fill text-danger"></i> Non-Aktif (<%= customers.filter(c => c.status !== 'active').length %>)
-        </button>
-
-        <span class="filter-divider"></span>
-
-        <button type="button" class="map-pill-btn active" id="pillLabels" onclick="toggleMarkerLabels()" title="Sembunyikan/Tampilkan label nama di marker">
-          <i class="bi bi-tag-fill text-primary"></i> <span id="labelToggleText">Label: ON</span>
-        </button>
-        <button type="button" class="map-pill-btn" onclick="fitAllMarkers()" title="Pusatkan peta ke seluruh titik entitas">
-          <i class="bi bi-arrows-fullscreen"></i> Fit Peta
-        </button>
-      </div>
-    </div>
-
-    <!-- Map Viewport Wrapper with Floating ODN Legend -->
-    <div class="map-viewport-wrapper">
-      <div id="map"></div>
-
-      <!-- Floating ODN Map Legend -->
-      <div class="map-floating-legend" id="mapOdnLegend">
-        <div class="map-legend-head" onclick="toggleOdnLegend()" title="Klik untuk meminimalkan / memperluas legenda topologi">
-          <span><i class="bi bi-layers-half me-1 text-primary"></i> Legenda Topologi ODN</span>
-          <i class="bi bi-chevron-down" id="legendChevron"></i>
+      <button type="button" class="ftth-tab-btn" id="btnTabOdps" onclick="switchMainTab('tab-odps', this)">
+        <div class="ftth-tab-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+          <i class="bi bi-box-seam-fill"></i>
         </div>
-        <div class="map-legend-items">
-          <div class="legend-row">
-            <span class="legend-badge" style="background: #0284c7; border: 1px solid #38bdf8;"></span>
-            <span>Sentral OLT (NOC)</span>
-          </div>
-          <div class="legend-row">
-            <span class="legend-badge" style="background: #8b5cf6; border: 1px solid #c084fc;"></span>
-            <span>Kabinet Feeder (ODC)</span>
-          </div>
-          <div class="legend-row">
-            <span class="legend-badge" style="background: #f59e0b; border: 1px solid #fde047;"></span>
-            <span>Kotak Distribusi (ODP)</span>
-          </div>
-          <div class="legend-row">
-            <span class="legend-badge" style="background: #10b981; border: 1px solid #6ee7b7; border-radius: 50%;"></span>
-            <span>ONU Pelanggan Aktif</span>
-          </div>
-          <div class="legend-row">
-            <span class="legend-badge" style="background: #ef4444; border: 1px solid #fca5a5; border-radius: 50%;"></span>
-            <span>ONU Pelanggan Isolir</span>
-          </div>
-          <div class="legend-row">
-            <span class="legend-line" style="background: #0ea5e9;"></span>
-            <span>Kabel Feeder OLT ➔ ODC</span>
-          </div>
-          <div class="legend-row">
-            <span class="legend-line" style="background: #8b5cf6;"></span>
-            <span>Kabel Distribusi ODC ➔ ODP</span>
-          </div>
-          <div class="legend-row">
-            <span class="legend-line" style="background: #10b981;"></span>
-            <span>Drop Cable ke Pelanggan</span>
-          </div>
+        <div class="ftth-tab-text">
+          <span class="ftth-tab-title">Titik ODP</span>
+          <span class="ftth-tab-sub">Kotak Distribusi</span>
         </div>
-      </div>
-    </div>
+        <span class="ftth-tab-badge" style="background: rgba(245, 158, 11, 0.18); color: #d97706;"><%= odps.length %></span>
+      </button>
 
-    <!-- Bottom Tabbed Panel: ONU Pelanggan, ODP, ODC & OLT -->
-    <div class="data-tabs-panel">
-      <div class="data-tabs-nav">
-        <button type="button" class="tab-btn active" onclick="switchDataTab('onu-tab', this)">
+      <button type="button" class="ftth-tab-btn" id="btnTabCustomers" onclick="switchMainTab('tab-customers', this)">
+        <div class="ftth-tab-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
           <i class="bi bi-router-fill"></i>
-          <span>Daftar ONU Pelanggan</span>
-          <span class="tab-badge"><%= customers.length %></span>
-        </button>
-        <button type="button" class="tab-btn" onclick="switchDataTab('odp-tab', this)">
-          <i class="bi bi-box-seam-fill text-warning"></i>
-          <span>Kotak Distribusi (ODP)</span>
-          <span class="tab-badge"><%= odps.length %></span>
-        </button>
-        <button type="button" class="tab-btn" onclick="switchDataTab('odc-tab', this)">
-          <i class="bi bi-diagram-3-fill" style="color: #8b5cf6;"></i>
-          <span>Kabinet Feeder (ODC)</span>
-          <span class="tab-badge"><%= (typeof odcs !== 'undefined' && odcs) ? odcs.length : 0 %></span>
-        </button>
-        <button type="button" class="tab-btn" onclick="switchDataTab('olt-tab', this)">
-          <i class="bi bi-hdd-rack-fill" style="color: #0ea5e9;"></i>
-          <span>Sentral OLT (Pusat)</span>
-          <span class="tab-badge"><%= (typeof olts !== 'undefined' && olts) ? olts.length : 0 %></span>
-        </button>
+        </div>
+        <div class="ftth-tab-text">
+          <span class="ftth-tab-title">ONU Pelanggan</span>
+          <span class="ftth-tab-sub">Drop Terminasi</span>
+        </div>
+        <span class="ftth-tab-badge" style="background: rgba(16, 185, 129, 0.18); color: #059669;"><%= customers.length %></span>
+      </button>
+
+      <button type="button" class="ftth-tab-btn btn-gis-tab" id="btnTabGisMap" onclick="switchMainTab('tab-gis-map', this)">
+        <div class="ftth-tab-icon" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #ffffff;">
+          <i class="bi bi-map-fill"></i>
+        </div>
+        <div class="ftth-tab-text">
+          <span class="ftth-tab-title" style="color: #0284c7;">Lihat Peta GIS</span>
+          <span class="ftth-tab-sub">Peta Geospasial</span>
+        </div>
+        <span class="live-pulse-dot pulse-cyan" title="Live GIS Layer"></span>
+      </button>
+    </div>
+
+    <!-- ===================================================================
+         SUBPAGE 1: DIAGRAM TOPOLOGI & HIRARKI FISIK ODN
+         =================================================================== -->
+    <div id="tab-topology" class="ftth-subpage active">
+      <!-- Executive ODN Telemetry & Status HUD: 4 Cards -->
+      <div class="odn-hud-grid">
+        <div class="odn-hud-card">
+          <div class="odn-hud-icon msc-s" style="box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);">
+            <i class="bi bi-router-fill"></i>
+          </div>
+          <div class="odn-hud-info">
+            <div class="odn-hud-lbl">ONU Aktif (Online)</div>
+            <div class="odn-hud-val text-success">
+              <span class="live-pulse-dot pulse-green me-1"></span>
+              <%= customers.filter(c => c.status === 'active').length %>
+            </div>
+            <div class="odn-hud-sub" style="color: #10b981;">
+              <i class="bi bi-broadcast"></i> Terhubung ke Jaringan
+            </div>
+          </div>
+        </div>
+
+        <div class="odn-hud-card">
+          <div class="odn-hud-icon msc-d" style="box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);">
+            <i class="bi bi-slash-circle-fill"></i>
+          </div>
+          <div class="odn-hud-info">
+            <div class="odn-hud-lbl">ONU Isolir / Nonaktif</div>
+            <div class="odn-hud-val text-danger">
+              <span class="live-pulse-dot pulse-red me-1"></span>
+              <%= customers.filter(c => c.status !== 'active').length %>
+            </div>
+            <div class="odn-hud-sub" style="color: #ef4444;">
+              <i class="bi bi-pause-circle"></i> Layanan Dihentikan
+            </div>
+          </div>
+        </div>
+
+        <div class="odn-hud-card">
+          <div class="odn-hud-icon" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; box-shadow: 0 0 10px rgba(14, 165, 233, 0.25);">
+            <i class="bi bi-diagram-3-fill"></i>
+          </div>
+          <div class="odn-hud-info">
+            <div class="odn-hud-lbl">Topologi ODN Fisik</div>
+            <div class="odn-hud-val" style="color: #0ea5e9; font-size: 15px; font-weight: 700;">
+              <%= (typeof olts !== 'undefined' && olts ? olts.length : 0) %> OLT • <%= (typeof odcs !== 'undefined' && odcs ? odcs.length : 0) %> ODC • <%= odps.length %> ODP
+            </div>
+            <div class="odn-hud-sub" style="color: #0284c7;">
+              <i class="bi bi-layers-half"></i> Sentral ➔ Feeder ➔ Distribusi
+            </div>
+          </div>
+        </div>
+
+        <div class="odn-hud-card">
+          <div class="odn-hud-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);">
+            <i class="bi bi-exclamation-octagon-fill"></i>
+          </div>
+          <div class="odn-hud-info">
+            <div class="odn-hud-lbl">Redaman Kritis (&le; -27 dBm)</div>
+            <div class="odn-hud-val text-danger">
+              <%= customers.filter(c => c.optical_status === 'critical' || (c.optical_rx_power && Number(c.optical_rx_power) <= -27)).length %>
+            </div>
+            <div class="odn-hud-sub" style="color: #f43f5e;">
+              <i class="bi bi-activity"></i> Potensi Gangguan Serat
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- TAB 1: ONU PELANGGAN -->
-      <div id="onu-tab" class="tab-content active">
-        <div class="panel-filter-bar">
-          <div style="display: flex; gap: 8px; flex: 1; max-width: 450px;">
-            <input 
-              id="customerTableSearch" 
-              class="table-search-input" 
-              style="width: 100%;"
-              type="text" 
-              placeholder="Filter nama, PPPoE, HP, SN/Tag..."
-            >
+      <!-- Banner Peringatan OLT Belum Berkoordinat -->
+      <% const unlocatedOlts = (typeof olts !== 'undefined' && olts) ? olts.filter(o => !o.lat || !o.lng) : []; %>
+      <% if (unlocatedOlts.length > 0) { %>
+        <div class="alert alert-w" style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; border-radius:12px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.35);">
+          <div style="font-size:13px; color:var(--text);">
+            <i class="bi bi-geo-alt-fill text-warning me-2" style="font-size:16px;"></i>
+            <strong>Pemberitahuan ODN:</strong> Terdapat <%= unlocatedOlts.length %> perangkat OLT yang belum memiliki titik lokasi di peta: <strong><%= unlocatedOlts.map(o => o.name).join(', ') %></strong>.
           </div>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <select id="customerGpsFilter" class="table-search-input" style="min-width: 160px;" onchange="filterCustomerTable()">
-              <option value="all">Semua Status GPS</option>
-              <option value="has_gps">Hanya Memiliki GPS (<%= customers.filter(c => c.lat && c.lng).length %>)</option>
-              <option value="no_gps">Tanpa Koordinat GPS (<%= customers.filter(c => !c.lat || !c.lng).length %>)</option>
-              <option value="active">Hanya Aktif</option>
-              <option value="suspended">Hanya Isolir</option>
+          <button type="button" class="btn btn-sm btn-warning" onclick="openSetOltLocationModal('<%= unlocatedOlts[0].id %>', '<%= unlocatedOlts[0].name.replace(/'/g, "\\'") %>')">
+            <i class="bi bi-pin-map-fill me-1"></i> Tentukan Lokasi OLT
+          </button>
+        </div>
+      <% } %>
+
+      <!-- Hero CTA Card: Opsi Lihat Peta GIS -->
+      <div class="ftth-map-hero">
+        <div class="ftth-map-hero-left">
+          <div class="ftth-map-hero-icon">
+            <i class="bi bi-map-fill"></i>
+          </div>
+          <div>
+            <div style="font-weight: 800; font-size: 15px; color: var(--text);">Pemetaan Geospasial Topologi ODN FTTH</div>
+            <div style="font-size: 12px; color: var(--muted); margin-top: 3px;">
+              Visualisasikan sebaran <strong><%= (typeof olts !== 'undefined' && olts) ? olts.length : 0 %> OLT</strong>, <strong><%= (typeof odcs !== 'undefined' && odcs) ? odcs.length : 0 %> ODC</strong>, <strong><%= odps.length %> ODP</strong>, dan <strong><%= customers.length %> Pelanggan</strong> langsung pada peta satelit interaktif lengkap dengan jalur kabel optik.
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-p" onclick="openGisMapTab()" style="font-weight: 800; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="bi bi-pin-map-fill"></i> Buka Peta GIS Lengkap
+          </button>
+          <button type="button" class="btn btn-g" onclick="openGisMapTab(true)" style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="bi bi-arrows-fullscreen"></i> Pusatkan Semua Titik
+          </button>
+        </div>
+      </div>
+
+      <!-- Interactive Topology Hierarchy Explorer -->
+      <div class="topo-explorer-card">
+        <div class="topo-tree-toolbar">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 34px; height: 34px; border-radius: 9px; background: rgba(2, 132, 199, 0.15); color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 17px;">
+              <i class="bi bi-diagram-3-fill"></i>
+            </div>
+            <div>
+              <div style="font-weight: 800; font-size: 14px; color: var(--text);">Pohon Hierarki Distribusi ODN</div>
+              <div style="font-size: 11px; color: var(--muted);">Struktur bertingkat: Sentral OLT ➔ Kabinet ODC ➔ Kotak ODP ➔ Drop ONU</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="topoSearchInput" class="table-search-input" placeholder="Cari nama perangkat dalam pohon..." oninput="filterTopologyTree()" style="min-width: 220px;">
+            <select id="topoOltSelect" class="table-search-input" onchange="filterTopologyTree()" style="min-width: 170px;">
+              <option value="all">Semua Perangkat OLT</option>
+              <% if (typeof olts !== 'undefined' && olts) { %>
+                <% olts.forEach(o => { %>
+                  <option value="<%= o.id %>"><%= o.name %></option>
+                <% }) %>
+              <% } %>
             </select>
           </div>
         </div>
 
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Pelanggan</th>
-                <th>PPPoE / Tag ONU</th>
-                <th>Status</th>
-                <th>Redaman Rx</th>
-                <th>Paket & ODP</th>
-                <th>Koordinat GPS</th>
-                <th style="text-align: right; width: 175px;">Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="customersTableBody">
-              <% if (customers && customers.length > 0) { %>
-                <% customers.forEach(c => { 
-                    const hasGps = Boolean(c.lat && c.lng);
-                    const isActive = c.status === 'active';
-                %>
-                  <tr 
-                    data-id="<%= c.id %>"
-                    data-name="<%= String(c.name || '').toLowerCase() %>"
-                    data-pppoe="<%= String(c.pppoe_username || '').toLowerCase() %>"
-                    data-phone="<%= String(c.phone || '').toLowerCase() %>"
-                    data-tag="<%= String(c.genieacs_tag || '').toLowerCase() %>"
-                    data-address="<%= String(c.address || '').toLowerCase() %>"
-                    data-status="<%= c.status %>"
-                    data-hasgps="<%= hasGps ? '1' : '0' %>"
-                  >
-                    <td>
-                      <div style="font-weight: 800; color: var(--text);"><%= c.name %></div>
-                      <div style="font-size: 11px; color: var(--muted);"><i class="bi bi-telephone"></i> <%= c.phone || '-' %></div>
-                    </td>
-                    <td>
-                      <div style="font-weight: 700; font-family: monospace; font-size: 12px; color: #2563eb;"><%= c.pppoe_username || '-' %></div>
-                      <% if (c.genieacs_tag) { %>
-                        <div style="font-size: 11px; color: var(--muted);"><i class="bi bi-tag"></i> <%= c.genieacs_tag %></div>
-                      <% } %>
-                    </td>
-                    <td>
-                      <% if (isActive) { %>
-                        <span class="cp-chip cp-chip-active"><i class="bi bi-check-circle-fill"></i> Aktif</span>
-                      <% } else { %>
-                        <span class="cp-chip cp-chip-suspended"><i class="bi bi-x-circle-fill"></i> Isolir</span>
-                      <% } %>
-                    </td>
-                    <td>
-                      <% if (c.optical_rx_power !== null && c.optical_rx_power !== undefined) { 
-                          const rx = Number(c.optical_rx_power);
-                          let bCls = 'opt-badge-normal';
-                          if (rx <= -27 || rx >= -8) bCls = 'opt-badge-critical';
-                          else if (rx <= -24) bCls = 'opt-badge-warning';
-                      %>
-                        <span class="opt-badge <%= bCls %>"><%= rx.toFixed(2) %> dBm</span>
-                        <% if (c.optical_last_sync) { %>
-                          <div style="font-size: 10px; color: var(--muted);"><%= String(c.optical_last_sync).split('T')[0] %></div>
-                        <% } %>
-                      <% } else { %>
-                        <span class="opt-badge opt-badge-na">Belum sync</span>
-                      <% } %>
-                    </td>
-                    <td>
-                      <div style="font-weight: 700; font-size: 12px;"><%= c.package_name || '-' %></div>
-                      <div style="font-size: 11px; color: #d97706; font-weight: 700;">
-                        <i class="bi bi-box-seam"></i> <%= c.odp_name || 'Tanpa ODP' %>
+        <!-- Tree Nodes of OLT ➔ ODC ➔ ODP -->
+        <div id="topoHierarchyContainer">
+          <% if (typeof olts !== 'undefined' && olts && olts.length > 0) { %>
+            <% olts.forEach(olt => { 
+                const oltOdcs = (typeof odcs !== 'undefined' && odcs) ? odcs.filter(c => c.olt_id == olt.id) : [];
+                const hasOltGps = Boolean(olt.lat && olt.lng);
+            %>
+              <div class="topo-tree-olt-block" data-olt-id="<%= olt.id %>" data-olt-name="<%= (olt.name || '').toLowerCase() %>">
+                <!-- OLT Header -->
+                <div class="topo-olt-head">
+                  <div class="topo-olt-info">
+                    <div class="topo-olt-icon">
+                      <i class="bi bi-hdd-rack-fill"></i>
+                    </div>
+                    <div>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-weight: 800; font-size: 15px; color: var(--text);"><%= olt.name %></span>
+                        <span class="live-pulse-dot <%= olt.is_active ? 'pulse-green' : 'pulse-red' %>" title="<%= olt.is_active ? 'Online' : 'Offline' %>"></span>
+                        <span class="badge" style="background: rgba(2, 132, 199, 0.15); color: #0284c7; font-weight: 800;"><%= (olt.brand || 'ZTE').toUpperCase() %></span>
                       </div>
-                    </td>
-                    <td>
-                      <% if (hasGps) { %>
-                        <span style="font-size: 11.5px; font-family: monospace; color: var(--text); font-weight: 700;">
-                          <%= Number(c.lat).toFixed(5) %>, <%= Number(c.lng).toFixed(5) %>
-                        </span>
-                      <% } else { %>
-                        <span style="font-size: 11px; color: #ef4444; font-weight: 700;"><i class="bi bi-exclamation-circle"></i> Belum ada GPS</span>
-                      <% } %>
-                    </td>
-                    <td style="text-align: right;">
-                      <div style="display: flex; gap: 4px; justify-content: flex-end;">
-                        <% if (hasGps && c.odp_id) { %>
-                          <button type="button" class="btn btn-sm btn-info" onclick="snapCustomerCableRoad(<%= c.id %>)" title="Tarik Kabel Otomatis Ikuti Jalan (OSRM)"><i class="bi bi-signpost-2-fill"></i></button>
-                        <% } %>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" data-id="<%= c.id %>" data-name="<%= c.name || '' %>" data-type="customer" onclick="openHistoryFromBtn(this)" title="Riwayat Redaman"><i class="bi bi-activity"></i></button>
-                        <% if (hasGps) { %>
-                          <button type="button" class="btn btn-sm btn-p" onclick="focusCustomer(<%= c.id %>)" title="Fokuskan ke Peta"><i class="bi bi-geo-alt-fill"></i></button>
-                        <% } %>
-                        <a href="/admin/customers?search=<%= encodeURIComponent(c.name || '') %>" class="btn btn-sm btn-g" title="Detail Pelanggan"><i class="bi bi-eye"></i></a>
-                        <% if (c.phone) { %>
-                          <a href="https://wa.me/<%= String(c.phone).replace(/\D/g, '').replace(/^0/, '62') %>" target="_blank" class="btn btn-sm btn-wa" title="Kirim WA"><i class="bi bi-whatsapp"></i></a>
-                        <% } %>
+                      <div style="font-size: 11.5px; color: var(--muted); margin-top: 3px;">
+                        Host: <code style="color: #0284c7; font-weight: 700;"><%= olt.host || '-' %></code> • 
+                        SNMP Port: <code><%= olt.snmp_port || 161 %></code> • 
+                        <span style="color: #8b5cf6; font-weight: 700;"><%= oltOdcs.length %> ODC Tersambung</span>
                       </div>
-                    </td>
-                  </tr>
-                <% }) %>
-              <% } else { %>
-                <tr><td colspan="7" style="padding: 16px; text-align: center; color: var(--muted);">Belum ada data pelanggan.</td></tr>
-              <% } %>
-            </tbody>
-          </table>
-        </div>
-        <div class="table-pagination-bar" id="custPaginationBar"></div>
-      </div>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 6px;">
+                    <% if (hasOltGps) { %>
+                      <button type="button" class="btn btn-sm btn-g" onclick="focusOlt(<%= olt.id %>)" title="Fokuskan ke Peta"><i class="bi bi-geo-alt-fill text-primary me-1"></i> Lihat di Peta</button>
+                    <% } else { %>
+                      <button type="button" class="btn btn-sm btn-warning" onclick="openSetOltLocationModal(<%= olt.id %>, '<%= (olt.name || '').replace(/'/g, "\\'") %>')"><i class="bi bi-pin-map me-1"></i> Tentukan Titik</button>
+                    <% } %>
+                    <a href="/admin/olts" class="btn btn-sm btn-p" title="Kelola OLT"><i class="bi bi-gear-fill me-1"></i> Kelola</a>
+                  </div>
+                </div>
 
-      <!-- TAB 2: DAFTAR ODP -->
-      <div id="odp-tab" class="tab-content">
-        <div class="panel-filter-bar">
-          <input id="odpSearch" class="table-search-input" type="text" placeholder="Cari ODP (nama / deskripsi)...">
-          <button type="button" class="btn btn-p btn-sm" onclick="openModal('addOdpModal')"><i class="bi bi-plus-circle"></i> Tambah ODP</button>
-        </div>
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Nama ODP</th>
-                <th>Koneksi Induk</th>
-                <th>Redaman In / Out</th>
-                <th>Splitter & Kapasitas</th>
-                <th>Pelanggan</th>
-                <th>Koordinat</th>
-                <th style="width: 175px; text-align: right;">Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="odpsTbody">
-              <% if (odps && odps.length > 0) { %>
-                <% odps.forEach(o => { %>
-                  <tr data-name="<%= String(o.name || '').toLowerCase() %>" data-desc="<%= String(o.description || '').toLowerCase() %>">
-                    <td>
-                      <div style="font-weight: 800; color: var(--text);"><i class="bi bi-box-seam-fill text-warning me-1"></i> <%= o.name %></div>
-                    </td>
-                    <td>
-                      <% if (o.odc_name) { %>
-                        <div style="font-size: 11.5px; font-weight: 700; color: #8b5cf6;"><i class="bi bi-diagram-3-fill"></i> ODC: <%= o.odc_name %></div>
-                        <% if (o.odc_out_port) { %>
-                          <div style="font-size: 10.5px; color: var(--muted);"><%= o.odc_out_port %></div>
+                <!-- ODC Grid connected to this OLT -->
+                <% if (oltOdcs.length > 0) { %>
+                  <div class="topo-odc-grid">
+                    <% oltOdcs.forEach(c => { 
+                        const cOdps = (typeof odps !== 'undefined' && odps) ? odps.filter(p => p.odc_id == c.id) : [];
+                        const hasOdcGps = Boolean(c.lat && c.lng);
+                    %>
+                      <div class="topo-odc-box" data-odc-id="<%= c.id %>" data-odc-name="<%= (c.name || '').toLowerCase() %>">
+                        <div class="topo-odc-head">
+                          <div class="topo-odc-title">
+                            <span class="live-pulse-dot pulse-purple"></span>
+                            <i class="bi bi-archive-fill" style="color: #8b5cf6; font-size: 16px;"></i>
+                            <span><%= c.name %></span>
+                          </div>
+                          <div style="display: flex; gap: 4px;">
+                            <% if (hasOdcGps) { %>
+                              <button type="button" class="btn btn-sm btn-g" style="padding: 3px 8px; font-size: 11px;" onclick="focusOdc(<%= c.id %>)" title="Lihat di Peta"><i class="bi bi-geo-alt-fill" style="color: #8b5cf6;"></i></button>
+                            <% } %>
+                            <button type="button" class="btn btn-sm btn-p" style="padding: 3px 8px; font-size: 11px;" onclick='editOdc(<%= JSON.stringify(c) %>)' title="Edit ODC"><i class="bi bi-pencil"></i></button>
+                          </div>
+                        </div>
+
+                        <div style="font-size: 11.5px; color: var(--muted); display: flex; justify-content: space-between;">
+                          <span>Port PON: <strong style="color: #8b5cf6;"><%= c.pon_port || 'PON 1' %></strong></span>
+                          <span>Splitter: <strong><%= c.splitter_ratio || '1:8' %></strong></span>
+                          <span>Kapasitas: <strong><%= c.total_ports || 48 %> Port</strong></span>
+                        </div>
+
+                        <% if (c.input_power_dbm !== null || c.output_power_dbm !== null) { %>
+                          <div style="font-size: 11px; background: var(--bg3); padding: 4px 8px; border-radius: 6px; display: flex; justify-content: space-between;">
+                            <span>In: <strong><%= c.input_power_dbm !== null ? c.input_power_dbm + ' dBm' : '-' %></strong></span>
+                            <span>Out: <strong class="text-primary"><%= c.output_power_dbm !== null ? c.output_power_dbm + ' dBm' : '-' %></strong></span>
+                          </div>
                         <% } %>
-                      <% } %>
-                      <% if (o.parent_odp_name) { %>
-                        <div style="font-size: 11px; font-weight: 700; color: #f59e0b;"><i class="bi bi-box-seam"></i> Induk: <%= o.parent_odp_name %></div>
-                      <% } %>
-                      <% if (!o.odc_name && !o.parent_odp_name) { %>
-                        <div style="font-size: 11.5px; color: var(--muted);">-</div>
-                      <% } %>
-                    </td>
-                    <td>
-                      <div style="font-size: 11px;">
-                        <span>In: <strong><%= o.input_power_dbm !== null ? o.input_power_dbm + ' dBm' : '-' %></strong></span><br>
-                        <span>Out: <strong class="text-primary"><%= o.output_power_dbm !== null ? o.output_power_dbm + ' dBm' : '-' %></strong></span>
-                      </div>
-                    </td>
-                    <td>
-                      <div style="font-size: 11.5px; font-weight: 700;">Splitter <%= o.splitter_ratio || '1:8' %></div>
-                      <div style="font-size: 11px; color: var(--muted);"><%= o.connected_customer_count || 0 %> / <%= o.total_ports || 8 %> Port</div>
-                    </td>
-                    <td>
-                      <div style="font-size: 12px; font-weight: 700;">
-                        <span class="text-primary"><i class="bi bi-people-fill"></i> <%= o.connected_customer_count || 0 %> Pelanggan</span>
-                      </div>
-                      <% if (o.connected_child_odp_count > 0) { %>
-                        <div style="font-size: 11px; color: #f59e0b; font-weight: 600;"><i class="bi bi-diagram-2"></i> <%= o.connected_child_odp_count %> Sub-ODP</div>
-                      <% } %>
-                    </td>
-                    <td>
-                      <div style="font-size: 11.5px; font-family: monospace; font-weight: 700;">
-                        <%= (Number(o.lat) || 0).toFixed(6) %>, <%= (Number(o.lng) || 0).toFixed(6) %>
-                      </div>
-                    </td>
-                    <td>
-                      <div style="display: flex; gap: 4px; justify-content: flex-end;">
-                        <button type="button" class="btn btn-sm btn-warning" data-id="<%= o.id %>" data-name="<%= o.name || '' %>" data-type="odp" data-port="Port Out" onclick="openRecordFromBtn(this)" title="Catat Pengukuran Redaman"><i class="bi bi-speedometer2"></i></button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" data-id="<%= o.id %>" data-name="<%= o.name || '' %>" data-type="odp" onclick="openHistoryFromBtn(this)" title="Riwayat Redaman"><i class="bi bi-activity"></i></button>
-                        <button type="button" class="btn btn-sm btn-p" data-odp-id="<%= Number(o.id) %>" onclick="editOdpFromBtn(this)" title="<%= t('common.edit', 'Edit') %>"><i class="bi bi-pencil"></i></button>
-                        <button type="button" class="btn btn-sm btn-d" onclick="promptDeleteOdp(<%= Number(o.id) %>)" title="Hapus ODP"><i class="bi bi-trash"></i></button>
-                        <button type="button" class="btn btn-sm btn-g" data-odp-id="<%= Number(o.id) %>" onclick="focusOdpFromBtn(this)" title="Fokus Peta"><i class="bi bi-geo-alt"></i></button>
-                      </div>
-                    </td>
-                  </tr>
-                <% }) %>
-              <% } else { %>
-                <tr><td colspan="7" style="padding: 16px; text-align: center; color: var(--muted);">Belum ada data ODP.</td></tr>
-              <% } %>
-            </tbody>
-          </table>
-        </div>
-        <div class="table-pagination-bar" id="odpPaginationBar"></div>
-      </div>
 
-      <!-- TAB 3: DAFTAR ODC -->
-      <div id="odc-tab" class="tab-content">
-        <div class="panel-filter-bar">
-          <input id="odcSearch" class="table-search-input" type="text" placeholder="Cari ODC (nama / deskripsi)...">
-          <button type="button" class="btn btn-sm" style="background:#8b5cf6; border:1px solid #7c3aed; color:#fff;" onclick="openModal('addOdcModal')"><i class="bi bi-diagram-3-fill"></i> Tambah ODC</button>
-        </div>
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Nama ODC</th>
-                <th>OLT & Port PON</th>
-                <th>Redaman In / Out</th>
-                <th>Splitter & Kapasitas</th>
-                <th>ODP Tersambung</th>
-                <th>Koordinat</th>
-                <th style="width: 175px; text-align: right;">Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="odcsTbody">
-              <% if (typeof odcs !== 'undefined' && odcs && odcs.length > 0) { %>
-                <% odcs.forEach(c => { %>
-                  <tr data-name="<%= String(c.name || '').toLowerCase() %>" data-desc="<%= String(c.description || '').toLowerCase() %>">
-                    <td>
-                      <div style="font-weight: 800; color: var(--text);"><i class="bi bi-diagram-3-fill me-1" style="color: #8b5cf6;"></i> <%= c.name %></div>
-                    </td>
-                    <td>
-                      <div style="font-size: 12px; font-weight: 700; color: var(--text);"><%= c.olt_name || '-' %></div>
-                      <div style="font-size: 11px; color: #8b5cf6; font-weight: 700;"><%= c.pon_port || 'PON 1' %></div>
-                    </td>
-                    <td>
-                      <div style="font-size: 11px;">
-                        <span>In: <strong><%= c.input_power_dbm !== null ? c.input_power_dbm + ' dBm' : '-' %></strong></span><br>
-                        <span>Out: <strong class="text-primary"><%= c.output_power_dbm !== null ? c.output_power_dbm + ' dBm' : '-' %></strong></span>
+                        <!-- ODPs under this ODC -->
+                        <div class="topo-odp-list">
+                          <div style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px;">
+                            <i class="bi bi-box-seam text-warning me-1"></i> Titik ODP Terhubung (<%= cOdps.length %>)
+                          </div>
+                          <% if (cOdps.length > 0) { %>
+                            <% cOdps.forEach(op => { 
+                                const opCusts = customers ? customers.filter(cust => cust.odp_id == op.id) : [];
+                                const totalP = Number(op.total_ports) || 8;
+                                const usedP = Number(op.connected_customer_count) || opCusts.length;
+                                const pct = Math.min(100, Math.round((usedP / totalP) * 100));
+                                let barColor = '#10b981';
+                                if (pct >= 90) barColor = '#ef4444';
+                                else if (pct >= 70) barColor = '#f59e0b';
+                                const hasOdpGps = Boolean(op.lat && op.lng);
+                            %>
+                              <div class="topo-odp-item" data-odp-id="<%= op.id %>" data-odp-name="<%= (op.name || '').toLowerCase() %>">
+                                <div class="topo-odp-info">
+                                  <span class="live-pulse-dot pulse-amber"></span>
+                                  <div style="min-width: 0;">
+                                    <div style="font-weight: 700; font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><%= op.name %></div>
+                                    <div style="font-size: 10.5px; color: var(--muted);">Splitter <%= op.splitter_ratio || '1:8' %> • In: <%= op.input_power_dbm || '-' %> dBm</div>
+                                  </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                  <div style="text-align: right;">
+                                    <div style="font-size: 10.5px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--text);"><%= usedP %>/<%= totalP %></div>
+                                    <div class="topo-port-gauge" title="<%= pct %>% Terpakai">
+                                      <div class="topo-port-fill" style="width: <%= pct %>%; background: <%= barColor %>;"></div>
+                                    </div>
+                                  </div>
+                                  <% if (hasOdpGps) { %>
+                                    <button type="button" class="btn btn-sm btn-g" style="padding: 2px 6px; font-size: 11px;" onclick="focusOdp(<%= op.id %>)" title="Lihat di Peta"><i class="bi bi-geo-alt-fill text-warning"></i></button>
+                                  <% } %>
+                                </div>
+                              </div>
+                            <% }) %>
+                          <% } else { %>
+                            <div style="font-size: 11px; color: var(--muted); font-style: italic; padding: 4px 0;">Belum ada ODP terhubung ke kabinet ini.</div>
+                          <% } %>
+                        </div>
                       </div>
-                    </td>
-                    <td>
-                      <div style="font-size: 11.5px; font-weight: 700;">Splitter <%= c.splitter_ratio || '1:8' %></div>
-                      <div style="font-size: 11px; color: var(--muted);"><%= c.total_ports || 48 %> Total Port</div>
-                    </td>
-                    <td>
-                      <span class="cp-chip" style="background: rgba(139,92,246,0.15); color: #8b5cf6; border-color: rgba(139,92,246,0.3);">
-                        <i class="bi bi-box-seam-fill"></i> <%= c.connected_odp_count || 0 %> ODP
-                      </span>
-                    </td>
-                    <td>
-                      <div style="font-size: 11.5px; font-family: monospace; font-weight: 700;">
-                        <%= (Number(c.lat) || 0).toFixed(6) %>, <%= (Number(c.lng) || 0).toFixed(6) %>
-                      </div>
-                    </td>
-                    <td>
-                      <div style="display: flex; gap: 4px; justify-content: flex-end;">
-                        <button type="button" class="btn btn-sm btn-warning" data-id="<%= c.id %>" data-name="<%= c.name || '' %>" data-type="odc" data-port="<%= c.pon_port || 'PON 1' %>" onclick="openRecordFromBtn(this)" title="Catat Pengukuran Redaman"><i class="bi bi-speedometer2"></i></button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" data-id="<%= c.id %>" data-name="<%= c.name || '' %>" data-type="odc" onclick="openHistoryFromBtn(this)" title="Riwayat Redaman"><i class="bi bi-activity"></i></button>
-                        <button type="button" class="btn btn-sm btn-p" onclick='editOdc(<%= JSON.stringify(c) %>)' title="<%= t('common.edit', 'Edit') %>"><i class="bi bi-pencil"></i></button>
-                        <button type="button" class="btn btn-sm btn-d" onclick="promptDeleteOdc(<%= Number(c.id) %>)" title="Hapus ODC"><i class="bi bi-trash"></i></button>
-                        <button type="button" class="btn btn-sm btn-g" onclick="focusOdc(<%= Number(c.id) %>)" title="Fokus Peta"><i class="bi bi-geo-alt"></i></button>
-                      </div>
-                    </td>
-                  </tr>
-                <% }) %>
-              <% } else { %>
-                <tr><td colspan="7" style="padding: 16px; text-align: center; color: var(--muted);">Belum ada data ODC. Silakan klik tombol "Tambah ODC".</td></tr>
-              <% } %>
-            </tbody>
-          </table>
-        </div>
-        <div class="table-pagination-bar" id="odcPaginationBar"></div>
-      </div>
+                    <% }) %>
+                  </div>
+                <% } else { %>
+                  <div style="padding: 14px; text-align: center; color: var(--muted); font-size: 12px; font-style: italic;">
+                    Belum ada kabinet ODC terhubung ke OLT ini. <button type="button" class="btn btn-sm btn-p ms-2" onclick="openAddOdcModal()">+ Tambah ODC</button>
+                  </div>
+                <% } %>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div style="padding: 30px; text-align: center; color: var(--muted);">
+              <i class="bi bi-hdd-rack" style="font-size: 36px; color: var(--muted); display: block; margin-bottom: 10px;"></i>
+              Belum ada perangkat OLT terdaftar. Silakan klik tombol <strong>"Tambah OLT"</strong> untuk memulai penyusunan topologi ODN.
+            </div>
+          <% } %>
 
-      <!-- TAB 4: PERANGKAT OLT PUSAT -->
-      <div id="olt-tab" class="tab-content">
-        <div class="panel-filter-bar">
-          <div style="display: flex; gap: 8px; flex: 1; max-width: 450px;">
-            <input 
-              id="oltTableSearch" 
-              class="table-search-input" 
-              style="width: 100%;"
-              type="text" 
-              placeholder="Cari nama OLT, IP / Host, Brand..."
-            >
+          <!-- Unassigned / Orphan Section -->
+          <% 
+            const orphanOdcs = (typeof odcs !== 'undefined' && odcs) ? odcs.filter(c => !c.olt_id) : [];
+            const orphanOdps = (typeof odps !== 'undefined' && odps) ? odps.filter(p => !p.odc_id && !p.parent_odp_id) : [];
+          %>
+          <% if (orphanOdcs.length > 0 || orphanOdps.length > 0) { %>
+            <div style="margin-top: 20px; padding: 14px 18px; border-radius: 12px; background: rgba(245, 158, 11, 0.08); border: 1.5px dashed rgba(245, 158, 11, 0.4);">
+              <div style="font-weight: 800; font-size: 13px; color: #f59e0b; display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-exclamation-triangle-fill"></i> Perangkat Belum Terhubung ke Induk (<%= orphanOdcs.length %> ODC, <%= orphanOdps.length %> ODP)
+              </div>
+              <div style="font-size: 11.5px; color: var(--muted); margin-top: 4px;">
+                Perangkat berikut belum memiliki induk OLT atau ODC. Silakan klik untuk mengedit dan menghubungkan ke jalur topologi:
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+                <% orphanOdcs.forEach(c => { %>
+                  <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #8b5cf6; padding: 5px 10px; cursor: pointer;" onclick='editOdc(<%= JSON.stringify(c) %>)'>
+                    <i class="bi bi-archive me-1"></i> ODC: <%= c.name %> (Edit)
+                  </span>
+                <% }) %>
+                <% orphanOdps.forEach(p => { %>
+                  <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #d97706; padding: 5px 10px; cursor: pointer;" data-odp-id="<%= p.id %>" onclick="editOdpFromBtn(this)">
+                    <i class="bi bi-box-seam me-1"></i> ODP: <%= p.name %> (Edit)
+                  </span>
+                <% }) %>
+              </div>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         SUBPAGE 2: PERANGKAT OLT (OPTICAL LINE TERMINAL)
+         =================================================================== -->
+    <div id="tab-olts" class="ftth-subpage">
+      <div class="subpage-header-card">
+        <div class="subpage-title-box">
+          <div class="subpage-title-icon" style="background: rgba(2, 132, 199, 0.15); color: #0284c7;">
+            <i class="bi bi-hdd-rack-fill"></i>
           </div>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <button class="btn btn-sm btn-p" onclick="openAddOltModal()">
-              <i class="bi bi-plus-circle me-1"></i> Tambah OLT
-            </button>
-            <a href="/admin/olts" class="btn btn-sm btn-g">
-              <i class="bi bi-gear me-1"></i> Manajemen OLT
-            </a>
+          <div>
+            <div class="subpage-title-h">Daftar & Detail Perangkat OLT Sentral (Central Office)</div>
+            <div class="subpage-title-d">Optical Line Terminal di NOC / POP pusat sebagai hulu seluruh distribusi FTTH</div>
           </div>
         </div>
-
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Nama OLT</th>
-                <th>Host / IP</th>
-                <th>Brand / Vendor</th>
-                <th>SNMP Port</th>
-                <th>Status</th>
-                <th>Koordinat GPS</th>
-                <th>ODC Terhubung</th>
-                <th style="text-align: right; width: 160px;">Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="oltsTbody">
-              <% if (typeof olts !== 'undefined' && olts && olts.length > 0) { %>
-                <% olts.forEach(o => { 
-                    const hasGps = Boolean(o.lat && o.lng);
-                    const odcCount = (typeof odcs !== 'undefined' && odcs) ? odcs.filter(c => c.olt_id == o.id).length : 0;
-                %>
-                  <tr data-id="<%= o.id %>" data-name="<%= (o.name || '').toLowerCase() %>" data-host="<%= (o.host || '').toLowerCase() %>">
-                    <td>
-                      <div style="font-weight: 800; color: var(--text);"><%= o.name %></div>
-                      <div style="font-size: 11px; color: var(--muted);"><%= o.description || 'Sentral NOC' %></div>
-                    </td>
-                    <td><code style="color: #0284c7; font-weight: 700;"><%= o.host %></code></td>
-                    <td><span class="badge" style="background: rgba(2, 132, 199, 0.15); color: #0284c7;"><%= (o.brand || 'ZTE').toUpperCase() %></span></td>
-                    <td><code><%= o.snmp_port || 161 %></code></td>
-                    <td>
-                      <span class="badge <%= o.is_active ? 'bs' : 'bd' %>">
-                        <%= o.is_active ? 'Aktif' : 'Nonaktif' %>
-                      </span>
-                    </td>
-                    <td>
-                      <% if (hasGps) { %>
-                        <span style="font-size: 11px; font-family: monospace; color: var(--text); font-weight: 700;">
-                          <%= Number(o.lat).toFixed(5) %>, <%= Number(o.lng).toFixed(5) %>
-                        </span>
-                      <% } else { %>
-                        <span class="badge bg-secondary" style="font-size: 10.5px;"><i class="bi bi-exclamation-triangle"></i> Belum ada lokasi</span>
-                      <% } %>
-                    </td>
-                    <td>
-                      <span class="badge" style="background:#8b5cf6; color:#fff; padding:2px 8px; border-radius:4px; font-size:11px;">
-                        <%= odcCount %> ODC
-                      </span>
-                    </td>
-                    <td style="text-align: right;">
-                      <div style="display: inline-flex; gap: 4px;">
-                        <% if (hasGps) { %>
-                          <button type="button" class="btn btn-sm btn-g" onclick="focusOlt(<%= Number(o.id) %>)" title="Fokus di Peta"><i class="bi bi-geo-alt"></i></button>
-                        <% } %>
-                        <button type="button" class="btn btn-sm btn-warning" onclick="openSetOltLocationModal(<%= Number(o.id) %>, '<%= (o.name || '').replace(/'/g, "\\'") %>', '<%= o.lat || '' %>', '<%= o.lng || '' %>')" title="Tentukan / Ubah Titik Lokasi Peta"><i class="bi bi-pin-map"></i></button>
-                        <a href="/admin/olts" class="btn btn-sm btn-p" title="Buka Detail OLT"><i class="bi bi-arrow-up-right-square"></i></a>
-                      </div>
-                    </td>
-                  </tr>
-                <% }) %>
-              <% } else { %>
-                <tr><td colspan="8" style="padding: 16px; text-align: center; color: var(--muted);">Belum ada data OLT terdaftar. Silakan klik tombol "Tambah OLT".</td></tr>
-              <% } %>
-            </tbody>
-          </table>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button type="button" class="btn btn-sm btn-p" onclick="openModal('addOltModal')">
+            <i class="bi bi-plus-circle me-1"></i> Tambah OLT Baru
+          </button>
+          <a href="/admin/olts" class="btn btn-sm btn-g">
+            <i class="bi bi-gear me-1"></i> Manajemen OLT
+          </a>
         </div>
-        <div class="table-pagination-bar" id="oltPaginationBar"></div>
+      </div>
+
+      <div class="panel-filter-bar">
+        <div style="display: flex; gap: 8px; flex: 1; max-width: 450px;">
+          <input 
+            id="oltTableSearch" 
+            class="table-search-input" 
+            style="width: 100%;"
+            type="text" 
+            placeholder="Cari nama OLT, IP / Host, Brand..."
+          >
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nama OLT</th>
+              <th>Host / IP</th>
+              <th>Brand / Vendor</th>
+              <th>SNMP Port</th>
+              <th>Status</th>
+              <th>Koordinat GPS</th>
+              <th>ODC Terhubung</th>
+              <th style="text-align: right; width: 160px;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="oltsTbody">
+            <% if (typeof olts !== 'undefined' && olts && olts.length > 0) { %>
+              <% olts.forEach(o => { 
+                  const hasGps = Boolean(o.lat && o.lng);
+                  const odcCount = (typeof odcs !== 'undefined' && odcs) ? odcs.filter(c => c.olt_id == o.id).length : 0;
+              %>
+                <tr data-id="<%= o.id %>" data-name="<%= (o.name || '').toLowerCase() %>" data-host="<%= (o.host || '').toLowerCase() %>">
+                  <td>
+                    <div style="font-weight: 800; color: var(--text);"><i class="bi bi-hdd-rack-fill text-primary me-1"></i> <%= o.name %></div>
+                    <div style="font-size: 11px; color: var(--muted);"><%= o.description || 'Sentral NOC' %></div>
+                  </td>
+                  <td><code style="color: #0284c7; font-weight: 700;"><%= o.host %></code></td>
+                  <td><span class="badge" style="background: rgba(2, 132, 199, 0.15); color: #0284c7;"><%= (o.brand || 'ZTE').toUpperCase() %></span></td>
+                  <td><code><%= o.snmp_port || 161 %></code></td>
+                  <td>
+                    <span class="badge <%= o.is_active ? 'bs' : 'bd' %>" style="display: inline-flex; align-items: center; gap: 4px;">
+                      <span class="live-pulse-dot <%= o.is_active ? 'pulse-green' : 'pulse-red' %>"></span>
+                      <%= o.is_active ? 'Aktif' : 'Nonaktif' %>
+                    </span>
+                  </td>
+                  <td>
+                    <% if (hasGps) { %>
+                      <span style="font-size: 11px; font-family: monospace; color: var(--text); font-weight: 700;">
+                        <%= Number(o.lat).toFixed(5) %>, <%= Number(o.lng).toFixed(5) %>
+                      </span>
+                    <% } else { %>
+                      <span class="badge bg-secondary" style="font-size: 10.5px;"><i class="bi bi-exclamation-triangle"></i> Belum ada lokasi</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <span class="badge" style="background:#8b5cf6; color:#fff; padding:2px 8px; border-radius:4px; font-size:11px;">
+                      <%= odcCount %> ODC
+                    </span>
+                  </td>
+                  <td style="text-align: right;">
+                    <div style="display: inline-flex; gap: 4px;">
+                      <% if (hasGps) { %>
+                        <button type="button" class="btn btn-sm btn-g" onclick="focusOlt(<%= Number(o.id) %>)" title="Fokus di Peta"><i class="bi bi-geo-alt"></i></button>
+                      <% } %>
+                      <button type="button" class="btn btn-sm btn-warning" onclick="openSetOltLocationModal(<%= Number(o.id) %>, '<%= (o.name || '').replace(/'/g, "\\'") %>', '<%= o.lat || '' %>', '<%= o.lng || '' %>')" title="Tentukan / Ubah Titik Lokasi Peta"><i class="bi bi-pin-map"></i></button>
+                      <a href="/admin/olts" class="btn btn-sm btn-p" title="Buka Detail OLT"><i class="bi bi-arrow-up-right-square"></i></a>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="8" style="padding: 16px; text-align: center; color: var(--muted);">Belum ada data OLT terdaftar. Silakan klik tombol "Tambah OLT".</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-pagination-bar" id="oltPaginationBar"></div>
+    </div>
+
+    <!-- ===================================================================
+         SUBPAGE 3: DISTRIBUSI ODC (OPTICAL DISTRIBUTION CABINET)
+         =================================================================== -->
+    <div id="tab-odcs" class="ftth-subpage">
+      <div class="subpage-header-card">
+        <div class="subpage-title-box">
+          <div class="subpage-title-icon" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">
+            <i class="bi bi-archive-fill"></i>
+          </div>
+          <div>
+            <div class="subpage-title-h">Daftar & Detail Kabinet Feeder (ODC)</div>
+            <div class="subpage-title-d">Kabinet outdoor pembagi sinyal feeder dari OLT menuju klaster kotak distribusi ODP</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button type="button" class="btn btn-sm" style="background:#8b5cf6; border:1px solid #7c3aed; color:#fff;" onclick="openModal('addOdcModal')">
+            <i class="bi bi-plus-circle me-1"></i> Tambah ODC Baru
+          </button>
+          <button type="button" class="btn btn-sm btn-g" onclick="openGisMapTab()">
+            <i class="bi bi-map me-1"></i> Lihat di Peta
+          </button>
+        </div>
+      </div>
+
+      <div class="panel-filter-bar">
+        <div style="display: flex; gap: 8px; flex: 1; max-width: 450px;">
+          <input id="odcSearch" class="table-search-input" style="width: 100%;" type="text" placeholder="Cari ODC (nama / deskripsi / OLT)...">
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nama ODC</th>
+              <th>OLT & Port PON</th>
+              <th>Redaman In / Out</th>
+              <th>Splitter & Kapasitas</th>
+              <th>ODP Tersambung</th>
+              <th>Koordinat</th>
+              <th style="width: 175px; text-align: right;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="odcsTbody">
+            <% if (typeof odcs !== 'undefined' && odcs && odcs.length > 0) { %>
+              <% odcs.forEach(c => { %>
+                <tr data-name="<%= String(c.name || '').toLowerCase() %>" data-desc="<%= String(c.description || '').toLowerCase() %>">
+                  <td>
+                    <div style="font-weight: 800; color: var(--text);"><i class="bi bi-archive-fill me-1" style="color: #8b5cf6;"></i> <%= c.name %></div>
+                    <% if (c.description) { %>
+                      <div style="font-size: 11px; color: var(--muted);"><%= c.description %></div>
+                    <% } %>
+                  </td>
+                  <td>
+                    <div style="font-size: 12px; font-weight: 700; color: var(--text);"><%= c.olt_name || '-' %></div>
+                    <div style="font-size: 11px; color: #8b5cf6; font-weight: 700;"><%= c.pon_port || 'PON 1' %></div>
+                  </td>
+                  <td>
+                    <div style="font-size: 11px;">
+                      <span>In: <strong><%= c.input_power_dbm !== null ? c.input_power_dbm + ' dBm' : '-' %></strong></span><br>
+                      <span>Out: <strong class="text-primary"><%= c.output_power_dbm !== null ? c.output_power_dbm + ' dBm' : '-' %></strong></span>
+                    </div>
+                  </td>
+                  <td>
+                    <div style="font-size: 11.5px; font-weight: 700;">Splitter <%= c.splitter_ratio || '1:8' %></div>
+                    <div style="font-size: 11px; color: var(--muted);"><%= c.total_ports || 48 %> Total Port</div>
+                  </td>
+                  <td>
+                    <span class="cp-chip" style="background: rgba(139,92,246,0.15); color: #8b5cf6; border-color: rgba(139,92,246,0.3);">
+                      <i class="bi bi-box-seam-fill"></i> <%= c.connected_odp_count || 0 %> ODP
+                    </span>
+                  </td>
+                  <td>
+                    <div style="font-size: 11.5px; font-family: monospace; font-weight: 700;">
+                      <%= (Number(c.lat) || 0).toFixed(6) %>, <%= (Number(c.lng) || 0).toFixed(6) %>
+                    </div>
+                  </td>
+                  <td>
+                    <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                      <button type="button" class="btn btn-sm btn-warning" data-id="<%= c.id %>" data-name="<%= c.name || '' %>" data-type="odc" data-port="<%= c.pon_port || 'PON 1' %>" onclick="openRecordFromBtn(this)" title="Catat Pengukuran Redaman"><i class="bi bi-speedometer2"></i></button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" data-id="<%= c.id %>" data-name="<%= c.name || '' %>" data-type="odc" onclick="openHistoryFromBtn(this)" title="Riwayat Redaman"><i class="bi bi-activity"></i></button>
+                      <button type="button" class="btn btn-sm btn-p" onclick='editOdc(<%= JSON.stringify(c) %>)' title="<%= t('common.edit', 'Edit') %>"><i class="bi bi-pencil"></i></button>
+                      <button type="button" class="btn btn-sm btn-d" onclick="promptDeleteOdc(<%= Number(c.id) %>)" title="Hapus ODC"><i class="bi bi-trash"></i></button>
+                      <button type="button" class="btn btn-sm btn-g" onclick="focusOdc(<%= Number(c.id) %>)" title="Fokus Peta"><i class="bi bi-geo-alt"></i></button>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="7" style="padding: 16px; text-align: center; color: var(--muted);">Belum ada data ODC. Silakan klik tombol "Tambah ODC".</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-pagination-bar" id="odcPaginationBar"></div>
+    </div>
+
+    <!-- ===================================================================
+         SUBPAGE 4: TITIK DISTRIBUSI ODP (OPTICAL DISTRIBUTION POINT)
+         =================================================================== -->
+    <div id="tab-odps" class="ftth-subpage">
+      <div class="subpage-header-card">
+        <div class="subpage-title-box">
+          <div class="subpage-title-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+            <i class="bi bi-box-seam-fill"></i>
+          </div>
+          <div>
+            <div class="subpage-title-h">Daftar & Detail Titik Distribusi ODP (Distribution Point)</div>
+            <div class="subpage-title-d">Kotak pembagi sinyal optik terdekat ke tiang/rumah pelanggan FTTH</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button type="button" class="btn btn-p btn-sm" onclick="openModal('addOdpModal')">
+            <i class="bi bi-plus-circle me-1"></i> Tambah ODP Baru
+          </button>
+          <button type="button" class="btn btn-g btn-sm" onclick="openGisMapTab()">
+            <i class="bi bi-map me-1"></i> Lihat di Peta
+          </button>
+        </div>
+      </div>
+
+      <div class="panel-filter-bar">
+        <div style="display: flex; gap: 8px; flex: 1; max-width: 450px;">
+          <input id="odpSearch" class="table-search-input" style="width: 100%;" type="text" placeholder="Cari ODP (nama / deskripsi / ODC induk)...">
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nama ODP</th>
+              <th>Koneksi Induk</th>
+              <th>Redaman In / Out</th>
+              <th>Splitter & Kapasitas</th>
+              <th>Pelanggan</th>
+              <th>Koordinat</th>
+              <th style="width: 175px; text-align: right;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="odpsTbody">
+            <% if (odps && odps.length > 0) { %>
+              <% odps.forEach(o => { %>
+                <tr data-name="<%= String(o.name || '').toLowerCase() %>" data-desc="<%= String(o.description || '').toLowerCase() %>">
+                  <td>
+                    <div style="font-weight: 800; color: var(--text);"><i class="bi bi-box-seam-fill text-warning me-1"></i> <%= o.name %></div>
+                    <% if (o.description) { %>
+                      <div style="font-size: 11px; color: var(--muted);"><%= o.description %></div>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (o.odc_name) { %>
+                      <div style="font-size: 11.5px; font-weight: 700; color: #8b5cf6;"><i class="bi bi-archive-fill"></i> ODC: <%= o.odc_name %></div>
+                      <% if (o.odc_out_port) { %>
+                        <div style="font-size: 10.5px; color: var(--muted);"><%= o.odc_out_port %></div>
+                      <% } %>
+                    <% } %>
+                    <% if (o.parent_odp_name) { %>
+                      <div style="font-size: 11px; font-weight: 700; color: #f59e0b;"><i class="bi bi-box-seam"></i> Induk: <%= o.parent_odp_name %></div>
+                    <% } %>
+                    <% if (!o.odc_name && !o.parent_odp_name) { %>
+                      <div style="font-size: 11.5px; color: var(--muted);">-</div>
+                    <% } %>
+                  </td>
+                  <td>
+                    <div style="font-size: 11px;">
+                      <span>In: <strong><%= o.input_power_dbm !== null ? o.input_power_dbm + ' dBm' : '-' %></strong></span><br>
+                      <span>Out: <strong class="text-primary"><%= o.output_power_dbm !== null ? o.output_power_dbm + ' dBm' : '-' %></strong></span>
+                    </div>
+                  </td>
+                  <td>
+                    <div style="font-size: 11.5px; font-weight: 700;">Splitter <%= o.splitter_ratio || '1:8' %></div>
+                    <div style="font-size: 11px; color: var(--muted);"><%= o.connected_customer_count || 0 %> / <%= o.total_ports || 8 %> Port</div>
+                  </td>
+                  <td>
+                    <div style="font-size: 12px; font-weight: 700;">
+                      <span class="text-primary"><i class="bi bi-people-fill"></i> <%= o.connected_customer_count || 0 %> Pelanggan</span>
+                    </div>
+                    <% if (o.connected_child_odp_count > 0) { %>
+                      <div style="font-size: 11px; color: #f59e0b; font-weight: 600;"><i class="bi bi-diagram-2"></i> <%= o.connected_child_odp_count %> Sub-ODP</div>
+                    <% } %>
+                  </td>
+                  <td>
+                    <div style="font-size: 11.5px; font-family: monospace; font-weight: 700;">
+                      <%= (Number(o.lat) || 0).toFixed(6) %>, <%= (Number(o.lng) || 0).toFixed(6) %>
+                    </div>
+                  </td>
+                  <td>
+                    <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                      <button type="button" class="btn btn-sm btn-warning" data-id="<%= o.id %>" data-name="<%= o.name || '' %>" data-type="odp" data-port="Port Out" onclick="openRecordFromBtn(this)" title="Catat Pengukuran Redaman"><i class="bi bi-speedometer2"></i></button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" data-id="<%= o.id %>" data-name="<%= o.name || '' %>" data-type="odp" onclick="openHistoryFromBtn(this)" title="Riwayat Redaman"><i class="bi bi-activity"></i></button>
+                      <button type="button" class="btn btn-sm btn-p" data-odp-id="<%= Number(o.id) %>" onclick="editOdpFromBtn(this)" title="<%= t('common.edit', 'Edit') %>"><i class="bi bi-pencil"></i></button>
+                      <button type="button" class="btn btn-sm btn-d" onclick="promptDeleteOdp(<%= Number(o.id) %>)" title="Hapus ODP"><i class="bi bi-trash"></i></button>
+                      <button type="button" class="btn btn-sm btn-g" data-odp-id="<%= Number(o.id) %>" onclick="focusOdpFromBtn(this)" title="Fokus Peta"><i class="bi bi-geo-alt"></i></button>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="7" style="padding: 16px; text-align: center; color: var(--muted);">Belum ada data ODP. Silakan klik tombol "Tambah ODP".</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-pagination-bar" id="odpPaginationBar"></div>
+    </div>
+
+    <!-- ===================================================================
+         SUBPAGE 5: ONU & TITIK PELANGGAN FTTH
+         =================================================================== -->
+    <div id="tab-customers" class="ftth-subpage">
+      <div class="subpage-header-card">
+        <div class="subpage-title-box">
+          <div class="subpage-title-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+            <i class="bi bi-router-fill"></i>
+          </div>
+          <div>
+            <div class="subpage-title-h">Daftar Titik Pelanggan & Modem ONU FTTH</div>
+            <div class="subpage-title-d">Monitoring status koneksi PPPoE, redaman Rx optik, dan keterikatan ODP pelanggan</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button type="button" class="btn btn-sm btn-p" onclick="openGisMapTab()">
+            <i class="bi bi-map-fill me-1"></i> Buka Peta Pelanggan
+          </button>
+          <a href="/admin/customers" class="btn btn-sm btn-g">
+            <i class="bi bi-people me-1"></i> Manajemen Pelanggan
+          </a>
+        </div>
+      </div>
+
+      <div class="panel-filter-bar">
+        <div style="display: flex; gap: 8px; flex: 1; max-width: 450px;">
+          <input 
+            id="customerTableSearch" 
+            class="table-search-input" 
+            style="width: 100%;"
+            type="text" 
+            placeholder="Filter nama, PPPoE, HP, SN/Tag..."
+          >
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <select id="customerGpsFilter" class="table-search-input" style="min-width: 160px;" onchange="filterCustomerTable()">
+            <option value="all">Semua Status GPS</option>
+            <option value="has_gps">Hanya Memiliki GPS (<%= customers.filter(c => c.lat && c.lng).length %>)</option>
+            <option value="no_gps">Tanpa Koordinat GPS (<%= customers.filter(c => !c.lat || !c.lng).length %>)</option>
+            <option value="active">Hanya Aktif</option>
+            <option value="suspended">Hanya Isolir</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Pelanggan</th>
+              <th>PPPoE / Tag ONU</th>
+              <th>Status</th>
+              <th>Redaman Rx</th>
+              <th>Paket & ODP</th>
+              <th>Koordinat GPS</th>
+              <th style="text-align: right; width: 175px;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="customersTableBody">
+            <% if (customers && customers.length > 0) { %>
+              <% customers.forEach(c => { 
+                  const hasGps = Boolean(c.lat && c.lng);
+                  const isActive = c.status === 'active';
+              %>
+                <tr 
+                  data-id="<%= c.id %>"
+                  data-name="<%= String(c.name || '').toLowerCase() %>"
+                  data-pppoe="<%= String(c.pppoe_username || '').toLowerCase() %>"
+                  data-phone="<%= String(c.phone || '').toLowerCase() %>"
+                  data-tag="<%= String(c.genieacs_tag || '').toLowerCase() %>"
+                  data-address="<%= String(c.address || '').toLowerCase() %>"
+                  data-status="<%= c.status %>"
+                  data-hasgps="<%= hasGps ? '1' : '0' %>"
+                >
+                  <td>
+                    <div style="font-weight: 800; color: var(--text);"><%= c.name %></div>
+                    <div style="font-size: 11px; color: var(--muted);"><i class="bi bi-telephone"></i> <%= c.phone || '-' %></div>
+                  </td>
+                  <td>
+                    <div style="font-weight: 700; font-family: monospace; font-size: 12px; color: #2563eb;"><%= c.pppoe_username || '-' %></div>
+                    <% if (c.genieacs_tag) { %>
+                      <div style="font-size: 11px; color: var(--muted);"><i class="bi bi-tag"></i> <%= c.genieacs_tag %></div>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (isActive) { %>
+                      <span class="cp-chip cp-chip-active"><span class="live-pulse-dot pulse-green me-1"></span> Aktif</span>
+                    <% } else { %>
+                      <span class="cp-chip cp-chip-suspended"><span class="live-pulse-dot pulse-red me-1"></span> Isolir</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (c.optical_rx_power !== null && c.optical_rx_power !== undefined) { 
+                        const rx = Number(c.optical_rx_power);
+                        let bCls = 'opt-badge-normal';
+                        if (rx <= -27 || rx >= -8) bCls = 'opt-badge-critical';
+                        else if (rx <= -24) bCls = 'opt-badge-warning';
+                    %>
+                      <span class="opt-badge <%= bCls %>"><%= rx.toFixed(2) %> dBm</span>
+                      <% if (c.optical_last_sync) { %>
+                        <div style="font-size: 10px; color: var(--muted);"><%= String(c.optical_last_sync).split('T')[0] %></div>
+                      <% } %>
+                    <% } else { %>
+                      <span class="opt-badge opt-badge-na">Belum sync</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <div style="font-weight: 700; font-size: 12px;"><%= c.package_name || '-' %></div>
+                    <div style="font-size: 11px; color: #d97706; font-weight: 700;">
+                      <i class="bi bi-box-seam"></i> <%= c.odp_name || 'Tanpa ODP' %>
+                    </div>
+                  </td>
+                  <td>
+                    <% if (hasGps) { %>
+                      <span style="font-size: 11.5px; font-family: monospace; color: var(--text); font-weight: 700;">
+                        <%= Number(c.lat).toFixed(5) %>, <%= Number(c.lng).toFixed(5) %>
+                      </span>
+                    <% } else { %>
+                      <span style="font-size: 11px; color: #ef4444; font-weight: 700;"><i class="bi bi-exclamation-circle"></i> Belum ada GPS</span>
+                    <% } %>
+                  </td>
+                  <td style="text-align: right;">
+                    <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                      <% if (hasGps && c.odp_id) { %>
+                        <button type="button" class="btn btn-sm btn-info" onclick="snapCustomerCableRoad(<%= c.id %>)" title="Tarik Kabel Otomatis Ikuti Jalan (OSRM)"><i class="bi bi-signpost-2-fill"></i></button>
+                      <% } %>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" data-id="<%= c.id %>" data-name="<%= c.name || '' %>" data-type="customer" onclick="openHistoryFromBtn(this)" title="Riwayat Redaman"><i class="bi bi-activity"></i></button>
+                      <% if (hasGps) { %>
+                        <button type="button" class="btn btn-sm btn-p" onclick="focusCustomer(<%= c.id %>)" title="Fokuskan ke Peta"><i class="bi bi-geo-alt-fill"></i></button>
+                      <% } %>
+                      <a href="/admin/customers?search=<%= encodeURIComponent(c.name || '') %>" class="btn btn-sm btn-g" title="Detail Pelanggan"><i class="bi bi-eye"></i></a>
+                      <% if (c.phone) { %>
+                        <a href="https://wa.me/<%= String(c.phone).replace(/\D/g, '').replace(/^0/, '62') %>" target="_blank" class="btn btn-sm btn-wa" title="Kirim WA"><i class="bi bi-whatsapp"></i></a>
+                      <% } %>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="7" style="padding: 16px; text-align: center; color: var(--muted);">Belum ada data pelanggan.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-pagination-bar" id="custPaginationBar"></div>
+    </div>
+
+    <!-- ===================================================================
+         SUBPAGE 6: PETA GIS GEOSPASIAL INTERAKTIF (LEAFLET ODN)
+         =================================================================== -->
+    <div id="tab-gis-map" class="ftth-subpage">
+      <div class="subpage-header-card" style="margin-bottom: 10px;">
+        <div class="subpage-title-box">
+          <div class="subpage-title-icon" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff;">
+            <i class="bi bi-map-fill"></i>
+          </div>
+          <div>
+            <div class="subpage-title-h">Peta GIS Geospasial Topologi ODN & FTTH</div>
+            <div class="subpage-title-d">Visualisasi pemetaan titik koordinat perangkat dan rute tarikan kabel serat optik</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button type="button" class="btn btn-sm btn-g" onclick="switchMainTab('tab-topology', document.getElementById('btnTabTopology'))">
+            <i class="bi bi-arrow-left me-1"></i> Kembali ke Hirarki Topologi
+          </button>
+        </div>
+      </div>
+
+      <!-- Map Search & Layer Controls Toolbar -->
+      <div class="map-toolbar">
+        <div class="map-search-box">
+          <i class="bi bi-search map-search-icon"></i>
+          <input 
+            id="mapGlobalSearch" 
+            class="map-search-input" 
+            type="text" 
+            placeholder="Cari pelanggan, PPPoE, No HP, SN ONU, alamat, ODC, ODP... (Ctrl+K)"
+            autocomplete="off"
+          >
+          <button id="mapSearchClearBtn" class="map-search-clear" onclick="clearMapSearch()" title="Hapus pencarian">&times;</button>
+          
+          <!-- Auto-Suggest Dropdown Results -->
+          <div id="mapSearchDropdown" class="map-search-dropdown">
+            <div class="ms-header">
+              <span id="msHeaderCount">Hasil Pencarian</span>
+              <span><kbd style="background:var(--bg); border:1px solid var(--border); padding:2px 5px; border-radius:4px; font-size:10px;">ESC</kbd> tutup</span>
+            </div>
+            <div id="msResultsList"></div>
+          </div>
+        </div>
+
+        <!-- Quick Filter Pills: ODC, ODP, Pelanggan, Aktif, Non-Aktif, Label, Fit Peta -->
+        <div class="map-filter-group">
+          <button type="button" class="map-pill-btn active" id="pillEntAll" onclick="setEntityFilter('all')" title="Tampilkan semua entitas">
+            <i class="bi bi-grid-fill"></i> Semua
+          </button>
+          <button type="button" class="map-pill-btn" id="pillEntOlt" onclick="setEntityFilter('olt')" title="Hanya OLT">
+            <i class="bi bi-hdd-rack-fill" style="color: #0ea5e9;"></i> OLT (<%= (typeof olts !== 'undefined' && olts) ? olts.length : 0 %>)
+          </button>
+          <button type="button" class="map-pill-btn" id="pillEntOdc" onclick="setEntityFilter('odc')" title="Hanya ODC">
+            <i class="bi bi-archive-fill" style="color: #a855f7;"></i> ODC (<%= (typeof odcs !== 'undefined' && odcs) ? odcs.length : 0 %>)
+          </button>
+          <button type="button" class="map-pill-btn" id="pillEntOdp" onclick="setEntityFilter('odp')" title="Hanya ODP">
+            <i class="bi bi-box-seam-fill text-warning"></i> ODP (<%= odps.length %>)
+          </button>
+          <button type="button" class="map-pill-btn" id="pillEntCust" onclick="setEntityFilter('customer')" title="Hanya Pelanggan">
+            <i class="bi bi-router-fill text-info"></i> Pelanggan (<%= customers.length %>)
+          </button>
+
+          <span class="filter-divider"></span>
+
+          <button type="button" class="map-pill-btn" id="pillStatActive" onclick="setStatusFilter('active')" title="Hanya pelanggan aktif">
+            <i class="bi bi-check-circle-fill text-success"></i> Aktif (<%= customers.filter(c => c.status === 'active').length %>)
+          </button>
+          <button type="button" class="map-pill-btn" id="pillStatSuspended" onclick="setStatusFilter('suspended')" title="Hanya pelanggan non-aktif / isolir">
+            <i class="bi bi-x-circle-fill text-danger"></i> Non-Aktif (<%= customers.filter(c => c.status !== 'active').length %>)
+          </button>
+
+          <span class="filter-divider"></span>
+
+          <button type="button" class="map-pill-btn active" id="pillLabels" onclick="toggleMarkerLabels()" title="Sembunyikan/Tampilkan label nama di marker">
+            <i class="bi bi-tag-fill text-primary"></i> <span id="labelToggleText">Label: ON</span>
+          </button>
+          <button type="button" class="map-pill-btn" onclick="fitAllMarkers()" title="Pusatkan peta ke seluruh titik entitas">
+            <i class="bi bi-arrows-fullscreen"></i> Fit Peta
+          </button>
+        </div>
+      </div>
+
+      <!-- Map Viewport Wrapper with Floating ODN Legend -->
+      <div class="map-viewport-wrapper">
+        <div id="map"></div>
+
+        <!-- Floating ODN Map Legend -->
+        <div class="map-floating-legend" id="mapOdnLegend">
+          <div class="map-legend-head" onclick="toggleOdnLegend()" title="Klik untuk meminimalkan / memperluas legenda topologi">
+            <span><i class="bi bi-layers-half me-1 text-primary"></i> Legenda Topologi ODN</span>
+            <i class="bi bi-chevron-down" id="legendChevron"></i>
+          </div>
+          <div class="map-legend-items">
+            <div class="legend-row">
+              <span class="legend-badge" style="background: #0284c7; border: 1px solid #38bdf8;"></span>
+              <span>Sentral OLT (NOC)</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-badge" style="background: #8b5cf6; border: 1px solid #c084fc;"></span>
+              <span>Kabinet Feeder (ODC)</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-badge" style="background: #f59e0b; border: 1px solid #fde047;"></span>
+              <span>Kotak Distribusi (ODP)</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-badge" style="background: #10b981; border: 1px solid #6ee7b7; border-radius: 50%;"></span>
+              <span>ONU Pelanggan Aktif</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-badge" style="background: #ef4444; border: 1px solid #fca5a5; border-radius: 50%;"></span>
+              <span>ONU Pelanggan Isolir</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-line" style="background: #0ea5e9;"></span>
+              <span>Kabel Feeder OLT ➔ ODC</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-line" style="background: #8b5cf6;"></span>
+              <span>Kabel Distribusi ODC ➔ ODP</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-line" style="background: #10b981;"></span>
+              <span>Drop Cable ke Pelanggan</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1822,7 +2610,7 @@
             <p style="font-size: 13px; color: var(--muted); max-width: 440px; margin: 0 auto 16px auto; line-height: 1.5;">
               Dalam hierarki topologi ODN (Optical Distribution Network), kabinet <strong>ODC wajib terhubung ke perangkat OLT</strong> sebagai sumber feeder utama. Anda harus mendaftarkan OLT terlebih dahulu sebelum membuat ODC.
             </p>
-            <button type="button" class="btn btn-p" onclick="closeModal('addOdcModal'); openAddOltModal();">
+            <button type="button" class="btn btn-p" onclick="closeModal('addOdcModal'); openModal('addOltModal');">
               <i class="bi bi-plus-circle me-1"></i> Tambah OLT Sekarang
             </button>
           </div>
@@ -2409,8 +3197,8 @@
 </div>
 
 <!-- Modal Tambah OLT (Central Office / POP) -->
-<div class="mo" id="addOltModal">
-  <div class="mb" style="max-width: 620px;">
+<div class="mo" id="addOltModal" style="z-index: 99999;" onclick="if(event.target===this)closeModal('addOltModal')">
+  <div class="mb" style="max-width: 620px; width: 95%;">
     <form action="/admin/olts" method="POST">
       <input type="hidden" name="redirect_to" value="/admin/map">
       <div class="mh">
@@ -2453,7 +3241,12 @@
           </div>
         </div>
 
-        <label class="fl"><i class="bi bi-pin-map text-primary"></i> Tentukan Titik Lokasi OLT di Peta</label>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <label class="fl mb-0"><i class="bi bi-pin-map text-primary"></i> Tentukan Titik Lokasi OLT di Peta</label>
+          <button type="button" class="btn btn-g btn-sm py-0 px-2" style="font-size:11px;" onclick="detectOltPickerGps()">
+            <i class="bi bi-crosshair me-1"></i> Deteksi GPS Saya
+          </button>
+        </div>
         <div id="olt-picker-map" style="height: 220px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--border);"></div>
 
         <div class="form-row">
@@ -2545,6 +3338,54 @@
       .replace(/'/g, '&#039;');
   }
 
+  function openModal(id) { 
+    const el = document.getElementById(id);
+    if (!el) {
+      console.warn('Modal tidak ditemukan:', id);
+      return;
+    }
+    el.style.display = 'flex'; 
+    el.classList.add('show');
+    document.body.style.overflow = 'hidden';
+
+    if (id === 'addOdpModal') {
+      const elLat = document.getElementById('new_lat');
+      const elLng = document.getElementById('new_lng');
+      const lat = (elLat && parseFloat(elLat.value)) ? parseFloat(elLat.value) : (typeof officeCoords !== 'undefined' ? officeCoords.lat : -6.2);
+      const lng = (elLng && parseFloat(elLng.value)) ? parseFloat(elLng.value) : (typeof officeCoords !== 'undefined' ? officeCoords.lng : 106.8);
+      if (typeof initPickerMap === 'function') initPickerMap(lat, lng);
+    } else if (id === 'addOdcModal') {
+      const elLat = document.getElementById('new_odc_lat');
+      const elLng = document.getElementById('new_odc_lng');
+      const lat = (elLat && parseFloat(elLat.value)) ? parseFloat(elLat.value) : (typeof officeCoords !== 'undefined' ? officeCoords.lat : -6.2);
+      const lng = (elLng && parseFloat(elLng.value)) ? parseFloat(elLng.value) : (typeof officeCoords !== 'undefined' ? officeCoords.lng : 106.8);
+      if (typeof initOdcPickerMap === 'function') initOdcPickerMap(lat, lng);
+    } else if (id === 'addOltModal') {
+      setTimeout(() => {
+        if (typeof initOltPickerMap === 'function') initOltPickerMap();
+      }, 150);
+    }
+  }
+
+  function closeModal(id) { 
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.display = 'none'; 
+      el.classList.remove('show');
+    }
+    const anyOpen = document.querySelector('.mo.show, .mo[style*="display: flex"]');
+    if (!anyOpen) document.body.style.overflow = '';
+  }
+
+  function openAddOltModal() { openModal('addOltModal'); }
+  function openAddOdcModal() { openModal('addOdcModal'); }
+  function openAddOdpModal() { openModal('addOdpModal'); }
+
+  window.openModal = openModal;
+  window.closeModal = closeModal;
+  window.openAddOltModal = openAddOltModal;
+  window.openAddOdcModal = openAddOdcModal;
+  window.openAddOdpModal = openAddOdpModal;
   const appSettings = JSON.parse(document.getElementById('settings-data').textContent || '{}');
   const officeCoords = {
     lat: parseFloat(appSettings.office_lat) || -6.200000,
@@ -3235,7 +4076,15 @@
   });
 
   // ─── FOCUS ACTIONS ────────────────────────────────────────────────────────
+  function ensureGisMapVisible() {
+    const btnMap = document.getElementById('btnTabGisMap');
+    if (btnMap && !btnMap.classList.contains('active')) {
+      switchMainTab('tab-gis-map', btnMap);
+    }
+  }
+
   function focusCustomer(id) {
+    ensureGisMapVisible();
     const entry = customerMap[id];
     if (!entry) {
       const c = customers.find(x => x.id === id);
@@ -3249,36 +4098,42 @@
     const lat = parseFloat(data.lat);
     const lng = parseFloat(data.lng);
 
-    map.flyTo([lat, lng], 18, { duration: 1 });
-
     setTimeout(() => {
-      marker.openPopup();
-      const node = document.getElementById(`onu-node-${id}`);
-      if (node) {
-        node.classList.add('marker-pulse-highlight');
-        setTimeout(() => node.classList.remove('marker-pulse-highlight'), 2500);
-      }
-    }, 800);
+      if (typeof map !== 'undefined' && map) map.invalidateSize();
+      map.flyTo([lat, lng], 18, { duration: 1 });
+      setTimeout(() => {
+        marker.openPopup();
+        const node = document.getElementById(`onu-node-${id}`);
+        if (node) {
+          node.classList.add('marker-pulse-highlight');
+          setTimeout(() => node.classList.remove('marker-pulse-highlight'), 2500);
+        }
+      }, 800);
+    }, 150);
   }
 
   function focusOdp(id) {
+    ensureGisMapVisible();
     const entry = odpMap[id];
     if (!entry) return;
 
     const { marker, coord } = entry;
-    map.flyTo(coord, 18, { duration: 1 });
-
     setTimeout(() => {
-      marker.openPopup();
-      const node = document.getElementById(`odp-node-${id}`);
-      if (node) {
-        node.classList.add('marker-pulse-highlight');
-        setTimeout(() => node.classList.remove('marker-pulse-highlight'), 2500);
-      }
-    }, 800);
+      if (typeof map !== 'undefined' && map) map.invalidateSize();
+      map.flyTo(coord, 18, { duration: 1 });
+      setTimeout(() => {
+        marker.openPopup();
+        const node = document.getElementById(`odp-node-${id}`);
+        if (node) {
+          node.classList.add('marker-pulse-highlight');
+          setTimeout(() => node.classList.remove('marker-pulse-highlight'), 2500);
+        }
+      }, 800);
+    }, 150);
   }
 
   function focusOlt(id) {
+    ensureGisMapVisible();
     const entry = oltMap[id];
     if (!entry) {
       const o = olts.find(x => x.id == id);
@@ -3289,33 +4144,38 @@
     }
 
     const { marker, coord } = entry;
-    map.flyTo(coord, 18, { duration: 1 });
-
     setTimeout(() => {
-      marker.openPopup();
-      const node = document.getElementById(`olt-node-${id}`);
-      if (node) {
-        node.classList.add('marker-pulse-highlight');
-        setTimeout(() => node.classList.remove('marker-pulse-highlight'), 2500);
-      }
-    }, 800);
+      if (typeof map !== 'undefined' && map) map.invalidateSize();
+      map.flyTo(coord, 18, { duration: 1 });
+      setTimeout(() => {
+        marker.openPopup();
+        const node = document.getElementById(`olt-node-${id}`);
+        if (node) {
+          node.classList.add('marker-pulse-highlight');
+          setTimeout(() => node.classList.remove('marker-pulse-highlight'), 2500);
+        }
+      }, 800);
+    }, 150);
   }
 
   function focusOdc(id) {
+    ensureGisMapVisible();
     const entry = odcMap[id];
     if (!entry) return;
 
     const { marker, coord } = entry;
-    map.flyTo(coord, 18, { duration: 1 });
-
     setTimeout(() => {
-      marker.openPopup();
-      const node = document.getElementById(`odc-node-${id}`);
-      if (node) {
-        node.classList.add('marker-pulse-highlight');
-        setTimeout(() => node.classList.remove('marker-pulse-highlight'), 2500);
-      }
-    }, 800);
+      if (typeof map !== 'undefined' && map) map.invalidateSize();
+      map.flyTo(coord, 18, { duration: 1 });
+      setTimeout(() => {
+        marker.openPopup();
+        const node = document.getElementById(`odc-node-${id}`);
+        if (node) {
+          node.classList.add('marker-pulse-highlight');
+          setTimeout(() => node.classList.remove('marker-pulse-highlight'), 2500);
+        }
+      }, 800);
+    }, 150);
   }
 
   function editOdpFromBtn(btn) {
@@ -3483,14 +4343,105 @@
     }
   }
 
-  // ─── TABBED DATA PANEL LOGIC ──────────────────────────────────────────────
-  function switchDataTab(tabId, btn) {
-    document.querySelectorAll('.data-tabs-panel .tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.data-tabs-panel .tab-btn').forEach(el => el.classList.remove('active'));
+  // ─── FTTH SUB-PAGE & DATA PANEL LOGIC ─────────────────────────────────────
+  function switchMainTab(tabId, btn) {
+    document.querySelectorAll('.ftth-subpage').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.ftth-tab-btn').forEach(el => el.classList.remove('active'));
     
     const target = document.getElementById(tabId);
     if (target) target.classList.add('active');
     if (btn) btn.classList.add('active');
+
+    // If switching to GIS Map, ensure Leaflet recalculates viewport
+    if (tabId === 'tab-gis-map') {
+      setTimeout(() => {
+        if (typeof map !== 'undefined' && map) {
+          map.invalidateSize();
+        }
+      }, 150);
+    } else if (tabId === 'tab-customers') {
+      renderTablePage('customer');
+    } else if (tabId === 'tab-odps') {
+      renderTablePage('odp');
+    } else if (tabId === 'tab-odcs') {
+      renderTablePage('odc');
+    } else if (tabId === 'tab-olts') {
+      renderTablePage('olt');
+    }
+  }
+
+  function openGisMapTab(doFit = false) {
+    const btn = document.getElementById('btnTabGisMap');
+    switchMainTab('tab-gis-map', btn);
+    if (doFit && typeof fitAllMarkers === 'function') {
+      setTimeout(() => {
+        fitAllMarkers();
+      }, 200);
+    }
+  }
+
+  function filterTopologyTree() {
+    const searchVal = (document.getElementById('topoSearchInput')?.value || '').trim().toLowerCase();
+    const oltVal = document.getElementById('topoOltSelect')?.value || 'all';
+
+    const oltBlocks = document.querySelectorAll('.topo-tree-olt-block');
+    oltBlocks.forEach(block => {
+      const oltId = block.getAttribute('data-olt-id');
+      const oltName = block.getAttribute('data-olt-name') || '';
+
+      const matchOltFilter = (oltVal === 'all' || oltVal == oltId);
+      if (!matchOltFilter) {
+        block.style.display = 'none';
+        return;
+      }
+
+      // Check search in block
+      if (!searchVal) {
+        block.style.display = '';
+        block.querySelectorAll('.topo-odc-box').forEach(b => b.style.display = '');
+        block.querySelectorAll('.topo-odp-item').forEach(i => i.style.display = '');
+        return;
+      }
+
+      const oltMatch = oltName.includes(searchVal);
+      let anyOdcMatch = false;
+
+      const odcBoxes = block.querySelectorAll('.topo-odc-box');
+      odcBoxes.forEach(odcBox => {
+        const odcName = odcBox.getAttribute('data-odc-name') || '';
+        const odcMatch = odcName.includes(searchVal);
+        let anyOdpMatch = false;
+
+        const odpItems = odcBox.querySelectorAll('.topo-odp-item');
+        odpItems.forEach(odpItem => {
+          const odpName = odpItem.getAttribute('data-odp-name') || '';
+          if (odpName.includes(searchVal) || odcMatch || oltMatch) {
+            odpItem.style.display = '';
+            anyOdpMatch = true;
+          } else {
+            odpItem.style.display = 'none';
+          }
+        });
+
+        if (odcMatch || anyOdpMatch || oltMatch) {
+          odcBox.style.display = '';
+          anyOdcMatch = true;
+        } else {
+          odcBox.style.display = 'none';
+        }
+      });
+
+      if (oltMatch || anyOdcMatch) {
+        block.style.display = '';
+      } else {
+        block.style.display = 'none';
+      }
+    });
+  }
+
+  function switchDataTab(tabId, btn) {
+    // Kept for backward compatibility
+    switchMainTab(tabId, btn);
   }
 
   // ─── CLIENT-SIDE DATA PAGINATOR ENGINE ────────────────────────────────────
@@ -3697,25 +4648,6 @@
     custTableSearch.addEventListener('input', filterCustomerTable);
   }
 
-  // ─── ODN TOPOLOGY MODAL HELPERS ──────────────────────────────────────────
-  function openAddOltModal() {
-    openModal('addOltModal');
-    setTimeout(initOltPickerMap, 300);
-  }
-
-  function openAddOdcModal() {
-    openModal('addOdcModal');
-    if (typeof hasOlts !== 'undefined' ? hasOlts : (olts && olts.length > 0)) {
-      setTimeout(initOdcPickerMap, 300);
-    }
-  }
-
-  function openAddOdpModal() {
-    openModal('addOdpModal');
-    if ((typeof hasOdcs !== 'undefined' ? hasOdcs : (odcs && odcs.length > 0)) || (typeof hasOdps !== 'undefined' ? hasOdps : (odps && odps.length > 0))) {
-      setTimeout(initPickerMap, 300);
-    }
-  }
 
   function handleOdpHierarchyChange(mode) {
     const prefix = mode === 'new' ? 'new_odp_' : 'e_odp_';
@@ -3734,34 +4666,88 @@
   let oltPickerMarker = null;
 
   function initOltPickerMap() {
-    if (oltPickerMap) {
-      oltPickerMap.invalidateSize();
-      return;
+    try {
+      if (typeof L === 'undefined') return;
+      const elLat = document.getElementById('new_olt_lat');
+      const elLng = document.getElementById('new_olt_lng');
+      const lat = (elLat && parseFloat(elLat.value)) ? parseFloat(elLat.value) : (typeof officeCoords !== 'undefined' ? officeCoords.lat : -6.2);
+      const lng = (elLng && parseFloat(elLng.value)) ? parseFloat(elLng.value) : (typeof officeCoords !== 'undefined' ? officeCoords.lng : 106.8);
+
+      const container = document.getElementById('olt-picker-map');
+      if (!container) return;
+
+      if (oltPickerMap) {
+        oltPickerMap.setView([lat, lng], 16);
+        if (oltPickerMarker) oltPickerMarker.setLatLng([lat, lng]);
+        setTimeout(() => oltPickerMap.invalidateSize(), 200);
+        return;
+      }
+
+      if (container._leaflet_id) {
+        container._leaflet_id = null;
+      }
+
+      oltPickerMap = L.map('olt-picker-map').setView([lat, lng], 16);
+      L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        maxZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+      }).addTo(oltPickerMap);
+
+      const oltIcon = L.divIcon({
+        html: '<i class="bi bi-hdd-rack-fill" style="font-size:20px; color:#0284c7; filter:drop-shadow(0 2px 5px rgba(0,0,0,0.5));"></i>',
+        className: 'custom-div-icon',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+
+      oltPickerMarker = L.marker([lat, lng], { draggable: true, icon: oltIcon }).addTo(oltPickerMap);
+
+      const updateInputs = (l, g) => {
+        if (elLat) elLat.value = Number(l).toFixed(6);
+        if (elLng) elLng.value = Number(g).toFixed(6);
+      };
+
+      updateInputs(lat, lng);
+
+      oltPickerMarker.on('dragend', (e) => {
+        const pos = e.target.getLatLng();
+        updateInputs(pos.lat, pos.lng);
+      });
+
+      oltPickerMap.on('click', (e) => {
+        oltPickerMarker.setLatLng(e.latlng);
+        updateInputs(e.latlng.lat, e.latlng.lng);
+      });
+
+      setTimeout(() => oltPickerMap.invalidateSize(), 300);
+    } catch (err) {
+      console.warn('initOltPickerMap warning:', err);
     }
-    const container = document.getElementById('olt-picker-map');
-    if (!container) return;
+  }
 
-    oltPickerMap = L.map('olt-picker-map').setView([officeCoords.lat, officeCoords.lng], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(oltPickerMap);
-
-    oltPickerMarker = L.marker([officeCoords.lat, officeCoords.lng], { draggable: true }).addTo(oltPickerMap);
-
-    const updateInputs = (lat, lng) => {
-      document.getElementById('new_olt_lat').value = lat.toFixed(6);
-      document.getElementById('new_olt_lng').value = lng.toFixed(6);
-    };
-
-    updateInputs(officeCoords.lat, officeCoords.lng);
-
-    oltPickerMarker.on('dragend', (e) => {
-      const pos = e.target.getLatLng();
-      updateInputs(pos.lat, pos.lng);
-    });
-
-    oltPickerMap.on('click', (e) => {
-      oltPickerMarker.setLatLng(e.latlng);
-      updateInputs(e.latlng.lat, e.latlng.lng);
-    });
+  function detectOltPickerGps() {
+    if (!navigator.geolocation) return alert('Browser tidak mendukung geolokasi GPS.');
+    const btn = event ? event.target.closest('button') : null;
+    const origText = btn ? btn.innerHTML : '';
+    if (btn) btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Mendeteksi...';
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        document.getElementById('new_olt_lat').value = Number(lat).toFixed(6);
+        document.getElementById('new_olt_lng').value = Number(lng).toFixed(6);
+        if (oltPickerMap && oltPickerMarker) {
+          oltPickerMap.setView([lat, lng], 16);
+          oltPickerMarker.setLatLng([lat, lng]);
+          setTimeout(() => oltPickerMap.invalidateSize(), 200);
+        }
+        if (btn) btn.innerHTML = origText;
+      },
+      err => {
+        alert('Gagal mendeteksi lokasi GPS: ' + err.message);
+        if (btn) btn.innerHTML = origText;
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   }
 
   // Set OLT Location Modal & AJAX save
@@ -4655,20 +5641,6 @@
     }
   }
 
-  function openModal(id) { 
-    document.getElementById(id).style.display = 'flex'; 
-    if (id === 'addOdpModal') {
-      const lat = parseFloat(document.getElementById('new_lat').value) || officeCoords.lat;
-      const lng = parseFloat(document.getElementById('new_lng').value) || officeCoords.lng;
-      initPickerMap(lat, lng);
-    } else if (id === 'addOdcModal') {
-      const lat = parseFloat(document.getElementById('new_odc_lat').value) || officeCoords.lat;
-      const lng = parseFloat(document.getElementById('new_odc_lng').value) || officeCoords.lng;
-      initOdcPickerMap(lat, lng);
-    }
-  }
-
-  function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
   // Right Click on Map to Add ODP
   map.on('contextmenu', function(e) {
@@ -4685,11 +5657,19 @@
     map.invalidateSize();
   }, 500);
 
-  window.onclick = function(e) {
-    if (e.target.className === 'mo') {
-      e.target.style.display = 'none';
+  window.addEventListener('click', function(e) {
+    if (e.target && e.target.classList && e.target.classList.contains('mo')) {
+      closeModal(e.target.id);
     }
-  };
+  });
+
+  window.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.mo.show, .mo[style*="display: flex"]').forEach(function(m) {
+        closeModal(m.id);
+      });
+    }
+  });
 
   // ─── REALTIME SPARKLINE CHART ─────────────────────────────────────────────
   const customerTrafficIntervals = {};

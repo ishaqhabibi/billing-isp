@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Dashboard NOC MikroTik | <%= company %></title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/css/admin.css?v=2.7">
+  <link rel="stylesheet" href="/css/admin.css?v=3.3">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     /* ── PAGE LAYOUT & HEADER ── */
@@ -456,9 +456,326 @@
     .mc { background: transparent; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 4px; }
     .mbody { padding: 20px; overflow-y: auto; }
     .mf { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: flex-end; gap: 10px; background: var(--bg3); }
+
+    /* ── MODERN HIGH-TECH NOC TELEMETRY LOADING SCREEN ── */
+    .noc-loading-screen {
+      position: fixed !important;
+      top: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      left: var(--sw, 240px) !important;
+      width: auto !important;
+      z-index: 900 !important;
+      background: radial-gradient(circle at 50% 35%, rgba(37, 99, 235, 0.16), transparent 50%),
+                  radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.12), transparent 45%),
+                  rgba(11, 17, 30, 0.94) !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 20px !important;
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                  visibility 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+    @media (max-width: 991px) {
+      .noc-loading-screen {
+        left: 0 !important;
+      }
+    }
+    body.light-theme .noc-loading-screen {
+      background: radial-gradient(circle at 50% 30%, rgba(37, 99, 235, 0.18), transparent 50%),
+                  radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.12), transparent 45%),
+                  rgba(248, 250, 252, 0.95);
+    }
+    .noc-loading-screen.fade-out {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      transform: scale(1.025) !important;
+      pointer-events: none !important;
+    }
+    .noc-loading-card {
+      position: relative;
+      width: 100%;
+      max-width: 460px;
+      background: rgba(19, 27, 46, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 22px;
+      padding: 34px 28px 28px;
+      box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.65),
+                  0 0 0 1px rgba(37, 99, 235, 0.18) inset;
+      text-align: center;
+      overflow: hidden;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      animation: nocCardEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    body.light-theme .noc-loading-card {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(0, 82, 204, 0.18);
+      box-shadow: 0 24px 64px -12px rgba(0, 82, 204, 0.22),
+                  0 0 0 1px rgba(37, 99, 235, 0.25) inset;
+    }
+    @keyframes nocCardEnter {
+      from { opacity: 0; transform: translateY(16px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .noc-loading-beam {
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, #2563eb, #06b6d4, #10b981, #2563eb);
+      background-size: 200% 100%;
+      animation: nocBeamFlow 2.4s linear infinite;
+    }
+    @keyframes nocBeamFlow {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 200% 0%; }
+    }
+    .noc-loading-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.14);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #10b981;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 22px;
+    }
+    body.light-theme .noc-loading-badge {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.28);
+      color: #059669;
+    }
+    .noc-loading-badge .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+      animation: nocBadgePulse 1.4s infinite ease-in-out;
+    }
+    @keyframes nocBadgePulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.35); opacity: 0.55; }
+    }
+    .noc-loading-emblem {
+      position: relative;
+      width: 86px;
+      height: 86px;
+      margin: 0 auto 22px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .noc-loading-ring-outer {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2.5px solid transparent;
+      border-top-color: #2563eb;
+      border-right-color: #10b981;
+      animation: nocRingRotate 1.8s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+      box-shadow: 0 0 16px rgba(37, 99, 235, 0.35);
+    }
+    .noc-loading-ring-inner {
+      position: absolute;
+      inset: 9px;
+      border-radius: 50%;
+      border: 2px dashed rgba(56, 189, 248, 0.7);
+      border-bottom-color: transparent;
+      animation: nocRingRotateReverse 2.4s linear infinite;
+    }
+    @keyframes nocRingRotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes nocRingRotateReverse {
+      0% { transform: rotate(360deg); }
+      100% { transform: rotate(0deg); }
+    }
+    .noc-loading-icon-core {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(16, 185, 129, 0.25));
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #38bdf8;
+      box-shadow: 0 0 20px rgba(37, 99, 235, 0.45);
+    }
+    body.light-theme .noc-loading-icon-core {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(16, 185, 129, 0.15));
+      color: #0284c7;
+    }
+    .noc-loading-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 6px;
+      letter-spacing: -0.2px;
+    }
+    .noc-loading-subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+    .noc-loading-subtitle strong {
+      color: #38bdf8;
+      font-weight: 700;
+    }
+    body.light-theme .noc-loading-subtitle strong {
+      color: #0284c7;
+    }
+    .noc-progress-container {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 18px;
+    }
+    body.light-theme .noc-progress-container {
+      background: rgba(0, 0, 0, 0.08);
+    }
+    .noc-progress-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #2563eb, #06b6d4, #10b981, #2563eb);
+      background-size: 200% 100%;
+      border-radius: 999px;
+      animation: nocProgressAnim 1.6s linear infinite;
+      box-shadow: 0 0 12px rgba(37, 99, 235, 0.6);
+    }
+    @keyframes nocProgressAnim {
+      0% { background-position: 100% 0%; }
+      100% { background-position: -100% 0%; }
+    }
+    .noc-steps-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .noc-step-item {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--muted);
+      justify-content: center;
+      padding: 7px 6px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.25s ease;
+    }
+    body.light-theme .noc-step-item {
+      background: rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    .noc-step-item.active {
+      color: #38bdf8;
+      background: rgba(37, 99, 235, 0.12);
+      border-color: rgba(37, 99, 235, 0.35);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+    }
+    .noc-step-item.done {
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+    body.light-theme .noc-step-item.active {
+      color: #0284c7;
+      background: rgba(2, 132, 199, 0.1);
+      border-color: rgba(2, 132, 199, 0.3);
+    }
+    body.light-theme .noc-step-item.done {
+      color: #059669;
+      background: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .noc-live-status {
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .noc-live-status .status-dot {
+      width: 6.5px;
+      height: 6.5px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      animation: nocPulseDot 1.2s infinite ease-in-out;
+    }
   </style>
 </head>
 <body>
+<!-- Modern NOC High-Tech Loading Screen for MikroTik -->
+<div id="noc-loading-screen" class="noc-loading-screen" style="position:fixed !important;top:0 !important;right:0 !important;bottom:0 !important;left:var(--sw, 240px) !important;z-index:900 !important;display:flex !important;align-items:center !important;justify-content:center !important;background:radial-gradient(circle at 50% 35%, rgba(37, 99, 235, 0.16), transparent 50%), radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.12), transparent 45%), rgba(11, 17, 30, 0.94) !important;backdrop-filter:blur(20px) !important;-webkit-backdrop-filter:blur(20px) !important;">
+  <div class="noc-loading-card">
+    <div class="noc-loading-beam"></div>
+    
+    <div class="noc-loading-badge">
+      <span class="pulse-dot"></span>
+      <span>BIONFIBER NOC • ROUTEROS GATEWAY</span>
+    </div>
+
+    <div class="noc-loading-emblem">
+      <div class="noc-loading-ring-outer"></div>
+      <div class="noc-loading-ring-inner"></div>
+      <div class="noc-loading-icon-core">
+        <i class="bi bi-router-fill"></i>
+      </div>
+    </div>
+
+    <div class="noc-loading-title">Sinkronisasi Gateway MikroTik</div>
+    <div class="noc-loading-subtitle" id="noc-loading-target">
+      Mengambil telemetri RouterOS API, utilisasi port & sesi aktif...
+    </div>
+
+    <div class="noc-progress-container">
+      <div class="noc-progress-bar"></div>
+    </div>
+
+    <div class="noc-steps-row">
+      <div class="noc-step-item active" id="noc-step-1">
+        <i class="bi bi-cpu"></i> <span>RouterOS</span>
+      </div>
+      <div class="noc-step-item" id="noc-step-2">
+        <i class="bi bi-ethernet"></i> <span>Port SFP</span>
+      </div>
+      <div class="noc-step-item" id="noc-step-3">
+        <i class="bi bi-people"></i> <span>Sesi Aktif</span>
+      </div>
+    </div>
+
+    <div class="noc-live-status">
+      <span class="status-dot"></span>
+      <span id="noc-status-ticker">Mengontak RouterOS API & SNMP telemetri...</span>
+    </div>
+  </div>
+</div>
 <%- include('partials/sidebar', { activePage: 'mikrotik', company }) %>
 <div class="mw">
   <!-- TOPBAR -->
@@ -1048,6 +1365,11 @@ Ketik alamat IP tujuan untuk menguji konektivitas &amp; latency.</div>
       if (rosEl) rosEl.textContent = `RouterOS ${d.rosVersion || ''}`;
       if (rackBadgeEl) rackBadgeEl.textContent = `${d.model || 'RB5009'} • PHYSICAL PORTS & SFP+ 10G`;
 
+      const targetEl = document.getElementById('noc-loading-target');
+      if (targetEl && (d.identity || d.model)) {
+        targetEl.innerHTML = `Terhubung ke <strong>${escapeHtmlAttr(d.identity || d.routerName || 'MikroTik')}</strong> ${d.model ? `(${escapeHtmlAttr(d.model)})` : ''}`;
+      }
+
       // Status & Latency & Uptime
       const badge = document.getElementById('snmp-status-badge');
       if (badge) {
@@ -1405,14 +1727,69 @@ Ketik alamat IP tujuan untuk menguji konektivitas &amp; latency.</div>
     }
   }
 
+  // ── NOC MODERN LOADING SCREEN HANDLERS ──
+  function setNocLoadingStep(stepNum, statusText) {
+    const step1 = document.getElementById('noc-step-1');
+    const step2 = document.getElementById('noc-step-2');
+    const step3 = document.getElementById('noc-step-3');
+    const ticker = document.getElementById('noc-status-ticker');
+    if (ticker && statusText) ticker.textContent = statusText;
+
+    if (stepNum === 1) {
+      if (step1) { step1.className = 'noc-step-item active'; }
+      if (step2) { step2.className = 'noc-step-item'; }
+      if (step3) { step3.className = 'noc-step-item'; }
+    } else if (stepNum === 2) {
+      if (step1) { step1.className = 'noc-step-item done'; }
+      if (step2) { step2.className = 'noc-step-item active'; }
+      if (step3) { step3.className = 'noc-step-item'; }
+    } else if (stepNum === 3) {
+      if (step1) { step1.className = 'noc-step-item done'; }
+      if (step2) { step2.className = 'noc-step-item done'; }
+      if (step3) { step3.className = 'noc-step-item active'; }
+    }
+  }
+
+  function hideNocLoadingScreen() {
+    const el = document.getElementById('noc-loading-screen');
+    if (!el || el.classList.contains('fade-out')) return;
+
+    const step1 = document.getElementById('noc-step-1');
+    const step2 = document.getElementById('noc-step-2');
+    const step3 = document.getElementById('noc-step-3');
+    const ticker = document.getElementById('noc-status-ticker');
+    if (step1) step1.className = 'noc-step-item done';
+    if (step2) step2.className = 'noc-step-item done';
+    if (step3) step3.className = 'noc-step-item done';
+    if (ticker) ticker.textContent = 'Telemetri RouterOS berhasil disinkronkan!';
+
+    setTimeout(() => {
+      el.classList.add('fade-out');
+      setTimeout(() => {
+        el.style.display = 'none';
+      }, 450);
+    }, 220);
+  }
+
+  setTimeout(hideNocLoadingScreen, 7500);
+
   // ── AUTO REFRESH TIMERS ──
-  function startPolling() {
+  async function startPolling() {
     stopPolling();
 
-    loadSnmpTelemetry();
-    loadSnmpTraffic();
-    loadRackPorts();
-    loadNocSessions();
+    setNocLoadingStep(1, 'Mengontak RouterOS API & SNMP telemetri...');
+    const p1 = loadSnmpTelemetry();
+    setNocLoadingStep(2, 'Memuat status link port & throughput...');
+    const p2 = loadSnmpTraffic();
+    const p3 = loadRackPorts();
+    setNocLoadingStep(3, 'Sinkronisasi sesi aktif pelanggan...');
+    const p4 = loadNocSessions();
+
+    try {
+      await Promise.allSettled([p1, p2, p3, p4]);
+    } finally {
+      hideNocLoadingScreen();
+    }
 
     // Fast 2.5s for bandwidth throughput
     snmpTrafficTimer = setInterval(() => {

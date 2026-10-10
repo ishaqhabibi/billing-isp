@@ -814,6 +814,9 @@
       <button type="button" class="seg-btn" id="tab-btn-settings" onclick="switchTab('settings')">
         <i class="bi bi-sliders"></i> Konfigurasi Server
       </button>
+      <button type="button" class="seg-btn" id="tab-btn-migration" onclick="switchTab('migration')">
+        <i class="bi bi-arrow-repeat"></i> Wizard Migrasi RADIUS
+      </button>
     </div>
 
     <!-- TAB 1: PENGATURAN RADIUS -->
@@ -1577,6 +1580,9 @@
             </span>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="switchTab('migration')" title="Buka Wizard Migrasi Kredensial MikroTik ke RADIUS">
+              <i class="bi bi-arrow-repeat"></i> Wizard Migrasi RADIUS
+            </button>
             <a href="/admin/customers" class="btn btn-g btn-sm" style="text-decoration:none;" title="Kelola Pelanggan Lengkap">
               <i class="bi bi-people"></i> Buka Menu Pelanggan
             </a>
@@ -1825,6 +1831,234 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- TAB 6: WIZARD MIGRASI SECRET MIKROTIK -> RADIUS -->
+    <div id="tab-content-migration" class="tab-pane" style="display:none;">
+      
+      <!-- Top Banner Guide -->
+      <div style="background:linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(16,185,129,0.08) 100%); border:1px solid rgba(99,102,241,0.25); border-radius:14px; padding:20px; margin-bottom:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+          <div style="display:flex; align-items:flex-start; gap:14px;">
+            <div style="width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg, var(--primary), #4338ca); color:#fff; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; box-shadow:0 4px 14px var(--pdim);">
+              <i class="bi bi-arrow-repeat"></i>
+            </div>
+            <div>
+              <h5 style="margin:0; font-size:16px; font-weight:800; color:var(--text); display:flex; align-items:center; gap:8px;">
+                Wizard Migrasi MikroTik Secret ke RADIUS Server
+                <span class="badge bs" style="font-size:10px; padding:2px 8px;"><i class="bi bi-shield-check"></i> Zero Downtime Guide</span>
+              </h5>
+              <div style="font-size:12.5px; color:var(--muted); margin-top:4px; line-height:1.5;">
+                Panduan praktis dan otomatisasi untuk mengalihkan autentikasi pelanggan PPPoE dari database lokal MikroTik (<code>/ppp secret</code>) ke RADIUS Server terpusat. Pelanggan tetap online tanpa gangguan koneksi!
+              </div>
+            </div>
+          </div>
+          <div>
+            <button type="button" class="btn btn-g btn-sm" onclick="switchTab('settings')">
+              <i class="bi bi-sliders"></i> Cek Pengaturan Server
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4-STEP WIZARD CARDS -->
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:18px; margin-bottom:20px;">
+        
+        <!-- STEP 1: Verifikasi Kesiapan Server RADIUS -->
+        <div class="radius-card" style="margin:0;">
+          <div class="radius-card-hd" style="border-bottom:1px solid var(--border);">
+            <div class="radius-card-title">
+              <span class="badge" style="background:var(--primary); color:#fff; border-radius:50%; width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; margin-right:6px;">1</span>
+              <span>Kesiapan Server &amp; Script MikroTik</span>
+            </div>
+            <span class="badge <%= radiusStatus.running ? 'bs' : 'bd' %>" style="font-size:10px;">
+              <%= radiusStatus.running ? 'RADIUS Aktif' : 'RADIUS Mati' %>
+            </span>
+          </div>
+          <div class="radius-card-bd" style="font-size:12.5px; line-height:1.5;">
+            <p style="color:var(--muted); margin-bottom:12px;">
+              Pastikan service UDP RADIUS berjalan dan script konfigurasi telah dijalankan di MikroTik:
+            </p>
+            <div style="background:var(--bg3); padding:10px 12px; border-radius:8px; border:1px solid var(--border); font-size:11.5px; margin-bottom:12px;">
+              <div>• <strong>Status:</strong> <%= radiusStatus.running ? 'Online (UDP Port ' + radiusStatus.authPort + ' / ' + radiusStatus.acctPort + ')' : 'Non-Aktif (Harap nyalakan di tab Konfigurasi)' %></div>
+              <div>• <strong>Shared Secret:</strong> <code><%= radiusStatus.secret %></code></div>
+              <div>• <strong>Router NAS:</strong> <%= nasList.length %> Router Terdaftar</div>
+            </div>
+            <button type="button" class="btn btn-g btn-sm w-100" onclick="copyMikrotikScript(this)">
+              <i class="bi bi-clipboard-check"></i> Salin Script Setup MikroTik
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 2: Audit & Validasi Kredensial -->
+        <div class="radius-card" style="margin:0;">
+          <div class="radius-card-hd" style="border-bottom:1px solid var(--border);">
+            <div class="radius-card-title">
+              <span class="badge" style="background:#0ea5e9; color:#fff; border-radius:50%; width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; margin-right:6px;">2</span>
+              <span>Audit &amp; Pra-Validasi Kredensial</span>
+            </div>
+            <span class="badge bm" style="font-size:10px;" id="auditStatusBadge">Belum Diaudit</span>
+          </div>
+          <div class="radius-card-bd" style="font-size:12.5px; line-height:1.5;">
+            <p style="color:var(--muted); margin-bottom:12px;">
+              Cocokkan akun di <code>/ppp secret</code> MikroTik dengan data pelanggan di database billing untuk mencegah salah password:
+            </p>
+            <div class="fg" style="margin-bottom:10px;">
+              <label class="fl" style="font-size:11px;">Pilih Router Target Audit:</label>
+              <select class="fs" id="auditRouterSelect" style="font-size:12px; padding:6px 10px;">
+                <option value="">-- Router Utama / Semua --</option>
+                <% (routers || []).forEach(r => { %>
+                  <option value="<%= r.id %>"><%= r.name %> (<%= r.host %>)</option>
+                <% }) %>
+              </select>
+            </div>
+            <button type="button" class="btn btn-p btn-sm w-100" id="btnRunAudit" onclick="runMigrationAudit()">
+              <i class="bi bi-search"></i> Jalankan Audit Kredensial Sekarang
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 3: Eksekusi Alihkan Mode Pelanggan -->
+        <div class="radius-card" style="margin:0;">
+          <div class="radius-card-hd" style="border-bottom:1px solid var(--border);">
+            <div class="radius-card-title">
+              <span class="badge" style="background:#10b981; color:#fff; border-radius:50%; width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; margin-right:6px;">3</span>
+              <span>Eksekusi Migrasi Mode Akun</span>
+            </div>
+            <span class="badge bs" style="font-size:10px;">1-Click Action</span>
+          </div>
+          <div class="radius-card-bd" style="font-size:12.5px; line-height:1.5;">
+            <p style="color:var(--muted); margin-bottom:12px;">
+              Alihkan seluruh pelanggan ke mode Full RADIUS (<code>is_radius = 1</code>). Pelanggan online tetap aman tanpa putus:
+            </p>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <button type="button" class="btn btn-success btn-sm w-100" style="font-weight:700;" onclick="executeBulkMigration(1)">
+                <i class="bi bi-broadcast"></i> Migrasi Semua ke Full RADIUS
+              </button>
+              <button type="button" class="btn btn-g btn-sm w-100" onclick="executeBulkMigration(0)">
+                <i class="bi bi-arrow-counterclockwise"></i> Rollback ke MikroTik Secret
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 4: Manajemen Secret MikroTik -->
+        <div class="radius-card" style="margin:0;">
+          <div class="radius-card-hd" style="border-bottom:1px solid var(--border);">
+            <div class="radius-card-title">
+              <span class="badge" style="background:#f59e0b; color:#fff; border-radius:50%; width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; margin-right:6px;">4</span>
+              <span>Kelola Secret MikroTik (Safety Net)</span>
+            </div>
+            <span class="badge bw" style="font-size:10px;">Router Optimizer</span>
+          </div>
+          <div class="radius-card-bd" style="font-size:12.5px; line-height:1.5;">
+            <p style="color:var(--muted); margin-bottom:12px;">
+              Setelah semua akun aktif via RADIUS, nonaktifkan secret lokal agar MikroTik hemat RAM/CPU:
+            </p>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <button type="button" class="btn btn-warning btn-sm w-100" style="font-weight:700;" onclick="manageMikrotikSecrets('disable_migrated')">
+                <i class="bi bi-shield-slash"></i> Nonaktifkan (Disable) Secret di Router
+              </button>
+              <button type="button" class="btn btn-g btn-sm w-100" onclick="manageMikrotikSecrets('enable_all')">
+                <i class="bi bi-shield-check"></i> Aktifkan Kembali Secret (Emergency Failover)
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- AUDIT RESULTS CONTAINER (DYNAMICALLY POPULATED) -->
+      <div id="auditResultsSection" style="display:none; margin-bottom:24px;">
+        <div class="card-modern">
+          <div class="card-modern-hd" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div class="card-modern-title">
+              <i class="bi bi-clipboard2-data-fill text-primary"></i>
+              Hasil Audit &amp; Rekonsiliasi Kredensial MikroTik: <strong id="auditRouterName">-</strong>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-warning btn-sm" id="btnSyncPasswords" onclick="syncPasswordsFromMikrotik()" style="display:none;">
+                <i class="bi bi-key-fill"></i> Sinkronkan Password MikroTik ke Billing
+              </button>
+              <button type="button" class="btn btn-info btn-sm" id="btnImportSecrets" onclick="importSecretsFromMikrotik()" style="display:none;">
+                <i class="bi bi-box-arrow-in-down"></i> Impor Secret ke Billing
+              </button>
+            </div>
+          </div>
+          <div class="card-bd" style="padding:16px;">
+            
+            <!-- Metric Counters -->
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:16px;">
+              <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:10px; padding:12px; text-align:center;">
+                <div style="font-size:11px; color:#10b981; font-weight:700; text-transform:uppercase;">Cocok Sempurna (Matched)</div>
+                <div style="font-size:24px; font-weight:800; color:#10b981; margin-top:4px;" id="statMatchedCount">0</div>
+                <div style="font-size:11px; color:var(--muted); margin-top:2px;">Kredensial 100% Valid</div>
+              </div>
+              <div style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); border-radius:10px; padding:12px; text-align:center;">
+                <div style="font-size:11px; color:#f59e0b; font-weight:700; text-transform:uppercase;">Password Beda (Mismatch)</div>
+                <div style="font-size:24px; font-weight:800; color:#f59e0b; margin-top:4px;" id="statMismatchCount">0</div>
+                <div style="font-size:11px; color:var(--muted); margin-top:2px;">Perlu Disinkronkan</div>
+              </div>
+              <div style="background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.25); border-radius:10px; padding:12px; text-align:center;">
+                <div style="font-size:11px; color:#38bdf8; font-weight:700; text-transform:uppercase;">Hanya di MikroTik</div>
+                <div style="font-size:24px; font-weight:800; color:#38bdf8; margin-top:4px;" id="statOnlyMtCount">0</div>
+                <div style="font-size:11px; color:var(--muted); margin-top:2px;">Belum Ada di Billing</div>
+              </div>
+              <div style="background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.25); border-radius:10px; padding:12px; text-align:center;">
+                <div style="font-size:11px; color:#a855f7; font-weight:700; text-transform:uppercase;">Hanya di Billing</div>
+                <div style="font-size:24px; font-weight:800; color:#a855f7; margin-top:4px;" id="statOnlyDbCount">0</div>
+                <div style="font-size:11px; color:var(--muted); margin-top:2px;">Otomatis via RADIUS</div>
+              </div>
+            </div>
+
+            <!-- Detailed Tables Accordion / Tabs -->
+            <div id="auditDetailSections">
+              <!-- Mismatches Warning Table -->
+              <div id="mismatchTableWrap" style="display:none; margin-bottom:16px;">
+                <div style="font-weight:700; font-size:13px; color:#f59e0b; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+                  <i class="bi bi-exclamation-triangle-fill"></i> Akun dengan Password Berbeda (Harus Disinkronkan):
+                </div>
+                <div class="tbl-wrap">
+                  <table class="dtbl">
+                    <thead>
+                      <tr>
+                        <th>Username PPPoE</th>
+                        <th>Nama Pelanggan</th>
+                        <th>Password di Billing</th>
+                        <th>Password Aktual MikroTik</th>
+                        <th>Status Layanan</th>
+                      </tr>
+                    </thead>
+                    <tbody id="mismatchTableBody"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Only in MikroTik Table -->
+              <div id="onlyMtTableWrap" style="display:none; margin-bottom:16px;">
+                <div style="font-weight:700; font-size:13px; color:#38bdf8; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+                  <i class="bi bi-info-circle-fill"></i> Akun Secret di MikroTik yang Belum Terdaftar di Billing:
+                </div>
+                <div class="tbl-wrap">
+                  <table class="dtbl">
+                    <thead>
+                      <tr>
+                        <th>Username MikroTik</th>
+                        <th>Profil Bandwidth</th>
+                        <th>Password MikroTik</th>
+                        <th>Status Secret</th>
+                      </tr>
+                    </thead>
+                    <tbody id="onlyMtTableBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Toast Notification Container -->
@@ -2198,13 +2432,17 @@
 
   // Restore active tab from hash or localStorage
   document.addEventListener('DOMContentLoaded', () => {
+    const validTabs = ['online', 'settings', 'nas', 'accounting', 'users', 'migration'];
+    const serverTab = <%= typeof defaultTab !== 'undefined' ? JSON.stringify(defaultTab) : 'null' %>;
     let initialTab = 'online';
     const hash = window.location.hash.replace('#', '');
-    if (hash && ['online', 'settings', 'nas', 'accounting', 'users'].includes(hash)) {
+    if (hash && validTabs.includes(hash)) {
       initialTab = hash;
+    } else if (serverTab && validTabs.includes(serverTab)) {
+      initialTab = serverTab;
     } else {
       const savedTab = localStorage.getItem('radius_active_tab');
-      if (savedTab && ['online', 'settings', 'nas', 'accounting', 'users'].includes(savedTab)) {
+      if (savedTab && validTabs.includes(savedTab)) {
         initialTab = savedTab;
       }
     }
@@ -3120,6 +3358,223 @@
     }).catch(() => {
       prompt('Salin perintah UFW di bawah ini:', text);
     });
+  }
+
+  // ─── RADIUS MIGRATION WIZARD JAVASCRIPT ──────────────────────────────
+  let currentAuditData = null;
+
+  async function runMigrationAudit() {
+    const btn = document.getElementById('btnRunAudit');
+    const badge = document.getElementById('auditStatusBadge');
+    const routerId = document.getElementById('auditRouterSelect').value;
+    const originalText = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menghubungi MikroTik & Audit...';
+    if (badge) {
+      badge.className = 'badge bw';
+      badge.textContent = 'Memeriksa Router...';
+    }
+
+    try {
+      const res = await fetch('/admin/radius/migration/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ router_id: routerId || null })
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Audit gagal');
+      }
+
+      currentAuditData = data;
+      renderAuditResults(data);
+      showToast('s', `Audit selesai untuk router ${data.router.name || 'MikroTik'}.`);
+      if (badge) {
+        badge.className = 'badge bs';
+        badge.textContent = 'Selesai Diaudit';
+      }
+    } catch (err) {
+      console.error('Audit error:', err);
+      showToast('e', err.message || 'Gagal melakukan audit router');
+      if (badge) {
+        badge.className = 'badge bd';
+        badge.textContent = 'Audit Gagal';
+      }
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+    }
+  }
+
+  function renderAuditResults(data) {
+    const section = document.getElementById('auditResultsSection');
+    if (!section) return;
+    section.style.display = 'block';
+
+    document.getElementById('auditRouterName').textContent = `${data.router.name} (${data.router.host})`;
+    document.getElementById('statMatchedCount').textContent = data.stats.matchedCount;
+    document.getElementById('statMismatchCount').textContent = data.stats.mismatchCount;
+    document.getElementById('statOnlyMtCount').textContent = data.stats.onlyInMikrotikCount;
+    document.getElementById('statOnlyDbCount').textContent = data.stats.onlyInBillingCount;
+
+    // Action buttons visibility
+    const btnSync = document.getElementById('btnSyncPasswords');
+    const btnImport = document.getElementById('btnImportSecrets');
+    if (btnSync) btnSync.style.display = data.stats.mismatchCount > 0 ? 'inline-flex' : 'none';
+    if (btnImport) btnImport.style.display = data.stats.onlyInMikrotikCount > 0 ? 'inline-flex' : 'none';
+
+    // Render Mismatches Table
+    const misWrap = document.getElementById('mismatchTableWrap');
+    const misBody = document.getElementById('mismatchTableBody');
+    if (data.mismatched && data.mismatched.length > 0) {
+      misWrap.style.display = 'block';
+      misBody.innerHTML = data.mismatched.map(m => `
+        <tr>
+          <td><strong style="color:var(--text);font-family:monospace;">${escapeHtml(m.username)}</strong></td>
+          <td>${escapeHtml(m.customerName)}</td>
+          <td><span class="badge bd font-monospace">${escapeHtml(m.dbPassword || '(Kosong)')}</span></td>
+          <td><span class="badge bs font-monospace">${escapeHtml(m.mtPassword || '(Kosong)')}</span></td>
+          <td><span class="badge ${m.status === 'active' ? 'bs' : 'bd'}">${escapeHtml(m.status)}</span></td>
+        </tr>
+      `).join('');
+    } else {
+      misWrap.style.display = 'none';
+      misBody.innerHTML = '';
+    }
+
+    // Render Only in MikroTik Table
+    const onlyMtWrap = document.getElementById('onlyMtTableWrap');
+    const onlyMtBody = document.getElementById('onlyMtTableBody');
+    if (data.onlyInMikrotik && data.onlyInMikrotik.length > 0) {
+      onlyMtWrap.style.display = 'block';
+      onlyMtBody.innerHTML = data.onlyInMikrotik.map(m => `
+        <tr>
+          <td><strong style="color:#38bdf8;font-family:monospace;">${escapeHtml(m.username)}</strong></td>
+          <td><span class="badge bm">${escapeHtml(m.profile)}</span></td>
+          <td><span class="font-monospace">${escapeHtml(m.mtPassword || '-')}</span></td>
+          <td><span class="badge ${m.disabled ? 'bw' : 'bs'}">${m.disabled ? 'Disabled' : 'Aktif'}</span></td>
+        </tr>
+      `).join('');
+    } else {
+      onlyMtWrap.style.display = 'none';
+      onlyMtBody.innerHTML = '';
+    }
+
+    section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  async function syncPasswordsFromMikrotik() {
+    if (!confirm('Sinkronkan seluruh password dari MikroTik ke database billing? Password pelanggan di billing yang berbeda akan diperbarui agar sama persis dengan MikroTik.')) return;
+
+    const btn = document.getElementById('btnSyncPasswords');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyinkronkan...';
+
+    try {
+      const routerId = document.getElementById('auditRouterSelect').value;
+      const res = await fetch('/admin/radius/migration/sync-passwords', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ router_id: routerId || null })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Gagal sinkronisasi');
+      showToast('s', data.message);
+      runMigrationAudit();
+    } catch (e) {
+      showToast('e', e.message || 'Gagal sinkronisasi');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+    }
+  }
+
+  async function importSecretsFromMikrotik() {
+    if (!confirm('Impor seluruh secret di MikroTik yang belum ada di billing ke dalam database pelanggan?')) return;
+
+    const btn = document.getElementById('btnImportSecrets');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengimpor...';
+
+    try {
+      const routerId = document.getElementById('auditRouterSelect').value;
+      const res = await fetch('/admin/radius/migration/import-secrets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ router_id: routerId || null })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Gagal impor secret');
+      showToast('s', data.message);
+      runMigrationAudit();
+    } catch (e) {
+      showToast('e', e.message || 'Gagal impor secret');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+    }
+  }
+
+  async function executeBulkMigration(targetMode) {
+    const label = targetMode === 1 ? 'Full RADIUS' : 'MikroTik Secret';
+    const confirmMsg = targetMode === 1
+      ? 'Yakin ingin mengalihkan SEMUA pelanggan PPPoE aktif ke mode Full RADIUS? Pelanggan yang sedang online tidak akan putus.'
+      : 'Yakin ingin me-Rollback SEMUA pelanggan PPPoE kembali ke mode MikroTik Secret lokal?';
+
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      const routerId = document.getElementById('auditRouterSelect').value;
+      const res = await fetch('/admin/radius/migration/bulk-switch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ target_mode: targetMode, router_id: routerId || null })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Gagal migrasi mode');
+      showToast('s', data.message);
+      setTimeout(() => location.reload(), 1500);
+    } catch (e) {
+      showToast('e', e.message || 'Gagal migrasi');
+    }
+  }
+
+  async function manageMikrotikSecrets(action) {
+    const isDisable = action === 'disable_migrated';
+    const confirmMsg = isDisable
+      ? 'Nonaktifkan (Disable) secret di MikroTik bagi pelanggan yang sudah aktif di Full RADIUS? Ini akan meringankan beban memori RAM & CPU router MikroTik.'
+      : 'PERINGATAN DARURAT: Aktifkan kembali seluruh secret di MikroTik (Rollback/Failover)?';
+
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      const routerId = document.getElementById('auditRouterSelect').value;
+      const res = await fetch('/admin/radius/migration/manage-mikrotik-secrets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ action, router_id: routerId || null })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Gagal kelola secret');
+      showToast('s', data.message);
+      if (currentAuditData) runMigrationAudit();
+    } catch (e) {
+      showToast('e', e.message || 'Gagal kelola secret');
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   // Auto dismiss notification alert after 4 seconds

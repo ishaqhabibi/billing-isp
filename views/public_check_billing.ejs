@@ -841,7 +841,7 @@
                       </div>
                       <div class="text-sub small">
                         No. Invoice: <span class="fw-semibold">INV-<%= inv.id %></span>
-                        <% if (inv.due_date) { %> &bull; Jatuh Tempo: <%= new Date(inv.due_date).toLocaleDateString('id-ID') %><% } %>
+                        &bull; Jatuh Tempo: <%= inv.due_date ? new Date(inv.due_date).toLocaleDateString('id-ID') : `${(typeof settings !== 'undefined' && settings.due_date_day) ? settings.due_date_day : 20} ${monthNames[Number(inv.period_month)] || ''} ${inv.period_year || ''}` %>
                       </div>
                     </div>
                   </div>

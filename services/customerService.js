@@ -201,9 +201,15 @@ function createCustomer(data) {
   const pppoeUsername = data.pppoe_username ? formatBionPppoe(data.pppoe_username) : '';
   const ontSn = data.ont_sn ? String(data.ont_sn).trim() : '';
 
+  const billingDay = (data.billing_day !== undefined && data.billing_day !== '' && data.billing_day !== null)
+    ? Math.min(31, Math.max(1, parseInt(data.billing_day, 10)))
+    : ((data.isolate_day !== undefined && data.isolate_day !== '' && data.isolate_day !== null)
+        ? Math.min(31, Math.max(1, parseInt(data.isolate_day, 10)))
+        : null);
+
   return db.prepare(`
-    INSERT INTO customers (nik, name, phone, email, address, area, customer_code, package_id, router_id, olt_id, odc_id, odp_id, pon_port, odp_port, photo_house, photo_customer, photo_optical_power, initial_rx_power, lat, lng, genieacs_tag, pppoe_username, pppoe_password, pppoe_remote_address, isolir_profile, status, install_date, expired_at, notes, auto_isolate, isolate_day, connection_type, static_ip, mac_address, hotspot_username, hotspot_password, hotspot_profile, collector_id, is_radius, ont_sn)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO customers (nik, name, phone, email, address, area, customer_code, package_id, router_id, olt_id, odc_id, odp_id, pon_port, odp_port, photo_house, photo_customer, photo_optical_power, initial_rx_power, lat, lng, genieacs_tag, pppoe_username, pppoe_password, pppoe_remote_address, isolir_profile, status, install_date, expired_at, notes, auto_isolate, isolate_day, billing_day, connection_type, static_ip, mac_address, hotspot_username, hotspot_password, hotspot_profile, collector_id, is_radius, ont_sn)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     data.nik ? String(data.nik).trim() : '',
     data.name, data.phone || '', data.email || '', data.address || '',
@@ -231,7 +237,8 @@ function createCustomer(data) {
     expiredAt,
     data.notes || '',
     data.auto_isolate !== undefined ? parseInt(data.auto_isolate) : 1,
-    data.isolate_day !== undefined ? parseInt(data.isolate_day) : 10,
+    billingDay,
+    billingDay,
     data.connection_type || 'pppoe',
     data.static_ip || '',
     data.mac_address || '',
@@ -276,8 +283,14 @@ function updateCustomer(id, data) {
     ? (data.ont_sn ? String(data.ont_sn).trim() : '')
     : (prev ? (prev.ont_sn || '') : '');
 
+  const billingDay = data.billing_day !== undefined
+    ? (data.billing_day !== '' && data.billing_day !== null ? Math.min(31, Math.max(1, parseInt(data.billing_day, 10))) : null)
+    : (data.isolate_day !== undefined
+        ? (data.isolate_day !== '' && data.isolate_day !== null ? Math.min(31, Math.max(1, parseInt(data.isolate_day, 10))) : null)
+        : (prev ? (prev.billing_day || prev.isolate_day || null) : null));
+
   const result = db.prepare(`
-    UPDATE customers SET nik=?, name=?, phone=?, email=?, address=?, area=?, customer_code=?, package_id=?, router_id=?, olt_id=?, odc_id=?, odp_id=?, pon_port=?, odp_port=?, photo_house=?, photo_customer=?, photo_optical_power=?, initial_rx_power=?, lat=?, lng=?, genieacs_tag=?, pppoe_username=?, pppoe_password=?, pppoe_remote_address=?, isolir_profile=?, status=?, install_date=?, expired_at=?, notes=?, auto_isolate=?, isolate_day=?, cable_path=?, connection_type=?, static_ip=?, mac_address=?, hotspot_username=?, hotspot_password=?, hotspot_profile=?, collector_id=?, is_radius=?, ont_sn=?
+    UPDATE customers SET nik=?, name=?, phone=?, email=?, address=?, area=?, customer_code=?, package_id=?, router_id=?, olt_id=?, odc_id=?, odp_id=?, pon_port=?, odp_port=?, photo_house=?, photo_customer=?, photo_optical_power=?, initial_rx_power=?, lat=?, lng=?, genieacs_tag=?, pppoe_username=?, pppoe_password=?, pppoe_remote_address=?, isolir_profile=?, status=?, install_date=?, expired_at=?, notes=?, auto_isolate=?, isolate_day=?, billing_day=?, cable_path=?, connection_type=?, static_ip=?, mac_address=?, hotspot_username=?, hotspot_password=?, hotspot_profile=?, collector_id=?, is_radius=?, ont_sn=?
     WHERE id=?
   `).run(
     data.nik !== undefined ? (data.nik ? String(data.nik).trim() : '') : (prev ? (prev.nik || '') : ''),
@@ -306,7 +319,8 @@ function updateCustomer(id, data) {
     expiredAt,
     data.notes || '',
     data.auto_isolate !== undefined ? parseInt(data.auto_isolate) : 1,
-    data.isolate_day !== undefined ? parseInt(data.isolate_day) : 10,
+    billingDay,
+    billingDay,
     data.cable_path || null,
     data.connection_type || 'pppoe',
     data.static_ip || '',
@@ -415,6 +429,8 @@ async function deleteCustomer(id) {
 
 function getCustomerStats() {
   const unpaidRow = db.prepare("SELECT COUNT(DISTINCT customer_id) as c FROM invoices WHERE status='unpaid'").get();
+  const radiusRow = db.prepare("SELECT COUNT(*) as c FROM customers WHERE is_radius = 1").get();
+  const mikrotikRow = db.prepare("SELECT COUNT(*) as c FROM customers WHERE is_radius = 0 OR is_radius IS NULL").get();
   return {
     total:        db.prepare('SELECT COUNT(*) as c FROM customers').get().c,
     active:       db.prepare("SELECT COUNT(*) as c FROM customers WHERE status IN ('active', 'ditangguhkan')").get().c,
@@ -422,6 +438,8 @@ function getCustomerStats() {
     suspended:    db.prepare("SELECT COUNT(*) as c FROM customers WHERE status='suspended'").get().c,
     inactive:     db.prepare("SELECT COUNT(*) as c FROM customers WHERE status='inactive'").get().c,
     unpaid:       unpaidRow ? (unpaidRow.c || 0) : 0,
+    radius:       radiusRow ? (radiusRow.c || 0) : 0,
+    mikrotik:     mikrotikRow ? (mikrotikRow.c || 0) : 0,
   };
 }
 

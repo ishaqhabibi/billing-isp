@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/admin.css?v=2.7">
+  <link rel="stylesheet" href="/css/admin.css?v=3.3">
   <script src="/js/theme.js"></script>
   <style>
     .onus-dashboard { display: flex; flex-direction: column; gap: 18px; }
@@ -437,6 +437,53 @@
   </style>
 </head>
 <body>
+<% if (typeof olts !== 'undefined' && olts.length > 0) { %>
+<!-- Modern NOC High-Tech Loading Screen -->
+<div id="noc-loading-screen" class="noc-loading-screen" style="position:fixed !important;top:0 !important;right:0 !important;bottom:0 !important;left:var(--sw, 240px) !important;z-index:900 !important;display:flex !important;align-items:center !important;justify-content:center !important;background:radial-gradient(circle at 50% 35%, rgba(14, 165, 233, 0.16), transparent 50%), radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.12), transparent 45%), rgba(11, 17, 30, 0.94) !important;backdrop-filter:blur(20px) !important;-webkit-backdrop-filter:blur(20px) !important;">
+  <div class="noc-loading-card">
+    <div class="noc-loading-beam"></div>
+    
+    <div class="noc-loading-badge">
+      <span class="pulse-dot"></span>
+      <span>BIONFIBER NOC • ONU TELEMETRY</span>
+    </div>
+
+    <div class="noc-loading-emblem">
+      <div class="noc-loading-ring-outer"></div>
+      <div class="noc-loading-ring-inner"></div>
+      <div class="noc-loading-icon-core">
+        <i class="bi bi-hdd-network-fill"></i>
+      </div>
+    </div>
+
+    <div class="noc-loading-title">Sinkronisasi Data Modem ONU</div>
+    <div class="noc-loading-subtitle" id="noc-loading-target">
+      Mengambil data registrasi ONU, status link & redaman optik...
+    </div>
+
+    <div class="noc-progress-container">
+      <div class="noc-progress-bar"></div>
+    </div>
+
+    <div class="noc-steps-row">
+      <div class="noc-step-item active" id="noc-step-1">
+        <i class="bi bi-broadcast"></i> <span>SNMP v2c</span>
+      </div>
+      <div class="noc-step-item" id="noc-step-2">
+        <i class="bi bi-cpu"></i> <span>Tabel ONU</span>
+      </div>
+      <div class="noc-step-item" id="noc-step-3">
+        <i class="bi bi-activity"></i> <span>Optik</span>
+      </div>
+    </div>
+
+    <div class="noc-live-status">
+      <span class="status-dot"></span>
+      <span id="noc-status-ticker">Mengirim query telemetry OLT via SNMP...</span>
+    </div>
+  </div>
+</div>
+<% } %>
 <div class="mw">
   <!-- Topbar Header -->
   <div class="topbar">
@@ -658,10 +705,10 @@
 <%- include('partials/sidebar', { activePage: 'olts', company }) %>
 
 <!-- MODAL: Detail Diagnostik Optik ONU -->
-<div class="mo" id="onuDetailModal">
-  <div class="md" style="max-width: 620px;">
+<div class="mo" id="onuDetailModal" onclick="if(event.target===this)closeModal('onuDetailModal')">
+  <div class="mb" style="max-width: 620px; width: 95%;">
     <div class="mh">
-      <h5 class="mtitle"><i class="bi bi-speedometer2 text-primary me-2"></i>Diagnostik Optik &amp; Parameter Modem</h5>
+      <h5 class="mt mb-0" style="font-size:15px; font-weight:800; color:var(--text);"><i class="bi bi-speedometer2 text-primary me-2"></i>Diagnostik Optik &amp; Parameter Modem</h5>
       <button type="button" class="mc" onclick="closeModal('onuDetailModal')">&times;</button>
     </div>
     <div class="mbody" id="onuDetailModalBody">
@@ -674,10 +721,10 @@
 </div>
 
 <!-- MODAL: Reboot ONU -->
-<div class="mo" id="rebootOnuModal">
-  <div class="md" style="max-width: 440px;">
+<div class="mo" id="rebootOnuModal" onclick="if(event.target===this)closeModal('rebootOnuModal')">
+  <div class="mb" style="max-width: 460px; width: 95%;">
     <div class="mh">
-      <h5 class="mtitle text-danger"><i class="bi bi-arrow-repeat me-2"></i>Konfirmasi Reboot Modem</h5>
+      <h5 class="mt mb-0 text-danger" style="font-size:15px; font-weight:800;"><i class="bi bi-arrow-repeat me-2"></i>Konfirmasi Reboot Modem</h5>
       <button type="button" class="mc" onclick="closeModal('rebootOnuModal')">&times;</button>
     </div>
     <div class="mbody">
@@ -697,19 +744,19 @@
 </div>
 
 <!-- MODAL: Ubah Nama ONU -->
-<div class="mo" id="renameOnuModal">
-  <div class="md" style="max-width: 440px;">
+<div class="mo" id="renameOnuModal" onclick="if(event.target===this)closeModal('renameOnuModal')">
+  <div class="mb" style="max-width: 460px; width: 95%;">
     <div class="mh">
-      <h5 class="mtitle"><i class="bi bi-pencil-square text-primary me-2"></i>Ubah Alias Modem di OLT</h5>
+      <h5 class="mt mb-0" style="font-size:15px; font-weight:800; color:var(--text);"><i class="bi bi-pencil-square text-primary me-2"></i>Ubah Alias Modem di OLT</h5>
       <button type="button" class="mc" onclick="closeModal('renameOnuModal')">&times;</button>
     </div>
     <div class="mbody">
-      <div class="mb-3">
-        <label class="form-label small text-muted">ID / Port ONU</label>
+      <div class="fg">
+        <label class="fl">ID / Port ONU</label>
         <input type="text" class="fc" id="renameOnuId" readonly style="background:var(--bg3);">
       </div>
-      <div class="mb-3">
-        <label class="form-label small text-muted">Nama Alias Baru</label>
+      <div class="fg">
+        <label class="fl">Nama Alias Baru</label>
         <input type="text" class="fc" id="renameOnuNewName" placeholder="Contoh: Bpk-Ahmad-RT02" maxlength="32">
         <div class="text-muted small mt-1">Maksimal 32 karakter (disarankan alfanumerik &amp; strip).</div>
       </div>
@@ -722,10 +769,10 @@
 </div>
 
 <!-- MODAL: Test SNMP -->
-<div class="mo" id="testSnmpModal">
-  <div class="md" style="max-width: 480px;">
+<div class="mo" id="testSnmpModal" onclick="if(event.target===this)closeModal('testSnmpModal')">
+  <div class="mb" style="max-width: 500px; width: 95%;">
     <div class="mh">
-      <h5 class="mtitle"><i class="bi bi-activity text-primary me-2"></i>Hasil Uji SNMP OLT</h5>
+      <h5 class="mt mb-0" style="font-size:15px; font-weight:800; color:var(--text);"><i class="bi bi-activity text-primary me-2"></i>Hasil Uji SNMP OLT</h5>
       <button type="button" class="mc" onclick="closeModal('testSnmpModal')">&times;</button>
     </div>
     <div class="mbody" id="testSnmpModalBody"></div>
@@ -776,12 +823,25 @@ function copyToClipboard(text) {
 
 function openModal(id) {
   const m = document.getElementById(id);
-  if (m) m.classList.add('show');
+  if (m) {
+    m.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
 }
 function closeModal(id) {
   const m = document.getElementById(id);
-  if (m) m.classList.remove('show');
+  if (m) {
+    m.classList.remove('show');
+    const anyOpen = document.querySelector('.mo.show');
+    if (!anyOpen) document.body.style.overflow = '';
+  }
 }
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.mo.show').forEach(m => m.classList.remove('show'));
+    document.body.style.overflow = '';
+  }
+});
 
 function handleOltChange() {
   const sel = document.getElementById('olt-selector');
@@ -806,6 +866,52 @@ function refreshCurrentOlt() {
   if (sel && sel.value) loadOnuData(sel.value);
 }
 
+function setNocLoadingStep(stepNum, statusText) {
+  const step1 = document.getElementById('noc-step-1');
+  const step2 = document.getElementById('noc-step-2');
+  const step3 = document.getElementById('noc-step-3');
+  const ticker = document.getElementById('noc-status-ticker');
+  if (ticker && statusText) ticker.textContent = statusText;
+
+  if (stepNum === 1) {
+    if (step1) { step1.className = 'noc-step-item active'; }
+    if (step2) { step2.className = 'noc-step-item'; }
+    if (step3) { step3.className = 'noc-step-item'; }
+  } else if (stepNum === 2) {
+    if (step1) { step1.className = 'noc-step-item done'; }
+    if (step2) { step2.className = 'noc-step-item active'; }
+    if (step3) { step3.className = 'noc-step-item'; }
+  } else if (stepNum === 3) {
+    if (step1) { step1.className = 'noc-step-item done'; }
+    if (step2) { step2.className = 'noc-step-item done'; }
+    if (step3) { step3.className = 'noc-step-item active'; }
+  }
+}
+
+function hideNocLoadingScreen() {
+  const el = document.getElementById('noc-loading-screen');
+  if (!el || el.classList.contains('fade-out')) return;
+
+  const step1 = document.getElementById('noc-step-1');
+  const step2 = document.getElementById('noc-step-2');
+  const step3 = document.getElementById('noc-step-3');
+  const ticker = document.getElementById('noc-status-ticker');
+  if (step1) step1.className = 'noc-step-item done';
+  if (step2) step2.className = 'noc-step-item done';
+  if (step3) step3.className = 'noc-step-item done';
+  if (ticker) ticker.textContent = 'Data Modem ONU berhasil disinkronkan!';
+
+  setTimeout(() => {
+    el.classList.add('fade-out');
+    setTimeout(() => {
+      el.style.display = 'none';
+    }, 450);
+  }, 220);
+}
+
+// Safety timeout: automatically fade out after 8s so user never gets stuck
+setTimeout(hideNocLoadingScreen, 8000);
+
 async function loadOnuData(oltId) {
   currentOltId = oltId;
   const overlay = document.getElementById('loading-overlay');
@@ -813,10 +919,23 @@ async function loadOnuData(oltId) {
   if (overlay) overlay.style.display = 'flex';
   if (icon) icon.classList.add('spin');
 
+  const sel = document.getElementById('olt-selector');
+  const selOpt = sel ? sel.options[sel.selectedIndex] : null;
+  const optName = selOpt ? selOpt.textContent.split('(')[0].trim() : 'OLT';
+  const optHost = selOpt ? selOpt.getAttribute('data-host') : '';
+  const targetLabel = document.getElementById('noc-loading-target');
+  if (targetLabel) {
+    targetLabel.innerHTML = `Mengambil data dari <strong>${escapeHtml(optName)}</strong> ${optHost ? `(${escapeHtml(optHost)})` : ''}`;
+  }
+
+  setNocLoadingStep(1, `Mengirim query SNMP v2c ke ${optHost || optName}...`);
+
   try {
     const res = await fetch(`/admin/olts/${oltId}/stats?full=true`);
+    setNocLoadingStep(2, 'Memproses data tabel ONU & link port...');
     const data = await res.json();
 
+    setNocLoadingStep(3, 'Menghitung statistik KPI & spectrum optik...');
     allOnus = Array.isArray(data.onus) ? data.onus : [];
 
     updatePonPortFilterOptions();
@@ -853,6 +972,7 @@ async function loadOnuData(oltId) {
   } finally {
     if (overlay) overlay.style.display = 'none';
     if (icon) icon.classList.remove('spin');
+    hideNocLoadingScreen();
   }
 }
 

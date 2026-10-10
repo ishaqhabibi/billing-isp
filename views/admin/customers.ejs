@@ -336,6 +336,421 @@
       color: #fff;
       transform: scale(1.1);
     }
+
+    /* Modal Stepper Robust Flex Container (Zero Cutoff & Adaptive) */
+    .cust-stepper-modal {
+      max-width: 860px !important;
+      width: min(95vw, 860px) !important;
+      height: min(92vh, 840px) !important;
+      max-height: calc(100vh - 32px) !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
+      border-radius: 18px !important;
+      padding: 0 !important;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25) !important;
+      background: var(--bg2) !important;
+    }
+    .cust-stepper-header {
+      flex-shrink: 0 !important;
+      padding: 16px 22px !important;
+      border-bottom: 1px solid var(--border) !important;
+      background: var(--bg2) !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+    }
+    .cust-stepper-form {
+      display: flex !important;
+      flex-direction: column !important;
+      flex: 1 1 0% !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+      margin: 0 !important;
+    }
+    .cust-stepper-body {
+      flex: 1 1 0% !important;
+      min-height: 0 !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      padding: 22px 24px !important;
+      background: var(--bg2) !important;
+    }
+    .cust-modal-pane {
+      display: none;
+      animation: fadeInModalPane 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .cust-modal-pane.active {
+      display: block;
+    }
+    @keyframes fadeInModalPane {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .modal-stepper-footer {
+      flex-shrink: 0 !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      gap: 10px !important;
+      padding: 14px 24px !important;
+      border-top: 1px solid var(--border) !important;
+      background: var(--bg2) !important;
+      margin: 0 !important;
+      z-index: 10 !important;
+    }
+
+    /* Modal Segmented Stepper Tabs (Adaptive Light & Dark) */
+    .cust-modal-tabs {
+      flex-shrink: 0 !important;
+      display: flex;
+      gap: 6px;
+      background: var(--bg3) !important;
+      padding: 8px 16px !important;
+      border-bottom: 1px solid var(--border) !important;
+      border-top: none !important;
+      border-left: none !important;
+      border-right: none !important;
+      border-radius: 0 !important;
+      margin-bottom: 0 !important;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .cust-modal-tabs::-webkit-scrollbar { display: none; }
+    .cust-modal-tab-btn {
+      flex: 1;
+      min-width: 125px;
+      padding: 9px 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted) !important;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+    }
+    .cust-modal-tab-btn:hover {
+      color: var(--primary) !important;
+      background: var(--pdim) !important;
+    }
+    .cust-modal-tab-btn.active {
+      background: var(--primary) !important;
+      color: #ffffff !important;
+      font-weight: 700;
+      box-shadow: 0 4px 14px var(--pdim);
+      border-color: transparent !important;
+    }
+
+    /* Auth Mode Selector Cards */
+    .auth-mode-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 640px) {
+      .auth-mode-cards { grid-template-columns: 1fr !important; }
+    }
+    .auth-mode-card {
+      border: 2px solid var(--border);
+      background: var(--bg2);
+      border-radius: 14px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      display: flex !important;
+      align-items: flex-start !important;
+      gap: 14px !important;
+      user-select: none;
+    }
+    .auth-mode-card:hover:not(.disabled) {
+      border-color: var(--primary) !important;
+      background: var(--pdim);
+      transform: translateY(-2px);
+    }
+    .auth-mode-card.active,
+    .auth-mode-card.selected {
+      border-color: var(--primary) !important;
+      background: var(--pdim) !important;
+      box-shadow: 0 4px 18px var(--pdim) !important;
+    }
+    .auth-mode-card.active::after,
+    .auth-mode-card.selected::after {
+      content: '✓';
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0, 82, 204, 0.4);
+    }
+    .auth-mode-card.disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      filter: grayscale(0.6);
+    }
+    .auth-mode-icon {
+      width: 44px !important;
+      height: 44px !important;
+      min-width: 44px !important;
+      max-width: 44px !important;
+      border-radius: 12px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 20px !important;
+      flex-shrink: 0 !important;
+      transition: transform 0.2s ease;
+    }
+    .auth-mode-card:hover:not(.disabled) .auth-mode-icon {
+      transform: scale(1.08);
+    }
+
+    /* Modern Styled Dropdown Select Inputs (Adaptive Theme) */
+    select.fs {
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      appearance: none !important;
+      background-color: var(--bg2) !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235a6e85' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: calc(100% - 12px) center !important;
+      background-size: 14px 14px !important;
+      padding: 10px 38px 10px 14px !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 10px !important;
+      color: var(--text) !important;
+      font-size: 13px !important;
+      font-family: inherit !important;
+      cursor: pointer !important;
+      outline: none !important;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    select.fs:hover {
+      border-color: var(--primary) !important;
+      box-shadow: 0 0 0 2px var(--pdim) !important;
+    }
+    select.fs:focus {
+      border-color: var(--primary) !important;
+      box-shadow: 0 0 0 3px var(--pdim) !important;
+    }
+    select.fs option {
+      background: var(--bg2) !important;
+      color: var(--text) !important;
+      padding: 10px 14px !important;
+    }
+
+    /* Custom Modern Autocomplete Dropdown */
+    .custom-autocomplete-wrap {
+      position: relative;
+      width: 100%;
+    }
+    .custom-autocomplete-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .custom-autocomplete-input-wrap .fc {
+      padding-right: 36px !important;
+    }
+    .autocomplete-toggle-btn {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .autocomplete-toggle-btn:hover {
+      color: var(--primary);
+      background: var(--pdim);
+    }
+    .custom-autocomplete-dropdown {
+      position: absolute;
+      top: calc(100% + 5px);
+      left: 0;
+      right: 0;
+      background: var(--bg2) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 12px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18), 0 0 0 1px var(--border);
+      z-index: 1050;
+      max-height: 240px;
+      overflow-y: auto;
+      display: none;
+      animation: slideDownDrop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .custom-autocomplete-dropdown.show {
+      display: block;
+    }
+    @keyframes slideDownDrop {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .autocomplete-item {
+      padding: 9px 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      transition: all 0.15s ease;
+      color: var(--text);
+    }
+    .autocomplete-item:last-child {
+      border-bottom: none;
+    }
+    .autocomplete-item:hover,
+    .autocomplete-item.highlighted {
+      background: var(--pdim) !important;
+    }
+    .autocomplete-item-name {
+      font-family: monospace;
+      font-weight: 600;
+      font-size: 12.5px;
+      color: var(--text);
+    }
+    .autocomplete-item-meta {
+      font-size: 10.5px;
+      color: var(--muted);
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .autocomplete-empty {
+      padding: 16px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* ONU Helper Box */
+    .onu-helper-box {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(99, 102, 241, 0.06) 100%);
+      border: 1px solid rgba(14, 165, 233, 0.25);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+
+    /* ── EXPLICIT LIGHT THEME OVERRIDES (BIONFIBER LIGHT BRAND) ── */
+    html[data-theme="light"] .cust-stepper-modal,
+    html[data-theme="light"] .cust-stepper-header,
+    html[data-theme="light"] .cust-stepper-body,
+    html[data-theme="light"] .modal-stepper-footer,
+    body.light-theme .cust-stepper-modal,
+    body.light-theme .cust-stepper-header,
+    body.light-theme .cust-stepper-body,
+    body.light-theme .modal-stepper-footer {
+      background: #ffffff !important;
+      border-color: rgba(0, 52, 120, 0.1) !important;
+      color: #0f172a !important;
+    }
+    html[data-theme="light"] .cust-modal-tabs,
+    body.light-theme .cust-modal-tabs {
+      background: #edf4fc !important;
+      border-bottom: 1px solid rgba(0, 52, 120, 0.1) !important;
+    }
+    html[data-theme="light"] .cust-modal-tab-btn,
+    body.light-theme .cust-modal-tab-btn {
+      color: #5a6e85 !important;
+    }
+    html[data-theme="light"] .cust-modal-tab-btn:hover,
+    body.light-theme .cust-modal-tab-btn:hover {
+      color: #0052cc !important;
+      background: rgba(0, 82, 204, 0.08) !important;
+    }
+    html[data-theme="light"] .cust-modal-tab-btn.active,
+    body.light-theme .cust-modal-tab-btn.active {
+      background: #0052cc !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 12px rgba(0, 82, 204, 0.28) !important;
+      border-color: transparent !important;
+    }
+    html[data-theme="light"] select.fs,
+    body.light-theme select.fs {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+      border-color: #cbd5e1 !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235a6e85' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+    }
+    html[data-theme="light"] select.fs:hover,
+    body.light-theme select.fs:hover {
+      border-color: #0052cc !important;
+      background-color: #f8fafc !important;
+      box-shadow: 0 0 0 2px rgba(0, 82, 204, 0.12) !important;
+    }
+    html[data-theme="light"] select.fs:focus,
+    body.light-theme select.fs:focus {
+      border-color: #0052cc !important;
+      background-color: #ffffff !important;
+      box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.2) !important;
+    }
+    html[data-theme="light"] select.fs option,
+    body.light-theme select.fs option {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+    }
+    html[data-theme="light"] .auth-mode-card,
+    body.light-theme .auth-mode-card {
+      background: #ffffff !important;
+      border-color: #cbd5e1 !important;
+    }
+    html[data-theme="light"] .auth-mode-card:hover:not(.disabled),
+    body.light-theme .auth-mode-card:hover:not(.disabled) {
+      border-color: #0052cc !important;
+      background: #f8fafc !important;
+    }
+    html[data-theme="light"] .auth-mode-card.active,
+    body.light-theme .auth-mode-card.active {
+      border-color: #0052cc !important;
+      background: #f0f6ff !important;
+      box-shadow: 0 4px 18px rgba(0, 82, 204, 0.16) !important;
+    }
+    html[data-theme="light"] .custom-autocomplete-dropdown,
+    body.light-theme .custom-autocomplete-dropdown {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      box-shadow: 0 12px 30px rgba(0, 52, 120, 0.15) !important;
+    }
+    html[data-theme="light"] .autocomplete-item,
+    body.light-theme .autocomplete-item {
+      border-bottom: 1px solid #edf2f7 !important;
+    }
+    html[data-theme="light"] .autocomplete-item:hover,
+    body.light-theme .autocomplete-item:hover {
+      background: #f1f6fc !important;
+    }
+    html[data-theme="light"] .autocomplete-item-name,
+    body.light-theme .autocomplete-item-name {
+      color: #0f172a !important;
+    }
   </style>
 </head>
 <body>
@@ -360,15 +775,16 @@
     <style>
       .sc-clickable { cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
       .sc-clickable:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
-      .stat-card-active { border: 2px solid var(--primary) !important; box-shadow: 0 0 12px var(--pdim); }
-      .sc.s.stat-card-active { border-color: var(--success) !important; box-shadow: 0 0 12px var(--sdim); }
-      .sc.w.stat-card-active { border-color: var(--warning) !important; box-shadow: 0 0 12px var(--wdim); }
-      .sc.d.stat-card-active { border-color: var(--danger) !important; box-shadow: 0 0 12px var(--ddim); }
+      .stat-card-active { border: 2px solid var(--primary) !important; box-shadow: 0 0 14px var(--pdim); }
+      .sc.s.stat-card-active { border-color: var(--success) !important; box-shadow: 0 0 14px var(--sdim); }
+      .sc.w.stat-card-active { border-color: var(--warning) !important; box-shadow: 0 0 14px var(--wdim); }
+      .sc.d.stat-card-active { border-color: var(--danger) !important; box-shadow: 0 0 14px var(--ddim); }
+      .sc.auth.stat-card-active { border-color: #818cf8 !important; box-shadow: 0 0 14px rgba(99,102,241,0.3); }
     </style>
-    <div class="stat-grid" style="grid-template-columns:repeat(5,1fr)">
+    <div class="stat-grid" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr))">
       <div class="sc p sc-clickable <%= (!filterStatus) ? 'stat-card-active' : '' %>" onclick="filterByStatus('')" title="Klik untuk tampilkan semua pelanggan">
         <i class="bi bi-people sc-icon"></i>
-        <div class="sc-label"><%= t('admin.customers.stats.total', 'Total') %></div>
+        <div class="sc-label"><%= t('admin.customers.stats.total', 'Total Pelanggan') %></div>
         <div class="sc-val"><%= stats.total %></div>
         <% if (!filterStatus) { %>
           <div style="font-size:10px;font-weight:800;color:var(--primary);margin-top:4px"><i class="bi bi-funnel-fill"></i> Filter Aktif</div>
@@ -376,11 +792,27 @@
       </div>
       <div class="sc s sc-clickable <%= (filterStatus === 'active') ? 'stat-card-active' : '' %>" onclick="filterByStatus('active')" title="Klik untuk filter pelanggan Aktif">
         <i class="bi bi-check-circle sc-icon"></i>
-        <div class="sc-label"><%= t('admin.customers.stats.active', 'Aktif') %></div>
+        <div class="sc-label"><%= t('admin.customers.stats.active', 'Layanan Aktif') %></div>
         <div class="sc-val"><%= stats.active %></div>
         <% if (filterStatus === 'active') { %>
           <div style="font-size:10px;font-weight:800;color:var(--success);margin-top:4px"><i class="bi bi-funnel-fill"></i> Filter Aktif</div>
         <% } %>
+      </div>
+      <div class="sc s sc-clickable" onclick="toggleConnFilter('online')" title="Klik untuk filter pelanggan yang sedang Online saat ini">
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+          <span class="online-pulse-dot"></span>
+          <i class="bi bi-wifi sc-icon" style="position:static;font-size:20px;opacity:0.8;"></i>
+        </div>
+        <div class="sc-label" style="color:#10b981;margin-top:4px">Online Live</div>
+        <div class="sc-val" id="count_live_online_kpi" style="color:#10b981">0</div>
+      </div>
+      <div class="sc p sc-clickable" style="background:rgba(99,102,241,0.06);border-color:rgba(99,102,241,0.25);" onclick="toggleAuthFilter('')" title="Distribusi Mode Autentikasi Jaringan">
+        <i class="bi bi-broadcast sc-icon" style="color:#818cf8;"></i>
+        <div class="sc-label" style="color:#818cf8;">Mode Autentikasi</div>
+        <div style="font-size:12.5px;font-weight:800;color:var(--text);margin-top:4px;display:flex;flex-direction:column;gap:2px;">
+          <span style="color:#818cf8;"><i class="bi bi-broadcast"></i> RADIUS: <strong><%= stats.radius || 0 %></strong></span>
+          <span style="color:#fbbf24;font-size:11.5px;"><i class="bi bi-router"></i> MikroTik: <strong><%= stats.mikrotik || 0 %></strong></span>
+        </div>
       </div>
       <div class="sc d sc-clickable <%= (filterStatus === 'unpaid') ? 'stat-card-active' : '' %>" onclick="filterByStatus('unpaid')" title="Klik untuk filter pelanggan Menunggak (Ada Tagihan Belum Lunas)">
         <i class="bi bi-exclamation-octagon sc-icon" style="color:#f43f5e;"></i>
@@ -390,20 +822,12 @@
           <div style="font-size:10px;font-weight:800;color:#f43f5e;margin-top:4px"><i class="bi bi-funnel-fill"></i> Filter Aktif</div>
         <% } %>
       </div>
-      <div class="sc w sc-clickable <%= (filterStatus === 'suspended') ? 'stat-card-active' : '' %>" onclick="filterByStatus('suspended')" title="Klik untuk filter pelanggan Disuspend">
+      <div class="sc w sc-clickable <%= (filterStatus === 'suspended') ? 'stat-card-active' : '' %>" onclick="filterByStatus('suspended')" title="Klik untuk filter pelanggan Disuspend (Terisolir)">
         <i class="bi bi-pause-circle sc-icon"></i>
-        <div class="sc-label"><%= t('admin.customers.stats.suspended', 'Disuspend') %></div>
+        <div class="sc-label"><%= t('admin.customers.stats.suspended', 'Disuspend / Isolir') %></div>
         <div class="sc-val"><%= stats.suspended %></div>
         <% if (filterStatus === 'suspended') { %>
           <div style="font-size:10px;font-weight:800;color:var(--warning);margin-top:4px"><i class="bi bi-funnel-fill"></i> Filter Aktif</div>
-        <% } %>
-      </div>
-      <div class="sc d sc-clickable <%= (filterStatus === 'inactive') ? 'stat-card-active' : '' %>" onclick="filterByStatus('inactive')" title="Klik untuk filter Pendaftar Baru / Nonaktif">
-        <i class="bi bi-person-plus sc-icon"></i>
-        <div class="sc-label"><%= t('admin.customers.stats.inactive', 'Pendaftar Baru') %></div>
-        <div class="sc-val"><%= stats.inactive %></div>
-        <% if (filterStatus === 'inactive') { %>
-          <div style="font-size:10px;font-weight:800;color:var(--danger);margin-top:4px"><i class="bi bi-funnel-fill"></i> Filter Aktif</div>
         <% } %>
       </div>
     </div>
@@ -432,6 +856,13 @@
       </button>
       <button type="button" class="cust-filter-chip" id="chip_filter_offline" onclick="toggleConnFilter('offline')">
         <i class="bi bi-circle-fill text-muted" style="font-size:8px;"></i> Offline (<span id="count_live_offline">0</span>)
+      </button>
+      <span style="width:1px;height:18px;background:var(--border);margin:0 4px;display:inline-block;"></span>
+      <button type="button" class="cust-filter-chip" id="chip_filter_radius" onclick="toggleAuthFilter('radius')">
+        <i class="bi bi-broadcast text-primary"></i> RADIUS (<%= stats.radius || 0 %>)
+      </button>
+      <button type="button" class="cust-filter-chip" id="chip_filter_mikrotik" onclick="toggleAuthFilter('mikrotik')">
+        <i class="bi bi-router text-warning"></i> MikroTik (<%= stats.mikrotik || 0 %>)
       </button>
     </div>
 
@@ -482,12 +913,19 @@
     <div class="card">
       <div class="card-hd">
         <h6><i class="bi bi-people"></i> <%= t('admin.customers.list', 'Daftar Pelanggan') %> (<%= customers.length %>)</h6>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button type="button" class="btn btn-g btn-sm" onclick="window.print()" title="Cetak Data Pelanggan"><i class="bi bi-printer"></i> Cetak</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button type="button" class="btn btn-warning btn-sm" onclick="openQuickImportModal()" title="Tarik data secret PPPoE MikroTik yang belum ada di database billing" style="font-weight:700;box-shadow:0 2px 10px rgba(245,158,11,0.25);">
+            <i class="bi bi-lightning-charge-fill"></i> Impor dari MikroTik
+            <span class="badge" id="unregisteredSecretsBadge" style="background:rgba(0,0,0,0.3);margin-left:4px;display:none;font-size:10px;">0</span>
+          </button>
+          <a href="/admin/radius-settings#migration" class="btn btn-g btn-sm" title="Wizard Migrasi Kredensial MikroTik ke RADIUS">
+            <i class="bi bi-arrow-repeat text-primary"></i> Wizard RADIUS
+          </a>
           <a href="/admin/onu-stickers" class="btn btn-g btn-sm" title="Cetak Stiker Modem / ONU"><i class="bi bi-qr-code-scan"></i> Stiker ONU</a>
+          <button type="button" class="btn btn-g btn-sm" onclick="window.print()" title="Cetak Data Pelanggan"><i class="bi bi-printer"></i> Cetak</button>
           <a href="/admin/customers/export" class="btn btn-g btn-sm"><i class="bi bi-file-earmark-excel"></i> <%= t('admin.customers.export_excel', 'Export Excel') %></a>
           <button class="btn btn-g btn-sm" onclick="openModal('importModal')"><i class="bi bi-file-earmark-arrow-up"></i> <%= t('admin.customers.import_excel', 'Import Excel') %></button>
-          <button class="btn btn-p btn-sm" onclick="openModal('addModal')"><i class="bi bi-plus-lg"></i> <%= t('admin.customers.add', 'Tambah Pelanggan') %></button>
+          <button class="btn btn-p btn-sm" onclick="openModal('addModal')" style="font-weight:700;box-shadow:0 4px 14px var(--pdim);"><i class="bi bi-person-plus-fill"></i> <%= t('admin.customers.add', 'Tambah Pelanggan') %></button>
         </div>
       </div>
       <div class="card-bd" style="padding-bottom:0">
@@ -535,7 +973,8 @@
               <th><%= t('admin.customers.table.name', 'Nama') %></th>
               <th><%= t('admin.customers.table.phone_tag', 'Kontak & WhatsApp') %></th>
               <th><%= t('admin.customers.table.package', 'Paket') %></th>
-              <th>Koneksi MikroTik</th>
+              <th>Koneksi Live</th>
+              <th style="text-align:center;">Mode Auth</th>
               <th><%= t('admin.customers.table.address', 'Alamat & Topologi') %></th>
               <th><%= t('admin.customers.table.status', 'Status') %></th>
               <th><%= t('admin.customers.table.unpaid', 'Tagihan') %></th>
@@ -544,7 +983,7 @@
           </thead>
           <tbody>
           <% if (customers.length === 0) { %>
-            <tr><td colspan="11" class="text-center text-muted" style="padding:32px"><%= t('admin.customers.empty', 'Belum ada pelanggan') %></td></tr>
+            <tr><td colspan="12" class="text-center text-muted" style="padding:32px"><%= t('admin.customers.empty', 'Belum ada pelanggan') %></td></tr>
           <% } %>
           <% customers.forEach((c, i) => { 
             const username = String(c.pppoe_username || c.hotspot_username || '').trim().toLowerCase();
@@ -563,7 +1002,7 @@
               return (num / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
             }
           %>
-            <tr class="cust-row" data-conn="<%= isOnline ? 'online' : 'offline' %>">
+            <tr class="cust-row" data-conn="<%= isOnline ? 'online' : 'offline' %>" data-auth="<%= (c.is_radius === 1) ? 'radius' : 'mikrotik' %>">
               <td style="text-align:center;">
                 <input type="checkbox" class="cust-select-cb" value="<%= c.id %>" onchange="updateBulkBar()" style="cursor:pointer;width:15px;height:15px;">
               </td>
@@ -593,7 +1032,16 @@
                     </a>
                   <% } %>
                 </div>
-                <% if (c.genieacs_tag) { %><div style="font-size:11px;color:var(--primary)"><i class="bi bi-wifi"></i> <%= c.genieacs_tag %></div><% } %>
+                <% if (c.genieacs_tag || c.ont_sn) { %>
+                  <div style="font-size:11px;color:var(--primary);margin-top:2px;display:flex;align-items:center;gap:4px;" title="Modem ONU Terhubung: <%= c.ont_sn || c.genieacs_tag %>">
+                    <i class="bi bi-hdd-network"></i>
+                    <span style="font-family:monospace;font-weight:600;"><%= c.ont_sn || c.genieacs_tag %></span>
+                  </div>
+                <% } else { %>
+                  <div style="font-size:10px;color:var(--muted);margin-top:2px;">
+                    <i class="bi bi-hdd"></i> Belum ditag
+                  </div>
+                <% } %>
               </td>
               <td>
                 <% if (c.package_name) { %>
@@ -634,6 +1082,17 @@
                   <span style="color:#f472b6" title="Upload (Transmit)"><i class="bi bi-arrow-up"></i>TX: <strong class="conn-tx"><%= fmtB(txBytes) %></strong></span>
                 </div>
               </td>
+              <td style="text-align:center;white-space:nowrap;">
+                <% if (c.is_radius === 1) { %>
+                  <span class="badge" style="background:rgba(99,102,241,0.15);color:#818cf8;border:1px solid rgba(99,102,241,0.3);font-size:10px;padding:3px 8px;font-weight:700;display:inline-flex;align-items:center;gap:4px;" title="Autentikasi terpusat via RADIUS Server">
+                    <i class="bi bi-broadcast"></i> RADIUS
+                  </span>
+                <% } else { %>
+                  <span class="badge" style="background:rgba(245,158,11,0.12);color:#fbbf24;border:1px solid rgba(245,158,11,0.25);font-size:10px;padding:3px 8px;font-weight:700;display:inline-flex;align-items:center;gap:4px;" title="Autentikasi lokal via /ppp secret MikroTik">
+                    <i class="bi bi-router"></i> MikroTik
+                  </span>
+                <% } %>
+              </td>
               <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                 <div style="display:flex;align-items:center;gap:4px;">
                   <span><%= c.address || '-' %></span>
@@ -662,8 +1121,17 @@
                 <div style="font-size:10px;margin-top:4px">
                   <i class="bi bi-clock-history"></i> <%= t('admin.customers.auto_isolate.label', 'Auto Isolir') %>:
                   <span class="<%= c.auto_isolate === 0 ? 'text-danger' : 'text-success' %>">
-                    <%= c.auto_isolate === 0 ? t('admin.customers.auto_isolate.off', 'OFF') : t('admin.customers.auto_isolate.date_prefix', 'Tgl ') + (c.isolate_day || 10) %>
+                    <%= c.auto_isolate === 0 ? t('admin.customers.auto_isolate.off', 'OFF') : ('Aktif (Tgl ' + (typeof settings !== 'undefined' && settings.isolir_day ? settings.isolir_day : 1) + ')') %>
                   </span>
+                  <% if (c.billing_day || c.isolate_day) { %>
+                    <div style="font-size:9.5px;color:#f59e0b;margin-top:2px;font-weight:700;">
+                      <i class="bi bi-bicycle"></i> Tagih: Tgl <%= c.billing_day || c.isolate_day %>
+                    </div>
+                  <% } else { %>
+                    <div style="font-size:9.5px;color:var(--muted);margin-top:2px;">
+                      <i class="bi bi-calendar2-check"></i> Tempo: Tgl <%= (typeof settings !== 'undefined' && settings.due_date_day) ? settings.due_date_day : 20 %>
+                    </div>
+                  <% } %>
                 </div>
               </td>
               <td class="text-center">
@@ -746,63 +1214,85 @@
   <%- include('partials/footer') %>
 </div>
 
-<!-- Modal Tambah -->
+<!-- Modal Tambah (Modern 5-Step Stepper) -->
 <div class="mo" id="addModal">
-  <div class="mb" style="max-width:720px;">
-    <div class="mh"><span class="mt"><i class="bi bi-person-plus"></i> Tambah Pelanggan Baru</span><button class="mc" onclick="closeModal('addModal')">&times;</button></div>
-    <form method="POST" action="/admin/customers" enctype="multipart/form-data">
-      <div class="mbody" style="max-height:75vh; overflow-y:auto; padding-right:6px;">
-        
-        <% const isRadiusActive = (typeof settings !== 'undefined' && settings && String(settings.radius_enabled) === '1'); %>
-        <% if (isRadiusActive) { %>
-        <!-- SECTION 1: MODE AUTENTIKASI KONEKSI (UTAMA) -->
-        <div style="background: rgba(99, 102, 241, 0.08); padding: 14px 16px; border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.25); margin-bottom: 16px;">
-          <div class="fw6 mb-2" style="color:var(--primary); font-size:13px; display:flex; align-items:center; justify-content:space-between;">
-            <span><i class="bi bi-cpu text-primary me-1"></i> Mode Autentikasi Pelanggan (Utama)</span>
-            <span class="badge bp" style="font-size:10px; padding:3px 8px;">Diutamakan MikroTik API</span>
-          </div>
-          <div class="form-row" style="margin-bottom:0;" id="add_radius_select_fg">
-            <div class="fg" style="margin-bottom:0;">
-              <select class="fs" name="is_radius" id="add_is_radius" style="font-weight:700; height:42px;" onchange="handleAuthModeChange('add', this.value)">
-                <option value="0" selected>⚡ MikroTik API (Lokal /ppp secret - Utama & Default)</option>
-                <option value="1">📡 RADIUS Server (Billing Database Only)</option>
-              </select>
-              <small class="text-muted" style="font-size:11px; display:block; margin-top:4px;">
-                Mode MikroTik API mengelola kredensial PPP langsung di menu /ppp secret RouterOS MikroTik.
-              </small>
-            </div>
-          </div>
+  <div class="mb cust-stepper-modal">
+    <div class="mh cust-stepper-header">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.2)); border:1px solid rgba(99,102,241,0.4); display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:18px;">
+          <i class="bi bi-person-plus-fill"></i>
         </div>
-        <% } else { %>
-          <input type="hidden" name="is_radius" id="add_is_radius" value="0">
-        <% } %>
+        <div>
+          <div class="mt" style="font-size:16px; font-weight:800; line-height:1.2;">Tambah Pelanggan Baru</div>
+          <div style="font-size:11px; color:var(--muted);">Daftarkan pelanggan baru ke Billing, MikroTik, RADIUS, dan GenieACS</div>
+        </div>
+      </div>
+      <button class="mc" onclick="closeModal('addModal')">&times;</button>
+    </div>
 
-        <!-- SECTION 2: INFORMASI PELANGGAN -->
-        <div style="background: rgba(255, 255, 255, 0.02); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px;">
-          <div class="fw6 mb-2" style="font-size:13px; color:var(--text);"><i class="bi bi-person-vcard text-info me-1"></i> Informasi Pribadi Pelanggan</div>
+    <!-- Segmented Tab Navigation -->
+    <div class="cust-modal-tabs">
+      <button type="button" class="cust-modal-tab-btn active" onclick="switchCustModalTab('add', 1)" id="tab_btn_add_1">
+        <i class="bi bi-person-vcard"></i> <span>1. Data Diri</span>
+      </button>
+      <button type="button" class="cust-modal-tab-btn" onclick="switchCustModalTab('add', 2)" id="tab_btn_add_2">
+        <i class="bi bi-wallet2"></i> <span>2. Layanan & Billing</span>
+      </button>
+      <button type="button" class="cust-modal-tab-btn" onclick="switchCustModalTab('add', 3)" id="tab_btn_add_3">
+        <i class="bi bi-shield-lock"></i> <span>3. Autentikasi</span>
+      </button>
+      <button type="button" class="cust-modal-tab-btn" onclick="switchCustModalTab('add', 4)" id="tab_btn_add_4">
+        <i class="bi bi-router"></i> <span>4. Modem & FTTH</span>
+      </button>
+      <button type="button" class="cust-modal-tab-btn" onclick="switchCustModalTab('add', 5)" id="tab_btn_add_5">
+        <i class="bi bi-camera"></i> <span>5. QC & KYC</span>
+      </button>
+    </div>
+
+    <form method="POST" action="/admin/customers" enctype="multipart/form-data" id="addCustomerForm" class="cust-stepper-form">
+      <div class="mbody cust-stepper-body">
+        
+        <!-- PANE 1: DATA DIRI & KONTAK -->
+        <div class="cust-modal-pane active" id="pane_add_1">
+          <div style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-size:13px; font-weight:700; color:var(--text);"><i class="bi bi-person-lines-fill text-primary me-2"></i>Informasi Identitas & Kontak</div>
+            <span class="badge bp" style="font-size:11px;">Langkah 1 dari 5</span>
+          </div>
+
           <div class="form-row">
             <div class="fg">
-              <label class="fl" style="font-weight:700;color:var(--primary);"><i class="bi bi-upc-scan"></i> Kode Pelanggan (ID)</label>
-              <div style="display:flex;gap:6px;">
-                <input class="fc" name="customer_code" id="add_customer_code" placeholder="Contoh: URG24001" style="font-family:monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
-                <button type="button" class="btn btn-g btn-sm" onclick="triggerAutoGenerateCode('add')" title="Generate Kode & PPPoE"><i class="bi bi-magic text-primary"></i> Auto</button>
+              <label class="fl" style="font-weight:700; color:var(--primary); display:flex; justify-content:space-between;">
+                <span><i class="bi bi-upc-scan"></i> Kode Pelanggan (ID) *</span>
+                <span style="font-size:10px; font-weight:normal; color:var(--muted);">Otomatis atau Manual</span>
+              </label>
+              <div style="display:flex; gap:6px;">
+                <input class="fc" name="customer_code" id="add_customer_code" placeholder="Contoh: URG24001" style="font-family:monospace; font-weight:700; letter-spacing:1px; text-transform:uppercase;">
+                <button type="button" class="btn btn-g btn-sm" onclick="triggerAutoGenerateCode('add')" title="Generate Kode Otomatis"><i class="bi bi-magic text-primary"></i> Auto</button>
               </div>
-              <small class="text-muted" style="font-size:11px;">Format: <strong>[AREA][TAHUN][NOMOR URUT]</strong> (Contoh: <strong>URG24001</strong> - otomatis terisi saat Area dipilih).</small>
+              <small class="text-muted" style="font-size:11px;">Format: <strong>[AREA][TAHUN][NO URUT]</strong> (Otomatis dibuat saat Area dipilih).</small>
             </div>
             <div class="fg">
               <label class="fl"><i class="bi bi-card-text"></i> NIK / No. KTP (Opsional)</label>
-              <input class="fc" name="nik" placeholder="Contoh: 3201xxxxxxxxxxxx">
+              <input class="fc" name="nik" placeholder="Contoh: 3201xxxxxxxxxxxx" maxlength="20">
             </div>
           </div>
-          <div class="form-row">
-            <div class="fg"><label class="fl">Nama Lengkap *</label><input class="fc" name="name" required placeholder="Contoh: John Doe"></div>
-            <div class="fg"><label class="fl">No. Telepon / WA *</label><input class="fc" name="phone" placeholder="Contoh: 08123456789" required></div>
-          </div>
+
           <div class="form-row">
             <div class="fg">
-              <label class="fl"><i class="bi bi-geo-alt"></i> Area / Wilayah</label>
+              <label class="fl" style="font-weight:700;">Nama Lengkap Pelanggan *</label>
+              <input class="fc" name="name" required placeholder="Contoh: Ahmad Fauzi">
+            </div>
+            <div class="fg">
+              <label class="fl" style="font-weight:700;"><i class="bi bi-whatsapp text-success me-1"></i> No. Telepon / WhatsApp *</label>
+              <input class="fc" name="phone" placeholder="Contoh: 08123456789" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="fg">
+              <label class="fl"><i class="bi bi-geo-alt-fill text-warning me-1"></i> Area / Wilayah Layanan</label>
               <select class="fs" name="area" id="add_area" onchange="autoGenerateCustomerCode('add')">
-                <option value="">-- Pilih Area --</option>
+                <option value="">-- Pilih Wilayah / Area --</option>
                 <% if (typeof masterAreas !== 'undefined' && masterAreas && masterAreas.length > 0) { %>
                   <% masterAreas.forEach(a => { %>
                     <option value="<%= a.name %>" data-code="<%= a.code || '' %>"><%= a.name %><%= a.code ? ' [' + a.code + ']' : '' %></option>
@@ -814,28 +1304,39 @@
                 <% } %>
               </select>
             </div>
-            <div class="fg"><label class="fl">Email (Notifikasi Billing)</label><input class="fc" name="email" type="email" placeholder="customer@example.com"></div>
+            <div class="fg">
+              <label class="fl"><i class="bi bi-envelope me-1"></i> Email (Invoice & Notifikasi)</label>
+              <input class="fc" name="email" type="email" placeholder="nama@email.com">
+            </div>
           </div>
-          <div class="fg"><label class="fl">Alamat Lengkap</label><textarea class="fc" name="address" placeholder="Jl. Raya No. 123..."></textarea></div>
+
+          <div class="fg">
+            <label class="fl"><i class="bi bi-house-door me-1"></i> Alamat Pemasangan Lengkap</label>
+            <textarea class="fc" name="address" rows="3" placeholder="Jl. Merpati No. 45, RT 02 / RW 05, Kelurahan..."></textarea>
+          </div>
         </div>
 
-        <!-- SECTION 3: PAKET & PENGATURAN KONEKSI -->
-        <div style="background: rgba(255, 255, 255, 0.02); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px;">
-          <div class="fw6 mb-2" style="font-size:13px; color:var(--text);"><i class="bi bi-router text-warning me-1"></i> Paket & Akses Jaringan (MikroTik / RADIUS)</div>
+        <!-- PANE 2: LAYANAN & BILLING -->
+        <div class="cust-modal-pane" id="pane_add_2">
+          <div style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-size:13px; font-weight:700; color:var(--text);"><i class="bi bi-wallet2 text-success me-2"></i>Paket Langganan & Kebijakan Penagihan</div>
+            <span class="badge bp" style="font-size:11px;">Langkah 2 dari 5</span>
+          </div>
+
           <div class="form-row">
             <div class="fg">
-              <label class="fl">Paket Internet *</label>
-              <select class="fs" name="package_id" required>
-                <option value="">-- Pilih Paket --</option>
+              <label class="fl" style="font-weight:700; color:var(--primary);"><i class="bi bi-box-seam me-1"></i> Paket Internet *</label>
+              <select class="fs" name="package_id" id="add_package_id" required style="font-weight:600;">
+                <option value="">-- Pilih Paket Internet --</option>
                 <% packages.forEach(p => { %>
-                <option value="<%= p.id %>"><%= p.name %> — Rp <%= p.price.toLocaleString('id-ID') %></option>
+                <option value="<%= p.id %>"><%= p.name %> — Rp <%= Number(p.price).toLocaleString('id-ID') %>/bln</option>
                 <% }) %>
               </select>
             </div>
             <div class="fg">
-              <label class="fl">Router MikroTik</label>
+              <label class="fl"><i class="bi bi-hdd-rack me-1"></i> Router Gateway MikroTik</label>
               <select class="fs" name="router_id" id="add_router_select" onchange="loadRouterLists('add', this.value)">
-                <option value="">-- Default (Pengaturan) --</option>
+                <option value="">-- Default (Router Utama) --</option>
                 <% if (typeof routers !== 'undefined') { %>
                   <% routers.forEach(r => { %>
                     <option value="<%= r.id %>"><%= r.name %> (<%= r.host %>)</option>
@@ -847,119 +1348,44 @@
 
           <div class="form-row">
             <div class="fg">
-              <label class="fl">Metode Koneksi</label>
-              <select class="fs" name="connection_type" id="add_connection_type" onchange="toggleConnectionFields('add')">
-                <option value="pppoe" selected><%= isRadiusActive ? 'PPPoE (RADIUS / MikroTik)' : 'PPPoE (MikroTik API)' %></option>
-                <option value="static">Static IP (MikroTik)</option>
-                <option value="hotspot">Hotspot (MikroTik)</option>
-              </select>
-            </div>
-            <div class="fg">
-              <label class="fl">Tag ONU (GenieACS)</label>
-              <input class="fc" name="genieacs_tag" placeholder="Sama dengan ID/User Pelanggan">
-            </div>
-          </div>
-
-          <!-- KREDENSIAL PPPoE / RADIUS -->
-          <div id="add_pppoe_field">
-            <div class="form-row" style="background:rgba(59,130,246,0.04); padding:12px 14px; border-radius:10px; border:1px solid rgba(59,130,246,0.15);">
-              <div class="fg">
-                <label class="fl" style="font-weight:700; color:var(--primary);"><i class="bi bi-person-fill"></i> PPPoE Username *</label>
-                <% if (isRadiusActive) { %>
-                <div style="display:flex;gap:12px;align-items:center;margin-bottom:6px">
-                  <label style="margin:0;display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;font-weight:600;">
-                    <input type="radio" name="pppoe_input_mode" value="mikrotik" checked onchange="togglePppoeInputMode('add')">
-                    <span>Pilih dari MikroTik (API)</span>
-                  </label>
-                  <label style="margin:0;display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;font-weight:600;">
-                    <input type="radio" name="pppoe_input_mode" value="manual" onchange="togglePppoeInputMode('add')">
-                    <span>Input Manual (RADIUS)</span>
-                  </label>
-                </div>
-                <% } else { %>
-                  <input type="hidden" name="pppoe_input_mode" value="mikrotik">
-                <% } %>
-                <div id="add_pppoe_mikrotik_input">
-                  <input class="fc" name="pppoe_username" list="add_pppoe_list" placeholder="Pilih / ketik username@bionfiber.net" onblur="enforceBionPppoeDomain(this)">
-                  <datalist id="add_pppoe_list"></datalist>
-                  <div class="hint" id="add_pppoe_hint"></div>
-                </div>
-                <div id="add_pppoe_manual_input" style="display:none">
-                  <input class="fc" id="add_pppoe_username_manual" placeholder="Ketik username@bionfiber.net" onblur="enforceBionPppoeDomain(this)">
-                </div>
-              </div>
-              <div class="fg">
-                <label class="fl" style="font-weight:700; color:var(--warning);"><i class="bi bi-key-fill"></i> <%= isRadiusActive ? 'Password PPPoE / RADIUS *' : 'Password PPPoE *' %></label>
-                <input class="fc" name="pppoe_password" id="add_pppoe_password" placeholder="Masukkan password PPPoE" required>
-                <small class="text-muted" style="font-size:10px;display:block;margin-top:4px"><%= isRadiusActive ? 'Kredensial login modem pelanggan untuk RADIUS & PPPoE.' : 'Kredensial login modem pelanggan untuk PPPoE MikroTik API.' %></small>
-              </div>
-            </div>
-          </div>
-
-          <!-- STATIC IP -->
-          <div class="form-row" id="add_static_field" style="display:none">
-            <div class="fg">
-              <label class="fl">IP Address Pelanggan</label>
-              <input class="fc" name="static_ip" placeholder="Contoh: 192.168.10.10">
-            </div>
-          </div>
-
-          <!-- HOTSPOT -->
-          <div id="add_hotspot_field" style="display:none">
-            <div class="form-row">
-              <div class="fg">
-                <label class="fl">Hotspot Username</label>
-                <input class="fc" name="hotspot_username" placeholder="Contoh: user01">
-              </div>
-              <div class="fg">
-                <label class="fl">Hotspot Password</label>
-                <input class="fc" name="hotspot_password" placeholder="Kosong = sama dengan username">
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="fg">
-                <label class="fl">Hotspot User Profile</label>
-                <input class="fc" name="hotspot_profile" list="add_hotspot_profile_list" placeholder="Pilih profile hotspot">
-                <datalist id="add_hotspot_profile_list"></datalist>
-                <div class="hint" id="add_hotspot_profile_hint"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- SECTION 4: BILLING & OTOMASI -->
-        <div style="background: rgba(255, 255, 255, 0.02); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px;">
-          <div class="fw6 mb-2" style="font-size:13px; color:var(--text);"><i class="bi bi-cash-stack text-success me-1"></i> Penagihan, Kolektor, & Status Akun</div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl">Status Akun</label>
+              <label class="fl"><i class="bi bi-toggle-on me-1"></i> Status Akun Pelanggan</label>
               <select class="fs" name="status">
-                <option value="active" selected>Aktif</option>
-                <option value="suspended">Suspend / Isolir</option>
-                <option value="inactive">Nonaktif</option>
-              </select>
-            </div>
-            <div class="fg"><label class="fl">Tanggal Pasang</label><input class="fc" type="date" name="install_date"></div>
-          </div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl">Isolir Otomatis</label>
-              <select class="fs" name="auto_isolate">
-                <option value="1" selected>Aktif (Auto-Isolir Jatuh Tempo)</option>
-                <option value="0">Bebas Isolir (Tidak Pernah Isolir)</option>
+                <option value="active" selected>Aktif (Normal)</option>
+                <option value="suspended">Suspend / Terisolir</option>
+                <option value="inactive">Nonaktif / Berhenti</option>
               </select>
             </div>
             <div class="fg">
-              <label class="fl">Tanggal Isolir (Pascabayar, 1-31)</label>
-              <input class="fc" type="number" name="isolate_day" value="<%= (typeof settings !== 'undefined' && settings.isolir_day) ? settings.isolir_day : 1 %>" min="1" max="31">
-              <small class="text-muted" style="font-size:10.5px; display:block; margin-top:2px;">Default: Tgl <%= (typeof settings !== 'undefined' && settings.isolir_day) ? settings.isolir_day : 1 %> (Bulan berikutnya jika nunggak)</small>
+              <label class="fl"><i class="bi bi-calendar-check me-1"></i> Tanggal Pasang / Aktif</label>
+              <input class="fc" type="date" name="install_date" value="<%= new Date().toISOString().slice(0,10) %>">
             </div>
           </div>
-          <div class="form-row">
+
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:14px; margin-top:8px;">
+            <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:10px;"><i class="bi bi-calendar-event text-warning me-1"></i> Jadwal Jatuh Tempo & Isolir Otomatis</div>
+            <div class="form-row" style="margin-bottom:0;">
+              <div class="fg" style="margin-bottom:0;">
+                <label class="fl">Isolir Otomatis</label>
+                <select class="fs" name="auto_isolate">
+                  <option value="1" selected>Aktif (Auto-Isolir jika menunggak)</option>
+                  <option value="0">Bebas Isolir (VIP / Instansi / Fasum)</option>
+                </select>
+              </div>
+              <div class="fg" style="margin-bottom:0;">
+                <label class="fl">Tanggal Kunjungan Kolektor (1 - 31)</label>
+                <input class="fc" type="number" name="billing_day" placeholder="Default: Tgl <%= (typeof settings !== 'undefined' && settings.due_date_day) ? settings.due_date_day : 20 %>" min="1" max="31">
+                <small class="text-muted" style="font-size:10.5px; display:block; margin-top:2px;">
+                  Diisi jika ada permintaan khusus kunjungan petugas kolektor lapangan.
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row" style="margin-top:14px;">
             <div class="fg">
-              <label class="fl"><i class="bi bi-person-badge"></i> Kolektor Penagihan</label>
+              <label class="fl"><i class="bi bi-person-badge me-1"></i> Petugas Kolektor Penagihan</label>
               <select class="fs" name="collector_id" id="add_collector_id">
-                <option value="">-- Tanpa Kolektor --</option>
+                <option value="">-- Tanpa Kolektor Lapangan --</option>
                 <% if (typeof collectors !== 'undefined') { %>
                   <% collectors.forEach(col => { %>
                     <option value="<%= col.id %>" data-area="<%= col.area || '' %>"><%= col.name %> (<%= col.username %>)<%= col.area ? ' [Area: ' + col.area + ']' : '' %></option>
@@ -968,7 +1394,7 @@
               </select>
             </div>
             <div class="fg">
-              <label class="fl">Profile Isolir / Address List</label>
+              <label class="fl"><i class="bi bi-shield-slash me-1"></i> Profile Isolir MikroTik</label>
               <select class="fs" name="isolir_profile" id="add_isolir_select">
                 <option value="isolir">isolir</option>
               </select>
@@ -976,109 +1402,275 @@
           </div>
         </div>
 
-        <!-- SECTION 5: OPSEK & INFRASTRUKTUR (OLT, ODC, ODP, & PORT) -->
-        <div style="background: rgba(255, 255, 255, 0.02); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px;">
-          <div class="fw6 mb-2" style="font-size:13px; color:var(--text);"><i class="bi bi-diagram-3 text-secondary me-1"></i> Infrastruktur FTTH (OLT, ODC, ODP, & Port)</div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl">Perangkat OLT</label>
-              <select class="fs" name="olt_id" id="add_olt_id">
-                <option value="">-- Tanpa OLT --</option>
-                <% if (typeof olts !== 'undefined') { %>
-                  <% olts.forEach(o => { %>
-                    <option value="<%= o.id %>"><%= o.name %> (<%= o.brand %>)</option>
-                  <% }) %>
-                <% } %>
-              </select>
-            </div>
-            <div class="fg">
-              <label class="fl"><i class="bi bi-hdd-network text-info"></i> ODC (Optical Distribution Cabinet)</label>
-              <select class="fs" name="odc_id" id="add_odc_id" onchange="handleOdcChange('add'); autoGenerateCustomerCode('add');">
-                <option value="">-- Tanpa ODC --</option>
-                <% if (typeof odcs !== 'undefined') { %>
-                  <% odcs.forEach(o => { %>
-                    <option value="<%= o.id %>" data-name="<%= o.name %>"><%= o.name %><%= o.olt_name ? ' (' + o.olt_name + ')' : '' %></option>
-                  <% }) %>
-                <% } %>
-              </select>
-            </div>
+        <!-- PANE 3: KREDENSIAL & AUTENTIKASI (RADIUS / MIKROTIK) -->
+        <div class="cust-modal-pane" id="pane_add_3">
+          <div style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-size:13px; font-weight:700; color:var(--text);"><i class="bi bi-cpu-fill text-primary me-2"></i>Arsitektur Autentikasi Koneksi Internet</div>
+            <span class="badge bp" style="font-size:11px;">Langkah 3 dari 5</span>
           </div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl"><i class="bi bi-distribute-vertical text-warning"></i> ODP (Optical Distribution Point)</label>
-              <select class="fs" name="odp_id" id="add_odp_id" onchange="handleOdpChange('add'); autoGenerateCustomerCode('add');">
-                <option value="">-- Tanpa ODP --</option>
-                <% if (typeof odps !== 'undefined') { %>
-                  <% odps.forEach(o => { %>
-                    <option value="<%= o.id %>" data-name="<%= o.name %>" data-odc-id="<%= o.odc_id || '' %>"><%= o.name %></option>
-                  <% }) %>
-                <% } %>
-              </select>
+
+          <!-- Interactive Auth Mode Cards -->
+          <% const isRadiusActive = (typeof settings !== 'undefined' && settings && String(settings.radius_enabled) === '1'); %>
+          <input type="hidden" name="is_radius" id="add_is_radius" value="0">
+          
+          <div class="auth-mode-cards">
+            <!-- Card MikroTik -->
+            <div class="auth-mode-card active" id="auth_card_add_mikrotik" onclick="selectAuthModeCard('add', 0)">
+              <div class="auth-mode-icon" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);">
+                <i class="bi bi-hdd-network"></i>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+                  <span style="font-weight:700; font-size:13px; color:var(--text);">MikroTik Local Secret (API)</span>
+                  <span class="badge" style="background:rgba(245,158,11,0.18); color:#f59e0b; font-size:10px; border:1px solid rgba(245,158,11,0.3);">Default / Lokal</span>
+                </div>
+                <div style="font-size:11px; color:var(--muted); margin-top:4px; line-height:1.45;">
+                  Kredensial PPP langsung disimpan di router MikroTik <code>/ppp secret</code>. Stabil untuk single router tanpa server RADIUS tambahan.
+                </div>
+              </div>
             </div>
-            <div class="fg">
-              <label class="fl"><i class="bi bi-plug text-success"></i> Nomor Port ODP</label>
-              <input class="fc" type="number" min="1" max="64" name="odp_port" id="add_odp_port" oninput="autoGenerateCustomerCode('add')" placeholder="Contoh: 1 s/d 16">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl">Port PON OLT (Opsional)</label>
-              <input class="fc" name="pon_port" id="add_pon_port" placeholder="Contoh: PON 1/1/1">
-            </div>
-            <div class="fg" id="add_mac_field" style="display:none">
-              <label class="fl">MAC Address (Opsional)</label>
-              <input class="fc" name="mac_address" placeholder="Contoh: AA:BB:CC:DD:EE:FF">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="fg"><label class="fl">Latitude</label><input class="fc" name="lat" id="add_lat" placeholder="-6.xxx"></div>
-            <div class="fg">
-              <label class="fl">Longitude</label>
-              <div style="display:flex;gap:4px">
-                <input class="fc" name="lng" id="add_lng" placeholder="106.xxx">
-                <button type="button" class="btn btn-g btn-sm" onclick="openPicker('add')" title="Pilih di Peta"><i class="bi bi-geo-alt"></i></button>
+
+            <!-- Card RADIUS -->
+            <div class="auth-mode-card <%= !isRadiusActive ? 'disabled' : '' %>" id="auth_card_add_radius" onclick="selectAuthModeCard('add', 1)">
+              <div class="auth-mode-icon" style="background:rgba(99,102,241,0.15); color:var(--primary); border:1px solid rgba(99,102,241,0.3);">
+                <i class="bi bi-broadcast-pin"></i>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+                  <span style="font-weight:700; font-size:13px; color:var(--text);">RADIUS Database Server</span>
+                  <span class="badge" style="background:rgba(99,102,241,0.18); color:var(--primary); font-size:10px; border:1px solid rgba(99,102,241,0.3);"><%= isRadiusActive ? 'Modern / Scalable' : 'Nonaktif di Settings' %></span>
+                </div>
+                <div style="font-size:11px; color:var(--muted); margin-top:4px; line-height:1.45;">
+                  Disimpan terpusat di database Billing ISP. Router MikroTik autentikasi via port 1812 RADIUS. Beban RAM MikroTik tetap ringan & instan.
+                </div>
               </div>
             </div>
           </div>
-          <div class="fg" style="margin-top:10px;"><label class="fl">Catatan</label><textarea class="fc" name="notes" placeholder="Catatan internal opsional..."></textarea></div>
+
+          <div class="form-row">
+            <div class="fg">
+              <label class="fl">Metode Koneksi Jaringan</label>
+              <select class="fs" name="connection_type" id="add_connection_type" onchange="toggleConnectionFields('add')">
+                <option value="pppoe" selected>PPPoE Dial-Up (Rekomendasi Utama)</option>
+                <option value="static">Static IP Address</option>
+                <option value="hotspot">MikroTik Hotspot Voucher</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Kredensial PPPoE Box -->
+          <div id="add_pppoe_field" style="background:rgba(99,102,241,0.04); border:1px solid rgba(99,102,241,0.2); border-radius:12px; padding:16px; margin-bottom:16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+              <div style="font-size:12px; font-weight:700; color:var(--primary);"><i class="bi bi-key-fill me-1"></i> Kredensial Akun PPPoE</div>
+              <button type="button" class="btn btn-g btn-sm" onclick="openSecretPickerModal('add')" style="font-size:11px; padding:4px 10px; border-color:rgba(99,102,241,0.4); color:var(--primary);">
+                <i class="bi bi-cloud-arrow-down-fill me-1"></i> Ambil dari Secret MikroTik yang Sudah Aktif
+              </button>
+            </div>
+
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl" style="font-weight:700;"><i class="bi bi-person-fill text-primary me-1"></i> PPPoE Username *</label>
+                <div id="add_pppoe_mikrotik_input">
+                  <div class="custom-autocomplete-wrap" id="add_pppoe_autocomplete_wrap">
+                    <div class="custom-autocomplete-input-wrap">
+                      <input class="fc" name="pppoe_username" id="add_pppoe_username" placeholder="Ketik / pilih username@bionfiber.net" autocomplete="off" onfocus="openPppoeDropdown('add')" oninput="filterPppoeDropdown('add', this.value)" onblur="enforceBionPppoeDomain(this)" style="font-family:monospace; font-weight:600;">
+                      <button type="button" class="autocomplete-toggle-btn" onclick="togglePppoeDropdown('add')" title="Tampilkan daftar username PPPoE">
+                        <i class="bi bi-chevron-down" id="add_pppoe_toggle_icon"></i>
+                      </button>
+                    </div>
+                    <div class="custom-autocomplete-dropdown" id="add_pppoe_dropdown"></div>
+                  </div>
+                  <div class="hint" id="add_pppoe_hint" style="font-size:11px; margin-top:4px; color:var(--muted);"></div>
+                </div>
+                <div id="add_pppoe_manual_input" style="display:none">
+                  <input class="fc" id="add_pppoe_username_manual" placeholder="Ketik username@bionfiber.net" onblur="enforceBionPppoeDomain(this)" style="font-family:monospace; font-weight:600;">
+                </div>
+              </div>
+              <div class="fg">
+                <label class="fl" style="font-weight:700;"><i class="bi bi-lock-fill text-warning me-1"></i> PPPoE Password *</label>
+                <div style="display:flex; gap:6px;">
+                  <input class="fc" name="pppoe_password" id="add_pppoe_password" placeholder="Password login modem" required style="font-family:monospace; font-weight:600;">
+                  <button type="button" class="btn btn-g btn-sm" onclick="document.getElementById('add_pppoe_password').value=generateRandomPassword(6)" title="Acak Password"><i class="bi bi-shuffle"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STATIC IP -->
+          <div class="form-row" id="add_static_field" style="display:none">
+            <div class="fg">
+              <label class="fl">IP Address Statis Pelanggan</label>
+              <input class="fc" name="static_ip" placeholder="Contoh: 192.168.10.50">
+            </div>
+          </div>
+
+          <!-- HOTSPOT -->
+          <div id="add_hotspot_field" style="display:none">
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Hotspot Username</label>
+                <input class="fc" name="hotspot_username" placeholder="Contoh: voucher01">
+              </div>
+              <div class="fg">
+                <label class="fl">Hotspot Password</label>
+                <input class="fc" name="hotspot_password" placeholder="Kosong = sama dengan username">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Hotspot Profile</label>
+                <select class="fs" name="hotspot_profile" id="add_hotspot_profile">
+                  <option value="">-- Pilih Profil Hotspot --</option>
+                </select>
+                <div class="hint" id="add_hotspot_profile_hint"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- SECTION 6: DOKUMENTASI INSTALASI & KYC BERSTANDAR ISP -->
-        <div style="background: rgba(255, 255, 255, 0.02); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <div class="fw6" style="font-size:13px; color:var(--text);">
-              <i class="bi bi-camera-fill text-primary me-1"></i> Dokumentasi Instalasi & QC Redaman (SOP ISP)
-            </div>
-            <span class="badge bp" style="font-size:10px; padding:3px 8px;"><i class="bi bi-patch-check me-1"></i>Commissioning Standard</span>
+        <!-- PANE 4: MODEM ONU & INFRASTRUKTUR FTTH -->
+        <div class="cust-modal-pane" id="pane_add_4">
+          <div style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-size:13px; font-weight:700; color:var(--text);"><i class="bi bi-hdd-network-fill text-info me-2"></i>Perangkat Modem ONU & Jalur FTTH</div>
+            <span class="badge bp" style="font-size:11px;">Langkah 4 dari 5</span>
           </div>
 
-          <!-- Redaman Awal (Optical Power Meter) -->
-          <div style="background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:14px;">
-            <div class="form-row" style="margin-bottom:0; align-items:center;">
-              <div class="fg" style="margin-bottom:0; flex:1;">
-                <label class="fl" style="font-weight:700; color:var(--text); display:flex; justify-content:space-between;">
-                  <span><i class="bi bi-speedometer2 text-info me-1"></i> Redaman Awal / Rx Optical Power (dBm)</span>
-                  <span id="add_rx_status_badge" class="badge" style="display:none; font-size:11px;"></span>
-                </label>
-                <div style="display:flex; gap:8px; align-items:center;">
-                  <input class="fc" type="number" step="0.01" name="initial_rx_power" id="add_initial_rx_power" placeholder="Contoh: -19.50" oninput="updateRxBadge('add')" style="font-family:monospace; font-weight:700; font-size:14px; max-width:200px;">
-                  <span style="font-size:13px; font-weight:600; color:var(--muted);">dBm</span>
+          <!-- Educational Box: Kenapa ONU Harus Ditag? -->
+          <div class="onu-helper-box">
+            <div style="display:flex; gap:12px;">
+              <div style="font-size:24px; color:var(--primary); line-height:1;"><i class="bi bi-info-circle-fill"></i></div>
+              <div style="flex:1;">
+                <div style="font-size:12.5px; font-weight:800; color:var(--text); margin-bottom:4px;">
+                  Kenapa Modem ONU Wajib Ditag & Dipasangkan ke Pelanggan?
                 </div>
-                <small class="text-muted" style="font-size:11px; display:block; margin-top:4px;">
-                  Standar GPON: <strong>-15.00 dBm s/d -24.00 dBm</strong> (Ideal). Di atas -27.00 dBm dianggap redaman loss tinggi.
-                </small>
+                <div style="font-size:11px; color:var(--muted); line-height:1.5;">
+                  Dengan memasangkan <strong>Serial Number (SN)</strong> dan <strong>Tag GenieACS</strong>, sistem Billing akan otomatis terhubung via TR-069. Anda bisa <strong>memantau redaman Rx dBm secara live</strong>, melakukan <strong>Remote Reboot Modem</strong>, serta <strong>mengganti nama / password Wi-Fi pelanggan</strong> langsung dari Billing tanpa perlu teknisi datang ke rumah pelanggan!
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Grid 3 Foto: Rumah, Pelanggan, Redaman OPM -->
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
-            
-            <!-- Card 1: Foto Rumah -->
-            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center; position:relative;">
-              <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:8px;">
-                <i class="bi bi-house-door text-primary me-1"></i> Foto Rumah Pelanggan
+          <!-- Input Modem ONU & Quick Picker -->
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+              <span style="font-size:12px; font-weight:700; color:var(--text);"><i class="bi bi-upc-scan text-primary me-1"></i> Identitas Modem Pelanggan</span>
+              <button type="button" class="btn btn-p btn-sm" onclick="openOnuPickerModal('add')" style="font-size:11px; padding:4px 10px;">
+                <i class="bi bi-search me-1"></i> Deteksi & Pilih Modem dari GenieACS
+              </button>
+            </div>
+
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl" style="font-weight:700;"><i class="bi bi-barcode me-1"></i> Serial Number (SN) Modem ONU</label>
+                <input class="fc" name="ont_sn" id="add_ont_sn" placeholder="Contoh: ZTEGC0123456 / FH4B1234..." style="font-family:monospace; font-weight:700;">
+                <small class="text-muted" style="font-size:10.5px;">Ketik manual atau klik 'Deteksi & Pilih Modem' di atas.</small>
               </div>
+              <div class="fg">
+                <label class="fl" style="font-weight:700;"><i class="bi bi-tag-fill text-warning me-1"></i> Tag GenieACS (TR-069)</label>
+                <input class="fc" name="genieacs_tag" id="add_genieacs_tag" placeholder="Disarankan sama dengan PPPoE Username" style="font-family:monospace;">
+                <small class="text-muted" style="font-size:10.5px;">Otomatis disamakan dengan ID / username PPPoE pelanggan.</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- FTTH Infrastructure -->
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
+            <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:12px;"><i class="bi bi-diagram-3-fill text-secondary me-1"></i> Topologi Distribusi FTTH</div>
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Perangkat OLT</label>
+                <select class="fs" name="olt_id" id="add_olt_id">
+                  <option value="">-- Tanpa OLT --</option>
+                  <% if (typeof olts !== 'undefined') { %>
+                    <% olts.forEach(o => { %>
+                      <option value="<%= o.id %>"><%= o.name %> (<%= o.brand %>)</option>
+                    <% }) %>
+                  <% } %>
+                </select>
+              </div>
+              <div class="fg">
+                <label class="fl"><i class="bi bi-hdd-network text-info me-1"></i> ODC (Optical Distribution Cabinet)</label>
+                <select class="fs" name="odc_id" id="add_odc_id" onchange="handleOdcChange('add'); autoGenerateCustomerCode('add');">
+                  <option value="">-- Tanpa ODC --</option>
+                  <% if (typeof odcs !== 'undefined') { %>
+                    <% odcs.forEach(o => { %>
+                      <option value="<%= o.id %>" data-name="<%= o.name %>"><%= o.name %><%= o.olt_name ? ' (' + o.olt_name + ')' : '' %></option>
+                    <% }) %>
+                  <% } %>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl"><i class="bi bi-distribute-vertical text-warning me-1"></i> ODP (Optical Distribution Point)</label>
+                <select class="fs" name="odp_id" id="add_odp_id" onchange="handleOdpChange('add'); autoGenerateCustomerCode('add');">
+                  <option value="">-- Tanpa ODP --</option>
+                  <% if (typeof odps !== 'undefined') { %>
+                    <% odps.forEach(o => { %>
+                      <option value="<%= o.id %>" data-name="<%= o.name %>" data-odc-id="<%= o.odc_id || '' %>"><%= o.name %></option>
+                    <% }) %>
+                  <% } %>
+                </select>
+              </div>
+              <div class="fg">
+                <label class="fl"><i class="bi bi-plug text-success me-1"></i> Nomor Port ODP</label>
+                <input class="fc" type="number" min="1" max="64" name="odp_port" id="add_odp_port" oninput="autoGenerateCustomerCode('add')" placeholder="Contoh: 1 s/d 16">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Port PON OLT (Opsional)</label>
+                <input class="fc" name="pon_port" id="add_pon_port" placeholder="Contoh: PON 1/1/1">
+              </div>
+              <div class="fg" id="add_mac_field" style="display:none">
+                <label class="fl">MAC Address (Opsional)</label>
+                <input class="fc" name="mac_address" placeholder="Contoh: AA:BB:CC:DD:EE:FF">
+              </div>
+            </div>
+          </div>
+
+          <!-- Geolocation Coordinates -->
+          <div class="form-row">
+            <div class="fg"><label class="fl">Latitude Lokasi</label><input class="fc" name="lat" id="add_lat" placeholder="-6.xxx"></div>
+            <div class="fg">
+              <label class="fl">Longitude Lokasi</label>
+              <div style="display:flex; gap:4px">
+                <input class="fc" name="lng" id="add_lng" placeholder="106.xxx">
+                <button type="button" class="btn btn-g btn-sm" onclick="openPicker('add')" title="Pilih di Peta"><i class="bi bi-geo-alt"></i> Peta</button>
+              </div>
+            </div>
+          </div>
+          <div class="fg"><label class="fl">Catatan Internal</label><textarea class="fc" name="notes" placeholder="Catatan teknis atau instalasi..."></textarea></div>
+        </div>
+
+        <!-- PANE 5: DOKUMEN & QC REDAMAN -->
+        <div class="cust-modal-pane" id="pane_add_5">
+          <div style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-size:13px; font-weight:700; color:var(--text);"><i class="bi bi-patch-check-fill text-success me-2"></i>QC Redaman & Dokumentasi KYC SOP ISP</div>
+            <span class="badge bp" style="font-size:11px;">Langkah 5 dari 5</span>
+          </div>
+
+          <!-- Redaman Awal (OPM) -->
+          <div style="background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:16px;">
+            <label class="fl" style="font-weight:700; display:flex; justify-content:space-between;">
+              <span><i class="bi bi-speedometer2 text-info me-1"></i> Redaman Awal / Rx Optical Power (dBm)</span>
+              <span id="add_rx_status_badge" class="badge" style="display:none; font-size:11px;"></span>
+            </label>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input class="fc" type="number" step="0.01" name="initial_rx_power" id="add_initial_rx_power" placeholder="Contoh: -19.50" oninput="updateRxBadge('add')" style="font-family:monospace; font-weight:700; font-size:14px; max-width:200px;">
+              <span style="font-size:13px; font-weight:600; color:var(--muted);">dBm</span>
+            </div>
+            <small class="text-muted" style="font-size:11px; display:block; margin-top:4px;">
+              Standar GPON: <strong>-15.00 dBm s/d -24.00 dBm</strong> (Ideal). Di atas -27.00 dBm loss tinggi.
+            </small>
+          </div>
+
+          <!-- Grid Foto KYC -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center;">
+              <div style="font-size:12px; font-weight:700; margin-bottom:8px;"><i class="bi bi-house-door text-primary me-1"></i> Foto Rumah Pelanggan</div>
               <div id="add_preview_house_box" style="width:100%; height:110px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:8px; border:1px solid var(--border);">
                 <i class="bi bi-image text-muted" style="font-size:32px;"></i>
               </div>
@@ -1086,29 +1678,21 @@
                 <i class="bi bi-upload me-1"></i> Upload Foto Rumah
                 <input type="file" name="photo_house" accept="image/*" style="display:none" onchange="previewDocFile(this, 'add_preview_house_box')">
               </label>
-              <div style="font-size:10px; color:var(--muted); margin-top:4px;">Tampak depan & nomor rumah</div>
             </div>
 
-            <!-- Card 2: Foto Pelanggan / KYC -->
-            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center; position:relative;">
-              <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:8px;">
-                <i class="bi bi-person-bounding-box text-success me-1"></i> Foto Pelanggan / KTP
-              </div>
+            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center;">
+              <div style="font-size:12px; font-weight:700; margin-bottom:8px;"><i class="bi bi-person-bounding-box text-success me-1"></i> Foto Pelanggan / KTP</div>
               <div id="add_preview_customer_box" style="width:100%; height:110px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:8px; border:1px solid var(--border);">
                 <i class="bi bi-person-badge text-muted" style="font-size:32px;"></i>
               </div>
               <label class="btn btn-g btn-sm w-100" style="cursor:pointer; font-size:11px; margin:0;">
-                <i class="bi bi-upload me-1"></i> Upload Foto Pelanggan
+                <i class="bi bi-upload me-1"></i> Upload Foto KTP
                 <input type="file" name="photo_customer" accept="image/*" style="display:none" onchange="previewDocFile(this, 'add_preview_customer_box')">
               </label>
-              <div style="font-size:10px; color:var(--muted); margin-top:4px;">Verifikasi identitas / KTP</div>
             </div>
 
-            <!-- Card 3: Foto Layar OPM Redaman -->
-            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center; position:relative;">
-              <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:8px;">
-                <i class="bi bi-broadcast-pin text-warning me-1"></i> Foto Redaman OPM
-              </div>
+            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center;">
+              <div style="font-size:12px; font-weight:700; margin-bottom:8px;"><i class="bi bi-broadcast-pin text-warning me-1"></i> Foto Redaman OPM</div>
               <div id="add_preview_optical_box" style="width:100%; height:110px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:8px; border:1px solid var(--border);">
                 <i class="bi bi-activity text-muted" style="font-size:32px;"></i>
               </div>
@@ -1116,16 +1700,26 @@
                 <i class="bi bi-upload me-1"></i> Upload Foto OPM
                 <input type="file" name="photo_optical_power" accept="image/*" style="display:none" onchange="previewDocFile(this, 'add_preview_optical_box')">
               </label>
-              <div style="font-size:10px; color:var(--muted); margin-top:4px;">Layar Optical Power Meter saat QC</div>
             </div>
-
           </div>
         </div>
 
       </div>
-      <div class="mf">
+
+      <!-- Modern Stepper Modal Footer -->
+      <div class="modal-stepper-footer">
         <button type="button" class="btn btn-g" onclick="closeModal('addModal')">Batal</button>
-        <button type="submit" class="btn btn-p"><i class="bi bi-check-lg"></i> Simpan Pelanggan</button>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn btn-g" id="btn_prev_add" onclick="prevCustModalTab('add')" style="display:none;">
+            <i class="bi bi-arrow-left me-1"></i> Sebelumnya
+          </button>
+          <button type="button" class="btn btn-g" id="btn_next_add" onclick="nextCustModalTab('add')">
+            Lanjut <i class="bi bi-arrow-right ms-1"></i>
+          </button>
+          <button type="submit" class="btn btn-p" id="btn_submit_add">
+            <i class="bi bi-check-lg me-1"></i> Simpan Pelanggan
+          </button>
+        </div>
       </div>
     </form>
   </div>
@@ -1155,62 +1749,85 @@
   </div>
 </div>
 
-<!-- Modal Edit -->
+<!-- Modal Edit (Modern 5-Step Stepper) -->
 <div class="mo" id="editModal">
-  <div class="mb" style="max-width:720px;">
-    <div class="mh"><span class="mt"><i class="bi bi-pencil"></i> Edit Pelanggan</span><button class="mc" onclick="closeModal('editModal')">&times;</button></div>
-    <form method="POST" id="editForm" enctype="multipart/form-data">
-      <div class="mbody" style="max-height:75vh; overflow-y:auto; padding-right:6px;">
-        
-        <% if (isRadiusActive) { %>
-        <!-- SECTION 1: MODE AUTENTIKASI KONEKSI (UTAMA) -->
-        <div style="background: rgba(99, 102, 241, 0.08); padding: 14px 16px; border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.25); margin-bottom: 16px;">
-          <div class="fw6 mb-2" style="color:var(--primary); font-size:13px; display:flex; align-items:center; justify-content:space-between;">
-            <span><i class="bi bi-cpu text-primary me-1"></i> Mode Autentikasi Pelanggan (Utama)</span>
-            <span class="badge bp" style="font-size:10px; padding:3px 8px;">Diutamakan MikroTik API</span>
-          </div>
-          <div class="form-row" style="margin-bottom:0;" id="e_radius_select_fg">
-            <div class="fg" style="margin-bottom:0;">
-              <select class="fs" name="is_radius" id="e_is_radius" style="font-weight:700; height:42px;" onchange="handleAuthModeChange('edit', this.value)">
-                <option value="0">⚡ MikroTik API (Lokal /ppp secret - Utama & Default)</option>
-                <option value="1">📡 RADIUS Server (Billing Database Only)</option>
-              </select>
-              <small class="text-muted" style="font-size:11px; display:block; margin-top:4px;">
-                Mode MikroTik API mengelola kredensial PPP langsung di menu /ppp secret RouterOS MikroTik.
-              </small>
-            </div>
-          </div>
+  <div class="mb cust-stepper-modal">
+    <div class="mh cust-stepper-header">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg, rgba(245,158,11,0.2), rgba(234,88,12,0.2)); border:1px solid rgba(245,158,11,0.4); display:flex; align-items:center; justify-content:center; color:#f59e0b; font-size:18px;">
+          <i class="bi bi-pencil-square"></i>
         </div>
-        <% } else { %>
-          <input type="hidden" name="is_radius" id="e_is_radius" value="0">
-        <% } %>
+        <div>
+          <div class="mt" style="font-size:16px; font-weight:800; line-height:1.2;">Edit Data & Pengaturan Pelanggan</div>
+          <div style="font-size:11px; color:var(--muted);">Kelola identitas, migrasi autentikasi, status paket, dan konfigurasi modem</div>
+        </div>
+      </div>
+      <button class="mc" onclick="closeModal('editModal')">&times;</button>
+    </div>
 
-        <!-- SECTION 2: INFORMASI PELANGGAN -->
-        <div style="background: rgba(255, 255, 255, 0.02); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px;">
-          <div class="fw6 mb-2" style="font-size:13px; color:var(--text);"><i class="bi bi-person-vcard text-info me-1"></i> Informasi Pribadi Pelanggan</div>
+    <!-- Segmented Tab Navigation -->
+    <div class="cust-modal-tabs">
+      <button type="button" class="cust-modal-tab-btn active" onclick="switchCustModalTab('edit', 1)" id="tab_btn_edit_1">
+        <i class="bi bi-person-vcard"></i> <span>1. Data Diri</span>
+      </button>
+      <button type="button" class="cust-modal-tab-btn" onclick="switchCustModalTab('edit', 2)" id="tab_btn_edit_2">
+        <i class="bi bi-wallet2"></i> <span>2. Layanan & Billing</span>
+      </button>
+      <button type="button" class="cust-modal-tab-btn" onclick="switchCustModalTab('edit', 3)" id="tab_btn_edit_3">
+        <i class="bi bi-shield-lock"></i> <span>3. Autentikasi</span>
+      </button>
+      <button type="button" class="cust-modal-tab-btn" onclick="switchCustModalTab('edit', 4)" id="tab_btn_edit_4">
+        <i class="bi bi-router"></i> <span>4. Modem & FTTH</span>
+      </button>
+      <button type="button" class="cust-modal-tab-btn" onclick="switchCustModalTab('edit', 5)" id="tab_btn_edit_5">
+        <i class="bi bi-camera"></i> <span>5. QC & KYC</span>
+      </button>
+    </div>
+
+    <form method="POST" id="editForm" enctype="multipart/form-data" class="cust-stepper-form">
+      <div class="mbody cust-stepper-body">
+        
+        <!-- PANE 1: DATA DIRI & KONTAK -->
+        <div class="cust-modal-pane active" id="pane_edit_1">
+          <div style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-size:13px; font-weight:700; color:var(--text);"><i class="bi bi-person-lines-fill text-primary me-2"></i>Informasi Identitas & Kontak Pelanggan</div>
+            <span class="badge bp" style="font-size:11px;">Langkah 1 dari 5</span>
+          </div>
+
           <div class="form-row">
             <div class="fg">
-              <label class="fl" style="font-weight:700;color:var(--primary);"><i class="bi bi-upc-scan"></i> Kode Pelanggan (ID)</label>
-              <div style="display:flex;gap:6px;">
-                <input class="fc" name="customer_code" id="e_customer_code" placeholder="Contoh: URG24001" style="font-family:monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
-                <button type="button" class="btn btn-g btn-sm" onclick="triggerAutoGenerateCode('edit')" title="Generate Kode"><i class="bi bi-magic text-primary"></i> Auto</button>
+              <label class="fl" style="font-weight:700; color:var(--primary); display:flex; justify-content:space-between;">
+                <span><i class="bi bi-upc-scan"></i> Kode Pelanggan (ID)</span>
+                <span style="font-size:10px; font-weight:normal; color:var(--muted);">Format Area & Urut</span>
+              </label>
+              <div style="display:flex; gap:6px;">
+                <input class="fc" name="customer_code" id="e_customer_code" style="font-family:monospace; font-weight:700; letter-spacing:1px; text-transform:uppercase;">
+                <button type="button" class="btn btn-g btn-sm" onclick="triggerAutoGenerateCode('edit')" title="Generate Kode Otomatis"><i class="bi bi-magic text-primary"></i> Auto</button>
               </div>
-              <small class="text-muted" style="font-size:11px;">Format: <strong>[AREA][TAHUN][NOMOR URUT]</strong> (Contoh: <strong>URG24001</strong> - otomatis terisi saat Area dipilih).</small>
+              <small class="text-muted" style="font-size:11px;">Format: <strong>[AREA][TAHUN][NO URUT]</strong></small>
             </div>
             <div class="fg">
-              <label class="fl"><i class="bi bi-card-text"></i> NIK / No. KTP (Opsional)</label>
-              <input class="fc" name="nik" id="e_nik" placeholder="Contoh: 3201xxxxxxxxxxxx">
+              <label class="fl"><i class="bi bi-card-text"></i> NIK / No. KTP</label>
+              <input class="fc" name="nik" id="e_nik" placeholder="Contoh: 3201xxxxxxxxxxxx" maxlength="20">
             </div>
           </div>
-          <div class="form-row">
-            <div class="fg"><label class="fl">Nama Lengkap *</label><input class="fc" name="name" id="e_name" required></div>
-            <div class="fg"><label class="fl">No. Telepon / WA *</label><input class="fc" name="phone" id="e_phone" required></div>
-          </div>
+
           <div class="form-row">
             <div class="fg">
-              <label class="fl"><i class="bi bi-geo-alt"></i> Area / Wilayah</label>
+              <label class="fl" style="font-weight:700;">Nama Lengkap Pelanggan *</label>
+              <input class="fc" name="name" id="e_name" required>
+            </div>
+            <div class="fg">
+              <label class="fl" style="font-weight:700;"><i class="bi bi-whatsapp text-success me-1"></i> No. Telepon / WhatsApp *</label>
+              <input class="fc" name="phone" id="e_phone" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="fg">
+              <label class="fl"><i class="bi bi-geo-alt-fill text-warning me-1"></i> Area / Wilayah Layanan</label>
               <select class="fs" name="area" id="e_area" onchange="autoGenerateCustomerCode('edit')">
-                <option value="">-- Pilih Area --</option>
+                <option value="">-- Pilih Wilayah / Area --</option>
                 <% if (typeof masterAreas !== 'undefined' && masterAreas && masterAreas.length > 0) { %>
                   <% masterAreas.forEach(a => { %>
                     <option value="<%= a.name %>" data-code="<%= a.code || '' %>"><%= a.name %><%= a.code ? ' [' + a.code + ']' : '' %></option>
@@ -1222,28 +1839,39 @@
                 <% } %>
               </select>
             </div>
-            <div class="fg"><label class="fl">Email (Notifikasi Billing)</label><input class="fc" name="email" id="e_email" type="email"></div>
+            <div class="fg">
+              <label class="fl"><i class="bi bi-envelope me-1"></i> Email</label>
+              <input class="fc" name="email" id="e_email" type="email">
+            </div>
           </div>
-          <div class="fg"><label class="fl">Alamat Lengkap</label><textarea class="fc" name="address" id="e_address"></textarea></div>
+
+          <div class="fg">
+            <label class="fl"><i class="bi bi-house-door me-1"></i> Alamat Pemasangan</label>
+            <textarea class="fc" name="address" id="e_address" rows="3"></textarea>
+          </div>
         </div>
 
-        <!-- SECTION 3: PAKET & PENGATURAN KONEKSI -->
-        <div style="background: rgba(255, 255, 255, 0.02); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px;">
-          <div class="fw6 mb-2" style="font-size:13px; color:var(--text);"><i class="bi bi-router text-warning me-1"></i> Paket & Akses Jaringan (MikroTik / RADIUS)</div>
+        <!-- PANE 2: LAYANAN & BILLING -->
+        <div class="cust-modal-pane" id="pane_edit_2">
+          <div style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-size:13px; font-weight:700; color:var(--text);"><i class="bi bi-wallet2 text-success me-2"></i>Paket Langganan, Siklus Tagihan, & Status</div>
+            <span class="badge bp" style="font-size:11px;">Langkah 2 dari 5</span>
+          </div>
+
           <div class="form-row">
             <div class="fg">
-              <label class="fl">Paket Internet *</label>
-              <select class="fs" name="package_id" id="e_package" required>
-                <option value="">-- Pilih Paket --</option>
+              <label class="fl" style="font-weight:700; color:var(--primary);"><i class="bi bi-box-seam me-1"></i> Paket Internet *</label>
+              <select class="fs" name="package_id" id="e_package" required style="font-weight:600;">
+                <option value="">-- Pilih Paket Internet --</option>
                 <% packages.forEach(p => { %>
-                <option value="<%= p.id %>"><%= p.name %> — Rp <%= p.price.toLocaleString('id-ID') %></option>
+                <option value="<%= p.id %>"><%= p.name %> — Rp <%= Number(p.price).toLocaleString('id-ID') %>/bln</option>
                 <% }) %>
               </select>
             </div>
             <div class="fg">
-              <label class="fl">Router MikroTik</label>
-              <select class="fs" name="router_id" id="e_router_id" onchange="loadRouterLists('edit', this.value)">
-                <option value="">-- Default (Pengaturan) --</option>
+              <label class="fl"><i class="bi bi-hdd-rack me-1"></i> Router Gateway MikroTik</label>
+              <select class="fs" name="router_id" id="e_router_id" onchange="loadRouterLists('edit', this.value, currentEditCustomerId)">
+                <option value="">-- Default (Router Utama) --</option>
                 <% if (typeof routers !== 'undefined') { %>
                   <% routers.forEach(r => { %>
                     <option value="<%= r.id %>"><%= r.name %> (<%= r.host %>)</option>
@@ -1255,107 +1883,45 @@
 
           <div class="form-row">
             <div class="fg">
-              <label class="fl">Metode Koneksi</label>
-              <select class="fs" name="connection_type" id="e_connection_type" onchange="toggleConnectionFields('edit')">
-                <option value="pppoe"><%= isRadiusActive ? 'PPPoE (RADIUS / MikroTik)' : 'PPPoE (MikroTik API)' %></option>
-                <option value="static">Static IP (MikroTik)</option>
-                <option value="hotspot">Hotspot (MikroTik)</option>
-              </select>
-            </div>
-            <div class="fg">
-              <label class="fl">Tag ONU (GenieACS)</label>
-              <input class="fc" name="genieacs_tag" id="e_tag">
-            </div>
-          </div>
-
-          <!-- KREDENSIAL PPPoE / RADIUS -->
-          <div id="e_pppoe_field">
-            <div class="form-row" style="background:rgba(59,130,246,0.04); padding:12px 14px; border-radius:10px; border:1px solid rgba(59,130,246,0.15);">
-              <div class="fg">
-                <label class="fl" style="font-weight:700; color:var(--primary);"><i class="bi bi-person-fill"></i> PPPoE Username *</label>
-                <input class="fc" name="pppoe_username" id="e_pppoe" list="e_pppoe_list" placeholder="username@bionfiber.net" onblur="enforceBionPppoeDomain(this)" required>
-                <datalist id="e_pppoe_list"></datalist>
-                <div class="hint" id="e_pppoe_hint"></div>
-              </div>
-              <div class="fg">
-                <label class="fl" style="font-weight:700; color:var(--warning);"><i class="bi bi-key-fill"></i> Password PPPoE / RADIUS *</label>
-                <input class="fc" name="pppoe_password" id="e_pppoe_password" placeholder="Masukkan password PPPoE" required>
-                <small class="text-muted" style="font-size:10px;display:block;margin-top:4px">Kredensial login modem pelanggan untuk RADIUS & PPPoE.</small>
-              </div>
-            </div>
-          </div>
-
-          <!-- STATIC IP -->
-          <div class="form-row" id="e_static_field" style="display:none">
-            <div class="fg">
-              <label class="fl">IP Address Pelanggan</label>
-              <input class="fc" name="static_ip" id="e_static_ip" placeholder="Contoh: 192.168.10.10">
-            </div>
-          </div>
-
-          <!-- HOTSPOT -->
-          <div id="e_hotspot_field" style="display:none">
-            <div class="form-row">
-              <div class="fg">
-                <label class="fl">Hotspot Username</label>
-                <input class="fc" name="hotspot_username" id="e_hotspot_username" placeholder="Contoh: user01">
-              </div>
-              <div class="fg">
-                <label class="fl">Hotspot Password</label>
-                <input class="fc" name="hotspot_password" id="e_hotspot_password" placeholder="Kosong = sama dengan username">
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="fg">
-                <label class="fl">Hotspot User Profile</label>
-                <input class="fc" name="hotspot_profile" id="e_hotspot_profile" list="e_hotspot_profile_list" placeholder="Pilih profile hotspot">
-                <datalist id="e_hotspot_profile_list"></datalist>
-                <div class="hint" id="e_hotspot_profile_hint"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- SECTION 4: BILLING & OTOMASI -->
-        <div style="background: rgba(255, 255, 255, 0.02); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px;">
-          <div class="fw6 mb-2" style="font-size:13px; color:var(--text);"><i class="bi bi-cash-stack text-success me-1"></i> Penagihan, Kolektor, & Status Akun</div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl">Status Akun</label>
+              <label class="fl"><i class="bi bi-toggle-on me-1"></i> Status Akun Pelanggan</label>
               <select class="fs" name="status" id="e_status">
-                <option value="active">Aktif</option>
-                <option value="suspended">Suspend / Isolir</option>
-                <option value="inactive">Nonaktif</option>
-              </select>
-            </div>
-            <div class="fg"><label class="fl">Tanggal Pasang</label><input class="fc" type="date" name="install_date" id="e_install"></div>
-          </div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl">Isolir Otomatis</label>
-              <select class="fs" name="auto_isolate" id="e_auto_isolate">
-                <option value="1">Aktif (Auto-Isolir Jatuh Tempo)</option>
-                <option value="0">Bebas Isolir (Tidak Pernah Isolir)</option>
+                <option value="active">Aktif (Normal)</option>
+                <option value="suspended">Suspend / Terisolir</option>
+                <option value="inactive">Nonaktif / Berhenti</option>
               </select>
             </div>
             <div class="fg">
-              <label class="fl">Tanggal Isolir (Pascabayar, 1-31)</label>
-              <input class="fc" type="number" name="isolate_day" id="e_isolate_day" min="1" max="31">
-              <small class="text-muted" style="font-size:10.5px; display:block; margin-top:2px;">Default: Tgl <%= (typeof settings !== 'undefined' && settings.isolir_day) ? settings.isolir_day : 1 %> (Bulan berikutnya jika nunggak)</small>
+              <label class="fl"><i class="bi bi-calendar-check me-1"></i> Tanggal Pasang / Aktif</label>
+              <input class="fc" type="date" name="install_date" id="e_install">
             </div>
           </div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl"><i class="bi bi-hourglass-split text-warning me-1"></i> Masa Aktif / Expired Date (Khusus Prabayar)</label>
-              <input class="fc" type="date" name="expired_at" id="e_expired_at">
-              <small class="text-muted" style="font-size:10px;display:block;margin-top:2px;">Otomatis dihitung saat pasang/bayar. Bisa disesuaikan manual jika perlu.</small>
+
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:14px; margin-top:8px;">
+            <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:10px;"><i class="bi bi-calendar-event text-warning me-1"></i> Pengaturan Siklus Jatuh Tempo & Isolir</div>
+            <div class="form-row" style="margin-bottom:0;">
+              <div class="fg" style="margin-bottom:0;">
+                <label class="fl">Isolir Otomatis</label>
+                <select class="fs" name="auto_isolate" id="e_auto_isolate">
+                  <option value="1">Aktif (Auto-Isolir jika menunggak)</option>
+                  <option value="0">Bebas Isolir (VIP / Instansi / Fasum)</option>
+                </select>
+              </div>
+              <div class="fg" style="margin-bottom:0;">
+                <label class="fl">Tanggal Kunjungan Kolektor (1 - 31)</label>
+                <input class="fc" type="number" name="billing_day" id="e_billing_day" placeholder="Default: Tgl <%= (typeof settings !== 'undefined' && settings.due_date_day) ? settings.due_date_day : 20 %>" min="1" max="31">
+                <input type="hidden" name="isolate_day" id="e_isolate_day">
+                <small class="text-muted" style="font-size:10.5px; display:block; margin-top:2px;">
+                  Diisi jika ada permintaan khusus kunjungan petugas penagihan.
+                </small>
+              </div>
             </div>
           </div>
-          <div class="form-row">
+
+          <div class="form-row" style="margin-top:14px;">
             <div class="fg">
-              <label class="fl"><i class="bi bi-person-badge"></i> Kolektor Penagihan</label>
+              <label class="fl"><i class="bi bi-person-badge me-1"></i> Petugas Kolektor Penagihan</label>
               <select class="fs" name="collector_id" id="e_collector_id">
-                <option value="">-- Tanpa Kolektor --</option>
+                <option value="">-- Tanpa Kolektor Lapangan --</option>
                 <% if (typeof collectors !== 'undefined') { %>
                   <% collectors.forEach(col => { %>
                     <option value="<%= col.id %>" data-area="<%= col.area || '' %>"><%= col.name %> (<%= col.username %>)<%= col.area ? ' [Area: ' + col.area + ']' : '' %></option>
@@ -1364,117 +1930,278 @@
               </select>
             </div>
             <div class="fg">
-              <label class="fl">Profile Isolir / Address List</label>
+              <label class="fl"><i class="bi bi-shield-slash me-1"></i> Profile Isolir MikroTik</label>
               <select class="fs" name="isolir_profile" id="e_isolir_profile">
                 <option value="isolir">isolir</option>
               </select>
             </div>
           </div>
+          <div class="fg" style="margin-top:8px;">
+            <label class="fl"><i class="bi bi-calendar-x me-1"></i> Tanggal Berakhir Langganan (Khusus Prabayar)</label>
+            <input class="fc" type="date" name="expired_at" id="e_expired_at">
+          </div>
         </div>
 
-        <!-- SECTION 5: OPSEK & INFRASTRUKTUR (OLT, ODC, ODP, & PORT) -->
-        <div style="background: rgba(255, 255, 255, 0.02); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px;">
-          <div class="fw6 mb-2" style="font-size:13px; color:var(--text);"><i class="bi bi-diagram-3 text-secondary me-1"></i> Infrastruktur FTTH (OLT, ODC, ODP, & Port)</div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl">Perangkat OLT</label>
-              <select class="fs" name="olt_id" id="e_olt_id">
-                <option value="">-- Tanpa OLT --</option>
-                <% if (typeof olts !== 'undefined') { %>
-                  <% olts.forEach(o => { %>
-                    <option value="<%= o.id %>"><%= o.name %> (<%= o.brand %>)</option>
-                  <% }) %>
-                <% } %>
-              </select>
-            </div>
-            <div class="fg">
-              <label class="fl"><i class="bi bi-hdd-network text-info"></i> ODC (Optical Distribution Cabinet)</label>
-              <select class="fs" name="odc_id" id="e_odc_id" onchange="handleOdcChange('edit'); autoGenerateCustomerCode('edit');">
-                <option value="">-- Tanpa ODC --</option>
-                <% if (typeof odcs !== 'undefined') { %>
-                  <% odcs.forEach(o => { %>
-                    <option value="<%= o.id %>" data-name="<%= o.name %>"><%= o.name %><%= o.olt_name ? ' (' + o.olt_name + ')' : '' %></option>
-                  <% }) %>
-                <% } %>
-              </select>
-            </div>
+        <!-- PANE 3: KREDENSIAL & AUTENTIKASI (RADIUS / MIKROTIK) -->
+        <div class="cust-modal-pane" id="pane_edit_3">
+          <div style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-size:13px; font-weight:700; color:var(--text);"><i class="bi bi-cpu-fill text-primary me-2"></i>Mode Autentikasi Koneksi (Migrasi MikroTik ↔ RADIUS)</div>
+            <span class="badge bp" style="font-size:11px;">Langkah 3 dari 5</span>
           </div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl"><i class="bi bi-distribute-vertical text-warning"></i> ODP (Optical Distribution Point)</label>
-              <select class="fs" name="odp_id" id="e_odp_id" onchange="handleOdpChange('edit'); autoGenerateCustomerCode('edit');">
-                <option value="">-- Tanpa ODP --</option>
-                <% if (typeof odps !== 'undefined') { %>
-                  <% odps.forEach(o => { %>
-                    <option value="<%= o.id %>" data-name="<%= o.name %>" data-odc-id="<%= o.odc_id || '' %>"><%= o.name %></option>
-                  <% }) %>
-                <% } %>
-              </select>
-            </div>
-            <div class="fg">
-              <label class="fl"><i class="bi bi-plug text-success"></i> Nomor Port ODP</label>
-              <input class="fc" type="number" min="1" max="64" name="odp_port" id="e_odp_port" oninput="autoGenerateCustomerCode('edit')" placeholder="Contoh: 1 s/d 16">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="fg">
-              <label class="fl">Port PON OLT (Opsional)</label>
-              <input class="fc" name="pon_port" id="e_pon_port" placeholder="Contoh: PON 1/1/1">
-            </div>
-            <div class="fg" id="e_mac_field" style="display:none">
-              <label class="fl">MAC Address (Opsional)</label>
-              <input class="fc" name="mac_address" id="e_mac_address" placeholder="Contoh: AA:BB:CC:DD:EE:FF">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="fg"><label class="fl">Latitude</label><input class="fc" name="lat" id="e_lat" placeholder="-6.xxx"></div>
-            <div class="fg">
-              <label class="fl">Longitude</label>
-              <div style="display:flex;gap:4px">
-                <input class="fc" name="lng" id="e_lng" placeholder="106.xxx">
-                <button type="button" class="btn btn-g btn-sm" onclick="openPicker('edit')" title="Pilih di Peta"><i class="bi bi-geo-alt"></i></button>
+
+          <!-- Interactive Auth Mode Cards for Edit -->
+          <input type="hidden" name="is_radius" id="e_is_radius" value="0">
+          
+          <div class="auth-mode-cards">
+            <!-- Card MikroTik -->
+            <div class="auth-mode-card" id="auth_card_edit_mikrotik" onclick="selectAuthModeCard('edit', 0)">
+              <div class="auth-mode-icon" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);">
+                <i class="bi bi-hdd-network"></i>
               </div>
-            </div>
-          </div>
-          <div class="fg" style="margin-top:10px;"><label class="fl">Catatan</label><textarea class="fc" name="notes" id="e_notes" placeholder="Catatan internal opsional..."></textarea></div>
-        </div>
-
-        <!-- SECTION 6: DOKUMENTASI INSTALASI & KYC BERSTANDAR ISP -->
-        <div style="background: rgba(255, 255, 255, 0.02); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <div class="fw6" style="font-size:13px; color:var(--text);">
-              <i class="bi bi-camera-fill text-primary me-1"></i> Dokumentasi Instalasi & QC Redaman (SOP ISP)
-            </div>
-            <span class="badge bp" style="font-size:10px; padding:3px 8px;"><i class="bi bi-patch-check me-1"></i>Commissioning Standard</span>
-          </div>
-
-          <!-- Redaman Awal (Optical Power Meter) -->
-          <div style="background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:14px;">
-            <div class="form-row" style="margin-bottom:0; align-items:center;">
-              <div class="fg" style="margin-bottom:0; flex:1;">
-                <label class="fl" style="font-weight:700; color:var(--text); display:flex; justify-content:space-between;">
-                  <span><i class="bi bi-speedometer2 text-info me-1"></i> Redaman Awal / Rx Optical Power (dBm)</span>
-                  <span id="e_rx_status_badge" class="badge" style="display:none; font-size:11px;"></span>
-                </label>
-                <div style="display:flex; gap:8px; align-items:center;">
-                  <input class="fc" type="number" step="0.01" name="initial_rx_power" id="e_initial_rx_power" placeholder="Contoh: -19.50" oninput="updateRxBadge('edit')" style="font-family:monospace; font-weight:700; font-size:14px; max-width:200px;">
-                  <span style="font-size:13px; font-weight:600; color:var(--muted);">dBm</span>
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+                  <span style="font-weight:700; font-size:13px; color:var(--text);">MikroTik Local Secret (API)</span>
+                  <span class="badge" style="background:rgba(245,158,11,0.2); color:#f59e0b; font-size:10px;">Lokal RouterOS</span>
                 </div>
-                <small class="text-muted" style="font-size:11px; display:block; margin-top:4px;">
-                  Standar GPON: <strong>-15.00 dBm s/d -24.00 dBm</strong> (Ideal). Di atas -27.00 dBm dianggap redaman loss tinggi.
-                </small>
+                <div style="font-size:11px; color:var(--muted); margin-top:4px; line-height:1.45;">
+                  Secret dikelola langsung di menu <code>/ppp secret</code> MikroTik.
+                </div>
+              </div>
+            </div>
+
+            <!-- Card RADIUS -->
+            <div class="auth-mode-card <%= !isRadiusActive ? 'disabled' : '' %>" id="auth_card_edit_radius" onclick="selectAuthModeCard('edit', 1)">
+              <div class="auth-mode-icon" style="background:rgba(99,102,241,0.15); color:var(--primary); border:1px solid rgba(99,102,241,0.3);">
+                <i class="bi bi-broadcast-pin"></i>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+                  <span style="font-weight:700; font-size:13px; color:var(--text);">RADIUS Database Server</span>
+                  <span class="badge" style="background:rgba(99,102,241,0.2); color:var(--primary); font-size:10px;"><%= isRadiusActive ? 'Terpusat di Database' : 'Nonaktif di Settings' %></span>
+                </div>
+                <div style="font-size:11px; color:var(--muted); margin-top:4px; line-height:1.45;">
+                  Kredensial tersimpan di database Billing. MikroTik mengarahkan auth PPP ke port 1812 RADIUS.
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Grid 3 Foto: Rumah, Pelanggan, Redaman OPM -->
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
-            
-            <!-- Card 1: Foto Rumah -->
-            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center; position:relative;">
-              <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:8px;">
-                <i class="bi bi-house-door text-primary me-1"></i> Foto Rumah Pelanggan
+          <div id="edit_migration_hint" class="alert alert-i" style="display:none; font-size:11.5px; margin-bottom:14px; padding:10px 14px;">
+            <i class="bi bi-arrow-left-right me-1"></i> <span id="edit_migration_hint_text"></span>
+          </div>
+
+          <div class="form-row">
+            <div class="fg">
+              <label class="fl">Metode Koneksi Jaringan</label>
+              <select class="fs" name="connection_type" id="e_connection_type" onchange="toggleConnectionFields('edit')">
+                <option value="pppoe">PPPoE Dial-Up (Rekomendasi Utama)</option>
+                <option value="static">Static IP Address</option>
+                <option value="hotspot">MikroTik Hotspot Voucher</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Kredensial PPPoE Box -->
+          <div id="e_pppoe_field" style="background:rgba(99,102,241,0.04); border:1px solid rgba(99,102,241,0.2); border-radius:12px; padding:16px; margin-bottom:16px;">
+            <div class="fw6 mb-2" style="font-size:12px; color:var(--primary);"><i class="bi bi-key-fill me-1"></i> Kredensial Akun PPPoE</div>
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl" style="font-weight:700;"><i class="bi bi-person-fill text-primary me-1"></i> PPPoE Username *</label>
+                <div class="custom-autocomplete-wrap" id="e_pppoe_autocomplete_wrap">
+                  <div class="custom-autocomplete-input-wrap">
+                    <input class="fc" name="pppoe_username" id="e_pppoe" placeholder="Contoh: user123@bionfiber.net" autocomplete="off" onfocus="openPppoeDropdown('edit')" oninput="filterPppoeDropdown('edit', this.value)" onblur="enforceBionPppoeDomain(this)" style="font-family:monospace; font-weight:600;" required>
+                    <button type="button" class="autocomplete-toggle-btn" onclick="togglePppoeDropdown('edit')" title="Tampilkan daftar username PPPoE">
+                      <i class="bi bi-chevron-down" id="e_pppoe_toggle_icon"></i>
+                    </button>
+                  </div>
+                  <div class="custom-autocomplete-dropdown" id="e_pppoe_dropdown"></div>
+                </div>
+                <div class="hint" id="e_pppoe_hint" style="font-size:11px; margin-top:4px; color:var(--muted);"></div>
               </div>
+              <div class="fg">
+                <label class="fl" style="font-weight:700;"><i class="bi bi-lock-fill text-warning me-1"></i> PPPoE Password</label>
+                <div style="display:flex; gap:6px;">
+                  <input class="fc" name="pppoe_password" id="e_pppoe_password" placeholder="Kosongkan jika tidak diubah" style="font-family:monospace; font-weight:600;">
+                  <button type="button" class="btn btn-g btn-sm" onclick="document.getElementById('e_pppoe_password').value=generateRandomPassword(6)" title="Acak Password"><i class="bi bi-shuffle"></i></button>
+                </div>
+                <small class="text-muted" style="font-size:10px; display:block; margin-top:2px;">Kosongkan jika password tidak ingin diubah.</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- STATIC IP -->
+          <div class="form-row" id="e_static_field" style="display:none">
+            <div class="fg">
+              <label class="fl">IP Address Statis Pelanggan</label>
+              <input class="fc" name="static_ip" id="e_static_ip" placeholder="Contoh: 192.168.10.50">
+            </div>
+          </div>
+
+          <!-- HOTSPOT -->
+          <div id="e_hotspot_field" style="display:none">
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Hotspot Username</label>
+                <input class="fc" name="hotspot_username" id="e_hotspot_username" placeholder="Contoh: voucher01">
+              </div>
+              <div class="fg">
+                <label class="fl">Hotspot Password</label>
+                <input class="fc" name="hotspot_password" id="e_hotspot_password" placeholder="Kosong = sama dengan username">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Hotspot Profile</label>
+                <select class="fs" name="hotspot_profile" id="e_hotspot_profile">
+                  <option value="">-- Pilih Profil Hotspot --</option>
+                </select>
+                <div class="hint" id="e_hotspot_profile_hint"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANE 4: MODEM ONU & INFRASTRUKTUR FTTH -->
+        <div class="cust-modal-pane" id="pane_edit_4">
+          <div style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-size:13px; font-weight:700; color:var(--text);"><i class="bi bi-hdd-network-fill text-info me-2"></i>Perangkat Modem ONU & Jalur FTTH</div>
+            <span class="badge bp" style="font-size:11px;">Langkah 4 dari 5</span>
+          </div>
+
+          <!-- Educational Box: Kenapa ONU Harus Ditag? -->
+          <div class="onu-helper-box">
+            <div style="display:flex; gap:12px;">
+              <div style="font-size:24px; color:var(--primary); line-height:1;"><i class="bi bi-info-circle-fill"></i></div>
+              <div style="flex:1;">
+                <div style="font-size:12.5px; font-weight:800; color:var(--text); margin-bottom:4px;">
+                  Pemasangan Modem ONU ke Data Pelanggan (TR-069 GenieACS)
+                </div>
+                <div style="font-size:11px; color:var(--muted); line-height:1.5;">
+                  Pastikan <strong>Serial Number (SN)</strong> dan <strong>Tag GenieACS</strong> telah diisi sesuai modem pelanggan agar fitur live <strong>Rx dBm</strong>, <strong>Remote Reboot</strong>, dan <strong>Ganti Password Wi-Fi</strong> dapat berfungsi.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input Modem ONU & Quick Picker -->
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+              <span style="font-size:12px; font-weight:700; color:var(--text);"><i class="bi bi-upc-scan text-primary me-1"></i> Identitas Modem Pelanggan</span>
+              <button type="button" class="btn btn-p btn-sm" onclick="openOnuPickerModal('edit')" style="font-size:11px; padding:4px 10px;">
+                <i class="bi bi-search me-1"></i> Deteksi & Ganti Modem dari GenieACS
+              </button>
+            </div>
+
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl" style="font-weight:700;"><i class="bi bi-barcode me-1"></i> Serial Number (SN) Modem ONU</label>
+                <input class="fc" name="ont_sn" id="e_ont_sn" placeholder="Contoh: ZTEGC0123456 / FH4B1234..." style="font-family:monospace; font-weight:700;">
+              </div>
+              <div class="fg">
+                <label class="fl" style="font-weight:700;"><i class="bi bi-tag-fill text-warning me-1"></i> Tag GenieACS (TR-069)</label>
+                <input class="fc" name="genieacs_tag" id="e_tag" placeholder="Disarankan sama dengan PPPoE Username" style="font-family:monospace;">
+              </div>
+            </div>
+          </div>
+
+          <!-- FTTH Infrastructure -->
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
+            <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:12px;"><i class="bi bi-diagram-3-fill text-secondary me-1"></i> Topologi Distribusi FTTH</div>
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Perangkat OLT</label>
+                <select class="fs" name="olt_id" id="e_olt_id">
+                  <option value="">-- Tanpa OLT --</option>
+                  <% if (typeof olts !== 'undefined') { %>
+                    <% olts.forEach(o => { %>
+                      <option value="<%= o.id %>"><%= o.name %> (<%= o.brand %>)</option>
+                    <% }) %>
+                  <% } %>
+                </select>
+              </div>
+              <div class="fg">
+                <label class="fl"><i class="bi bi-hdd-network text-info me-1"></i> ODC (Optical Distribution Cabinet)</label>
+                <select class="fs" name="odc_id" id="e_odc_id" onchange="handleOdcChange('edit'); autoGenerateCustomerCode('edit');">
+                  <option value="">-- Tanpa ODC --</option>
+                  <% if (typeof odcs !== 'undefined') { %>
+                    <% odcs.forEach(o => { %>
+                      <option value="<%= o.id %>" data-name="<%= o.name %>"><%= o.name %><%= o.olt_name ? ' (' + o.olt_name + ')' : '' %></option>
+                    <% }) %>
+                  <% } %>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl"><i class="bi bi-distribute-vertical text-warning me-1"></i> ODP (Optical Distribution Point)</label>
+                <select class="fs" name="odp_id" id="e_odp_id" onchange="handleOdpChange('edit'); autoGenerateCustomerCode('edit');">
+                  <option value="">-- Tanpa ODP --</option>
+                  <% if (typeof odps !== 'undefined') { %>
+                    <% odps.forEach(o => { %>
+                      <option value="<%= o.id %>" data-name="<%= o.name %>" data-odc-id="<%= o.odc_id || '' %>"><%= o.name %></option>
+                    <% }) %>
+                  <% } %>
+                </select>
+              </div>
+              <div class="fg">
+                <label class="fl"><i class="bi bi-plug text-success me-1"></i> Nomor Port ODP</label>
+                <input class="fc" type="number" min="1" max="64" name="odp_port" id="e_odp_port" oninput="autoGenerateCustomerCode('edit')" placeholder="Contoh: 1 s/d 16">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl">Port PON OLT (Opsional)</label>
+                <input class="fc" name="pon_port" id="e_pon_port" placeholder="Contoh: PON 1/1/1">
+              </div>
+              <div class="fg" id="e_mac_field" style="display:none">
+                <label class="fl">MAC Address (Opsional)</label>
+                <input class="fc" name="mac_address" id="e_mac_address" placeholder="Contoh: AA:BB:CC:DD:EE:FF">
+              </div>
+            </div>
+          </div>
+
+          <!-- Geolocation Coordinates -->
+          <div class="form-row">
+            <div class="fg"><label class="fl">Latitude Lokasi</label><input class="fc" name="lat" id="e_lat" placeholder="-6.xxx"></div>
+            <div class="fg">
+              <label class="fl">Longitude Lokasi</label>
+              <div style="display:flex; gap:4px">
+                <input class="fc" name="lng" id="e_lng" placeholder="106.xxx">
+                <button type="button" class="btn btn-g btn-sm" onclick="openPicker('edit')" title="Pilih di Peta"><i class="bi bi-geo-alt"></i> Peta</button>
+              </div>
+            </div>
+          </div>
+          <div class="fg"><label class="fl">Catatan Internal</label><textarea class="fc" name="notes" id="e_notes" placeholder="Catatan internal..."></textarea></div>
+        </div>
+
+        <!-- PANE 5: DOKUMEN & QC REDAMAN -->
+        <div class="cust-modal-pane" id="pane_edit_5">
+          <div style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-size:13px; font-weight:700; color:var(--text);"><i class="bi bi-patch-check-fill text-success me-2"></i>QC Redaman & Dokumentasi KYC SOP ISP</div>
+            <span class="badge bp" style="font-size:11px;">Langkah 5 dari 5</span>
+          </div>
+
+          <!-- Redaman Awal (OPM) -->
+          <div style="background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:16px;">
+            <label class="fl" style="font-weight:700; display:flex; justify-content:space-between;">
+              <span><i class="bi bi-speedometer2 text-info me-1"></i> Redaman Awal / Rx Optical Power (dBm)</span>
+              <span id="e_rx_status_badge" class="badge" style="display:none; font-size:11px;"></span>
+            </label>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input class="fc" type="number" step="0.01" name="initial_rx_power" id="e_initial_rx_power" placeholder="Contoh: -19.50" oninput="updateRxBadge('edit')" style="font-family:monospace; font-weight:700; font-size:14px; max-width:200px;">
+              <span style="font-size:13px; font-weight:600; color:var(--muted);">dBm</span>
+            </div>
+            <small class="text-muted" style="font-size:11px; display:block; margin-top:4px;">
+              Standar GPON: <strong>-15.00 dBm s/d -24.00 dBm</strong> (Ideal). Di atas -27.00 dBm loss tinggi.
+            </small>
+          </div>
+
+          <!-- Grid Foto KYC -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center;">
+              <div style="font-size:12px; font-weight:700; margin-bottom:8px;"><i class="bi bi-house-door text-primary me-1"></i> Foto Rumah Pelanggan</div>
               <div id="e_preview_house_box" style="width:100%; height:110px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:8px; border:1px solid var(--border);">
                 <i class="bi bi-image text-muted" style="font-size:32px;"></i>
               </div>
@@ -1482,29 +2209,21 @@
                 <i class="bi bi-upload me-1"></i> Ganti Foto Rumah
                 <input type="file" name="photo_house" accept="image/*" style="display:none" onchange="previewDocFile(this, 'e_preview_house_box')">
               </label>
-              <div style="font-size:10px; color:var(--muted); margin-top:4px;">Tampak depan & nomor rumah</div>
             </div>
 
-            <!-- Card 2: Foto Pelanggan / KYC -->
-            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center; position:relative;">
-              <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:8px;">
-                <i class="bi bi-person-bounding-box text-success me-1"></i> Foto Pelanggan / KTP
-              </div>
+            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center;">
+              <div style="font-size:12px; font-weight:700; margin-bottom:8px;"><i class="bi bi-person-bounding-box text-success me-1"></i> Foto Pelanggan / KTP</div>
               <div id="e_preview_customer_box" style="width:100%; height:110px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:8px; border:1px solid var(--border);">
                 <i class="bi bi-person-badge text-muted" style="font-size:32px;"></i>
               </div>
               <label class="btn btn-g btn-sm w-100" style="cursor:pointer; font-size:11px; margin:0;">
-                <i class="bi bi-upload me-1"></i> Ganti Foto Pelanggan
+                <i class="bi bi-upload me-1"></i> Ganti Foto KTP
                 <input type="file" name="photo_customer" accept="image/*" style="display:none" onchange="previewDocFile(this, 'e_preview_customer_box')">
               </label>
-              <div style="font-size:10px; color:var(--muted); margin-top:4px;">Verifikasi identitas / KTP</div>
             </div>
 
-            <!-- Card 3: Foto Layar OPM Redaman -->
-            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center; position:relative;">
-              <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:8px;">
-                <i class="bi bi-broadcast-pin text-warning me-1"></i> Foto Redaman OPM
-              </div>
+            <div style="border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg2); text-align:center;">
+              <div style="font-size:12px; font-weight:700; margin-bottom:8px;"><i class="bi bi-broadcast-pin text-warning me-1"></i> Foto Redaman OPM</div>
               <div id="e_preview_optical_box" style="width:100%; height:110px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:8px; border:1px solid var(--border);">
                 <i class="bi bi-activity text-muted" style="font-size:32px;"></i>
               </div>
@@ -1512,16 +2231,26 @@
                 <i class="bi bi-upload me-1"></i> Ganti Foto OPM
                 <input type="file" name="photo_optical_power" accept="image/*" style="display:none" onchange="previewDocFile(this, 'e_preview_optical_box')">
               </label>
-              <div style="font-size:10px; color:var(--muted); margin-top:4px;">Layar Optical Power Meter saat QC</div>
             </div>
-
           </div>
         </div>
 
       </div>
-      <div class="mf">
+
+      <!-- Modern Stepper Modal Footer -->
+      <div class="modal-stepper-footer">
         <button type="button" class="btn btn-g" onclick="closeModal('editModal')">Batal</button>
-        <button type="submit" class="btn btn-p"><i class="bi bi-check-lg"></i> Update Pelanggan</button>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn btn-g" id="btn_prev_edit" onclick="prevCustModalTab('edit')" style="display:none;">
+            <i class="bi bi-arrow-left me-1"></i> Sebelumnya
+          </button>
+          <button type="button" class="btn btn-g" id="btn_next_edit" onclick="nextCustModalTab('edit')">
+            Lanjut <i class="bi bi-arrow-right ms-1"></i>
+          </button>
+          <button type="submit" class="btn btn-p" id="btn_submit_edit">
+            <i class="bi bi-check-lg me-1"></i> Update Pelanggan
+          </button>
+        </div>
       </div>
     </form>
   </div>
@@ -2209,9 +2938,261 @@
         </button>
       </div>
     </form>
+  <!-- Modal 1: Quick Import MikroTik Secrets -->
+<div class="mo" id="quickImportModal" style="z-index:2200;">
+  <div class="mb" style="max-width:920px; width:95vw; border-radius:18px; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.5);">
+    <div class="mh" style="padding:16px 22px; border-bottom:1px solid var(--border); background:rgba(255,255,255,0.02);">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg, rgba(245,158,11,0.2), rgba(234,88,12,0.2)); border:1px solid rgba(245,158,11,0.4); display:flex; align-items:center; justify-content:center; color:#f59e0b; font-size:18px;">
+          <i class="bi bi-cloud-arrow-down-fill"></i>
+        </div>
+        <div>
+          <div class="mt" style="font-size:16px; font-weight:800; line-height:1.2;">Impor Pelanggan dari Secret MikroTik</div>
+          <div style="font-size:11px; color:var(--muted);">Pelanggan PPPoE yang sudah aktif di MikroTik tapi belum terdaftar di Billing</div>
+        </div>
+      </div>
+      <button class="mc" onclick="closeModal('quickImportModal')">&times;</button>
+    </div>
+
+    <div class="mbody" style="padding:20px 24px; max-height:70vh; overflow-y:auto;">
+      <!-- Filter & Configuration Row -->
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:16px;">
+        <div class="fg" style="margin-bottom:0;">
+          <label class="fl" style="font-weight:700;"><i class="bi bi-hdd-network me-1"></i> Pilih Router MikroTik</label>
+          <select class="fs" id="qi_router_select" onchange="loadUnregisteredSecrets()" style="font-weight:600;">
+            <option value="">-- Semua Router / Default --</option>
+            <% if (typeof routers !== 'undefined') { %>
+              <% routers.forEach(r => { %>
+                <option value="<%= r.id %>"><%= r.name %> (<%= r.host %>)</option>
+              <% }) %>
+            <% } %>
+          </select>
+        </div>
+
+        <div class="fg" style="margin-bottom:0;">
+          <label class="fl" style="font-weight:700;"><i class="bi bi-box-seam me-1"></i> Paket Default</label>
+          <select class="fs" id="qi_package_select" style="font-weight:600;">
+            <option value="">-- Cocokkan Berdasarkan Profile --</option>
+            <% packages.forEach(p => { %>
+              <option value="<%= p.id %>"><%= p.name %> (Rp <%= Number(p.price).toLocaleString('id-ID') %>)</option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="fg" style="margin-bottom:0;">
+          <label class="fl" style="font-weight:700;"><i class="bi bi-cpu me-1"></i> Mode Autentikasi Impor</label>
+          <select class="fs" id="qi_auth_mode" style="font-weight:600;">
+            <option value="0" selected>⚡ Tetap di MikroTik API (Lokal Router)</option>
+            <option value="1">📡 Langsung Migrasikan ke RADIUS Server</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Quick Action Controls -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:12px; font-weight:700; color:var(--text);" id="qi_count_label">Memuat data...</span>
+          <button type="button" class="btn btn-g btn-sm" onclick="loadUnregisteredSecrets()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn btn-g btn-sm" onclick="qiSelectAll(true)">Pilih Semua</button>
+          <button type="button" class="btn btn-g btn-sm" onclick="qiSelectAll(false)">Batalkan Pilihan</button>
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div class="tbl-wrap" style="max-height:360px; overflow-y:auto; border:1px solid var(--border); border-radius:10px;">
+        <table class="tbl" style="width:100%; border-collapse:collapse; font-size:12px;">
+          <thead>
+            <tr style="background:var(--bg2); border-bottom:1px solid var(--border); text-align:left;">
+              <th style="padding:10px; width:40px; text-align:center;">
+                <input type="checkbox" id="qi_check_all" onchange="qiToggleAll(this.checked)" style="accent-color:var(--primary); cursor:pointer;">
+              </th>
+              <th style="padding:10px;">PPPoE Username</th>
+              <th style="padding:10px;">Password</th>
+              <th style="padding:10px;">Profile PPP</th>
+              <th style="padding:10px;">Remote / Static IP</th>
+              <th style="padding:10px;">Router</th>
+              <th style="padding:10px;">Status</th>
+            </tr>
+          </thead>
+          <tbody id="qi_table_body">
+            <tr><td colspan="7" style="text-align:center; padding:24px; color:var(--muted);">Memuat data secret MikroTik...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="alert alert-i" style="margin-top:14px; margin-bottom:0; font-size:11.5px; line-height:1.5;">
+        <i class="bi bi-info-circle me-1"></i> Pelanggan yang diimpor akan langsung dibuatkan <strong>Data Pelanggan Billing</strong>, nomor ID pelanggan baru, dan status Aktif. Jika Anda memilih mode RADIUS, kredensial mereka juga akan otomatis didaftarkan ke server RADIUS database.
+      </div>
+    </div>
+
+    <div class="mf" style="padding:14px 22px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+      <button type="button" class="btn btn-g" onclick="closeModal('quickImportModal')">Batal</button>
+      <button type="button" class="btn btn-p" id="qi_submit_btn" onclick="executeQuickImport()" style="padding:8px 20px; font-weight:700;">
+        <i class="bi bi-check-lg me-1"></i> Impor (<span id="qi_selected_count">0</span>) Pelanggan Masuk ke Billing
+      </button>
+    </div>
   </div>
 </div>
 
+<!-- Modal 2: ONU Picker Modal (GenieACS TR-069) -->
+<div class="mo" id="onuPickerModal" style="z-index:2250;">
+  <div class="mb" style="max-width:820px; width:95vw; border-radius:18px; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.5);">
+    <div class="mh" style="padding:16px 22px; border-bottom:1px solid var(--border); background:rgba(255,255,255,0.02);">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg, rgba(6,182,212,0.2), rgba(59,130,246,0.2)); border:1px solid rgba(6,182,212,0.4); display:flex; align-items:center; justify-content:center; color:#06b6d4; font-size:18px;">
+          <i class="bi bi-router"></i>
+        </div>
+        <div>
+          <div class="mt" style="font-size:16px; font-weight:800; line-height:1.2;">Pilih Modem ONU dari GenieACS</div>
+          <div style="font-size:11px; color:var(--muted);">Pilih perangkat TR-069 yang terdeteksi untuk dipasangkan ke pelanggan</div>
+        </div>
+      </div>
+      <button class="mc" onclick="closeModal('onuPickerModal')">&times;</button>
+    </div>
+
+    <div class="mbody" style="padding:20px 24px; max-height:70vh; overflow-y:auto;">
+      <!-- Search Input -->
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <div style="position:relative; flex:1;">
+          <i class="bi bi-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted);"></i>
+          <input type="text" class="fc" id="onu_picker_search" placeholder="Cari berdasarkan Serial Number (SN), Model, atau IP..." style="padding-left:36px;" oninput="filterOnuList()">
+        </div>
+        <button type="button" class="btn btn-g" onclick="loadAvailableOnus()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+      </div>
+
+      <!-- ONU Table -->
+      <div class="tbl-wrap" style="max-height:360px; overflow-y:auto; border:1px solid var(--border); border-radius:10px;">
+        <table class="tbl" style="width:100%; border-collapse:collapse; font-size:12px;">
+          <thead>
+            <tr style="background:var(--bg2); border-bottom:1px solid var(--border); text-align:left;">
+              <th style="padding:10px;">Serial Number (SN)</th>
+              <th style="padding:10px;">Model / Manufaktur</th>
+              <th style="padding:10px;">IP Address</th>
+              <th style="padding:10px;">Tag GenieACS</th>
+              <th style="padding:10px;">Status Pemasangan</th>
+              <th style="padding:10px; text-align:center;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="onu_picker_tbody">
+            <tr><td colspan="6" style="text-align:center; padding:24px; color:var(--muted);">Memuat daftar modem dari GenieACS...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="mf" style="padding:14px 22px; border-top:1px solid var(--border); display:flex; justify-content:flex-end;">
+      <button type="button" class="btn btn-g" onclick="closeModal('onuPickerModal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 3: Secret Picker Modal (Single Select for Add Form) -->
+<div class="mo" id="secretPickerModal" style="z-index:2250;">
+  <div class="mb" style="max-width:820px; width:95vw; border-radius:18px; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.5);">
+    <div class="mh" style="padding:16px 22px; border-bottom:1px solid var(--border); background:rgba(255,255,255,0.02);">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.2)); border:1px solid rgba(99,102,241,0.4); display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:18px;">
+          <i class="bi bi-hdd-network-fill"></i>
+        </div>
+        <div>
+          <div class="mt" style="font-size:16px; font-weight:800; line-height:1.2;">Pilih Akun Secret MikroTik</div>
+          <div style="font-size:11px; color:var(--muted);">Pilih user PPPoE aktif dari MikroTik untuk mengisi form secara otomatis</div>
+        </div>
+      </div>
+      <button class="mc" onclick="closeModal('secretPickerModal')">&times;</button>
+    </div>
+
+    <div class="mbody" style="padding:20px 24px; max-height:70vh; overflow-y:auto;">
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <div style="position:relative; flex:1;">
+          <i class="bi bi-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted);"></i>
+          <input type="text" class="fc" id="secret_picker_search" placeholder="Cari nama PPPoE user..." style="padding-left:36px;" oninput="filterSecretPickerList()">
+        </div>
+      </div>
+
+      <div class="tbl-wrap" style="max-height:360px; overflow-y:auto; border:1px solid var(--border); border-radius:10px;">
+        <table class="tbl" style="width:100%; border-collapse:collapse; font-size:12px;">
+          <thead>
+            <tr style="background:var(--bg2); border-bottom:1px solid var(--border); text-align:left;">
+              <th style="padding:10px;">Username PPPoE</th>
+              <th style="padding:10px;">Profile PPP</th>
+              <th style="padding:10px;">IP Address</th>
+              <th style="padding:10px;">Komentar</th>
+              <th style="padding:10px; text-align:center;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="secret_picker_tbody">
+            <tr><td colspan="5" style="text-align:center; padding:24px; color:var(--muted);">Memuat secret MikroTik...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="mf" style="padding:14px 22px; border-top:1px solid var(--border); display:flex; justify-content:flex-end;">
+      <button type="button" class="btn btn-g" onclick="closeModal('secretPickerModal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 4: Wizard Migrasi RADIUS -->
+<div class="mo" id="radiusWizardModal" style="z-index:2200;">
+  <div class="mb" style="max-width:760px; width:95vw; border-radius:18px; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.5);">
+    <div class="mh" style="padding:16px 22px; border-bottom:1px solid var(--border); background:rgba(255,255,255,0.02);">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.2)); border:1px solid rgba(99,102,241,0.4); display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:18px;">
+          <i class="bi bi-broadcast-pin"></i>
+        </div>
+        <div>
+          <div class="mt" style="font-size:16px; font-weight:800; line-height:1.2;">Panduan & Wizard Migrasi RADIUS</div>
+          <div style="font-size:11px; color:var(--muted);">Transisi mulus dari MikroTik /ppp secret lokal ke RADIUS Server Database</div>
+        </div>
+      </div>
+      <button class="mc" onclick="closeModal('radiusWizardModal')">&times;</button>
+    </div>
+
+    <div class="mbody" style="padding:20px 24px; max-height:70vh; overflow-y:auto;">
+      <div style="margin-bottom:16px;">
+        <div style="font-size:14px; font-weight:800; color:var(--text); margin-bottom:8px;">Bagaimana Cara Kerja Migrasi?</div>
+        <p style="font-size:12px; color:var(--muted); line-height:1.6; margin-bottom:12px;">
+          Sistem ISP Billing ini dirancang mendukung <strong>Hybrid Mode</strong>: pelanggan lama Anda bisa tetap diautentikasi lewat MikroTik Local Secret, sementara pelanggan baru atau yang ingin dimigrasikan bisa dialihkan ke <strong>RADIUS Server</strong> secara bertahap tanpa downtime!
+        </p>
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:14px; margin-bottom:16px;">
+        <div style="background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:16px;">
+          <div style="font-size:13px; font-weight:700; color:var(--text); margin-bottom:6px;"><i class="bi bi-1-circle-fill text-primary me-2"></i>Aktifkan RADIUS di MikroTik</div>
+          <p style="font-size:11px; color:var(--muted); line-height:1.5; margin:0;">
+            Di MikroTik RouterOS, buka <code>/radius</code> &gt; Tambah Client Server: IP Server Billing, secret, service: <code>ppp</code>. Lalu di <code>/ppp aaa</code> centang <strong>Use RADIUS: yes</strong>.
+          </p>
+        </div>
+        <div style="background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:16px;">
+          <div style="font-size:13px; font-weight:700; color:var(--text); margin-bottom:6px;"><i class="bi bi-2-circle-fill text-primary me-2"></i>Migrasi Per Pelanggan atau Massal</div>
+          <p style="font-size:11px; color:var(--muted); line-height:1.5; margin:0;">
+            Buka menu edit pelanggan, pilih kartu <strong>📡 RADIUS Server</strong>, lalu simpan. Atau gunakan tombol <strong>Impor dari MikroTik</strong> di atas untuk migrasi instan.
+          </p>
+        </div>
+      </div>
+
+      <div style="background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.25); border-radius:12px; padding:14px;">
+        <div style="font-size:12px; font-weight:700; color:var(--primary); margin-bottom:4px;"><i class="bi bi-shield-check me-1"></i> Keunggulan Mode RADIUS:</div>
+        <ul style="font-size:11px; color:var(--muted); margin:0; padding-left:18px; line-height:1.6;">
+          <li>Mendukung ribuan pelanggan tanpa memberatkan memori RAM MikroTik.</li>
+          <li>Isolir otomatis instan via RADIUS response (Filter-Id atau Address-List).</li>
+          <li>Satu database billing bisa mengontrol banyak router BRAS/MikroTik sekaligus.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mf" style="padding:14px 22px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+      <a href="/admin/settings" class="btn btn-g btn-sm"><i class="bi bi-gear me-1"></i> Buka Pengaturan RADIUS</a>
+      <button type="button" class="btn btn-p" onclick="closeModal('radiusWizardModal'); openQuickImportModal();">
+        <i class="bi bi-lightning-charge me-1"></i> Mulai Impor / Migrasi dari MikroTik
+      </button>
+    </div>
+  </div>
+</div>
 
 <script id="customers-data" type="application/json"><%- JSON.stringify(customers) %></script>
 <script id="odcs-data" type="application/json"><%- JSON.stringify(typeof odcs !== 'undefined' ? odcs : []) %></script>
@@ -2231,7 +3212,13 @@
 <script>
 function openModal(id){
   const el = document.getElementById(id);
-  if (el) el.classList.add('show');
+  if (el) {
+    el.classList.add('show');
+    if (id === 'addModal') {
+      if (typeof switchCustModalTab === 'function') switchCustModalTab('add', 1);
+      if (typeof selectAuthModeCard === 'function') selectAuthModeCard('add', 0);
+    }
+  }
 }
 function closeModal(id){
   const el = document.getElementById(id);
@@ -2480,7 +3467,10 @@ function viewCustDetail(idx) {
       }
     }
     if (document.getElementById('v_genieacs')) document.getElementById('v_genieacs').textContent = c.genieacs_tag || '-';
-    if (document.getElementById('v_status_account')) document.getElementById('v_status_account').textContent = `Status: ${c.status || 'active'} | Auto Isolir: ${c.auto_isolate === 0 ? 'Nonaktif' : 'Aktif (Tgl ' + (c.isolate_day || '-') + ')'}`;
+    const globalIsolirDay = <%= (typeof settings !== 'undefined' && settings.isolir_day) ? settings.isolir_day : 1 %>;
+    const visitDay = c.billing_day || c.isolate_day;
+    const visitStr = visitDay ? ` | Tagih Kolektor: Tgl ${visitDay}` : '';
+    if (document.getElementById('v_status_account')) document.getElementById('v_status_account').textContent = `Status: ${c.status || 'active'} | Auto Isolir: ${c.auto_isolate === 0 ? 'Nonaktif' : 'Aktif (Tgl ' + globalIsolirDay + ')'}${visitStr}`;
     if (document.getElementById('v_balance')) document.getElementById('v_balance').textContent = 'Rp ' + Number(c.balance || 0).toLocaleString('id-ID');
 
     // Populate Tab 4: Dokumentasi Instalasi & Topologi ISP
@@ -3175,6 +4165,62 @@ function updateInputs(lat, lng) {
   document.getElementById(prefix + 'lng').value = lng.toFixed(8);
 }
 
+// ─── CUSTOMER STEPPER MODAL & INTERACTIVE CARDS ──────────────────────
+let currentCustModalTab = { add: 1, edit: 1 };
+
+function switchCustModalTab(type, step) {
+  currentCustModalTab[type] = step;
+  for (let i = 1; i <= 5; i++) {
+    const pane = document.getElementById(`pane_${type}_${i}`);
+    const btn = document.getElementById(`tab_btn_${type}_${i}`);
+    if (pane) pane.classList.toggle('active', i === step);
+    if (btn) btn.classList.toggle('active', i === step);
+  }
+  const btnPrev = document.getElementById(`btn_prev_${type}`);
+  const btnNext = document.getElementById(`btn_next_${type}`);
+  const btnSubmit = document.getElementById(`btn_submit_${type}`);
+  if (btnPrev) btnPrev.style.display = step > 1 ? 'inline-flex' : 'none';
+  if (btnNext) btnNext.style.display = step < 5 ? 'inline-flex' : 'none';
+}
+
+function prevCustModalTab(type) {
+  if (currentCustModalTab[type] > 1) {
+    switchCustModalTab(type, currentCustModalTab[type] - 1);
+  }
+}
+
+function nextCustModalTab(type) {
+  if (currentCustModalTab[type] < 5) {
+    switchCustModalTab(type, currentCustModalTab[type] + 1);
+  }
+}
+
+function selectAuthModeCard(type, val) {
+  const isRadius = (String(val) === '1');
+  const inputEl = document.getElementById(type === 'add' ? 'add_is_radius' : 'e_is_radius');
+  if (inputEl) inputEl.value = isRadius ? '1' : '0';
+
+  const cardMikrotik = document.getElementById(`auth_card_${type}_mikrotik`);
+  const cardRadius = document.getElementById(`auth_card_${type}_radius`);
+  if (cardMikrotik) cardMikrotik.classList.toggle('active', !isRadius);
+  if (cardRadius) cardRadius.classList.toggle('active', isRadius);
+
+  if (type === 'edit') {
+    const hintBox = document.getElementById('edit_migration_hint');
+    const hintText = document.getElementById('edit_migration_hint_text');
+    if (hintBox && hintText) {
+      hintBox.style.display = 'block';
+      if (isRadius) {
+        hintText.innerHTML = '<strong>Migrasi ke RADIUS Server:</strong> Kredensial akan divalidasi terpusat di server database RADIUS. Beban RAM MikroTik tetap ringan.';
+      } else {
+        hintText.innerHTML = '<strong>Migrasi ke MikroTik Local Secret:</strong> Kredensial akan disimpan langsung di <code>/ppp secret</code> RouterOS MikroTik.';
+      }
+    }
+  }
+
+  handleAuthModeChange(type, isRadius ? '1' : '0');
+}
+
 function handleAuthModeChange(type, val) {
   const isRadius = String(val) === '1';
   if (type === 'add') {
@@ -3236,8 +4282,6 @@ function toggleConnectionFields(type) {
     macField.style.display = 'block';
   }
 
-  // Toggle required attribute on PPPoE fields to prevent HTML5 validation blocking
-  // when connection type is hotspot or static (hidden required fields block form submit)
   const pppoePasswordEl = document.getElementById(type === 'add' ? 'add_pppoe_password' : 'e_pppoe_password');
   const pppoeUsernameEl = type === 'add' ? null : document.getElementById('e_pppoe');
   if (pppoePasswordEl) {
@@ -3262,6 +4306,337 @@ function toggleConnectionFields(type) {
   }
 }
 
+// ─── QUICK IMPORT UNREGISTERED SECRETS (MIKROTIK) ─────────────────────
+let unregisteredSecretsCache = [];
+
+async function openQuickImportModal() {
+  openModal('quickImportModal');
+  loadUnregisteredSecrets();
+}
+
+async function loadUnregisteredSecrets() {
+  const routerId = document.getElementById('qi_router_select')?.value || '';
+  const tbody = document.getElementById('qi_table_body');
+  const countLabel = document.getElementById('qi_count_label');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--muted);"><i class="bi bi-hourglass-split"></i> Memindai secret di Router MikroTik...</td></tr>';
+  if (countLabel) countLabel.textContent = 'Memindai...';
+
+  try {
+    const qs = routerId ? `?routerId=${encodeURIComponent(routerId)}` : '';
+    const res = await fetch(`/admin/api/customers/unregistered-secrets${qs}`);
+    const data = await res.json();
+
+    if (!data.ok || !Array.isArray(data.secrets)) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:#ef4444;"><i class="bi bi-exclamation-triangle me-1"></i> ${data.message || 'Gagal memuat data secret.'}</td></tr>`;
+      return;
+    }
+
+    unregisteredSecretsCache = data.secrets;
+    renderUnregisteredSecretsTable(data.secrets);
+  } catch (err) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:#ef4444;"><i class="bi bi-exclamation-triangle me-1"></i> Terjadi kesalahan koneksi ke server: ${err.message}</td></tr>`;
+  }
+}
+
+function renderUnregisteredSecretsTable(secrets) {
+  const tbody = document.getElementById('qi_table_body');
+  const countLabel = document.getElementById('qi_count_label');
+  if (countLabel) countLabel.textContent = `Ditemukan ${secrets.length} Secret Belum Terdaftar di Billing`;
+
+  if (!tbody) return;
+  if (secrets.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--muted);"><i class="bi bi-check2-circle text-success" style="font-size:28px; display:block; margin-bottom:8px;"></i> Semua secret PPPoE di MikroTik sudah terdaftar di database Billing!</td></tr>';
+    qiUpdateSelectedCount();
+    return;
+  }
+
+  tbody.innerHTML = secrets.map((s, idx) => `
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px; text-align:center;">
+        <input type="checkbox" class="qi-cb" data-idx="${idx}" checked onchange="qiUpdateSelectedCount()" style="accent-color:var(--primary); cursor:pointer;">
+      </td>
+      <td style="padding:10px; font-weight:700; font-family:monospace; color:var(--primary);">
+        ${s.name || '-'}
+      </td>
+      <td style="padding:10px; font-family:monospace; color:var(--muted);">
+        ${s.password ? '••••••' : '<em style="color:#ef4444">Kosong</em>'}
+      </td>
+      <td style="padding:10px;">
+        <span class="badge bp" style="font-size:10px;">${s.profile || 'default'}</span>
+      </td>
+      <td style="padding:10px; font-family:monospace;">
+        ${s['remote-address'] || '-'}
+      </td>
+      <td style="padding:10px; font-size:11px; color:var(--muted);">
+        ${s._router_name || 'Router'}
+      </td>
+      <td style="padding:10px;">
+        <span class="badge bw" style="font-size:10px;"><i class="bi bi-exclamation-circle me-1"></i>Belum di Billing</span>
+      </td>
+    </tr>
+  `).join('');
+
+  qiUpdateSelectedCount();
+}
+
+function qiToggleAll(checked) {
+  document.querySelectorAll('.qi-cb').forEach(cb => cb.checked = checked);
+  qiUpdateSelectedCount();
+}
+
+function qiSelectAll(checked) {
+  const master = document.getElementById('qi_check_all');
+  if (master) master.checked = checked;
+  qiToggleAll(checked);
+}
+
+function qiUpdateSelectedCount() {
+  const checked = document.querySelectorAll('.qi-cb:checked');
+  const countEl = document.getElementById('qi_selected_count');
+  const submitBtn = document.getElementById('qi_submit_btn');
+  if (countEl) countEl.textContent = checked.length;
+  if (submitBtn) submitBtn.disabled = (checked.length === 0);
+}
+
+async function executeQuickImport() {
+  const checked = Array.from(document.querySelectorAll('.qi-cb:checked'));
+  if (checked.length === 0) {
+    alert('Pilih minimal satu secret untuk diimpor!');
+    return;
+  }
+
+  const selectedSecrets = checked.map(cb => {
+    const idx = parseInt(cb.getAttribute('data-idx'));
+    return unregisteredSecretsCache[idx];
+  }).filter(Boolean);
+
+  const packageId = document.getElementById('qi_package_select')?.value || null;
+  const isRadius = document.getElementById('qi_auth_mode')?.value || '0';
+
+  if (!confirm(`Yakin ingin mengimpor ${selectedSecrets.length} akun pelanggan terpilih ke sistem Billing ISP?`)) return;
+
+  const submitBtn = document.getElementById('qi_submit_btn');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Mengimpor Data...';
+  }
+
+  try {
+    const res = await fetch('/admin/api/customers/quick-import-secrets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        secrets: selectedSecrets,
+        packageId,
+        isRadius: parseInt(isRadius)
+      })
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      alert(`✅ Berhasil mengimpor ${data.importedCount} pelanggan ke Billing!`);
+      closeModal('quickImportModal');
+      window.location.reload();
+    } else {
+      alert(`❌ Gagal impor: ${data.message || 'Terjadi kesalahan'}`);
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i class="bi bi-check-lg me-1"></i> Impor (${selectedSecrets.length}) Pelanggan Masuk ke Billing`;
+      }
+    }
+  } catch (err) {
+    alert(`❌ Terjadi kesalahan: ${err.message}`);
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Coba Lagi';
+    }
+  }
+}
+
+// ─── AVAILABLE ONU PICKER (GENIEACS TR-069) ───────────────────────────
+let availableOnusCache = [];
+let currentOnuPickerTarget = 'add';
+
+async function openOnuPickerModal(target = 'add') {
+  currentOnuPickerTarget = target;
+  openModal('onuPickerModal');
+  loadAvailableOnus();
+}
+
+async function loadAvailableOnus() {
+  const tbody = document.getElementById('onu_picker_tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--muted);"><i class="bi bi-hourglass-split"></i> Memindai modem TR-069 dari GenieACS...</td></tr>';
+
+  try {
+    const res = await fetch('/admin/api/customers/available-onus');
+    const data = await res.json();
+
+    if (!data.ok || !Array.isArray(data.onus)) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:#ef4444;"><i class="bi bi-exclamation-triangle me-1"></i> ${data.message || 'GenieACS tidak terhubung atau belum ada modem terdeteksi.'}</td></tr>`;
+      return;
+    }
+
+    availableOnusCache = data.onus;
+    renderOnuTable(data.onus);
+  } catch (err) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:#ef4444;"><i class="bi bi-exclamation-triangle me-1"></i> Koneksi gagal: ${err.message}</td></tr>`;
+  }
+}
+
+function renderOnuTable(onus) {
+  const tbody = document.getElementById('onu_picker_tbody');
+  if (!tbody) return;
+
+  if (onus.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--muted);">Tidak ada modem ONU yang terdeteksi di GenieACS. Pastikan ONU telah disetting ACS URL.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = onus.map((o) => {
+    const isPaired = o.is_paired;
+    const pairedBadge = isPaired 
+      ? `<span class="badge bw" style="font-size:10px;"><i class="bi bi-link-45deg me-1"></i>Terpasang: ${o.paired_with || 'Pelanggan'}</span>`
+      : `<span class="badge bs" style="font-size:10px;"><i class="bi bi-check-circle me-1"></i>Tersedia / Bebas</span>`;
+
+    const tagEsc = (o.genieacs_tag || o.sn || '').replace(/'/g, "\\'");
+    const snEsc = (o.sn || '').replace(/'/g, "\\'");
+
+    return `
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:10px; font-weight:700; font-family:monospace; color:var(--primary);">${o.sn || '-'}</td>
+        <td style="padding:10px;">${o.model || o.manufacturer || 'ONT Generic'}</td>
+        <td style="padding:10px; font-family:monospace; font-size:11px;">${o.ip || '-'}</td>
+        <td style="padding:10px; font-family:monospace; font-size:11px;">${o.genieacs_tag || '-'}</td>
+        <td style="padding:10px;">${pairedBadge}</td>
+        <td style="padding:10px; text-align:center;">
+          <button type="button" class="btn btn-p btn-sm" style="font-size:11px; padding:3px 10px;" onclick="selectOnuForCustomer('${snEsc}', '${tagEsc}')">
+            <i class="bi bi-check2 me-1"></i> Gunakan
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterOnuList() {
+  const query = (document.getElementById('onu_picker_search')?.value || '').toLowerCase().trim();
+  if (!query) {
+    renderOnuTable(availableOnusCache);
+    return;
+  }
+  const filtered = availableOnusCache.filter(o => 
+    (o.sn && o.sn.toLowerCase().includes(query)) ||
+    (o.model && o.model.toLowerCase().includes(query)) ||
+    (o.manufacturer && o.manufacturer.toLowerCase().includes(query)) ||
+    (o.ip && o.ip.toLowerCase().includes(query)) ||
+    (o.genieacs_tag && o.genieacs_tag.toLowerCase().includes(query))
+  );
+  renderOnuTable(filtered);
+}
+
+function selectOnuForCustomer(sn, tag) {
+  const prefix = currentOnuPickerTarget === 'add' ? 'add_' : 'e_';
+  const tagField = currentOnuPickerTarget === 'add' ? document.getElementById('add_genieacs_tag') : document.getElementById('e_tag');
+  const snField = document.getElementById(prefix + 'ont_sn');
+
+  if (snField) snField.value = sn;
+  if (tagField) {
+    if (!tagField.value || tagField.value.trim() === '') {
+      tagField.value = tag || sn;
+    }
+  }
+
+  closeModal('onuPickerModal');
+  alert(`Modem ONU (SN: ${sn}) berhasil dipasangkan ke form!`);
+}
+
+// ─── SINGLE SECRET PICKER (FOR ADD CUSTOMER FORM) ────────────────────
+let secretPickerTarget = 'add';
+
+async function openSecretPickerModal(target = 'add') {
+  secretPickerTarget = target;
+  openModal('secretPickerModal');
+  const tbody = document.getElementById('secret_picker_tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--muted);"><i class="bi bi-hourglass-split"></i> Memuat daftar secret MikroTik...</td></tr>';
+
+  try {
+    const res = await fetch('/admin/api/customers/unregistered-secrets');
+    const data = await res.json();
+    if (!data.ok || !Array.isArray(data.secrets)) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:24px; color:#ef4444;">${data.message || 'Gagal memuat secret.'}</td></tr>`;
+      return;
+    }
+    renderSecretPickerTable(data.secrets);
+  } catch (err) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:24px; color:#ef4444;">Gagal: ${err.message}</td></tr>`;
+  }
+}
+
+function renderSecretPickerTable(secrets) {
+  const tbody = document.getElementById('secret_picker_tbody');
+  if (!tbody) return;
+  if (secrets.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--muted);">Tidak ada secret yang belum terdaftar di MikroTik.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = secrets.map((s) => {
+    const nameEsc = (s.name || '').replace(/'/g, "\\'");
+    const passEsc = (s.password || '').replace(/'/g, "\\'");
+    const rId = s._router_id || '';
+    return `
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:10px; font-weight:700; font-family:monospace; color:var(--primary);">${s.name || '-'}</td>
+        <td style="padding:10px;"><span class="badge bp" style="font-size:10px;">${s.profile || 'default'}</span></td>
+        <td style="padding:10px; font-family:monospace;">${s['remote-address'] || '-'}</td>
+        <td style="padding:10px; color:var(--muted);">${s.comment || '-'}</td>
+        <td style="padding:10px; text-align:center;">
+          <button type="button" class="btn btn-p btn-sm" style="font-size:11px; padding:3px 10px;" onclick="applySecretToForm('${nameEsc}', '${passEsc}', '${rId}')">
+            <i class="bi bi-check2 me-1"></i> Pilih
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function applySecretToForm(name, pass, routerId) {
+  if (secretPickerTarget === 'add') {
+    const userField = document.querySelector('#addModal input[name="pppoe_username"]');
+    const userManual = document.getElementById('add_pppoe_username_manual');
+    const passField = document.getElementById('add_pppoe_password');
+    const tagField = document.getElementById('add_genieacs_tag');
+    const routerSelect = document.getElementById('add_router_select');
+    const nameField = document.querySelector('#addModal input[name="name"]');
+
+    if (userField) userField.value = name;
+    if (userManual) userManual.value = name;
+    if (passField) passField.value = pass || generateRandomPassword(6);
+    if (tagField) tagField.value = name;
+    if (routerSelect && routerId) routerSelect.value = routerId;
+    if (nameField && !nameField.value) {
+      nameField.value = name.replace(/@.*$/, '').replace(/[_\-\.]/g, ' ').toUpperCase();
+    }
+  }
+  closeModal('secretPickerModal');
+}
+
+// ─── AUTH MODE QUICK FILTER (TABLE) ──────────────────────────────────
+let currentAuthFilter = 'all';
+
+function toggleAuthFilter(mode) {
+  currentAuthFilter = mode;
+  document.querySelectorAll('.auth-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.auth === mode));
+
+  const rows = document.querySelectorAll('table.tbl tbody tr[data-auth]');
+  rows.forEach(tr => {
+    if (mode === 'all') {
+      tr.style.display = '';
+    } else {
+      tr.style.display = (tr.dataset.auth === mode) ? '' : 'none';
+    }
+  });
+}
+
 document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show')}));
 let currentEditCustomerId = '';
 function editCust(idx) {
@@ -3281,6 +4656,7 @@ function editCust(idx) {
   document.getElementById('e_pppoe').value=c.pppoe_username||'';
   if (document.getElementById('e_pppoe_password')) document.getElementById('e_pppoe_password').value=c.pppoe_password||'';
   if (document.getElementById('e_is_radius')) document.getElementById('e_is_radius').value=(c.is_radius !== 0 ? '1' : '0');
+  selectAuthModeCard('edit', (c.is_radius !== 0 && c.is_radius !== '0') ? 1 : 0);
   document.getElementById('e_static_ip').value=c.static_ip||'';
   document.getElementById('e_mac_address').value=c.mac_address||'';
   document.getElementById('e_hotspot_username').value=c.hotspot_username||'';
@@ -3288,6 +4664,7 @@ function editCust(idx) {
   document.getElementById('e_hotspot_profile').value=c.hotspot_profile||'';
   document.getElementById('e_area').value=c.area||'';
   document.getElementById('e_tag').value=c.genieacs_tag||'';
+  if (document.getElementById('e_ont_sn')) document.getElementById('e_ont_sn').value = c.ont_sn || '';
   document.getElementById('e_collector_id').value=c.collector_id||'';
   document.getElementById('e_olt_id').value=c.olt_id||'';
   if (document.getElementById('e_odc_id')) document.getElementById('e_odc_id').value=c.odc_id||'';
@@ -3311,8 +4688,11 @@ function editCust(idx) {
   }
   document.getElementById('e_notes').value=c.notes||'';
   document.getElementById('e_auto_isolate').value=(c.auto_isolate !== undefined ? c.auto_isolate : 1);
-  document.getElementById('e_isolate_day').value=(c.isolate_day || 10);
+  const billDayVal = (c.billing_day || c.isolate_day || '');
+  if (document.getElementById('e_billing_day')) document.getElementById('e_billing_day').value = billDayVal;
+  if (document.getElementById('e_isolate_day')) document.getElementById('e_isolate_day').value = billDayVal;
   toggleConnectionFields('edit');
+  switchCustModalTab('edit', 1);
   openModal('editModal');
   loadRouterLists('edit', c.router_id || '', c.id || '');
 }
@@ -3509,14 +4889,130 @@ document.getElementById('payInvoiceModal')?.addEventListener('change', (e) => {
   if (e.target && e.target.classList && e.target.classList.contains('pay-month')) updatePayTotal();
 });
 
-function buildPppoeList(datalistEl, users) {
-  if (!datalistEl) return;
-  datalistEl.innerHTML = '';
-  for (const u of users) {
-    if (!u || !u.name) continue;
-    datalistEl.insertAdjacentHTML('beforeend', `<option value="${String(u.name).replace(/"/g, '&quot;')}"></option>`);
+// ─── MODERN CUSTOM AUTOCOMPLETE FOR PPPOE CREDENTIALS ───────────────
+const cachedPppoeUsers = { add: [], edit: [] };
+
+function setCachedPppoeUsers(type, users) {
+  cachedPppoeUsers[type] = Array.isArray(users) ? users : [];
+  renderPppoeDropdown(type);
+}
+
+function renderPppoeDropdown(type, query = '') {
+  const dropdownEl = document.getElementById(type === 'add' ? 'add_pppoe_dropdown' : 'e_pppoe_dropdown');
+  if (!dropdownEl) return;
+
+  const users = cachedPppoeUsers[type] || [];
+  const q = String(query).trim().toLowerCase();
+  const filtered = q
+    ? users.filter(u => u && u.name && (u.name.toLowerCase().includes(q) || (u.profile && u.profile.toLowerCase().includes(q)) || (u.caller_id && u.caller_id.toLowerCase().includes(q))))
+    : users;
+
+  if (filtered.length === 0) {
+    dropdownEl.innerHTML = `
+      <div class="autocomplete-empty">
+        <div style="margin-bottom:6px;"><i class="bi bi-search text-muted"></i> Tidak ada secret yang cocok</div>
+        ${q ? `<div style="font-size:11px; color:var(--primary); cursor:pointer; font-weight:600;" onclick="selectPppoeItem('${type}', '${q.replace(/'/g, "\\'")}')">Gunakan "${q}" sebagai Username Baru</div>` : ''}
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  filtered.slice(0, 35).forEach(u => {
+    const uname = String(u.name || '').replace(/"/g, '&quot;');
+    const upass = String(u.password || '').replace(/"/g, '&quot;');
+    const uprof = String(u.profile || '').replace(/"/g, '&quot;');
+    const uip = String(u.remote_address || u.address || '').replace(/"/g, '&quot;');
+    
+    html += `
+      <div class="autocomplete-item" onclick="selectPppoeItem('${type}', '${uname.replace(/'/g, "\\'")}', '${upass.replace(/'/g, "\\'")}', '${uprof.replace(/'/g, "\\'")}')">
+        <div>
+          <div class="autocomplete-item-name"><i class="bi bi-person-fill text-primary me-1"></i>${uname}</div>
+          ${uip ? `<div style="font-size:10px; color:var(--muted); font-family:monospace;">IP: ${uip}</div>` : ''}
+        </div>
+        <div class="autocomplete-item-meta">
+          ${uprof ? `<span class="badge" style="background:rgba(99,102,241,0.18); color:var(--primary); font-size:10px;">${uprof}</span>` : ''}
+          <i class="bi bi-arrow-right-short text-muted"></i>
+        </div>
+      </div>
+    `;
+  });
+
+  if (filtered.length > 35) {
+    html += `<div style="padding:8px; text-align:center; font-size:10.5px; color:var(--muted); border-top:1px solid rgba(255,255,255,0.04);">Menampilkan 35 dari ${filtered.length} secret. Ketik untuk mempersempit.</div>`;
+  }
+
+  dropdownEl.innerHTML = html;
+}
+
+function selectPppoeItem(type, username, password = '', profile = '') {
+  const inputEl = document.getElementById(type === 'add' ? 'add_pppoe_username' : 'e_pppoe');
+  if (inputEl) inputEl.value = username;
+
+  if (password) {
+    const passEl = document.getElementById(type === 'add' ? 'add_pppoe_password' : 'e_pppoe_password');
+    if (passEl && (!passEl.value || type === 'add')) {
+      passEl.value = password;
+    }
+  }
+
+  // Auto-fill GenieACS Tag if empty
+  const tagEl = document.getElementById(type === 'add' ? 'add_genieacs_tag' : 'e_tag');
+  if (tagEl && !tagEl.value) {
+    tagEl.value = username;
+  }
+
+  closePppoeDropdown(type);
+}
+
+function openPppoeDropdown(type) {
+  const dropdownEl = document.getElementById(type === 'add' ? 'add_pppoe_dropdown' : 'e_pppoe_dropdown');
+  const iconEl = document.getElementById(type === 'add' ? 'add_pppoe_toggle_icon' : 'e_pppoe_toggle_icon');
+  const inputEl = document.getElementById(type === 'add' ? 'add_pppoe_username' : 'e_pppoe');
+  if (dropdownEl) {
+    dropdownEl.classList.add('show');
+    renderPppoeDropdown(type, inputEl ? inputEl.value : '');
+  }
+  if (iconEl) iconEl.style.transform = 'rotate(180deg)';
+}
+
+function closePppoeDropdown(type) {
+  const dropdownEl = document.getElementById(type === 'add' ? 'add_pppoe_dropdown' : 'e_pppoe_dropdown');
+  const iconEl = document.getElementById(type === 'add' ? 'add_pppoe_toggle_icon' : 'e_pppoe_toggle_icon');
+  if (dropdownEl) dropdownEl.classList.remove('show');
+  if (iconEl) iconEl.style.transform = 'rotate(0deg)';
+}
+
+function togglePppoeDropdown(type) {
+  const dropdownEl = document.getElementById(type === 'add' ? 'add_pppoe_dropdown' : 'e_pppoe_dropdown');
+  if (dropdownEl && dropdownEl.classList.contains('show')) {
+    closePppoeDropdown(type);
+  } else {
+    openPppoeDropdown(type);
   }
 }
+
+function filterPppoeDropdown(type, val) {
+  openPppoeDropdown(type);
+  renderPppoeDropdown(type, val);
+}
+
+// Global click outside & Escape listeners to auto-dismiss dropdowns
+document.addEventListener('click', (e) => {
+  ['add', 'edit'].forEach(type => {
+    const wrap = document.getElementById(type === 'add' ? 'add_pppoe_autocomplete_wrap' : 'e_pppoe_autocomplete_wrap');
+    if (wrap && !wrap.contains(e.target)) {
+      closePppoeDropdown(type);
+    }
+  });
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closePppoeDropdown('add');
+    closePppoeDropdown('edit');
+  }
+});
 
 async function loadPppoeAdd(routerId = '') {
   try {
@@ -3526,9 +5022,10 @@ async function loadPppoeAdd(routerId = '') {
     const res = await fetch(url);
     if (!res.ok) return;
     const users = await res.json();
-    buildPppoeList(document.getElementById('add_pppoe_list'), Array.isArray(users) ? users : []);
+    const list = Array.isArray(users) ? users : [];
+    setCachedPppoeUsers('add', list);
     const hint = document.getElementById('add_pppoe_hint');
-    if (hint) hint.innerText = Array.isArray(users) && users.length ? `Tersedia ${users.length} user PPPoE (yang belum dipakai).` : 'Tidak ada user PPPoE yang tersedia.';
+    if (hint) hint.innerText = list.length ? `Tersedia ${list.length} user PPPoE MikroTik siap pakai.` : 'Tidak ada user PPPoE MikroTik yang tersedia.';
   } catch (e) {
     console.error('Failed to load MikroTik users', e);
   }
@@ -3544,21 +5041,22 @@ async function loadPppoeEdit(routerId = '', excludeCustomerId = '') {
     const res = await fetch(url);
     if (!res.ok) return;
     const users = await res.json();
-    buildPppoeList(document.getElementById('e_pppoe_list'), Array.isArray(users) ? users : []);
+    const list = Array.isArray(users) ? users : [];
+    setCachedPppoeUsers('edit', list);
     const hint = document.getElementById('e_pppoe_hint');
-    if (hint) hint.innerText = Array.isArray(users) && users.length ? `Tersedia ${users.length} user PPPoE (yang belum dipakai).` : 'Tidak ada user PPPoE yang tersedia.';
+    if (hint) hint.innerText = list.length ? `Tersedia ${list.length} user PPPoE MikroTik siap pakai.` : 'Tidak ada user PPPoE MikroTik yang tersedia.';
   } catch (e) {
     console.error('Failed to load MikroTik users', e);
   }
 }
 
-function buildHotspotProfileList(datalistEl, profiles) {
-  if (!datalistEl) return;
-  datalistEl.innerHTML = '';
+function buildHotspotProfileList(selectEl, profiles) {
+  if (!selectEl) return;
+  selectEl.innerHTML = '<option value="">-- Pilih Profil Hotspot --</option>';
   for (const p of profiles) {
     const name = p && p.name ? String(p.name).trim() : '';
     if (!name) continue;
-    datalistEl.insertAdjacentHTML('beforeend', `<option value="${name.replace(/"/g, '&quot;')}"></option>`);
+    selectEl.insertAdjacentHTML('beforeend', `<option value="${name.replace(/"/g, '&quot;')}">${name}</option>`);
   }
 }
 
@@ -3572,11 +5070,11 @@ async function loadHotspotProfiles(type, routerId = '') {
     const rows = await res.json();
     const list = Array.isArray(rows) ? rows : [];
     if (type === 'add') {
-      buildHotspotProfileList(document.getElementById('add_hotspot_profile_list'), list);
+      buildHotspotProfileList(document.getElementById('add_hotspot_profile'), list);
       const hint = document.getElementById('add_hotspot_profile_hint');
       if (hint) hint.innerText = list.length ? `Tersedia ${list.length} profile hotspot.` : 'Tidak ada profile hotspot.';
     } else {
-      buildHotspotProfileList(document.getElementById('e_hotspot_profile_list'), list);
+      buildHotspotProfileList(document.getElementById('e_hotspot_profile'), list);
       const hint = document.getElementById('e_hotspot_profile_hint');
       if (hint) hint.innerText = list.length ? `Tersedia ${list.length} profile hotspot.` : 'Tidak ada profile hotspot.';
     }

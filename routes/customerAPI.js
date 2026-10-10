@@ -398,7 +398,7 @@ router.get('/app/admin/customers', requireAdminApiAuth, (req, res) => {
 // Admin: Tambah Pelanggan Baru (Native)
 router.post('/app/admin/customers/create', requireAdminApiAuth, async (req, res) => {
   try {
-    const { name, phone, address, package_id, pppoe_username, pppoe_password, isolate_day } = req.body || {};
+    const { name, phone, address, package_id, pppoe_username, pppoe_password, isolate_day, billing_day } = req.body || {};
     if (!name || !phone) return res.status(400).json({ success: false, message: 'Nama dan nomor WhatsApp wajib diisi' });
 
     const custData = {
@@ -409,7 +409,8 @@ router.post('/app/admin/customers/create', requireAdminApiAuth, async (req, res)
       pppoe_username: String(pppoe_username || phone).trim(),
       pppoe_password: String(pppoe_password || '123456').trim(),
       connection_type: 'pppoe',
-      isolate_day: Number(isolate_day || 10),
+      billing_day: (billing_day !== undefined && billing_day !== '') ? Number(billing_day) : (isolate_day !== undefined && isolate_day !== '' ? Number(isolate_day) : null),
+      isolate_day: (billing_day !== undefined && billing_day !== '') ? Number(billing_day) : (isolate_day !== undefined && isolate_day !== '' ? Number(isolate_day) : null),
       status: 'active'
     };
 
@@ -421,13 +422,14 @@ router.post('/app/admin/customers/create', requireAdminApiAuth, async (req, res)
         const { sendWA, whatsappStatus } = await import('../services/whatsappBot.mjs');
         if (whatsappStatus && whatsappStatus.connection === 'open') {
           const pkg = customerSvc.getPackageById(custData.package_id);
+          const globalDueDay = Number(getSetting('due_date_day', 20) || 20);
           const msg = `🎉 *SELAMAT BERGABUNG!*\n\n` +
                       `Halo Bp/Ibu *${custData.name}*,\n` +
                       `Layanan internet Anda telah terdaftar dan aktif.\n\n` +
                       `📦 *Paket:* ${pkg?.name || 'Internet'}\n` +
                       `👤 *User PPPoE:* ${custData.pppoe_username}\n` +
                       `🔑 *Password:* ${custData.pppoe_password}\n` +
-                      `📅 *Tgl Jatuh Tempo:* Setiap tgl ${custData.isolate_day}\n\n` +
+                      `📅 *Tgl Jatuh Tempo:* Setiap tgl ${globalDueDay}\n\n` +
                       `Terima kasih telah mempercayakan koneksi internet Anda kepada kami.`;
           await sendWA(custData.phone, msg);
         }
@@ -443,7 +445,7 @@ router.post('/app/admin/customers/create', requireAdminApiAuth, async (req, res)
 // Admin: Update Data Pelanggan (Native)
 router.post('/app/admin/customers/update', requireAdminApiAuth, (req, res) => {
   try {
-    const { id, name, phone, address, package_id, pppoe_username, pppoe_password, isolate_day } = req.body || {};
+    const { id, name, phone, address, package_id, pppoe_username, pppoe_password, isolate_day, billing_day } = req.body || {};
     const cId = Number(id);
     if (!cId) return res.status(400).json({ success: false, message: 'ID Pelanggan tidak valid' });
 
@@ -458,7 +460,8 @@ router.post('/app/admin/customers/update', requireAdminApiAuth, (req, res) => {
       package_id: Number(package_id || existing.package_id),
       pppoe_username: String(pppoe_username || existing.pppoe_username || phone).trim(),
       pppoe_password: String(pppoe_password || existing.pppoe_password || '123456').trim(),
-      isolate_day: Number(isolate_day || existing.isolate_day || 10)
+      billing_day: billing_day !== undefined ? (billing_day !== '' && billing_day !== null ? Number(billing_day) : null) : (isolate_day !== undefined ? (isolate_day !== '' && isolate_day !== null ? Number(isolate_day) : null) : (existing.billing_day || existing.isolate_day || null)),
+      isolate_day: billing_day !== undefined ? (billing_day !== '' && billing_day !== null ? Number(billing_day) : null) : (isolate_day !== undefined ? (isolate_day !== '' && isolate_day !== null ? Number(isolate_day) : null) : (existing.billing_day || existing.isolate_day || null))
     };
 
     customerSvc.updateCustomer(cId, updated);
@@ -497,6 +500,10 @@ function renderTemplateMessage(template, customer, invoice = null) {
   const period = invoice ? `${invoice.period_month || (now.getMonth() + 1)}/${invoice.period_year || now.getFullYear()}` : `${now.getMonth() + 1}/${now.getFullYear()}`;
   const rincian = `Tagihan Bulan ${period}`;
 
+  const globalDueDay = Number(getSetting('due_date_day', 20) || 20);
+  const globalIsolirDay = Number(getSetting('isolir_day', 1) || 1);
+  const collectorDay = customer.billing_day || customer.isolate_day || globalDueDay;
+
   let txt = template
     .replace(/\{\{nama\}\}/gi, customer.name || 'Pelanggan')
     .replace(/\{\{paket\}\}/gi, pkgName)
@@ -505,7 +512,9 @@ function renderTemplateMessage(template, customer, invoice = null) {
     .replace(/\{\{link\}\}/gi, link)
     .replace(/\{\{rincian\}\}/gi, rincian)
     .replace(/\{\{periode\}\}/gi, period)
-    .replace(/\{\{tgl_isolir\}\}/gi, String(customer.isolate_day || 10))
+    .replace(/\{\{jatuh_tempo\}\}/gi, String(globalDueDay))
+    .replace(/\{\{tgl_isolir\}\}/gi, String(globalIsolirDay))
+    .replace(/\{\{tgl_tagih\}\}/gi, String(collectorDay))
     .replace(/\{\{company\}\}/gi, comp);
 
   // Resolve spintax {option1|option2|...}
@@ -756,7 +765,7 @@ router.get('/app/collector/dashboard', requireCollectorApiAuth, (req, res) => {
     const curYear = now.getFullYear();
 
     let q = `
-      SELECT c.id, c.name, c.phone, c.address, c.status, c.area, c.isolate_day, c.pppoe_username,
+      SELECT c.id, c.name, c.phone, c.address, c.status, c.area, c.isolate_day, c.billing_day, c.pppoe_username,
              p.name as package_name, p.price as package_price,
              i.id as invoice_id, i.amount as invoice_amount, i.status as invoice_status,
              i.period_month, i.period_year
@@ -770,7 +779,7 @@ router.get('/app/collector/dashboard', requireCollectorApiAuth, (req, res) => {
     if (filterStatus === 'unpaid') {
       q += ` AND (i.status = 'unpaid' OR i.status IS NULL)`;
     } else if (filterStatus === 'today') {
-      q += ` AND c.isolate_day = ? AND (i.status = 'unpaid' OR i.status IS NULL)`;
+      q += ` AND COALESCE(c.billing_day, c.isolate_day) = ? AND (i.status = 'unpaid' OR i.status IS NULL)`;
       params.push(todayDay);
     } else if (filterStatus === 'isolir') {
       q += ` AND (c.status = 'suspended' OR c.status = 'isolated')`;
@@ -789,7 +798,7 @@ router.get('/app/collector/dashboard', requireCollectorApiAuth, (req, res) => {
       SELECT 
         SUM(CASE WHEN (i.status = 'unpaid' OR i.status IS NULL) THEN 1 ELSE 0 END) as unpaid_count,
         SUM(CASE WHEN (i.status = 'unpaid' OR i.status IS NULL) THEN COALESCE(i.amount, p.price, 0) ELSE 0 END) as unpaid_total,
-        SUM(CASE WHEN (i.status = 'unpaid' OR i.status IS NULL) AND c.isolate_day = ? THEN 1 ELSE 0 END) as today_count,
+        SUM(CASE WHEN (i.status = 'unpaid' OR i.status IS NULL) AND COALESCE(c.billing_day, c.isolate_day) = ? THEN 1 ELSE 0 END) as today_count,
         SUM(CASE WHEN c.status = 'suspended' THEN 1 ELSE 0 END) as isolir_count
       FROM customers c
       LEFT JOIN packages p ON p.id = c.package_id
@@ -2915,7 +2924,8 @@ router.post('/app/tech/customers/create', requireTechApiAuth, async (req, res) =
       status: 'active',
       install_date: new Date().toISOString().slice(0, 10),
       notes: String(req.body.notes || 'Pasang Baru via Teknisi APK').trim(),
-      isolate_day: req.body.isolate_day ? Number(req.body.isolate_day) : 10
+      billing_day: req.body.billing_day ? Number(req.body.billing_day) : (req.body.isolate_day ? Number(req.body.isolate_day) : null),
+      isolate_day: req.body.billing_day ? Number(req.body.billing_day) : (req.body.isolate_day ? Number(req.body.isolate_day) : null)
     };
 
     if (customerData.pppoe_username) {
@@ -3573,7 +3583,9 @@ router.get('/dashboard', requireCustomerApiAuth, async (req, res) => {
         address: customer.address || '',
         pppoeUsername: customer.pppoe_username || '',
         status: customer.status || 'active',
-        isolateDay: customer.isolate_day || 10,
+        billingDay: customer.billing_day || customer.isolate_day || null,
+        isolateDay: Number(getSetting('isolir_day', 1) || 1),
+        dueDay: Number(getSetting('due_date_day', 20) || 20),
         installDate: customer.install_date || null,
         expiredAt: customer.expired_at || null,
         balance: Number(customer.balance || 0)

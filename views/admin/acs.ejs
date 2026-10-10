@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>GenieACS Pro | <%= company %></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="/css/admin.css?v=2.7">
+    <link rel="stylesheet" href="/css/admin.css?v=3.3">
     <style>
         /* ── PAGE LAYOUT & HEADER ── */
         .acs-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
@@ -736,9 +736,340 @@
             background: #e2e8f0 !important;
             color: #0f172a !important;
         }
+
+        /* ── MODERN HIGH-TECH NOC TELEMETRY LOADING SCREEN (INLINE GUARANTEED) ── */
+        .noc-loading-screen {
+            position: fixed !important;
+            top: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            left: var(--sw, 240px) !important;
+            width: auto !important;
+            z-index: 900 !important;
+            background: radial-gradient(circle at 50% 35%, rgba(14, 165, 233, 0.16), transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.12), transparent 45%),
+                        rgba(11, 17, 30, 0.96) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 20px !important;
+            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                        visibility 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
+        }
+        @media (max-width: 991px) {
+            .noc-loading-screen {
+                left: 0 !important;
+            }
+        }
+        body.light-theme .noc-loading-screen,
+        html[data-theme="light"] .noc-loading-screen {
+            background: radial-gradient(circle at 50% 30%, rgba(14, 165, 233, 0.18), transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.12), transparent 45%),
+                        rgba(248, 250, 252, 0.96) !important;
+        }
+        .noc-loading-screen.fade-out {
+            opacity: 0 !important;
+            visibility: hidden !important;
+            transform: scale(1.025) !important;
+            pointer-events: none !important;
+        }
+        .noc-loading-card {
+            position: relative;
+            width: 100%;
+            max-width: 460px;
+            background: rgba(19, 27, 46, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 22px;
+            padding: 34px 28px 28px;
+            box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.65),
+                        0 0 0 1px rgba(14, 165, 233, 0.18) inset;
+            text-align: center;
+            overflow: hidden;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            animation: nocCardEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        body.light-theme .noc-loading-card,
+        html[data-theme="light"] .noc-loading-card {
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid rgba(0, 82, 204, 0.18);
+            box-shadow: 0 24px 64px -12px rgba(0, 82, 204, 0.22),
+                        0 0 0 1px rgba(14, 165, 233, 0.25) inset;
+        }
+        @keyframes nocCardEnter {
+            from { opacity: 0; transform: translateY(16px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .noc-loading-beam {
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, #0ea5e9, #6366f1, #10b981, #0ea5e9);
+            background-size: 200% 100%;
+            animation: nocBeamFlow 2.4s linear infinite;
+        }
+        @keyframes nocBeamFlow {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 0%; }
+        }
+        .noc-loading-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 999px;
+            background: rgba(14, 165, 233, 0.14);
+            border: 1px solid rgba(14, 165, 233, 0.35);
+            color: #38bdf8;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-bottom: 22px;
+        }
+        body.light-theme .noc-loading-badge,
+        html[data-theme="light"] .noc-loading-badge {
+            background: rgba(2, 132, 199, 0.1);
+            border-color: rgba(2, 132, 199, 0.28);
+            color: #0284c7;
+        }
+        .noc-loading-badge .pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 10px #38bdf8;
+            animation: nocBadgePulse 1.4s infinite ease-in-out;
+        }
+        @keyframes nocBadgePulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.35); opacity: 0.55; }
+        }
+        .noc-loading-emblem {
+            position: relative;
+            width: 86px;
+            height: 86px;
+            margin: 0 auto 22px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .noc-loading-ring-outer {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 2.5px solid transparent;
+            border-top-color: #0ea5e9;
+            border-right-color: #6366f1;
+            animation: nocRingRotate 1.8s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+            box-shadow: 0 0 16px rgba(14, 165, 233, 0.35);
+        }
+        .noc-loading-ring-inner {
+            position: absolute;
+            inset: 9px;
+            border-radius: 50%;
+            border: 2px dashed rgba(16, 185, 129, 0.7);
+            border-bottom-color: transparent;
+            animation: nocRingRotateReverse 2.4s linear infinite;
+        }
+        @keyframes nocRingRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes nocRingRotateReverse {
+            0% { transform: rotate(360deg); }
+            100% { transform: rotate(0deg); }
+        }
+        .noc-loading-icon-core {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(99, 102, 241, 0.25));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #38bdf8;
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.45);
+        }
+        body.light-theme .noc-loading-icon-core,
+        html[data-theme="light"] .noc-loading-icon-core {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(99, 102, 241, 0.15));
+            color: #0284c7;
+        }
+        .noc-loading-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 6px;
+            letter-spacing: -0.2px;
+        }
+        .noc-loading-subtitle {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 22px;
+            line-height: 1.5;
+        }
+        .noc-loading-subtitle strong {
+            color: #38bdf8;
+            font-weight: 700;
+        }
+        body.light-theme .noc-loading-subtitle strong,
+        html[data-theme="light"] .noc-loading-subtitle strong {
+            color: #0284c7;
+        }
+        .noc-progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 18px;
+        }
+        body.light-theme .noc-progress-container,
+        html[data-theme="light"] .noc-progress-container {
+            background: rgba(0, 0, 0, 0.08);
+        }
+        .noc-progress-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #0ea5e9, #6366f1, #10b981, #0ea5e9);
+            background-size: 200% 100%;
+            border-radius: 999px;
+            animation: nocProgressAnim 1.6s linear infinite;
+            box-shadow: 0 0 12px rgba(14, 165, 233, 0.6);
+        }
+        @keyframes nocProgressAnim {
+            0% { background-position: 100% 0%; }
+            100% { background-position: -100% 0%; }
+        }
+        .noc-steps-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+        .noc-step-item {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--muted);
+            justify-content: center;
+            padding: 7px 6px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.25s ease;
+        }
+        body.light-theme .noc-step-item,
+        html[data-theme="light"] .noc-step-item {
+            background: rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        .noc-step-item.active {
+            color: #38bdf8;
+            background: rgba(14, 165, 233, 0.12);
+            border-color: rgba(14, 165, 233, 0.35);
+            box-shadow: 0 2px 8px rgba(14, 165, 233, 0.15);
+        }
+        .noc-step-item.done {
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.12);
+            border-color: rgba(16, 185, 129, 0.35);
+        }
+        body.light-theme .noc-step-item.active,
+        html[data-theme="light"] .noc-step-item.active {
+            color: #0284c7;
+            background: rgba(2, 132, 199, 0.1);
+            border-color: rgba(2, 132, 199, 0.3);
+        }
+        body.light-theme .noc-step-item.done,
+        html[data-theme="light"] .noc-step-item.done {
+            color: #059669;
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+        .noc-live-status {
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .noc-live-status .status-dot {
+            width: 6.5px;
+            height: 6.5px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 8px #10b981;
+            animation: nocPulseDot 1.2s infinite ease-in-out;
+        }
+        @keyframes nocPulseDot {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.4); opacity: 0.85; }
+        }
     </style>
 </head>
 <body>
+<!-- Modern NOC High-Tech Loading Screen -->
+<div id="noc-loading-screen" class="noc-loading-screen" style="position:fixed !important;top:0 !important;right:0 !important;bottom:0 !important;left:var(--sw, 240px) !important;z-index:900 !important;display:flex !important;align-items:center !important;justify-content:center !important;background:radial-gradient(circle at 50% 35%, rgba(14, 165, 233, 0.16), transparent 50%), radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.12), transparent 45%), rgba(11, 17, 30, 0.96) !important;backdrop-filter:blur(20px) !important;-webkit-backdrop-filter:blur(20px) !important;">
+  <div class="noc-loading-card">
+    <div class="noc-loading-beam"></div>
+    
+    <div class="noc-loading-badge">
+      <span class="pulse-dot"></span>
+      <span>BIONFIBER NOC • GENIEACS PRO & TR-069</span>
+    </div>
+
+    <div class="noc-loading-emblem">
+      <div class="noc-loading-ring-outer"></div>
+      <div class="noc-loading-ring-inner"></div>
+      <div class="noc-loading-icon-core">
+        <i class="bi bi-broadcast"></i>
+      </div>
+    </div>
+
+    <div class="noc-loading-title">Sinkronisasi Auto Configuration Server</div>
+    <div class="noc-loading-subtitle" id="noc-loading-target">
+      Menghubungkan TR-069 NBI Engine & Telemetri CPE Modem...
+    </div>
+
+    <div class="noc-progress-container">
+      <div class="noc-progress-bar"></div>
+    </div>
+
+    <div class="noc-steps-row">
+      <div class="noc-step-item active" id="noc-step-1">
+        <i class="bi bi-hdd-network"></i> <span>NBI Socket</span>
+      </div>
+      <div class="noc-step-item" id="noc-step-2">
+        <i class="bi bi-people"></i> <span>Billing & PPPoE</span>
+      </div>
+      <div class="noc-step-item" id="noc-step-3">
+        <i class="bi bi-activity"></i> <span>Telemetri CPE</span>
+      </div>
+    </div>
+
+    <div class="noc-live-status">
+      <span class="status-dot"></span>
+      <span id="noc-status-ticker">Mengambil data parameter TR-069 & inventaris modem...</span>
+    </div>
+  </div>
+</div>
+
 <%- include('partials/sidebar', { activePage: 'acs_pro', company }) %>
 <div class="mw">
     <!-- Topbar Header -->
@@ -806,7 +1137,7 @@
                     <div class="kpi-icon"><i class="bi bi-router"></i></div>
                 </div>
                 <div class="kpi-body">
-                    <span class="kpi-val"><%= totalDev %></span>
+                    <span class="kpi-val" id="kpiValAll"><%= totalDev %></span>
                     <span class="kpi-badge" style="background:rgba(0,82,204,0.15);color:#38bdf8;">Unit</span>
                 </div>
                 <div class="kpi-footer">
@@ -820,8 +1151,8 @@
                     <div class="kpi-icon"><i class="bi bi-wifi"></i></div>
                 </div>
                 <div class="kpi-body">
-                    <span class="kpi-val"><%= onlineDev %></span>
-                    <span class="kpi-badge" style="background:rgba(16,185,129,0.15);color:#10b981;"><%= onlinePercent %>% Rasio</span>
+                    <span class="kpi-val" id="kpiValOnline"><%= onlineDev %></span>
+                    <span class="kpi-badge" id="kpiBadgeOnline" style="background:rgba(16,185,129,0.15);color:#10b981;"><%= onlinePercent %>% Rasio</span>
                 </div>
                 <div class="kpi-footer">
                     <span>Tersambung TR-069 & Sesi Aktif</span>
@@ -834,8 +1165,8 @@
                     <div class="kpi-icon"><i class="bi bi-exclamation-octagon"></i></div>
                 </div>
                 <div class="kpi-body">
-                    <span class="kpi-val"><%= offlineDev %></span>
-                    <span class="kpi-badge" style="background:rgba(239,68,68,0.15);color:#ef4444;"><%= totalDev > 0 ? (100 - onlinePercent) : 0 %>%</span>
+                    <span class="kpi-val" id="kpiValOffline"><%= offlineDev %></span>
+                    <span class="kpi-badge" id="kpiBadgeOffline" style="background:rgba(239,68,68,0.15);color:#ef4444;"><%= totalDev > 0 ? (100 - onlinePercent) : 0 %>%</span>
                 </div>
                 <div class="kpi-footer">
                     <span>Mati listrik / Kabel FO Putus</span>
@@ -848,7 +1179,7 @@
                     <div class="kpi-icon"><i class="bi bi-broadcast-pin"></i></div>
                 </div>
                 <div class="kpi-body">
-                    <span class="kpi-val"><%= criticalDev %></span>
+                    <span class="kpi-val" id="kpiValCritical"><%= criticalDev %></span>
                     <span class="kpi-badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;">&lt; -27 dBm</span>
                 </div>
                 <div class="kpi-footer">
@@ -890,7 +1221,7 @@
                                 <% } %>
                             </div>
                             
-                            <select class="fc" id="acsFilter" name="acs" style="width:190px; height:38px;" onchange="this.form.submit()">
+                            <select class="fc" id="acsFilter" name="acs" style="width:190px; height:38px;" onchange="showNocLoadingOnSwitch(this)">
                                 <option value="all">Semua ACS Server</option>
                                 <% acsServers.forEach(s => { %>
                                     <option value="<%= s.id %>" <%= String(selectedAcsId) === String(s.id) ? 'selected' : '' %>><%= s.name %></option>
@@ -905,16 +1236,16 @@
                         <!-- Instant Status Filter Pills -->
                         <div class="status-pills">
                             <button type="button" class="status-pill-btn active" data-filter="all" onclick="filterDevicesByStatus('all', this)">
-                                Semua (<%= totalDev %>)
+                                Semua (<span id="pillCountAll"><%= totalDev %></span>)
                             </button>
                             <button type="button" class="status-pill-btn" data-filter="online" onclick="filterDevicesByStatus('online', this)">
-                                <span class="live-dot" style="width:6px; height:6px;"></span> Online (<%= onlineDev %>)
+                                <span class="live-dot" style="width:6px; height:6px;"></span> Online (<span id="pillCountOnline"><%= onlineDev %></span>)
                             </button>
                             <button type="button" class="status-pill-btn" data-filter="offline" onclick="filterDevicesByStatus('offline', this)">
-                                <i class="bi bi-circle-fill text-danger" style="font-size:7px;"></i> Offline (<%= offlineDev %>)
+                                <i class="bi bi-circle-fill text-danger" style="font-size:7px;"></i> Offline (<span id="pillCountOffline"><%= offlineDev %></span>)
                             </button>
                             <button type="button" class="status-pill-btn" data-filter="critical" onclick="filterDevicesByStatus('critical', this)">
-                                <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size:10px;"></i> Kritis (<%= criticalDev %>)
+                                <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size:10px;"></i> Kritis (<span id="pillCountCritical"><%= criticalDev %></span>)
                             </button>
                         </div>
                     </div>
@@ -2451,7 +2782,17 @@ async function syncAllACS() {
         const res = await fetch('/admin/acs/api/sync/all', { method: 'POST' });
         const d = await res.json();
         alert(d.message || 'Proses sinkronisasi semua ACS server selesai');
-        if (d.success) location.reload();
+        if (d.success) {
+            const el = document.getElementById('noc-loading-screen');
+            if (el) {
+                el.style.display = 'flex';
+                el.classList.remove('fade-out');
+                if (typeof setNocLoadingStep === 'function') {
+                    setNocLoadingStep(1, 'Memuat ulang inventaris modem & telemetri TR-069...');
+                }
+            }
+            location.reload();
+        }
     } catch (err) {
         alert('Gagal menyinkronkan: ' + err.message);
     } finally {
@@ -3445,9 +3786,306 @@ function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
 }
 
+function escapeJs(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '');
+}
+
+// ── NOC TELEMETRY LOADING SCREEN CONTROLLER ──
+function setNocLoadingStep(stepNum, tickerText) {
+  const step1 = document.getElementById('noc-step-1');
+  const step2 = document.getElementById('noc-step-2');
+  const step3 = document.getElementById('noc-step-3');
+  const ticker = document.getElementById('noc-status-ticker');
+  if (ticker && tickerText) ticker.textContent = tickerText;
+
+  if (stepNum === 1) {
+    if (step1) { step1.className = 'noc-step-item active'; }
+    if (step2) { step2.className = 'noc-step-item'; }
+    if (step3) { step3.className = 'noc-step-item'; }
+  } else if (stepNum === 2) {
+    if (step1) { step1.className = 'noc-step-item done'; }
+    if (step2) { step2.className = 'noc-step-item active'; }
+    if (step3) { step3.className = 'noc-step-item'; }
+  } else if (stepNum === 3) {
+    if (step1) { step1.className = 'noc-step-item done'; }
+    if (step2) { step2.className = 'noc-step-item done'; }
+    if (step3) { step3.className = 'noc-step-item active'; }
+  }
+}
+
+function hideNocLoadingScreen() {
+  const el = document.getElementById('noc-loading-screen');
+  if (!el || el.classList.contains('fade-out')) return;
+
+  const step1 = document.getElementById('noc-step-1');
+  const step2 = document.getElementById('noc-step-2');
+  const step3 = document.getElementById('noc-step-3');
+  const ticker = document.getElementById('noc-status-ticker');
+  if (step1) step1.className = 'noc-step-item done';
+  if (step2) step2.className = 'noc-step-item done';
+  if (step3) step3.className = 'noc-step-item done';
+  if (ticker) ticker.textContent = 'GenieACS Enterprise Console siap!';
+
+  setTimeout(() => {
+    el.classList.add('fade-out');
+    setTimeout(() => {
+      el.style.display = 'none';
+    }, 450);
+  }, 220);
+}
+
+function showNocLoadingOnSwitch(select) {
+  const el = document.getElementById('noc-loading-screen');
+  if (el) {
+    el.style.display = 'flex';
+    el.classList.remove('fade-out');
+    const ticker = document.getElementById('noc-status-ticker');
+    if (ticker) ticker.textContent = 'Memuat telemetri dari server ACS terpilih...';
+    setNocLoadingStep(1, 'Menghubungkan TR-069 NBI Engine...');
+  }
+  select.form.submit();
+}
+
+// Safety timeout: automatically fade out after 10s so user never gets stuck
+setTimeout(hideNocLoadingScreen, 10000);
+
+function renderDevicesTableRows(devices, selectedAcsId) {
+    const tbody = document.getElementById('devicesTableBody');
+    if (!tbody) return;
+
+    if (!devices || devices.length === 0) {
+        tbody.innerHTML = `
+            <tr id="noDevicesRow">
+                <td colspan="7">
+                    <div class="empty-state">
+                        <div class="empty-icon"><i class="bi bi-hdd-network"></i></div>
+                        <div class="empty-title">Tidak Ada Perangkat Ditemukan</div>
+                        <div class="empty-desc">Belum ada data perangkat yang tersinkronisasi dari GenieACS server yang dipilih.</div>
+                        <div>
+                            <button class="btn btn-p btn-sm" onclick="syncAllACS()"><i class="bi bi-arrow-repeat"></i> Sinkronkan Sekarang</button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let rowsHtml = '';
+    devices.forEach(d => {
+        const mfg = (d.manufacturer || '').toLowerCase();
+        let vendorClass = 'vendor-badge';
+        if (mfg.includes('huawei')) vendorClass += ' vendor-huawei';
+        else if (mfg.includes('zte')) vendorClass += ' vendor-zte';
+        else if (mfg.includes('fiberhome')) vendorClass += ' vendor-fiberhome';
+
+        const rxNum = parseFloat(d.rx_power);
+        const hasRx = !isNaN(rxNum);
+        let rxBadgeClass = 'rx-badge rx-muted';
+        let rxLabel = hasRx ? `${d.rx_power} dBm` : '-';
+        let rxIcon = 'bi-activity';
+        let isCriticalRx = false;
+
+        if (hasRx) {
+            if (rxNum >= -22.0) {
+                rxBadgeClass = 'rx-badge rx-good';
+                rxIcon = 'bi-reception-4';
+            } else if (rxNum >= -26.9) {
+                rxBadgeClass = 'rx-badge rx-warning';
+                rxIcon = 'bi-reception-3';
+            } else {
+                rxBadgeClass = 'rx-badge rx-danger';
+                rxIcon = 'bi-exclamation-triangle-fill';
+                isCriticalRx = true;
+            }
+        }
+
+        const devId = d.id || d._id || d.sn;
+        const devSn = d.sn || devId;
+        const acsServerId = d.acs_server_id || selectedAcsId || '';
+
+        rowsHtml += `
+            <tr class="device-row" 
+                data-online="${d.isOnline ? '1' : '0'}" 
+                data-critical="${isCriticalRx ? '1' : '0'}"
+                data-sn="${escapeHtml((devSn || '').toLowerCase())}"
+                data-customer="${escapeHtml((d.customer_name || '').toLowerCase())}"
+                data-pppoe="${escapeHtml((d.pppoe_user || '').toLowerCase())}"
+                data-ip="${escapeHtml((d.ip || d.pppoe_ip || '').toLowerCase())}"
+                data-ssid="${escapeHtml((d.ssid || '').toLowerCase())}">
+                <td style="text-align:center;">
+                    <input type="checkbox" class="device-checkbox" data-id="${escapeHtml(devId)}" data-acs="${escapeHtml(acsServerId)}" onchange="updateBulkPanel()" style="cursor:pointer; width:16px; height:16px;">
+                </td>
+                <td>
+                    <div class="dev-identity">
+                        <a href="/admin/acs/device/${encodeURIComponent(devId)}?acsId=${encodeURIComponent(acsServerId)}" class="dev-sn" title="Buka Detail Telemetri Perangkat">
+                            <i class="bi bi-router text-muted"></i>
+                            <span>${escapeHtml(devSn)}</span>
+                        </a>
+                        <div class="dev-meta">
+                            <span class="${vendorClass}">${escapeHtml(d.manufacturer && d.manufacturer !== '-' ? d.manufacturer : 'ONU')}</span>
+                            <span>${escapeHtml(d.model && d.model !== '-' ? d.model : '')}</span>
+                            ${d.acs_server_name ? `<span style="opacity:0.6;">&bull; ${escapeHtml(d.acs_server_name)}</span>` : ''}
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="cust-cell">
+                        <div class="cust-name">
+                            ${d.customer_name && d.customer_name !== '-' ? `
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <i class="bi bi-person-circle text-primary" style="font-size:12px;"></i>
+                                    <span style="font-weight:600;">${escapeHtml(d.customer_name)}</span>
+                                    <button type="button" class="btn-act" onclick="unmapCustomer('${escapeJs(devSn)}', '${escapeJs(d.customer_name)}')" style="border:none; background:transparent; padding:0; font-size:11px; color:var(--muted); cursor:pointer; opacity:0.6;" title="Lepas tautan pelanggan">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </div>
+                            ` : `
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <span class="badge" style="background:rgba(148,163,184,0.12); color:#94a3b8; font-weight:600; font-size:11px; padding:2px 7px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;" title="Modem belum ditautkan ke data pelanggan billing">
+                                        <i class="bi bi-person-dash"></i> Belum Dimapping
+                                    </span>
+                                    <button type="button" class="btn btn-g btn-xs" onclick="openMapCustomerModal('${escapeJs(devSn)}')" style="font-size:10px; padding:2px 7px; line-height:1.2; border-radius:4px;" title="Tautkan modem ini ke salah satu pelanggan billing">
+                                        <i class="bi bi-link-45deg"></i> Tautkan
+                                    </button>
+                                </div>
+                            `}
+                        </div>
+                        <div class="cust-sub">
+                            ${d.pppoe_user && d.pppoe_user !== '-' ? `<span title="PPPoE Username" style="color:#60a5fa;"><i class="bi bi-key-fill"></i> ${escapeHtml(d.pppoe_user)}</span>` : ''}
+                            ${d.ip && d.ip !== '-' ? `<span title="IP Address" style="opacity:0.8;">${escapeHtml(d.ip)}</span>` : ''}
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div>
+                        <span class="badge ${d.client_count && d.client_count > 0 ? 'bs' : 'bm'}" style="font-size:11px; padding:4px 9px; font-weight:700; display:inline-flex; align-items:center; gap:6px;" title="Total Perangkat Terhubung ke Modem (Klien LAN & Wi-Fi)">
+                            <i class="bi bi-laptop"></i> ${d.client_count !== null && d.client_count !== undefined ? d.client_count : 0} Perangkat
+                        </span>
+                    </div>
+                </td>
+                <td>
+                    <span class="${rxBadgeClass}" title="Optical Received Power">
+                        <i class="bi ${rxIcon}"></i> ${escapeHtml(rxLabel)}
+                    </span>
+                </td>
+                <td>
+                    <div style="display:flex; flex-direction:column; gap:3px;">
+                        <div>
+                            <span class="status-pill ${d.isOnline ? 'status-up' : 'status-down'}">
+                                <span class="${d.isOnline ? 'live-dot' : ''}" style="width:6px; height:6px; background:${d.isOnline ? '#10b981' : '#ef4444'};"></span>
+                                ${d.isOnline ? 'Online' : 'Offline'}
+                            </span>
+                        </div>
+                        <div style="font-size:11px; color:var(--muted); font-family:monospace;" class="live-uptime-ticker" data-seconds="${d.uptime_seconds || 0}" data-online="${d.isOnline ? '1' : '0'}">
+                            <i class="bi bi-clock-history"></i> <span class="uptime-clock-text">${escapeHtml(d.uptime || '-')}</span>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="action-group">
+                        <button class="btn-act btn-wifi" onclick="openAcsWifiModal('${escapeJs(devId)}', '${escapeJs(devSn)}', '${escapeJs(d.ssid || '')}', '${escapeJs(d.customer_name || '')}', '${escapeJs(acsServerId)}')" title="Ganti Nama / Sandi Wi-Fi 2.4G & 5G (TR-069)">
+                            <i class="bi bi-wifi"></i>
+                        </button>
+                        <button class="btn-act btn-refresh" onclick="refreshDevice('${escapeJs(devId)}')" title="Summon / Refresh Data Perangkat">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </button>
+                        <button class="btn-act btn-wan" onclick="openAddWanModal('${escapeJs(devId)}', '${escapeJs(acsServerId)}', '${escapeJs(devSn)}', '${escapeJs(d.manufacturer || '')}', '${escapeJs(d.model || '')}')" title="Provisioning WAN All-in-One (VLAN, PPPoE & Binding)">
+                            <i class="bi bi-hdd-network"></i>
+                        </button>
+                        <button class="btn-act btn-del" onclick="deleteDevice('${escapeJs(devId)}', '${escapeJs(acsServerId)}')" title="Hapus Perangkat dari ACS">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = rowsHtml;
+}
+
+function updateConsoleDeviceOptions(devices) {
+    const sel = document.getElementById('consoleDeviceSelect');
+    if (!sel || !devices) return;
+    sel.innerHTML = devices.map((d, idx) => {
+        const devId = d.id || d._id || d.sn;
+        const devSn = d.sn || devId;
+        const devMfg = d.manufacturer || '-';
+        const devModel = d.model || '-';
+        const devCust = d.customer_name || d.pppoe_user || 'No Customer';
+        return `<option value="${escapeHtml(devId)}" data-sn="${escapeHtml(devSn)}" data-mfg="${escapeHtml(devMfg)}" data-model="${escapeHtml(devModel)}" data-customer="${escapeHtml(devCust)}">${escapeHtml(devSn)} - ${escapeHtml(devCust)} (${escapeHtml(devMfg)} ${escapeHtml(devModel)})</option>`;
+    }).join('');
+    if (typeof onConsoleDeviceChange === 'function') onConsoleDeviceChange();
+}
+
+async function loadAcsDevicesData() {
+    setNocLoadingStep(1, 'Menghubungkan TR-069 NBI Engine & Socket...');
+    
+    // Smooth telemetry stage progression while waiting for data
+    const stage2Timer = setTimeout(() => {
+        setNocLoadingStep(2, 'Sinkronisasi profil PPPoE & database pelanggan...');
+    }, 450);
+    const stage3Timer = setTimeout(() => {
+        setNocLoadingStep(3, 'Memproses telemetri parameter CPE & redaman optik...');
+    }, 950);
+
+    try {
+        const res = await fetch('/admin/acs/api/devices-data' + window.location.search);
+        const data = await res.json();
+
+        clearTimeout(stage2Timer);
+        clearTimeout(stage3Timer);
+        setNocLoadingStep(3, 'Menyiapkan tabel inventaris modem & optik...');
+
+        if (data.success && Array.isArray(data.devices)) {
+            // Update KPI cards
+            const totalEl = document.getElementById('kpiValAll');
+            const onEl = document.getElementById('kpiValOnline');
+            const offEl = document.getElementById('kpiValOffline');
+            const critEl = document.getElementById('kpiValCritical');
+            const onBadge = document.getElementById('kpiBadgeOnline');
+            const offBadge = document.getElementById('kpiBadgeOffline');
+            const devBadge = document.getElementById('badgeDevCount');
+
+            if (totalEl) totalEl.textContent = data.totalDev;
+            if (onEl) onEl.textContent = data.onlineDev;
+            if (offEl) offEl.textContent = data.offlineDev;
+            if (critEl) critEl.textContent = data.criticalDev;
+            if (onBadge) onBadge.textContent = `${data.onlinePercent}% Rasio`;
+            if (offBadge) offBadge.textContent = `${data.totalDev > 0 ? (100 - data.onlinePercent) : 0}%`;
+            if (devBadge) devBadge.textContent = data.totalDev;
+
+            // Update status pills
+            const pillAll = document.getElementById('pillCountAll');
+            const pillOn = document.getElementById('pillCountOnline');
+            const pillOff = document.getElementById('pillCountOffline');
+            const pillCrit = document.getElementById('pillCountCritical');
+            if (pillAll) pillAll.textContent = data.totalDev;
+            if (pillOn) pillOn.textContent = data.onlineDev;
+            if (pillOff) pillOff.textContent = data.offlineDev;
+            if (pillCrit) pillCrit.textContent = data.criticalDev;
+
+            // Render table & console
+            renderDevicesTableRows(data.devices, data.selectedAcsId);
+            updateConsoleDeviceOptions(data.devices);
+        }
+    } catch (err) {
+        console.error('Failed to load ACS devices telemetry:', err);
+    } finally {
+        setTimeout(hideNocLoadingScreen, 300);
+    }
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
-    onConsoleDeviceChange();
+    loadAcsDevicesData();
 });
 </script>
 </body>

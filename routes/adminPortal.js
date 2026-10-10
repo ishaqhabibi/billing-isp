@@ -644,6 +644,10 @@ router.get('/logout', (req, res) => { req.session.destroy(); res.redirect('/admi
 
 // ─── OLT MANAGEMENT ────────────────────────────────────────────────────────
 router.get('/olts', requireAdminSession, async (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+
   const olts = oltSvc.getAllOlts();
   
   res.render('admin/olts', { 
@@ -656,6 +660,10 @@ router.get('/olts', requireAdminSession, async (req, res) => {
 });
 
 router.get(['/olts/onus', '/olts-onus'], requireAdminSession, async (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+
   const olts = oltSvc.getAllOlts();
   
   res.render('admin/olts_onus', { 
@@ -762,7 +770,7 @@ router.post('/olts', requireAdminSession, restrictToAdmin, express.urlencoded({ 
   res.redirect(redirectUrl);
 });
 
-router.post('/olts/:id/update', requireAdminSession, restrictToAdmin, express.urlencoded({ extended: true }), (req, res) => {
+router.post(['/olts/:id/update', '/olts/:id/edit'], requireAdminSession, restrictToAdmin, express.urlencoded({ extended: true }), (req, res) => {
   const redirectUrl = req.body.redirect_to || req.query.redirect || '/admin/olts';
   try {
     oltSvc.updateOlt(req.params.id, req.body);
@@ -801,13 +809,17 @@ router.post('/api/olts/:id/coordinates', requireAdminSession, restrictToAdmin, e
 
 // ─── ODP & MAP MANAGEMENT ───────────────────────────────────────────────────
 router.get('/map', requireAdminSession, requireSidebarMenuAccess('map'), (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+
   const customers = customerSvc.getAllCustomers();
   const odps = odpSvc.getAllOdps();
   const odcs = odcSvc.getAllOdcs();
   const olts = oltSvc.getAllOlts();
   
   res.render('admin/map', { 
-    title: 'Peta Jaringan', 
+    title: 'Topologi Jaringan', 
     company: company(), 
     activePage: 'map', 
     customers, 
@@ -899,6 +911,191 @@ router.get('/api/customers/next-code', requireAdminSession, (req, res) => {
     });
   } catch (err) {
     return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── API: RAHASIA / SECRET MIKROTIK YANG BELUM DICATAT DI BILLING ──
+router.get('/api/customers/unregistered-secrets', requireAdminSession, async (req, res) => {
+  let conn = null;
+  try {
+    const rawRouterId = req.query.router_id || req.query.routerId;
+    const routerId = rawRouterId ? (Number(rawRouterId) || null) : null;
+
+    let targetRouter = null;
+    if (routerId) {
+      targetRouter = db.prepare('SELECT id, name, host FROM routers WHERE id = ?').get(routerId);
+    } else {
+      targetRouter = db.prepare('SELECT id, name, host FROM routers WHERE is_active = 1 ORDER BY id ASC LIMIT 1').get();
+    }
+    if (!targetRouter) {
+      const settings = getSettingsWithCache();
+      if (settings.mikrotik_host) targetRouter = { id: null, name: 'Default Router', host: settings.mikrotik_host };
+    }
+    if (!targetRouter) {
+      return res.json({ ok: false, error: 'Tidak ada router aktif.', secrets: [], count: 0 });
+    }
+
+    conn = await mikrotikService.getConnection(targetRouter.id);
+    const rawSecrets = await conn.client.menu('/ppp/secret').get();
+    const secrets = Array.isArray(rawSecrets) ? rawSecrets.filter(r => {
+      const svc = String(r?.service || '').toLowerCase();
+      return svc === 'pppoe' || svc === 'any' || !svc;
+    }) : [];
+
+    const registeredUsers = new Set(
+      (db.prepare("SELECT LOWER(pppoe_username) as u FROM customers WHERE pppoe_username != ''").all() || []).map(r => r.u)
+    );
+
+    const unregistered = secrets.filter(s => {
+      const uname = String(s.name || '').trim().toLowerCase();
+      return uname && !registeredUsers.has(uname);
+    }).map(s => ({
+      username: s.name,
+      password: String(s.password || ''),
+      profile: s.profile || '-',
+      comment: s.comment || '',
+      remoteAddress: s['remote-address'] || '',
+      disabled: s.disabled === 'true' || s.disabled === true
+    }));
+
+    return res.json({
+      ok: true,
+      router: { id: targetRouter.id, name: targetRouter.name, host: targetRouter.host },
+      count: unregistered.length,
+      secrets: unregistered
+    });
+  } catch (e) {
+    logger.error('[API unregistered-secrets] Error:', e.message);
+    return res.status(500).json({ ok: false, error: e.message, secrets: [], count: 0 });
+  } finally {
+    if (conn && conn.api) conn.api.close();
+  }
+});
+
+// ── API: QUICK IMPORT SECRETS DARI MIKROTIK KE BILLING ──
+router.post('/api/customers/quick-import-secrets', requireAdminSession, express.json(), async (req, res) => {
+  let conn = null;
+  try {
+    const rawRouterId = req.body.router_id || req.body.routerId;
+    const routerId = rawRouterId ? (Number(rawRouterId) || null) : null;
+    const selectedUsernames = Array.isArray(req.body.usernames) ? req.body.usernames.map(u => String(u).trim().toLowerCase()) : null;
+    const defaultPackageId = req.body.package_id ? Number(req.body.package_id) : null;
+    const targetAuthMode = req.body.is_radius !== undefined ? (Number(req.body.is_radius) === 1 ? 1 : 0) : 1;
+
+    let targetRouter = null;
+    if (routerId) {
+      targetRouter = db.prepare('SELECT id, name, host FROM routers WHERE id = ?').get(routerId);
+    } else {
+      targetRouter = db.prepare('SELECT id, name, host FROM routers WHERE is_active = 1 ORDER BY id ASC LIMIT 1').get();
+    }
+    if (!targetRouter) {
+      const settings = getSettingsWithCache();
+      if (settings.mikrotik_host) targetRouter = { id: null, name: 'Default Router', host: settings.mikrotik_host };
+    }
+    if (!targetRouter) {
+      return res.status(400).json({ ok: false, error: 'Tidak ada router aktif.' });
+    }
+
+    conn = await mikrotikService.getConnection(targetRouter.id);
+    const rawSecrets = await conn.client.menu('/ppp/secret').get();
+    const secrets = Array.isArray(rawSecrets) ? rawSecrets.filter(r => {
+      const svc = String(r?.service || '').toLowerCase();
+      return svc === 'pppoe' || svc === 'any' || !svc;
+    }) : [];
+
+    const existingUsers = new Set(
+      (db.prepare("SELECT LOWER(pppoe_username) as u FROM customers WHERE pppoe_username != ''").all() || []).map(r => r.u)
+    );
+
+    const packages = db.prepare('SELECT id, name FROM packages').all() || [];
+    const packagesMap = new Map();
+    packages.forEach(p => packagesMap.set(p.name.toLowerCase().trim(), p.id));
+    const fallbackPkgId = defaultPackageId || (packages[0] ? packages[0].id : 1);
+
+    let importedCount = 0;
+    const nowStr = new Date().toISOString().slice(0, 10);
+
+    db.transaction(() => {
+      secrets.forEach(s => {
+        const uname = String(s.name || '').trim();
+        if (!uname) return;
+        const unameLower = uname.toLowerCase();
+        if (existingUsers.has(unameLower)) return;
+        if (selectedUsernames && !selectedUsernames.includes(unameLower)) return;
+
+        const pwd = String(s.password || '123456').trim() || '123456';
+        const profName = String(s.profile || '').trim().toLowerCase();
+        const pkgId = packagesMap.get(profName) || fallbackPkgId;
+        const comment = String(s.comment || '').trim();
+        const custName = comment || uname.toUpperCase();
+        const staticIp = s['remote-address'] ? String(s['remote-address']).trim() : '';
+
+        db.prepare(`
+          INSERT INTO customers (
+            name, phone, pppoe_username, pppoe_password, connection_type,
+            package_id, router_id, static_ip, status, install_date,
+            auto_isolate, is_radius, notes
+          ) VALUES (?, ?, ?, ?, 'pppoe', ?, ?, ?, 'active', ?, 1, ?, ?)
+        `).run(
+          custName, '', uname, pwd, pkgId, targetRouter.id, staticIp, nowStr,
+          targetAuthMode,
+          `Diimpor dari MikroTik Secret (${s.profile || '-'})`
+        );
+
+        existingUsers.add(unameLower);
+        importedCount++;
+      });
+    })();
+
+    return res.json({
+      ok: true,
+      count: importedCount,
+      message: `Berhasil mengimpor ${importedCount} akun pelanggan dari router ${targetRouter.name} ke database billing.`
+    });
+  } catch (err) {
+    logger.error('[API quick-import-secrets] Error:', err);
+    return res.status(500).json({ ok: false, error: err.message });
+  } finally {
+    if (conn && conn.api) conn.api.close();
+  }
+});
+
+// ── API: DETEKSI PERANGKAT ONU GENIEACS YANG TERSEDIA / BELUM DITAG ──
+router.get('/api/customers/available-onus', requireAdminSession, async (req, res) => {
+  try {
+    const result = await customerDevice.listAllDevices(200);
+    if (!result || !result.ok || !Array.isArray(result.devices)) {
+      return res.json({ ok: true, devices: [] });
+    }
+
+    const assignedMap = new Map();
+    (db.prepare("SELECT id, name, LOWER(genieacs_tag) as t, LOWER(ont_sn) as s FROM customers").all() || []).forEach(r => {
+      if (r.t) assignedMap.set(r.t, r.name);
+      if (r.s) assignedMap.set(r.s, r.name);
+    });
+
+    const devices = result.devices.map(d => {
+      const sn = d.serialNumber || d._deviceId?._SerialNumber || d._id || '';
+      const tag = (Array.isArray(d._tags) ? d._tags[0] : (d.tag || '')) || '';
+      const assignedTo = (sn && assignedMap.get(sn.toLowerCase())) || (tag && assignedMap.get(tag.toLowerCase())) || null;
+      
+      return {
+        id: d._id,
+        serialNumber: sn,
+        tag: tag,
+        model: d.model || d.productClass || 'Fiberhome ONU',
+        rxPower: (d.opticalRxPower !== undefined && d.opticalRxPower !== null) ? d.opticalRxPower : null,
+        status: d.status || 'online',
+        ip: d.ip || '',
+        assignedTo: assignedTo,
+        isAssigned: !!assignedTo
+      };
+    });
+
+    return res.json({ ok: true, devices });
+  } catch (e) {
+    logger.error('[API available-onus] Error:', e.message);
+    return res.json({ ok: false, error: e.message, devices: [] });
   }
 });
 
@@ -2722,8 +2919,9 @@ router.get('/customers/export', requireAdminSession, (req, res) => {
       'Isolir Profile': c.isolir_profile,
       'Status': c.status,
       'Tanggal Pasang': c.install_date,
-      'Auto Isolir': c.auto_isolate === 1 ? 'YA' : 'TIDAK',
-      'Tgl Isolir': c.isolate_day,
+      'Auto Isolir': c.auto_isolate === 1 ? ('YA (Tgl ' + (getSetting('isolir_day', 1)) + ')') : 'TIDAK',
+      'Tgl Tagih Kolektor': c.billing_day || c.isolate_day || '',
+      'Tgl Isolir': c.isolate_day || getSetting('isolir_day', 1),
       'ODP': c.odp_name || '-',
       'Latitude': c.lat || '',
       'Longitude': c.lng || '',
@@ -2804,7 +3002,8 @@ router.post('/customers/import', requireAdminSession, upload.single('file'), asy
         status: (cleanRow['Status'] || cleanRow['status'] || 'active').toLowerCase(),
         install_date: cleanRow['Tanggal Pasang'] || cleanRow['install_date'],
         auto_isolate: (cleanRow['Auto Isolir'] === 'TIDAK' || cleanRow['auto_isolate'] === 0) ? 0 : 1,
-        isolate_day: parseInt(cleanRow['Tgl Isolir'] || cleanRow['isolate_day']) || 10,
+        billing_day: parseInt(cleanRow['Tgl Tagih Kolektor'] || cleanRow['billing_day'] || cleanRow['Tgl Isolir'] || cleanRow['isolate_day']) || null,
+        isolate_day: parseInt(cleanRow['Tgl Tagih Kolektor'] || cleanRow['billing_day'] || cleanRow['Tgl Isolir'] || cleanRow['isolate_day']) || null,
         notes: cleanRow['Catatan'] || cleanRow['notes']
       };
       
@@ -5646,6 +5845,9 @@ function getMikrotikViewContext(req, title = 'Monitoring MikroTik') {
 }
 
 router.get('/mikrotik', requireAdminSession, requireSidebarMenuAccess('mikrotik'), (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
   res.render('admin/mikrotik', getMikrotikViewContext(req, 'Dashboard NOC MikroTik'));
 });
 
@@ -8347,19 +8549,21 @@ router.post('/onu-provision/delete', requireAdminSession, restrictToAdmin, expre
 // --- RADIUS SERVER MANAGEMENT ---
 const radiusSvc = require('../services/radiusServerService');
 
-router.get(['/radius-settings', '/radius/online', '/radius/users', '/radius/nas', '/radius/accounting', '/radius-online', '/radius-users'], requireAdminSession, restrictToAdmin, async (req, res) => {
+router.get(['/radius-settings', '/radius/online', '/radius/users', '/radius/nas', '/radius/accounting', '/radius/migration', '/radius-online', '/radius-users', '/radius-migration'], requireAdminSession, restrictToAdmin, async (req, res) => {
   try {
     let defaultTab = 'settings';
     if (req.path.includes('/online') || req.path === '/radius-online') defaultTab = 'online';
     else if (req.path.includes('/users') || req.path === '/radius-users') defaultTab = 'users';
     else if (req.path.includes('/nas')) defaultTab = 'nas';
     else if (req.path.includes('/accounting')) defaultTab = 'accounting';
+    else if (req.path.includes('/migration') || req.path === '/radius-migration') defaultTab = 'migration';
     else if (req.query.tab) defaultTab = req.query.tab;
 
     const radiusStatus = radiusSvc.getStatus();
     const onlineSessions = radiusSvc.getOnlineSessions();
     const acctLogs = radiusSvc.getAccountingLogs(200);
     const nasList = db.prepare(`SELECT * FROM radius_nas ORDER BY id DESC`).all() || [];
+    const routers = db.prepare(`SELECT id, name, host, is_active FROM routers ORDER BY is_active DESC, id ASC`).all() || [];
 
     const todayStats = db.prepare(`
       SELECT 
@@ -8390,7 +8594,7 @@ router.get(['/radius-settings', '/radius/online', '/radius/users', '/radius/nas'
     req.session._msg = null;
 
     res.render('admin/radius-settings', {
-      title: defaultTab === 'online' ? 'Sesi Aktif RADIUS' : (defaultTab === 'users' ? 'Database Akun RADIUS' : 'Pengaturan RADIUS'),
+      title: defaultTab === 'online' ? 'Sesi Aktif RADIUS' : (defaultTab === 'users' ? 'Database Akun RADIUS' : (defaultTab === 'migration' ? 'Wizard Migrasi RADIUS' : 'Pengaturan RADIUS')),
       company: company(),
       activePage: 'radius_settings',
       session: req.session,
@@ -8400,6 +8604,7 @@ router.get(['/radius-settings', '/radius/online', '/radius/users', '/radius/nas'
       acctLogs,
       nasList,
       radiusUsers,
+      routers,
       todayTrafficMB,
       todayEvents,
       msg
@@ -8812,6 +9017,363 @@ router.post('/radius/test-auth', requireAdminSession, restrictToAdmin, async (re
   } catch (err) {
     logger.error('Error testing RADIUS auth:', err);
     return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WIZARD MIGRASI SECRET MIKROTIK -> RADIUS
+// ─────────────────────────────────────────────────────────────────────────────
+
+// 1. Audit & Pra-Validasi Kredensial MikroTik vs Billing
+router.post('/radius/migration/audit', requireAdminSession, restrictToAdmin, async (req, res) => {
+  let conn = null;
+  try {
+    const rawRouterId = req.body.router_id;
+    const routerId = rawRouterId ? (Number(rawRouterId) || null) : null;
+
+    let targetRouter = null;
+    if (routerId) {
+      targetRouter = db.prepare('SELECT id, name, host FROM routers WHERE id = ?').get(routerId);
+    } else {
+      targetRouter = db.prepare('SELECT id, name, host FROM routers WHERE is_active = 1 ORDER BY id ASC LIMIT 1').get();
+    }
+
+    if (!targetRouter) {
+      const settings = getSettingsWithCache();
+      if (settings.mikrotik_host) {
+        targetRouter = { id: null, name: 'Default Router (Settings)', host: settings.mikrotik_host };
+      }
+    }
+
+    if (!targetRouter) {
+      return res.status(400).json({ success: false, message: 'Tidak ada router MikroTik yang terkonfigurasi atau aktif.' });
+    }
+
+    conn = await mikrotikService.getConnection(targetRouter.id);
+    const rawSecrets = await conn.client.menu('/ppp/secret').get();
+    const secrets = Array.isArray(rawSecrets) ? rawSecrets.filter(r => {
+      const svc = String(r?.service || '').toLowerCase();
+      return svc === 'pppoe' || svc === 'any' || !svc;
+    }) : [];
+
+    let custSql = `
+      SELECT c.id, c.name, c.phone, c.pppoe_username, c.pppoe_password,
+             c.status, c.is_radius, c.router_id, p.name as package_name
+      FROM customers c
+      LEFT JOIN packages p ON p.id = c.package_id
+      WHERE (c.pppoe_username IS NOT NULL AND c.pppoe_username != '')
+    `;
+    const custParams = [];
+    if (targetRouter.id) {
+      custSql += ` AND (c.router_id = ? OR c.router_id IS NULL)`;
+      custParams.push(targetRouter.id);
+    }
+    const customers = db.prepare(custSql).all(...custParams) || [];
+
+    const dbMap = new Map();
+    customers.forEach(c => {
+      const uname = String(c.pppoe_username || '').trim().toLowerCase();
+      if (uname) dbMap.set(uname, c);
+    });
+
+    const mtMap = new Map();
+    secrets.forEach(s => {
+      const sname = String(s.name || '').trim().toLowerCase();
+      if (sname) mtMap.set(sname, s);
+    });
+
+    const matched = [];
+    const mismatched = [];
+    const onlyInMikrotik = [];
+    const onlyInBilling = [];
+
+    secrets.forEach(s => {
+      const sname = String(s.name || '').trim().toLowerCase();
+      const inDb = dbMap.get(sname);
+      const isSecDisabled = s.disabled === 'true' || s.disabled === true;
+      if (inDb) {
+        const mtPass = String(s.password || '');
+        const dbPass = String(inDb.pppoe_password || '');
+        const isPassMatch = !mtPass || (mtPass === dbPass);
+
+        const item = {
+          username: s.name,
+          customerName: inDb.name,
+          customerId: inDb.id,
+          packageName: inDb.package_name || s.profile || '-',
+          dbPassword: dbPass,
+          mtPassword: mtPass,
+          profile: s.profile || '-',
+          disabled: isSecDisabled,
+          is_radius: inDb.is_radius ? 1 : 0,
+          status: inDb.status
+        };
+
+        if (isPassMatch) {
+          matched.push(item);
+        } else {
+          mismatched.push(item);
+        }
+      } else {
+        onlyInMikrotik.push({
+          username: s.name,
+          profile: s.profile || '-',
+          mtPassword: String(s.password || ''),
+          disabled: isSecDisabled,
+          remoteAddress: s['remote-address'] || '-'
+        });
+      }
+    });
+
+    customers.forEach(c => {
+      const uname = String(c.pppoe_username || '').trim().toLowerCase();
+      if (!mtMap.has(uname)) {
+        onlyInBilling.push({
+          username: c.pppoe_username,
+          customerName: c.name,
+          customerId: c.id,
+          packageName: c.package_name || '-',
+          dbPassword: c.pppoe_password || '',
+          is_radius: c.is_radius ? 1 : 0,
+          status: c.status
+        });
+      }
+    });
+
+    const alreadyRadiusCount = customers.filter(c => c.is_radius === 1).length;
+    const stillSecretCount = customers.filter(c => !c.is_radius).length;
+
+    res.json({
+      success: true,
+      router: {
+        id: targetRouter.id,
+        name: targetRouter.name,
+        host: targetRouter.host
+      },
+      stats: {
+        totalMikrotikSecrets: secrets.length,
+        totalBillingCustomers: customers.length,
+        matchedCount: matched.length,
+        mismatchCount: mismatched.length,
+        onlyInMikrotikCount: onlyInMikrotik.length,
+        onlyInBillingCount: onlyInBilling.length,
+        alreadyRadiusCount,
+        stillSecretCount
+      },
+      matched,
+      mismatched,
+      onlyInMikrotik,
+      onlyInBilling
+    });
+  } catch (err) {
+    logger.error('[Migration Audit] Error:', err);
+    res.status(500).json({ success: false, message: 'Gagal melakukan audit router MikroTik: ' + err.message });
+  } finally {
+    if (conn && conn.api) conn.api.close();
+  }
+});
+
+// 2. Sinkronisasi Password dari MikroTik ke Billing
+router.post('/radius/migration/sync-passwords', requireAdminSession, restrictToAdmin, async (req, res) => {
+  let conn = null;
+  try {
+    const rawRouterId = req.body.router_id;
+    const routerId = rawRouterId ? (Number(rawRouterId) || null) : null;
+
+    conn = await mikrotikService.getConnection(routerId);
+    const rawSecrets = await conn.client.menu('/ppp/secret').get();
+    const secrets = Array.isArray(rawSecrets) ? rawSecrets : [];
+
+    let updatedCount = 0;
+    const updateStmt = db.prepare('UPDATE customers SET pppoe_password = ? WHERE LOWER(pppoe_username) = LOWER(?)');
+
+    db.transaction(() => {
+      secrets.forEach(s => {
+        const uname = String(s.name || '').trim();
+        const pwd = String(s.password || '').trim();
+        if (uname && pwd) {
+          const result = updateStmt.run(pwd, uname);
+          if (result.changes > 0) updatedCount += result.changes;
+        }
+      });
+    })();
+
+    logger.info(`[Migration Sync] Berhasil menyinkronkan ${updatedCount} password dari MikroTik ke billing.`);
+    res.json({ success: true, count: updatedCount, message: `Berhasil menyinkronkan ${updatedCount} password akun dari MikroTik ke database billing.` });
+  } catch (err) {
+    logger.error('[Migration Sync] Error:', err);
+    res.status(500).json({ success: false, message: 'Gagal menyinkronkan password: ' + err.message });
+  } finally {
+    if (conn && conn.api) conn.api.close();
+  }
+});
+
+// 3. Import Secret MikroTik yang Belum Ada di Billing
+router.post('/radius/migration/import-secrets', requireAdminSession, restrictToAdmin, async (req, res) => {
+  let conn = null;
+  try {
+    const rawRouterId = req.body.router_id;
+    const routerId = rawRouterId ? (Number(rawRouterId) || null) : null;
+
+    conn = await mikrotikService.getConnection(routerId);
+    const rawSecrets = await conn.client.menu('/ppp/secret').get();
+    const secrets = Array.isArray(rawSecrets) ? rawSecrets.filter(r => {
+      const svc = String(r?.service || '').toLowerCase();
+      return svc === 'pppoe' || svc === 'any' || !svc;
+    }) : [];
+
+    const existingUsers = new Set(
+      (db.prepare("SELECT LOWER(pppoe_username) as u FROM customers WHERE pppoe_username != ''").all() || []).map(r => r.u)
+    );
+
+    const defaultPackage = db.prepare('SELECT id, name FROM packages ORDER BY id ASC LIMIT 1').get();
+    const packagesMap = new Map();
+    (db.prepare('SELECT id, name FROM packages').all() || []).forEach(p => {
+      packagesMap.set(p.name.toLowerCase().trim(), p.id);
+    });
+
+    let importedCount = 0;
+    const nowStr = new Date().toISOString().slice(0, 10);
+
+    db.transaction(() => {
+      secrets.forEach(s => {
+        const uname = String(s.name || '').trim();
+        if (!uname || existingUsers.has(uname.toLowerCase())) return;
+
+        const pwd = String(s.password || '123456').trim() || '123456';
+        const profName = String(s.profile || '').trim().toLowerCase();
+        const pkgId = packagesMap.get(profName) || (defaultPackage ? defaultPackage.id : 1);
+        const comment = String(s.comment || '').trim();
+        const custName = comment || uname.toUpperCase();
+        const staticIp = s['remote-address'] ? String(s['remote-address']).trim() : '';
+
+        db.prepare(`
+          INSERT INTO customers (
+            name, phone, pppoe_username, pppoe_password, connection_type,
+            package_id, router_id, static_ip, status, install_date,
+            auto_isolate, is_radius, notes
+          ) VALUES (?, ?, ?, ?, 'pppoe', ?, ?, ?, 'active', ?, 1, 1, ?)
+        `).run(
+          custName, '', uname, pwd, pkgId, routerId, staticIp, nowStr,
+          `Diimpor dari MikroTik Secret (${s.profile || '-'})`
+        );
+
+        existingUsers.add(uname.toLowerCase());
+        importedCount++;
+      });
+    })();
+
+    logger.info(`[Migration Import] Berhasil mengimpor ${importedCount} secret dari MikroTik ke database.`);
+    res.json({ success: true, count: importedCount, message: `Berhasil mengimpor ${importedCount} akun secret dari MikroTik ke database billing.` });
+  } catch (err) {
+    logger.error('[Migration Import] Error:', err);
+    res.status(500).json({ success: false, message: 'Gagal mengimpor secret: ' + err.message });
+  } finally {
+    if (conn && conn.api) conn.api.close();
+  }
+});
+
+// 4. Bulk Switch Mode (1-Click Migrate All to Full RADIUS / Rollback)
+router.post('/radius/migration/bulk-switch', requireAdminSession, restrictToAdmin, async (req, res) => {
+  try {
+    const targetMode = Number(req.body.target_mode) === 1 ? 1 : 0;
+    const rawRouterId = req.body.router_id;
+    const routerId = rawRouterId ? (Number(rawRouterId) || null) : null;
+
+    let sql = `UPDATE customers SET is_radius = ? WHERE pppoe_username IS NOT NULL AND pppoe_username != '' AND status != 'deleted'`;
+    const params = [targetMode];
+
+    if (routerId) {
+      sql += ` AND (router_id = ? OR router_id IS NULL)`;
+      params.push(routerId);
+    }
+
+    const result = db.prepare(sql).run(...params);
+    const modeLabel = targetMode === 1 ? 'Full RADIUS' : 'MikroTik Secret';
+
+    logger.info(`[Migration Bulk Switch] Berhasil mengubah ${result.changes} pelanggan ke mode ${modeLabel}.`);
+    res.json({
+      success: true,
+      count: result.changes,
+      target_mode: targetMode,
+      message: `Berhasil mengalihkan ${result.changes} akun pelanggan ke mode ${modeLabel}.`
+    });
+  } catch (err) {
+    logger.error('[Migration Bulk Switch] Error:', err);
+    res.status(500).json({ success: false, message: 'Gagal mengalihkan mode pelanggan: ' + err.message });
+  }
+});
+
+// 5. Kelola Secret di MikroTik (Disable yang sudah di RADIUS / Enable Kembali)
+router.post('/radius/migration/manage-mikrotik-secrets', requireAdminSession, restrictToAdmin, async (req, res) => {
+  let conn = null;
+  try {
+    const action = String(req.body.action || 'disable_migrated').trim();
+    const rawRouterId = req.body.router_id;
+    const routerId = rawRouterId ? (Number(rawRouterId) || null) : null;
+
+    conn = await mikrotikService.getConnection(routerId);
+    const secretMenu = conn.client.menu('/ppp/secret');
+    const rawSecrets = await secretMenu.get();
+    const secrets = Array.isArray(rawSecrets) ? rawSecrets : [];
+
+    let count = 0;
+
+    if (action === 'disable_migrated') {
+      const radiusUsers = new Set(
+        (db.prepare("SELECT LOWER(pppoe_username) as u FROM customers WHERE is_radius = 1 AND pppoe_username != ''").all() || []).map(r => r.u)
+      );
+
+      for (const s of secrets) {
+        const sname = String(s.name || '').trim().toLowerCase();
+        const sid = s['.id'] || s.id;
+        const isDisabled = s.disabled === 'true' || s.disabled === true;
+        if (sid && radiusUsers.has(sname) && !isDisabled) {
+          try {
+            await secretMenu.set({ disabled: 'true' }, sid);
+            count++;
+          } catch (e) {
+            logger.warn(`[Manage Secrets] Gagal disable secret ${s.name}: ${e.message}`);
+          }
+        }
+      }
+
+      logger.info(`[Manage Secrets] Berhasil menonaktifkan ${count} secret di MikroTik.`);
+      res.json({
+        success: true,
+        count,
+        action,
+        message: `Berhasil menonaktifkan (${count}) secret di MikroTik yang sudah aktif di Full RADIUS. Resource router kini lebih ringan!`
+      });
+    } else if (action === 'enable_all') {
+      for (const s of secrets) {
+        const sid = s['.id'] || s.id;
+        const isDisabled = s.disabled === 'true' || s.disabled === true;
+        if (sid && isDisabled) {
+          try {
+            await secretMenu.set({ disabled: 'false' }, sid);
+            count++;
+          } catch (e) {
+            logger.warn(`[Manage Secrets] Gagal enable secret ${s.name}: ${e.message}`);
+          }
+        }
+      }
+
+      logger.info(`[Manage Secrets] Berhasil mengaktifkan kembali ${count} secret di MikroTik.`);
+      res.json({
+        success: true,
+        count,
+        action,
+        message: `Berhasil mengaktifkan kembali (${count}) secret di MikroTik sebagai cadangan darurat (failover).`
+      });
+    } else {
+      throw new Error('Aksi tidak valid');
+    }
+  } catch (err) {
+    logger.error('[Manage Secrets] Error:', err);
+    res.status(500).json({ success: false, message: 'Gagal mengelola secret di MikroTik: ' + err.message });
+  } finally {
+    if (conn && conn.api) conn.api.close();
   }
 });
 

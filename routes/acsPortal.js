@@ -1645,111 +1645,175 @@ function enrichDevicesWithCustomerNames(devices) {
 // ROUTES
 // ============================================
 
+// ── IN-MEMORY ACS DEVICE LIST CACHE (Ultra-fast Navigation) ──
+const acsListCache = new Map();
+const ACS_LIST_CACHE_TTL_MS = 25 * 1000; // 25 detik
+
+async function fetchAllAcsDevicesPayload({ selectedAcsId, searchQuery, refresh }) {
+    const acsServers = getACSServers();
+    const legacyACS = getLegacyACS();
+    
+    const activeServers = acsServers.length > 0 ? acsServers :
+        (legacyACS.acs_url ? [{ id: 'legacy', name: 'Default ACS', url: legacyACS.acs_url, username: legacyACS.acs_user, password: legacyACS.acs_pass }] : []);
+
+    const targetServers = selectedAcsId && selectedAcsId !== 'all' ? activeServers.filter(s => String(s.id) === String(selectedAcsId)) : activeServers;
+
+    const cacheKey = `${selectedAcsId || 'all'}`;
+    const cachedEntry = (!searchQuery && !refresh) ? acsListCache.get(cacheKey) : null;
+
+    let allDevices = [];
+    if (cachedEntry && (Date.now() - cachedEntry.time < ACS_LIST_CACHE_TTL_MS)) {
+        allDevices = cachedEntry.devices;
+    } else if (targetServers.length > 0) {
+        const activeSessionsMap = await mikrotikSvc.getActivePppoeSessionsMap().catch(() => new Map());
+        if (searchQuery) {
+            const query = JSON.stringify({
+                $or: [
+                    { '_deviceId._SerialNumber': { $regex: searchQuery, $options: 'i' } },
+                    { 'VirtualParameters.CustomerName': { $regex: searchQuery, $options: 'i' } },
+                    { 'VirtualParameters.customer_name': { $regex: searchQuery, $options: 'i' } },
+                    { 'VirtualParameters.PPPoEUser': { $regex: searchQuery, $options: 'i' } },
+                    { '_tags': searchQuery }
+                ]
+            });
+            
+            for (const server of targetServers) {
+                try {
+                    const baseUrl = normalizeUrl(server.url);
+                    let projection = '_id,_lastInform,_ip,_deviceId._Manufacturer,_deviceId._ProductClass,_deviceId._SerialNumber,VirtualParameters,InternetGatewayDevice.WANDevice,InternetGatewayDevice.X_FH_PON_MANAGE,InternetGatewayDevice.LANDevice.1.WLANConfiguration,InternetGatewayDevice.LANDevice.1.Hosts,InternetGatewayDevice.LANDevice.1.Hosts.Host,InternetGatewayDevice.LANDevice.1.Hosts.HostNumberOfEntries,InternetGatewayDevice.DeviceInfo.UpTime,Device.WiFi.SSID,Device.WiFi.AccessPoint,Device.Hosts,Device.Hosts.Host,Device.Optical,Device.XPON';
+                    const response = await axios.get(`${baseUrl}/devices`, {
+                        ...getAxiosConfig(server),
+                        params: { query, projection }
+                    });
+                    
+                    if (Array.isArray(response.data)) {
+                        const devices = response.data.map(d => {
+                            let rxPower = extractRxPower(d);
+                            let pppoeUser = extractPppoeUser(d);
+                            let ip = extractPppoeIp(d);
+                            const customerName = getNestedValue(d, 'VirtualParameters.CustomerName') ||
+                                                getNestedValue(d, 'VirtualParameters.customer_name') || '-';
+                            
+                            const isOnline = (d._lastInform && (Date.now() - new Date(d._lastInform).getTime() < 900000)) ||
+                                             (pppoeUser && pppoeUser !== '-' && activeSessionsMap.has(pppoeUser.toLowerCase()));
+                            
+                            const ssid = extractSsid(d);
+                            const uptimeInfo = extractUptimeInfo(d, activeSessionsMap, pppoeUser);
+                            const clientCount = extractClientCount(d);
+
+                            return {
+                                id: d._id,
+                                sn: d._deviceId?._SerialNumber || d._id,
+                                last_inform: d._lastInform,
+                                isOnline: isOnline,
+                                manufacturer: d._deviceId?._Manufacturer || '-',
+                                model: d._deviceId?._ProductClass || '-',
+                                rx_power: rxPower,
+                                pppoe_ip: ip,
+                                ip: ip,
+                                pppoe_user: pppoeUser,
+                                customer_name: customerName,
+                                ssid: (ssid && ssid !== '-') ? ssid : (getNestedValue(d, 'VirtualParameters.SSID') || '-'),
+                                uptime: uptimeInfo.formatted,
+                                uptime_seconds: uptimeInfo.seconds,
+                                client_count: clientCount,
+                                acs_server_id: server.id,
+                                acs_server_name: server.name
+                            };
+                        });
+                        allDevices = allDevices.concat(devices);
+                    }
+                } catch (err) {
+                    console.error(`Search error on server ${server.name}:`, err.message);
+                }
+            }
+        } else {
+            const results = await Promise.allSettled(targetServers.map(s => fetchDevicesFromACS(s, [], legacyACS, { activeSessionsMap })));
+            results.forEach(r => { if (r.status === 'fulfilled') allDevices = allDevices.concat(r.value.devices); });
+        }
+
+        allDevices = enrichDevicesWithCustomerNames(allDevices);
+
+        if (!searchQuery) {
+            acsListCache.set(cacheKey, { devices: allDevices, time: Date.now() });
+        }
+    }
+
+    if (searchQuery) {
+        const qLower = searchQuery.toLowerCase();
+        allDevices = allDevices.filter(d => 
+            String(d.sn || '').toLowerCase().includes(qLower) ||
+            String(d.id || '').toLowerCase().includes(qLower) ||
+            String(d.customer_name || '').toLowerCase().includes(qLower) ||
+            String(d.pppoe_user || '').toLowerCase().includes(qLower) ||
+            String(d.ip || d.pppoe_ip || '').toLowerCase().includes(qLower)
+        );
+    }
+
+    const totalDev = allDevices.length;
+    const onlineDev = allDevices.filter(d => d.isOnline).length;
+    const offlineDev = totalDev - onlineDev;
+    const criticalDev = allDevices.filter(d => {
+        const rx = parseFloat(d.rx_power);
+        return !isNaN(rx) && rx < -27;
+    }).length;
+    const onlinePercent = totalDev > 0 ? Math.round((onlineDev / totalDev) * 100) : 0;
+
+    // Update device_count in activeServers and DB
+    activeServers.forEach(s => {
+        let countForServer = allDevices.filter(d => String(d.acs_server_id) === String(s.id)).length;
+        if (countForServer === 0 && activeServers.length === 1 && allDevices.length > 0) {
+            countForServer = allDevices.length;
+        }
+        s.device_count = countForServer;
+        if (s.id !== 'legacy' && s.id !== 'builtin') {
+            try {
+                db.prepare('UPDATE genieacs_servers SET device_count = ? WHERE id = ?').run(s.device_count, s.id);
+            } catch (_) {}
+        }
+    });
+
+    return {
+        devices: allDevices,
+        totalDev,
+        onlineDev,
+        offlineDev,
+        criticalDev,
+        onlinePercent,
+        selectedAcsId
+    };
+}
+
+// ── ASYNC TELEMETRY DATA ENDPOINT (Instant loading & live stage progression) ──
+router.get('/api/devices-data', async (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    try {
+        const searchQuery = String(req.query.q || '').trim() || null;
+        const selectedAcsId = req.query.acs || null;
+        const refresh = req.query.refresh === 'true' || req.query.refresh === '1';
+        const data = await fetchAllAcsDevicesPayload({ selectedAcsId, searchQuery, refresh });
+        return res.json({ success: true, ...data });
+    } catch (err) {
+        console.error('API devices-data error:', err);
+        return res.status(500).json({ success: false, message: err.message, devices: [], totalDev: 0, onlineDev: 0, offlineDev: 0, criticalDev: 0 });
+    }
+});
+
+// ── FAST PAGE ENTRY ROUTE (Opens in <10ms, shows NOC loading screen while data loads) ──
 router.get('/', async (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     try {
         const searchQuery = String(req.query.q || '').trim() || null;
         const acsServers = getACSServers();
         const legacyACS = getLegacyACS();
-        const activeSessionsMap = await mikrotikSvc.getActivePppoeSessionsMap().catch(() => new Map());
         
         const activeServers = acsServers.length > 0 ? acsServers :
             (legacyACS.acs_url ? [{ id: 'legacy', name: 'Default ACS', url: legacyACS.acs_url, username: legacyACS.acs_user, password: legacyACS.acs_pass }] : []);
 
         const selectedAcsId = req.query.acs || (activeServers[0]?.id);
-        const targetServers = selectedAcsId && selectedAcsId !== 'all' ? activeServers.filter(s => String(s.id) === String(selectedAcsId)) : activeServers;
-
-        let allDevices = [];
-        if (targetServers.length > 0) {
-            if (searchQuery) {
-                // Search mode: query devices with search filter
-                const query = JSON.stringify({
-                    $or: [
-                        { '_deviceId._SerialNumber': { $regex: searchQuery, $options: 'i' } },
-                        { 'VirtualParameters.CustomerName': { $regex: searchQuery, $options: 'i' } },
-                        { 'VirtualParameters.customer_name': { $regex: searchQuery, $options: 'i' } },
-                        { 'VirtualParameters.PPPoEUser': { $regex: searchQuery, $options: 'i' } },
-                        { '_tags': searchQuery }
-                    ]
-                });
-                
-                for (const server of targetServers) {
-                    try {
-                        let projection = '_id,_lastInform,_ip,_deviceId._Manufacturer,_deviceId._ProductClass,_deviceId._SerialNumber,VirtualParameters,InternetGatewayDevice.WANDevice,InternetGatewayDevice.X_FH_PON_MANAGE,InternetGatewayDevice.LANDevice.1.WLANConfiguration,InternetGatewayDevice.LANDevice.1.Hosts,InternetGatewayDevice.LANDevice.1.Hosts.Host,InternetGatewayDevice.LANDevice.1.Hosts.HostNumberOfEntries,InternetGatewayDevice.DeviceInfo.UpTime,Device.WiFi.SSID,Device.WiFi.AccessPoint,Device.Hosts,Device.Hosts.Host,Device.Optical,Device.XPON';
-                        const response = await axios.get(`${baseUrl}/devices`, {
-                            ...getAxiosConfig(server),
-                            params: { query, projection }
-                        });
-                        
-                        if (Array.isArray(response.data)) {
-                            const devices = response.data.map(d => {
-                                let rxPower = extractRxPower(d);
-                                let pppoeUser = extractPppoeUser(d);
-                                let ip = extractPppoeIp(d);
-                                const customerName = getNestedValue(d, 'VirtualParameters.CustomerName') ||
-                                                    getNestedValue(d, 'VirtualParameters.customer_name') || '-';
-                                
-                                const isOnline = (d._lastInform && (Date.now() - new Date(d._lastInform).getTime() < 900000)) ||
-                                                 (pppoeUser && pppoeUser !== '-' && activeSessionsMap.has(pppoeUser.toLowerCase()));
-                                
-                                const ssid = extractSsid(d);
-                                const uptimeInfo = extractUptimeInfo(d, activeSessionsMap, pppoeUser);
-                                const clientCount = extractClientCount(d);
-
-                                return {
-                                    id: d._id,
-                                    sn: d._deviceId?._SerialNumber || d._id,
-                                    last_inform: d._lastInform,
-                                    isOnline: isOnline,
-                                    manufacturer: d._deviceId?._Manufacturer || '-',
-                                    model: d._deviceId?._ProductClass || '-',
-                                    rx_power: rxPower,
-                                    pppoe_ip: ip,
-                                    ip: ip,
-                                    pppoe_user: pppoeUser,
-                                    customer_name: customerName,
-                                    ssid: (ssid && ssid !== '-') ? ssid : (getNestedValue(d, 'VirtualParameters.SSID') || '-'),
-                                    uptime: uptimeInfo.formatted,
-                                    uptime_seconds: uptimeInfo.seconds,
-                                    client_count: clientCount,
-                                    acs_server_id: server.id,
-                                    acs_server_name: server.name
-                                };
-                            });
-                            allDevices = allDevices.concat(devices);
-                        }
-                    } catch (err) {
-                        console.error(`Search error on server ${server.name}:`, err.message);
-                    }
-                }
-            } else {
-                // Normal mode: fetch all devices
-                const results = await Promise.allSettled(targetServers.map(s => fetchDevicesFromACS(s, [], legacyACS, { activeSessionsMap })));
-                results.forEach(r => { if (r.status === 'fulfilled') allDevices = allDevices.concat(r.value.devices); });
-            }
-        }
-
-        // Enrich devices with matching customer names from Billing DB
-        allDevices = enrichDevicesWithCustomerNames(allDevices);
-
-        if (searchQuery) {
-            const qLower = searchQuery.toLowerCase();
-            allDevices = allDevices.filter(d => 
-                String(d.sn || '').toLowerCase().includes(qLower) ||
-                String(d.id || '').toLowerCase().includes(qLower) ||
-                String(d.customer_name || '').toLowerCase().includes(qLower) ||
-                String(d.pppoe_user || '').toLowerCase().includes(qLower) ||
-                String(d.ip || d.pppoe_ip || '').toLowerCase().includes(qLower)
-            );
-        }
-
-        let pppoeProfiles = [];
-        try {
-            // Get routerId dari query parameter jika ada (untuk multi-router support)
-            const selectedRouterId = req.query.router_id ? Number(req.query.router_id) : null;
-            pppoeProfiles = await mikrotikSvc.getPppoeProfiles(selectedRouterId);
-        } catch (e) {
-            console.error('Failed to load PPPoE profiles from MikroTik:', e.message);
-        }
 
         let customersList = [];
         try {
@@ -1762,23 +1826,11 @@ router.get('/', async (req, res) => {
             console.error('Failed to load customers for ACS page:', e.message);
         }
 
-        // Update device_count on activeServers dynamically so "Kelola Server ACS" displays accurate count
-        activeServers.forEach(s => {
-            let countForServer = allDevices.filter(d => String(d.acs_server_id) === String(s.id)).length;
-            if (countForServer === 0 && activeServers.length === 1 && allDevices.length > 0) {
-                countForServer = allDevices.length;
-            }
-            s.device_count = countForServer;
-            if (s.id !== 'legacy' && s.id !== 'builtin') {
-                try {
-                    db.prepare('UPDATE genieacs_servers SET device_count = ? WHERE id = ?').run(s.device_count, s.id);
-                } catch (_) {}
-            }
-        });
+        let pppoeProfiles = [];
 
         res.render('admin/acs', {
             user: req.session,
-            devices: allDevices,
+            devices: [],
             acsServers: activeServers,
             selectedAcsId,
             searchQuery,

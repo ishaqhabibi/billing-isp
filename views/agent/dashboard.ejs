@@ -821,7 +821,7 @@
                   <tr><td>Tag</td><td><%= inv.genieacs_tag ? inv.genieacs_tag : '-' %></td></tr>
                   <tr><td>IP Static</td><td><%= inv.static_ip ? inv.static_ip : '-' %></td></tr>
                   <tr><td>Router</td><td><%= inv.router_name ? inv.router_name : (inv.router_id ? ('#' + inv.router_id) : '-') %></td></tr>
-                  <tr><td>Status</td><td><%= inv.customer_status ? inv.customer_status : '-' %><%= inv.isolate_day ? (' • Tgl ' + inv.isolate_day) : '' %></td></tr>
+                  <tr><td>Status</td><td><%= inv.customer_status ? inv.customer_status : '-' %><%= (inv.billing_day || inv.isolate_day) ? (' • Tagih: Tgl ' + (inv.billing_day || inv.isolate_day)) : '' %></td></tr>
                   <tr><td>Alamat</td><td><%= inv.customer_address ? inv.customer_address : '-' %></td></tr>
                 </table>
 

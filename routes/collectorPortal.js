@@ -201,6 +201,7 @@ router.get('/', requireCollectorSession, (req, res) => {
            c.status as customer_status,
            c.install_date,
            c.isolate_day,
+           c.billing_day,
            c.lat, c.lng,
            c.collector_id,
            p.name as package_name,
@@ -220,7 +221,7 @@ router.get('/', requireCollectorSession, (req, res) => {
   const params = [month, year, ...collectorParams];
 
   if (scope === 'today') {
-    q += ' AND c.isolate_day = ?';
+    q += ' AND COALESCE(c.billing_day, c.isolate_day) = ?';
     params.push(todayDay);
   } else if (scope === 'isolir') {
     q += " AND c.status = 'suspended'";
@@ -260,8 +261,8 @@ router.get('/', requireCollectorSession, (req, res) => {
       SUM(CASE WHEN (i.status='unpaid' OR i.status IS NULL) THEN COALESCE(i.amount, p.price, 0) ELSE 0 END) as unpaid_total,
       SUM(CASE WHEN i.status='paid' THEN 1 ELSE 0 END) as paid_count,
       SUM(CASE WHEN i.status='paid' THEN COALESCE(i.amount, p.price, 0) ELSE 0 END) as paid_total,
-      SUM(CASE WHEN (i.status='unpaid' OR i.status IS NULL) AND c.isolate_day=? THEN 1 ELSE 0 END) as today_count,
-      SUM(CASE WHEN (i.status='unpaid' OR i.status IS NULL) AND c.isolate_day=? THEN COALESCE(i.amount, p.price, 0) ELSE 0 END) as today_total,
+      SUM(CASE WHEN (i.status='unpaid' OR i.status IS NULL) AND COALESCE(c.billing_day, c.isolate_day)=? THEN 1 ELSE 0 END) as today_count,
+      SUM(CASE WHEN (i.status='unpaid' OR i.status IS NULL) AND COALESCE(c.billing_day, c.isolate_day)=? THEN COALESCE(i.amount, p.price, 0) ELSE 0 END) as today_total,
       SUM(CASE WHEN c.status='suspended' THEN 1 ELSE 0 END) as isolir_count,
       SUM(CASE WHEN c.status='suspended' THEN COALESCE(i.amount, p.price, 0) ELSE 0 END) as isolir_total
     FROM customers c

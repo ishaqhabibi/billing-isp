@@ -384,7 +384,8 @@ router.post('/customers', requireTechSession, express.urlencoded({ extended: tru
       install_date: req.body.install_date ? String(req.body.install_date).trim() : null,
       notes: String(req.body.notes || '').trim(),
       auto_isolate: req.body.auto_isolate !== undefined ? Number(req.body.auto_isolate) : 1,
-      isolate_day: req.body.isolate_day !== undefined ? Number(req.body.isolate_day) : 10
+      billing_day: req.body.billing_day ? Number(req.body.billing_day) : (req.body.isolate_day !== undefined && req.body.isolate_day !== '' ? Number(req.body.isolate_day) : null),
+      isolate_day: req.body.billing_day ? Number(req.body.billing_day) : (req.body.isolate_day !== undefined && req.body.isolate_day !== '' ? Number(req.body.isolate_day) : null)
     };
 
     // VALIDATION: If customer has PPPoE connection, router_id is REQUIRED

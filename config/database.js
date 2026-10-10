@@ -787,6 +787,10 @@ try { db.exec("ALTER TABLE packages ADD COLUMN billing_type TEXT DEFAULT 'postpa
 try { db.exec("ALTER TABLE packages ADD COLUMN duration_days INTEGER DEFAULT 30"); } catch (e) {}
 try { db.exec("ALTER TABLE customers ADD COLUMN expired_at DATETIME DEFAULT NULL"); } catch (e) {}
 
+try {
+  db.exec("ALTER TABLE customers ADD COLUMN billing_day INTEGER DEFAULT NULL");
+} catch (e) { /* ignore if already exists */ }
+
 // Kolom untuk Tiket Bantuan (Foto & Catatan Teknisi)
 try { db.exec("ALTER TABLE tickets ADD COLUMN technician_notes TEXT DEFAULT ''"); } catch (e) {}
 try { db.exec("ALTER TABLE tickets ADD COLUMN photos TEXT DEFAULT ''"); } catch (e) {}

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Dashboard OLT | <%= company %></title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/css/admin.css?v=2.7">
+  <link rel="stylesheet" href="/css/admin.css?v=3.3">
   <script src="/js/theme.js"></script>
   <style>
     /* ── DASHBOARD NOC MODERN STYLING ── */
@@ -444,20 +444,302 @@
       color: var(--muted);
     }
 
-    /* Loading Overlay */
+    /* ── MODERN HIGH-TECH NOC TELEMETRY LOADING SCREEN ── */
+    .noc-loading-screen {
+      position: fixed !important;
+      top: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      left: var(--sw, 240px) !important;
+      width: auto !important;
+      z-index: 900 !important;
+      background: radial-gradient(circle at 50% 35%, rgba(14, 165, 233, 0.16), transparent 50%),
+                  radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.12), transparent 45%),
+                  rgba(11, 17, 30, 0.94) !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 20px !important;
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                  visibility 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+    @media (max-width: 991px) {
+      .noc-loading-screen {
+        left: 0 !important;
+      }
+    }
+    body.light-theme .noc-loading-screen {
+      background: radial-gradient(circle at 50% 30%, rgba(14, 165, 233, 0.18), transparent 50%),
+                  radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.12), transparent 45%),
+                  rgba(248, 250, 252, 0.95);
+    }
+    .noc-loading-screen.fade-out {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      transform: scale(1.025) !important;
+      pointer-events: none !important;
+    }
+    .noc-loading-card {
+      position: relative;
+      width: 100%;
+      max-width: 460px;
+      background: rgba(19, 27, 46, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 22px;
+      padding: 34px 28px 28px;
+      box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.65),
+                  0 0 0 1px rgba(14, 165, 233, 0.18) inset;
+      text-align: center;
+      overflow: hidden;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      animation: nocCardEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    body.light-theme .noc-loading-card {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(0, 82, 204, 0.18);
+      box-shadow: 0 24px 64px -12px rgba(0, 82, 204, 0.22),
+                  0 0 0 1px rgba(14, 165, 233, 0.25) inset;
+    }
+    @keyframes nocCardEnter {
+      from { opacity: 0; transform: translateY(16px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .noc-loading-beam {
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, #0ea5e9, #6366f1, #10b981, #0ea5e9);
+      background-size: 200% 100%;
+      animation: nocBeamFlow 2.4s linear infinite;
+    }
+    @keyframes nocBeamFlow {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 200% 0%; }
+    }
+    .noc-loading-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      background: rgba(14, 165, 233, 0.14);
+      border: 1px solid rgba(14, 165, 233, 0.35);
+      color: #38bdf8;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 22px;
+    }
+    body.light-theme .noc-loading-badge {
+      background: rgba(2, 132, 199, 0.1);
+      border-color: rgba(2, 132, 199, 0.28);
+      color: #0284c7;
+    }
+    .noc-loading-badge .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #38bdf8;
+      box-shadow: 0 0 10px #38bdf8;
+      animation: nocBadgePulse 1.4s infinite ease-in-out;
+    }
+    @keyframes nocBadgePulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.35); opacity: 0.55; }
+    }
+    .noc-loading-emblem {
+      position: relative;
+      width: 86px;
+      height: 86px;
+      margin: 0 auto 22px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .noc-loading-ring-outer {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2.5px solid transparent;
+      border-top-color: #0ea5e9;
+      border-right-color: #6366f1;
+      animation: nocRingRotate 1.8s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+      box-shadow: 0 0 16px rgba(14, 165, 233, 0.35);
+    }
+    .noc-loading-ring-inner {
+      position: absolute;
+      inset: 9px;
+      border-radius: 50%;
+      border: 2px dashed rgba(16, 185, 129, 0.7);
+      border-bottom-color: transparent;
+      animation: nocRingRotateReverse 2.4s linear infinite;
+    }
+    @keyframes nocRingRotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes nocRingRotateReverse {
+      0% { transform: rotate(360deg); }
+      100% { transform: rotate(0deg); }
+    }
+    .noc-loading-icon-core {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(99, 102, 241, 0.25));
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #38bdf8;
+      box-shadow: 0 0 20px rgba(14, 165, 233, 0.45);
+    }
+    body.light-theme .noc-loading-icon-core {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(99, 102, 241, 0.15));
+      color: #0284c7;
+    }
+    .noc-loading-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 6px;
+      letter-spacing: -0.2px;
+    }
+    .noc-loading-subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+    .noc-loading-subtitle strong {
+      color: #38bdf8;
+      font-weight: 700;
+    }
+    body.light-theme .noc-loading-subtitle strong {
+      color: #0284c7;
+    }
+    .noc-progress-container {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 18px;
+    }
+    body.light-theme .noc-progress-container {
+      background: rgba(0, 0, 0, 0.08);
+    }
+    .noc-progress-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #0ea5e9, #6366f1, #10b981, #0ea5e9);
+      background-size: 200% 100%;
+      border-radius: 999px;
+      animation: nocProgressAnim 1.6s linear infinite;
+      box-shadow: 0 0 12px rgba(14, 165, 233, 0.6);
+    }
+    @keyframes nocProgressAnim {
+      0% { background-position: 100% 0%; }
+      100% { background-position: -100% 0%; }
+    }
+    .noc-steps-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .noc-step-item {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--muted);
+      justify-content: center;
+      padding: 7px 6px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.25s ease;
+    }
+    body.light-theme .noc-step-item {
+      background: rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    .noc-step-item.active {
+      color: #38bdf8;
+      background: rgba(14, 165, 233, 0.12);
+      border-color: rgba(14, 165, 233, 0.35);
+      box-shadow: 0 2px 8px rgba(14, 165, 233, 0.15);
+    }
+    .noc-step-item.done {
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+    body.light-theme .noc-step-item.active {
+      color: #0284c7;
+      background: rgba(2, 132, 199, 0.1);
+      border-color: rgba(2, 132, 199, 0.3);
+    }
+    body.light-theme .noc-step-item.done {
+      color: #059669;
+      background: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .noc-live-status {
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .noc-live-status .status-dot {
+      width: 6.5px;
+      height: 6.5px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      animation: nocPulseDot 1.2s infinite ease-in-out;
+    }
+    @keyframes nocPulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Refined In-Dashboard Loading Overlay */
     .loading-overlay {
       position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(3px);
+      inset: 0;
+      background: rgba(11, 17, 30, 0.82);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       display: none;
       align-items: center;
       justify-content: center;
-      z-index: 20;
-      border-radius: 14px;
+      z-index: 50;
+      border-radius: 16px;
+      animation: nocFadeIn 0.2s ease;
     }
     body.light-theme .loading-overlay {
-      background: rgba(255, 255, 255, 0.78);
+      background: rgba(248, 250, 252, 0.85);
+    }
+    @keyframes nocFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     /* Diagnostics Result Box */
@@ -476,12 +758,93 @@
       border-bottom: 1px dashed var(--border);
       font-size: 13px;
     }
-    .diag-item:last-child { border-bottom: none; }
-    .diag-item .label { color: var(--muted); }
-    .diag-item .val { font-weight: 700; color: var(--text); font-family: 'JetBrains Mono', monospace; }
+    /* Modal OLT Enhanced Styling */
+    .modal-olt-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 13px;
+    }
+    .modal-olt-table th {
+      background: var(--bg3);
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .modal-olt-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      color: var(--text);
+    }
+    .modal-olt-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .modal-olt-table tbody tr:hover {
+      background: rgba(0, 82, 204, 0.04);
+    }
+    html[data-theme="light"] .modal-olt-table th {
+      background: #f8fafc;
+      color: #64748b;
+    }
+    html[data-theme="light"] .modal-olt-table tbody tr:hover {
+      background: #f1f5f9;
+    }
   </style>
 </head>
 <body>
+<% if (typeof olts !== 'undefined' && olts.length > 0) { %>
+<!-- Modern NOC High-Tech Loading Screen -->
+<div id="noc-loading-screen" class="noc-loading-screen" style="position:fixed !important;top:0 !important;right:0 !important;bottom:0 !important;left:var(--sw, 240px) !important;z-index:900 !important;display:flex !important;align-items:center !important;justify-content:center !important;background:radial-gradient(circle at 50% 35%, rgba(14, 165, 233, 0.16), transparent 50%), radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.12), transparent 45%), rgba(11, 17, 30, 0.94) !important;backdrop-filter:blur(20px) !important;-webkit-backdrop-filter:blur(20px) !important;">
+  <div class="noc-loading-card">
+    <div class="noc-loading-beam"></div>
+    
+    <div class="noc-loading-badge">
+      <span class="pulse-dot"></span>
+      <span>BIONFIBER NOC • OLT TELEMETRY</span>
+    </div>
+
+    <div class="noc-loading-emblem">
+      <div class="noc-loading-ring-outer"></div>
+      <div class="noc-loading-ring-inner"></div>
+      <div class="noc-loading-icon-core">
+        <i class="bi bi-hdd-rack-fill"></i>
+      </div>
+    </div>
+
+    <div class="noc-loading-title">Sinkronisasi Telemetri OLT</div>
+    <div class="noc-loading-subtitle" id="noc-loading-target">
+      Mengambil telemetri SNMP v2c & status redaman optik...
+    </div>
+
+    <div class="noc-progress-container">
+      <div class="noc-progress-bar"></div>
+    </div>
+
+    <div class="noc-steps-row">
+      <div class="noc-step-item active" id="noc-step-1">
+        <i class="bi bi-broadcast"></i> <span>SNMP v2c</span>
+      </div>
+      <div class="noc-step-item" id="noc-step-2">
+        <i class="bi bi-hdd-network"></i> <span>Data ONU</span>
+      </div>
+      <div class="noc-step-item" id="noc-step-3">
+        <i class="bi bi-activity"></i> <span>Optik</span>
+      </div>
+    </div>
+
+    <div class="noc-live-status">
+      <span class="status-dot"></span>
+      <span id="noc-status-ticker">Mengirim query telemetry OLT via SNMP...</span>
+    </div>
+  </div>
+</div>
+<% } %>
 <div class="mw">
   <!-- Topbar Header -->
   <div class="topbar">
@@ -537,9 +900,16 @@
 
     <div class="olt-noc-dash position-relative">
       <div id="loading-overlay" class="loading-overlay">
-        <div class="text-center">
-          <div class="spinner-border text-primary" role="status" style="width: 2.2rem; height: 2.2rem;"></div>
-          <div class="mt-2 fw-bold text-white small" id="loadingText">Mengambil telemetry OLT via SNMP...</div>
+        <div style="background: var(--bg2); border: 1px solid var(--border); padding: 22px 28px; border-radius: 16px; box-shadow: 0 16px 40px rgba(0,0,0,0.45); text-align: center; max-width: 320px;">
+          <div class="noc-loading-emblem" style="width: 58px; height: 58px; margin: 0 auto 12px auto;">
+            <div class="noc-loading-ring-outer" style="box-shadow: none;"></div>
+            <div class="noc-loading-ring-inner" style="inset: 6px;"></div>
+            <div class="noc-loading-icon-core" style="width: 34px; height: 34px; font-size: 15px;">
+              <i class="bi bi-hdd-rack-fill"></i>
+            </div>
+          </div>
+          <div style="font-weight: 700; font-size: 13.5px; color: var(--text); margin-bottom: 4px;">Sinkronisasi OLT</div>
+          <div style="font-size: 11.5px; color: var(--muted);" id="loadingText">Mengambil telemetry OLT via SNMP...</div>
         </div>
       </div>
 
@@ -785,41 +1155,98 @@
 <%- include('partials/sidebar', { activePage: 'olts', company }) %>
 
 <!-- MODAL: Kelola OLT -->
-<div class="mo" id="manageOltsModal">
-  <div class="md" style="max-width: 880px;">
+<div class="mo" id="manageOltsModal" onclick="if(event.target===this)closeModal('manageOltsModal')">
+  <div class="mb" style="max-width: 900px; width: 95%;">
     <div class="mh">
-      <h5 class="mtitle"><i class="bi bi-hdd-rack me-2 text-primary"></i>Daftar Perangkat OLT Terdaftar</h5>
-      <button type="button" class="mc" onclick="closeModal('manageOltsModal')">&times;</button>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:38px; height:38px; border-radius:10px; background:rgba(0,82,204,0.12); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
+          <i class="bi bi-hdd-rack-fill"></i>
+        </div>
+        <div>
+          <h5 class="mt mb-0" style="font-size:15px; font-weight:800; color:var(--text);">Daftar Perangkat OLT Terdaftar</h5>
+          <div style="font-size:11.5px; color:var(--muted); font-weight:500;">Sentral OLT (HSGQ, ZTE, Huawei, HIOSO, dll) untuk monitoring optical dan ONU</div>
+        </div>
+      </div>
+      <button type="button" class="mc" onclick="closeModal('manageOltsModal')" title="Tutup">&times;</button>
     </div>
-    <div class="mbody">
-      <div class="table-responsive">
-        <table class="table table-sm">
+    <div class="mbody" style="padding:0;">
+      <div style="overflow-x:auto;">
+        <table class="modal-olt-table">
           <thead>
             <tr>
-              <th>Nama Perangkat</th>
-              <th>IP Host</th>
-              <th>Brand</th>
+              <th>Perangkat &amp; Host</th>
+              <th>Vendor Brand</th>
               <th>SNMP Port</th>
               <th>Status</th>
+              <th>Titik Peta GIS</th>
               <th style="text-align:right">Aksi</th>
             </tr>
           </thead>
           <tbody>
             <% if (olts.length === 0) { %>
-              <tr><td colspan="6" class="text-center p-3 text-muted">Belum ada OLT.</td></tr>
+              <tr>
+                <td colspan="6" style="text-align:center; padding:36px 16px;">
+                  <div style="color:var(--muted); font-size:14px; margin-bottom:12px;">
+                    <i class="bi bi-hdd-rack" style="font-size:32px; display:block; margin-bottom:8px; opacity:0.5;"></i>
+                    Belum ada perangkat OLT yang didaftarkan ke sistem.
+                  </div>
+                  <button type="button" class="btn btn-p btn-sm" onclick="closeModal('manageOltsModal'); openModal('addOltModal');">
+                    <i class="bi bi-plus-lg me-1"></i> Tambah OLT Sekarang
+                  </button>
+                </td>
+              </tr>
             <% } else { %>
               <% olts.forEach(o => { %>
                 <tr>
-                  <td><strong><%= o.name %></strong></td>
-                  <td><code><%= o.host %></code></td>
-                  <td><span class="badge bs"><%= (o.brand || 'hsgq').toUpperCase() %></span></td>
-                  <td><code><%= o.snmp_port || 161 %></code></td>
-                  <td><span class="badge <%= o.is_active ? 'bs' : 'bd' %>"><%= o.is_active ? 'Aktif' : 'Nonaktif' %></span></td>
-                  <td style="text-align:right">
-                    <button class="btn btn-g btn-sm py-1 px-2" onclick="testOltSnmpDirect('<%= o.id %>')"><i class="bi bi-activity"></i> Test</button>
-                    <button class="btn btn-g btn-sm py-1 px-2" onclick="editOlt('<%= o.id %>')"><i class="bi bi-pencil"></i></button>
-                    <form action="/admin/olts/<%= o.id %>/delete" method="POST" onsubmit="return confirm('Hapus OLT ini?');" style="display:inline;">
-                      <button type="submit" class="btn btn-d btn-sm py-1 px-2"><i class="bi bi-trash"></i></button>
+                  <td>
+                    <div style="font-weight:700; color:var(--text); font-size:13.5px;"><%= o.name %></div>
+                    <div style="margin-top:3px; display:flex; align-items:center; gap:6px;">
+                      <code style="background:var(--bg3); color:var(--primary); padding:2px 7px; border-radius:6px; font-size:11.5px; font-family:'JetBrains Mono',monospace;"><%= o.host %></code>
+                      <% if (o.description) { %>
+                        <span style="font-size:11px; color:var(--muted); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="<%= o.description %>">• <%= o.description %></span>
+                      <% } %>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge bs" style="text-transform:uppercase; font-size:11px; font-weight:700; letter-spacing:0.3px;"><%= (o.brand || 'hsgq').toUpperCase() %></span>
+                  </td>
+                  <td>
+                    <code style="background:var(--bg3); padding:2px 7px; border-radius:6px; font-size:12px; font-family:'JetBrains Mono',monospace;"><%= o.snmp_port || 161 %></code>
+                  </td>
+                  <td>
+                    <% if (o.is_active) { %>
+                      <span class="status-pill-pulse online" style="font-size:11px; padding:2px 8px;">
+                        <i class="bi bi-circle-fill" style="font-size:5px;"></i> Aktif
+                      </span>
+                    <% } else { %>
+                      <span class="status-pill-pulse offline" style="font-size:11px; padding:2px 8px;">
+                        <i class="bi bi-circle-fill" style="font-size:5px;"></i> Nonaktif
+                      </span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (o.lat && o.lng) { %>
+                      <div style="display:flex; align-items:center; gap:5px;">
+                        <i class="bi bi-geo-alt-fill text-danger" style="font-size:12px;"></i>
+                        <code style="background:var(--bg3); color:var(--text); font-size:11px; padding:2px 6px; border-radius:5px;"><%= Number(o.lat).toFixed(4) %>, <%= Number(o.lng).toFixed(4) %></code>
+                      </div>
+                    <% } else { %>
+                      <a href="/admin/map" class="badge bw" style="text-decoration:none; font-size:10.5px;" title="Tentukan lokasi di peta topologi">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Belum Ada GPS
+                      </a>
+                    <% } %>
+                  </td>
+                  <td style="text-align:right; white-space:nowrap;">
+                    <button type="button" class="btn btn-g btn-sm py-1 px-2" onclick="testOltSnmpDirect('<%= o.id %>')" title="Uji Koneksi SNMP OLT">
+                      <i class="bi bi-activity text-primary"></i> Test
+                    </button>
+                    <button type="button" class="btn btn-g btn-sm py-1 px-2" onclick="editOlt('<%= o.id %>')" title="Edit Data OLT">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <form action="/admin/olts/<%= o.id %>/delete" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus OLT <%= o.name.replace(/'/g, "\\'") %>?');" style="display:inline;">
+                      <button type="submit" class="btn btn-d btn-sm py-1 px-2" title="Hapus OLT">
+                        <i class="bi bi-trash"></i>
+                      </button>
                     </form>
                   </td>
                 </tr>
@@ -839,31 +1266,39 @@
 </div>
 
 <!-- MODAL: Tambah OLT -->
-<div class="mo" id="addOltModal">
-  <div class="md" style="max-width: 580px;">
+<div class="mo" id="addOltModal" onclick="if(event.target===this)closeModal('addOltModal')">
+  <div class="mb" style="max-width: 600px; width: 95%;">
     <form action="/admin/olts" method="POST">
       <div class="mh">
-        <h5 class="mtitle"><i class="bi bi-plus-circle me-2 text-primary"></i>Tambah Perangkat OLT Baru</h5>
-        <button type="button" class="mc" onclick="closeModal('addOltModal')">&times;</button>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:36px; height:36px; border-radius:9px; background:rgba(0,82,204,0.12); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:18px;">
+            <i class="bi bi-plus-circle-fill"></i>
+          </div>
+          <div>
+            <h5 class="mt mb-0" style="font-size:15px; font-weight:800;">Tambah Perangkat OLT Baru</h5>
+            <div style="font-size:11.5px; color:var(--muted);">Daftarkan OLT untuk polling SNMP dan pemetaan GIS</div>
+          </div>
+        </div>
+        <button type="button" class="mc" onclick="closeModal('addOltModal')" title="Tutup">&times;</button>
       </div>
       <div class="mbody">
-        <div class="mb-3">
-          <label class="form-label small text-muted">Nama OLT</label>
+        <div class="fg">
+          <label class="fl">Nama OLT *</label>
           <input type="text" name="name" class="fc" placeholder="Contoh: OLT-HSGQ-4P-URANGGANTUNG" required>
         </div>
-        <div class="row g-2 mb-3">
-          <div class="col-8">
-            <label class="form-label small text-muted">IP Address / Host</label>
+        <div class="form-row">
+          <div class="fg">
+            <label class="fl">IP Address / Host *</label>
             <input type="text" name="host" class="fc" placeholder="172.16.0.2" required>
           </div>
-          <div class="col-4">
-            <label class="form-label small text-muted">SNMP Port</label>
+          <div class="fg">
+            <label class="fl">SNMP Port</label>
             <input type="number" name="snmp_port" class="fc" value="161">
           </div>
         </div>
-        <div class="row g-2 mb-3">
-          <div class="col-6">
-            <label class="form-label small text-muted">Brand / Vendor</label>
+        <div class="form-row">
+          <div class="fg">
+            <label class="fl">Brand / Vendor *</label>
             <select name="brand" class="fs">
               <option value="hsgq" selected>HSGQ (GPON / EPON)</option>
               <option value="hioso">HIOSO (GPON / EPON)</option>
@@ -875,50 +1310,77 @@
               <option value="generic">Generic SNMP</option>
             </select>
           </div>
-          <div class="col-6">
-            <label class="form-label small text-muted">SNMP Community</label>
+          <div class="fg">
+            <label class="fl">SNMP Community</label>
             <input type="text" name="snmp_community" class="fc" value="public">
           </div>
         </div>
-        <div class="mb-3">
-          <label class="form-label small text-muted">Deskripsi / Lokasi Rack</label>
+        <div class="fg">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+            <label class="fl mb-0"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Titik Lokasi Peta GIS (Latitude &amp; Longitude)</label>
+            <button type="button" class="btn btn-g btn-sm py-0 px-2" style="font-size:11px;" onclick="detectOltGps('add')">
+              <i class="bi bi-crosshair me-1"></i> Deteksi GPS Saya
+            </button>
+          </div>
+          <div class="form-row">
+            <div class="fg mb-0">
+              <input type="text" name="lat" id="a_lat" class="fc font-monospace" placeholder="Latitude: misal -8.234567">
+            </div>
+            <div class="fg mb-0">
+              <input type="text" name="lng" id="a_lng" class="fc font-monospace" placeholder="Longitude: misal 113.123456">
+            </div>
+          </div>
+          <div style="font-size:11px; color:var(--muted); margin-top:4px;">
+            * Koordinat ini akan otomatis disinkronkan ke <a href="/admin/map" target="_blank" style="color:var(--primary); font-weight:700;">Topologi Peta GIS</a> sebagai titik sentral OLT.
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Deskripsi / Lokasi Rack</label>
           <textarea name="description" class="fc" rows="2" placeholder="Lokasi POP, rack server..."></textarea>
         </div>
       </div>
       <div class="mf">
         <button type="button" class="btn btn-g" onclick="closeModal('addOltModal')">Batal</button>
-        <button type="submit" class="btn btn-p">Simpan Perangkat</button>
+        <button type="submit" class="btn btn-p"><i class="bi bi-check-lg me-1"></i> Simpan Perangkat</button>
       </div>
     </form>
   </div>
 </div>
 
 <!-- MODAL: Edit OLT -->
-<div class="mo" id="editOltModal">
-  <div class="md" style="max-width: 580px;">
+<div class="mo" id="editOltModal" onclick="if(event.target===this)closeModal('editOltModal')">
+  <div class="mb" style="max-width: 600px; width: 95%;">
     <form id="editOltForm" method="POST">
       <div class="mh">
-        <h5 class="mtitle"><i class="bi bi-pencil-square me-2 text-primary"></i>Edit Data OLT</h5>
-        <button type="button" class="mc" onclick="closeModal('editOltModal')">&times;</button>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:36px; height:36px; border-radius:9px; background:rgba(0,82,204,0.12); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:18px;">
+            <i class="bi bi-pencil-square"></i>
+          </div>
+          <div>
+            <h5 class="mt mb-0" style="font-size:15px; font-weight:800;">Edit Data OLT</h5>
+            <div style="font-size:11.5px; color:var(--muted);">Perbarui konfigurasi host, SNMP, dan koordinat peta OLT</div>
+          </div>
+        </div>
+        <button type="button" class="mc" onclick="closeModal('editOltModal')" title="Tutup">&times;</button>
       </div>
       <div class="mbody">
-        <div class="mb-3">
-          <label class="form-label small text-muted">Nama OLT</label>
+        <div class="fg">
+          <label class="fl">Nama OLT *</label>
           <input type="text" name="name" id="e_name" class="fc" required>
         </div>
-        <div class="row g-2 mb-3">
-          <div class="col-8">
-            <label class="form-label small text-muted">IP Address / Host</label>
+        <div class="form-row">
+          <div class="fg">
+            <label class="fl">IP Address / Host *</label>
             <input type="text" name="host" id="e_host" class="fc" required>
           </div>
-          <div class="col-4">
-            <label class="form-label small text-muted">SNMP Port</label>
+          <div class="fg">
+            <label class="fl">SNMP Port</label>
             <input type="number" name="snmp_port" id="e_snmp_port" class="fc">
           </div>
         </div>
-        <div class="row g-2 mb-3">
-          <div class="col-6">
-            <label class="form-label small text-muted">Brand / Vendor</label>
+        <div class="form-row">
+          <div class="fg">
+            <label class="fl">Brand / Vendor *</label>
             <select name="brand" id="e_brand" class="fs">
               <option value="hsgq">HSGQ (GPON / EPON)</option>
               <option value="hioso">HIOSO (GPON / EPON)</option>
@@ -930,13 +1392,32 @@
               <option value="generic">Generic SNMP</option>
             </select>
           </div>
-          <div class="col-6">
-            <label class="form-label small text-muted">SNMP Community</label>
+          <div class="fg">
+            <label class="fl">SNMP Community</label>
             <input type="text" name="snmp_community" id="e_snmp_community" class="fc">
           </div>
         </div>
-        <div class="mb-3">
-          <label class="form-label small text-muted">Status Monitoring</label>
+        <div class="fg">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+            <label class="fl mb-0"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Titik Lokasi Peta GIS (Latitude &amp; Longitude)</label>
+            <button type="button" class="btn btn-g btn-sm py-0 px-2" style="font-size:11px;" onclick="detectOltGps('edit')">
+              <i class="bi bi-crosshair me-1"></i> Deteksi GPS Saya
+            </button>
+          </div>
+          <div class="form-row">
+            <div class="fg mb-0">
+              <input type="text" name="lat" id="e_lat" class="fc font-monospace" placeholder="Latitude: misal -8.234567">
+            </div>
+            <div class="fg mb-0">
+              <input type="text" name="lng" id="e_lng" class="fc font-monospace" placeholder="Longitude: misal 113.123456">
+            </div>
+          </div>
+          <div style="font-size:11px; color:var(--muted); margin-top:4px;">
+            * Koordinat ini akan otomatis disinkronkan ke <a href="/admin/map" target="_blank" style="color:var(--primary); font-weight:700;">Topologi Peta GIS</a> sebagai titik sentral OLT.
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Status Monitoring</label>
           <select name="is_active" id="e_is_active" class="fs">
             <option value="1">Aktif</option>
             <option value="0">Nonaktif</option>
@@ -945,18 +1426,26 @@
       </div>
       <div class="mf">
         <button type="button" class="btn btn-g" onclick="closeModal('editOltModal')">Batal</button>
-        <button type="submit" class="btn btn-p">Simpan Perubahan</button>
+        <button type="submit" class="btn btn-p"><i class="bi bi-check-lg me-1"></i> Simpan Perubahan</button>
       </div>
     </form>
   </div>
 </div>
 
 <!-- MODAL: Test SNMP -->
-<div class="mo" id="testSnmpModal">
-  <div class="md" style="max-width: 480px;">
+<div class="mo" id="testSnmpModal" onclick="if(event.target===this)closeModal('testSnmpModal')">
+  <div class="mb" style="max-width: 500px; width: 95%;">
     <div class="mh">
-      <h5 class="mtitle"><i class="bi bi-activity text-primary me-2"></i>Hasil Uji SNMP OLT</h5>
-      <button type="button" class="mc" onclick="closeModal('testSnmpModal')">&times;</button>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:36px; height:36px; border-radius:9px; background:rgba(0,82,204,0.12); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:18px;">
+          <i class="bi bi-activity"></i>
+        </div>
+        <div>
+          <h5 class="mt mb-0" style="font-size:15px; font-weight:800;">Hasil Uji SNMP OLT</h5>
+          <div style="font-size:11.5px; color:var(--muted);">Respons status koneksi dan uptime perangkat</div>
+        </div>
+      </div>
+      <button type="button" class="mc" onclick="closeModal('testSnmpModal')" title="Tutup">&times;</button>
     </div>
     <div class="mbody" id="testSnmpModalBody">
       <!-- Diisi dinamis -->
@@ -972,12 +1461,25 @@ let currentOltId = null;
 
 function openModal(id) {
   const m = document.getElementById(id);
-  if (m) m.classList.add('show');
+  if (m) {
+    m.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
 }
 function closeModal(id) {
   const m = document.getElementById(id);
-  if (m) m.classList.remove('show');
+  if (m) {
+    m.classList.remove('show');
+    const anyOpen = document.querySelector('.mo.show');
+    if (!anyOpen) document.body.style.overflow = '';
+  }
 }
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.mo.show').forEach(m => m.classList.remove('show'));
+    document.body.style.overflow = '';
+  }
+});
 
 function handleOltChange() {
   const sel = document.getElementById('olt-selector');
@@ -1008,6 +1510,52 @@ function refreshCurrentOlt() {
   if (sel && sel.value) loadDashboard(sel.value);
 }
 
+function setNocLoadingStep(stepNum, statusText) {
+  const step1 = document.getElementById('noc-step-1');
+  const step2 = document.getElementById('noc-step-2');
+  const step3 = document.getElementById('noc-step-3');
+  const ticker = document.getElementById('noc-status-ticker');
+  if (ticker && statusText) ticker.textContent = statusText;
+
+  if (stepNum === 1) {
+    if (step1) { step1.className = 'noc-step-item active'; }
+    if (step2) { step2.className = 'noc-step-item'; }
+    if (step3) { step3.className = 'noc-step-item'; }
+  } else if (stepNum === 2) {
+    if (step1) { step1.className = 'noc-step-item done'; }
+    if (step2) { step2.className = 'noc-step-item active'; }
+    if (step3) { step3.className = 'noc-step-item'; }
+  } else if (stepNum === 3) {
+    if (step1) { step1.className = 'noc-step-item done'; }
+    if (step2) { step2.className = 'noc-step-item done'; }
+    if (step3) { step3.className = 'noc-step-item active'; }
+  }
+}
+
+function hideNocLoadingScreen() {
+  const el = document.getElementById('noc-loading-screen');
+  if (!el || el.classList.contains('fade-out')) return;
+
+  const step1 = document.getElementById('noc-step-1');
+  const step2 = document.getElementById('noc-step-2');
+  const step3 = document.getElementById('noc-step-3');
+  const ticker = document.getElementById('noc-status-ticker');
+  if (step1) step1.className = 'noc-step-item done';
+  if (step2) step2.className = 'noc-step-item done';
+  if (step3) step3.className = 'noc-step-item done';
+  if (ticker) ticker.textContent = 'Telemetri OLT berhasil disinkronkan!';
+
+  setTimeout(() => {
+    el.classList.add('fade-out');
+    setTimeout(() => {
+      el.style.display = 'none';
+    }, 450);
+  }, 220);
+}
+
+// Safety timeout: automatically fade out after 8s so user never gets stuck
+setTimeout(hideNocLoadingScreen, 8000);
+
 async function loadDashboard(oltId) {
   currentOltId = oltId;
   const overlay = document.getElementById('loading-overlay');
@@ -1015,10 +1563,23 @@ async function loadDashboard(oltId) {
   if (overlay) overlay.style.display = 'flex';
   if (icon) icon.classList.add('spin');
 
+  const sel = document.getElementById('olt-selector');
+  const selOpt = sel ? sel.options[sel.selectedIndex] : null;
+  const optName = selOpt ? selOpt.textContent.split('(')[0].trim() : 'OLT';
+  const optHost = selOpt ? selOpt.getAttribute('data-host') : '';
+  const targetLabel = document.getElementById('noc-loading-target');
+  if (targetLabel) {
+    targetLabel.innerHTML = `Menghubungkan ke <strong>${escapeHtml(optName)}</strong> ${optHost ? `(${escapeHtml(optHost)})` : ''}`;
+  }
+
+  setNocLoadingStep(1, `Mengirim query SNMP v2c ke ${optHost || optName}...`);
+
   try {
     const res = await fetch(`/admin/olts/${oltId}/stats?full=true`);
+    setNocLoadingStep(2, 'Memproses data modem ONU & spectrum optical power...');
     const data = await res.json();
 
+    setNocLoadingStep(3, 'Menyiapkan telemetri & KPI card OLT...');
     renderDashboardData(data);
     document.getElementById('last-refresh-time').textContent = new Date().toLocaleTimeString('id-ID');
   } catch (err) {
@@ -1026,6 +1587,7 @@ async function loadDashboard(oltId) {
   } finally {
     if (overlay) overlay.style.display = 'none';
     if (icon) icon.classList.remove('spin');
+    hideNocLoadingScreen();
   }
 }
 
@@ -1268,13 +1830,12 @@ function renderAttentionList(onus) {
   container.innerHTML = html;
 }
 
-function runDiagnosticPrompt() {
-  const sel = document.getElementById('olt-selector');
-  if (!sel || !sel.value) return;
+function testOltSnmpDirect(id) {
+  if (!id) return;
   openModal('testSnmpModal');
   const b = document.getElementById('testSnmpModalBody');
   b.innerHTML = '<div class="text-center p-4"><div class="spinner-border text-primary"></div><div class="mt-2 text-muted small">Menguji respon SNMP OLT...</div></div>';
-  fetch(`/admin/olts/${sel.value}/test-snmp`, { method: 'POST' })
+  fetch(`/admin/olts/${id}/test-snmp`, { method: 'POST' })
     .then(r => r.json())
     .then(data => {
       if (data.success) {
@@ -1311,21 +1872,63 @@ function runDiagnosticPrompt() {
     });
 }
 
+function runDiagnosticPrompt() {
+  const sel = document.getElementById('olt-selector');
+  if (!sel || !sel.value) return;
+  testOltSnmpDirect(sel.value);
+}
+
 function editOlt(id) {
   fetch(`/admin/olts/${id}/stats`)
     .then(r => r.json())
     .then(data => {
-      document.getElementById('editOltForm').action = `/admin/olts/${id}/edit`;
+      document.getElementById('editOltForm').action = `/admin/olts/${id}/update`;
       document.getElementById('e_name').value = data.name || '';
       document.getElementById('e_host').value = data.host || '';
       document.getElementById('e_snmp_port').value = data.snmp_port || 161;
       document.getElementById('e_brand').value = data.brand || 'hsgq';
       document.getElementById('e_snmp_community').value = data.snmp_community || 'public';
+      document.getElementById('e_lat').value = (data.lat !== undefined && data.lat !== null) ? data.lat : '';
+      document.getElementById('e_lng').value = (data.lng !== undefined && data.lng !== null) ? data.lng : '';
       document.getElementById('e_is_active').value = (data.is_active === false || data.is_active === 0) ? '0' : '1';
       closeModal('manageOltsModal');
       openModal('editOltModal');
     })
     .catch(e => alert('Gagal memuat data OLT: ' + e.message));
+}
+
+function detectOltGps(mode) {
+  if (!navigator.geolocation) {
+    alert('Browser tidak mendukung geolokasi GPS.');
+    return;
+  }
+  const btn = event ? event.target.closest('button') : null;
+  const originalText = btn ? btn.innerHTML : '';
+  if (btn) btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Mendeteksi...';
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      if (mode === 'add') {
+        const elLat = document.getElementById('a_lat');
+        const elLng = document.getElementById('a_lng');
+        if (elLat) elLat.value = lat;
+        if (elLng) elLng.value = lng;
+      } else {
+        const elLat = document.getElementById('e_lat');
+        const elLng = document.getElementById('e_lng');
+        if (elLat) elLat.value = lat;
+        if (elLng) elLng.value = lng;
+      }
+      if (btn) btn.innerHTML = originalText;
+    },
+    err => {
+      alert('Gagal mendeteksi lokasi GPS: ' + err.message);
+      if (btn) btn.innerHTML = originalText;
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
 }
 
 function escapeHtml(str) {
