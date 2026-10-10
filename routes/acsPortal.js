@@ -3461,8 +3461,35 @@ router.post('/map-customer', requireAdminSession, async (req, res) => {
         if (!sn || !customerId) {
             return res.status(400).json({ success: false, message: 'SN perangkat dan Pelanggan wajib dipilih' });
         }
-        db.prepare('UPDATE customers SET ont_sn = ? WHERE id = ?').run(String(sn).trim(), parseInt(customerId, 10));
-        return res.json({ success: true, message: 'Perangkat berhasil ditautkan ke data pelanggan' });
+        const cleanSn = String(sn).trim();
+        const cId = parseInt(customerId, 10);
+        
+        db.prepare('UPDATE customers SET ont_sn = ? WHERE id = ?').run(cleanSn, cId);
+        
+        // Ambil data pelanggan untuk disinkronkan ke tag GenieACS
+        const cust = db.prepare('SELECT id, name, customer_code, pppoe_username, genieacs_tag FROM customers WHERE id = ?').get(cId);
+        if (cust) {
+            const tagVal = (cust.customer_code || cust.pppoe_username || cust.genieacs_tag || '').trim();
+            if (tagVal) {
+                db.prepare("UPDATE customers SET genieacs_tag = COALESCE(NULLIF(genieacs_tag, ''), ?) WHERE id = ?").run(tagVal, cId);
+                try {
+                    const dev = await customerDevice.findDeviceByTag(cleanSn);
+                    if (dev && dev._id) {
+                        const servers = genieacsApi.getAllACSServers();
+                        for (const srv of servers) {
+                            try {
+                                const ax = genieacsApi.createAxiosInstance(srv);
+                                await ax.post(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(tagVal)}`, {});
+                                break;
+                            } catch (eTag) {}
+                        }
+                    }
+                } catch (acsErr) {
+                    console.warn('[map-customer] Gagal push tag ke GenieACS:', acsErr.message);
+                }
+            }
+        }
+        return res.json({ success: true, message: 'Perangkat berhasil ditautkan dan tag GenieACS berhasil disinkronkan' });
     } catch (e) {
         return res.status(500).json({ success: false, message: e.message });
     }

@@ -2433,7 +2433,7 @@
   // Restore active tab from hash or localStorage
   document.addEventListener('DOMContentLoaded', () => {
     const validTabs = ['online', 'settings', 'nas', 'accounting', 'users', 'migration'];
-    const serverTab = <%= typeof defaultTab !== 'undefined' ? JSON.stringify(defaultTab) : 'null' %>;
+    const serverTab = <%- typeof defaultTab !== 'undefined' ? JSON.stringify(defaultTab) : 'null' %>;
     let initialTab = 'online';
     const hash = window.location.hash.replace('#', '');
     if (hash && validTabs.includes(hash)) {

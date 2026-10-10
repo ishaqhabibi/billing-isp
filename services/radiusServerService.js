@@ -57,13 +57,16 @@ function findUserCredentials(username) {
              p.name as package_name, p.speed_up, p.speed_down, p.speed_up_upto, p.speed_down_upto
       FROM customers c
       LEFT JOIN packages p ON p.id = c.package_id
-      WHERE LOWER(c.pppoe_username) = LOWER(?) 
-         OR LOWER(c.pppoe_username) = LOWER(?) 
-         OR LOWER(c.pppoe_username) = LOWER(?)
-         OR LOWER(c.customer_code) = LOWER(?)
-         OR LOWER(c.customer_code) = LOWER(?)
-         OR LOWER(c.name) = LOWER(?) 
-         OR c.phone = ?
+      WHERE (c.status IS NULL OR c.status != 'deleted')
+        AND (
+          LOWER(c.pppoe_username) = LOWER(?) 
+          OR LOWER(c.pppoe_username) = LOWER(?) 
+          OR LOWER(c.pppoe_username) = LOWER(?)
+          OR LOWER(c.customer_code) = LOWER(?)
+          OR LOWER(c.customer_code) = LOWER(?)
+          OR LOWER(c.name) = LOWER(?) 
+          OR c.phone = ?
+        )
       LIMIT 1
     `).get(cleanUsername, withDomain, noDomain, cleanUsername, noDomain, cleanUsername, cleanUsername);
 

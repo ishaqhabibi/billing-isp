@@ -1263,13 +1263,13 @@
             <div class="fg">
               <label class="fl" style="font-weight:700; color:var(--primary); display:flex; justify-content:space-between;">
                 <span><i class="bi bi-upc-scan"></i> Kode Pelanggan (ID) *</span>
-                <span style="font-size:10px; font-weight:normal; color:var(--muted);">Otomatis atau Manual</span>
+                <span style="font-size:10px; font-weight:normal; color:var(--muted);">Input Manual (Bebas)</span>
               </label>
               <div style="display:flex; gap:6px;">
-                <input class="fc" name="customer_code" id="add_customer_code" placeholder="Contoh: URG24001" style="font-family:monospace; font-weight:700; letter-spacing:1px; text-transform:uppercase;">
+                <input class="fc" name="customer_code" id="add_customer_code" placeholder="Contoh: URG001, PLG-01, dll" style="font-family:monospace; font-weight:700; letter-spacing:1px; text-transform:uppercase;">
                 <button type="button" class="btn btn-g btn-sm" onclick="triggerAutoGenerateCode('add')" title="Generate Kode Otomatis"><i class="bi bi-magic text-primary"></i> Auto</button>
               </div>
-              <small class="text-muted" style="font-size:11px;">Format: <strong>[AREA][TAHUN][NO URUT]</strong> (Otomatis dibuat saat Area dipilih).</small>
+              <small class="text-muted" style="font-size:11px;">Input manual sesuai format ISP Anda. Klik tombol <strong>Auto</strong> jika ingin rekomendasi nomor urut.</small>
             </div>
             <div class="fg">
               <label class="fl"><i class="bi bi-card-text"></i> NIK / No. KTP (Opsional)</label>
@@ -1291,7 +1291,7 @@
           <div class="form-row">
             <div class="fg">
               <label class="fl"><i class="bi bi-geo-alt-fill text-warning me-1"></i> Area / Wilayah Layanan</label>
-              <select class="fs" name="area" id="add_area" onchange="autoGenerateCustomerCode('add')">
+              <select class="fs" name="area" id="add_area">
                 <option value="">-- Pilih Wilayah / Area --</option>
                 <% if (typeof masterAreas !== 'undefined' && masterAreas && masterAreas.length > 0) { %>
                   <% masterAreas.forEach(a => { %>
@@ -1411,18 +1411,18 @@
 
           <!-- Interactive Auth Mode Cards -->
           <% const isRadiusActive = (typeof settings !== 'undefined' && settings && String(settings.radius_enabled) === '1'); %>
-          <input type="hidden" name="is_radius" id="add_is_radius" value="0">
+          <input type="hidden" name="is_radius" id="add_is_radius" value="1">
           
           <div class="auth-mode-cards">
             <!-- Card MikroTik -->
-            <div class="auth-mode-card active" id="auth_card_add_mikrotik" onclick="selectAuthModeCard('add', 0)">
+            <div class="auth-mode-card" id="auth_card_add_mikrotik" onclick="selectAuthModeCard('add', 0)">
               <div class="auth-mode-icon" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);">
                 <i class="bi bi-hdd-network"></i>
               </div>
               <div style="flex:1; min-width:0;">
                 <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
                   <span style="font-weight:700; font-size:13px; color:var(--text);">MikroTik Local Secret (API)</span>
-                  <span class="badge" style="background:rgba(245,158,11,0.18); color:#f59e0b; font-size:10px; border:1px solid rgba(245,158,11,0.3);">Default / Lokal</span>
+                  <span class="badge" style="background:rgba(245,158,11,0.18); color:#f59e0b; font-size:10px; border:1px solid rgba(245,158,11,0.3);">Lokal Router</span>
                 </div>
                 <div style="font-size:11px; color:var(--muted); margin-top:4px; line-height:1.45;">
                   Kredensial PPP langsung disimpan di router MikroTik <code>/ppp secret</code>. Stabil untuk single router tanpa server RADIUS tambahan.
@@ -1431,14 +1431,14 @@
             </div>
 
             <!-- Card RADIUS -->
-            <div class="auth-mode-card <%= !isRadiusActive ? 'disabled' : '' %>" id="auth_card_add_radius" onclick="selectAuthModeCard('add', 1)">
+            <div class="auth-mode-card active" id="auth_card_add_radius" onclick="selectAuthModeCard('add', 1)">
               <div class="auth-mode-icon" style="background:rgba(99,102,241,0.15); color:var(--primary); border:1px solid rgba(99,102,241,0.3);">
                 <i class="bi bi-broadcast-pin"></i>
               </div>
               <div style="flex:1; min-width:0;">
                 <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
                   <span style="font-weight:700; font-size:13px; color:var(--text);">RADIUS Database Server</span>
-                  <span class="badge" style="background:rgba(99,102,241,0.18); color:var(--primary); font-size:10px; border:1px solid rgba(99,102,241,0.3);"><%= isRadiusActive ? 'Modern / Scalable' : 'Nonaktif di Settings' %></span>
+                  <span class="badge" style="background:rgba(99,102,241,0.18); color:var(--primary); font-size:10px; border:1px solid rgba(99,102,241,0.3);"><%= isRadiusActive ? 'Server Berjalan' : 'Siap Sinkron (Offline)' %></span>
                 </div>
                 <div style="font-size:11px; color:var(--muted); margin-top:4px; line-height:1.45;">
                   Disimpan terpusat di database Billing ISP. Router MikroTik autentikasi via port 1812 RADIUS. Beban RAM MikroTik tetap ringan & instan.
@@ -1460,11 +1460,23 @@
 
           <!-- Kredensial PPPoE Box -->
           <div id="add_pppoe_field" style="background:rgba(99,102,241,0.04); border:1px solid rgba(99,102,241,0.2); border-radius:12px; padding:16px; margin-bottom:16px;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <input type="hidden" name="pppoe_source" id="add_pppoe_source" value="new">
+            
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
               <div style="font-size:12px; font-weight:700; color:var(--primary);"><i class="bi bi-key-fill me-1"></i> Kredensial Akun PPPoE</div>
-              <button type="button" class="btn btn-g btn-sm" onclick="openSecretPickerModal('add')" style="font-size:11px; padding:4px 10px; border-color:rgba(99,102,241,0.4); color:var(--primary);">
-                <i class="bi bi-cloud-arrow-down-fill me-1"></i> Ambil dari Secret MikroTik yang Sudah Aktif
-              </button>
+              <div style="display:flex; gap:6px;">
+                <button type="button" class="btn btn-sm" id="btn_mode_pppoe_new" onclick="setPppoeSourceMode('add', 'new')" style="font-size:11px; padding:4px 10px; background:var(--primary); color:#fff; border:none; border-radius:6px; font-weight:600;">
+                  <i class="bi bi-plus-circle me-1"></i> Buat Secret Baru
+                </button>
+                <button type="button" class="btn btn-g btn-sm" id="btn_mode_pppoe_mikrotik" onclick="setPppoeSourceMode('add', 'mikrotik')" style="font-size:11px; padding:4px 10px; border-color:rgba(99,102,241,0.4); color:var(--primary);">
+                  <i class="bi bi-cloud-arrow-down-fill me-1"></i> Ambil dari MikroTik (Running)
+                </button>
+              </div>
+            </div>
+
+            <!-- Status Banner PPPoE Mode -->
+            <div id="add_pppoe_mode_badge" style="background:rgba(99,102,241,0.08); border:1px dashed rgba(99,102,241,0.3); border-radius:8px; padding:8px 12px; font-size:11px; color:var(--text); margin-bottom:12px; display:flex; align-items:center; justify-content:space-between;">
+              <span><i class="bi bi-info-circle text-primary me-1"></i> <strong>Mode: Buat Baru</strong> — Kredensial akan otomatis didaftarkan ke MikroTik <code>/ppp secret</code> saat formulir disimpan.</span>
             </div>
 
             <div class="form-row">
@@ -1473,7 +1485,7 @@
                 <div id="add_pppoe_mikrotik_input">
                   <div class="custom-autocomplete-wrap" id="add_pppoe_autocomplete_wrap">
                     <div class="custom-autocomplete-input-wrap">
-                      <input class="fc" name="pppoe_username" id="add_pppoe_username" placeholder="Ketik / pilih username@bionfiber.net" autocomplete="off" onfocus="openPppoeDropdown('add')" oninput="filterPppoeDropdown('add', this.value)" onblur="enforceBionPppoeDomain(this)" style="font-family:monospace; font-weight:600;">
+                      <input class="fc" name="pppoe_username" id="add_pppoe_username" placeholder="Contoh: user123 atau user@domain" autocomplete="off" onfocus="openPppoeDropdown('add')" oninput="filterPppoeDropdown('add', this.value)" style="font-family:monospace; font-weight:600;">
                       <button type="button" class="autocomplete-toggle-btn" onclick="togglePppoeDropdown('add')" title="Tampilkan daftar username PPPoE">
                         <i class="bi bi-chevron-down" id="add_pppoe_toggle_icon"></i>
                       </button>
@@ -1483,7 +1495,7 @@
                   <div class="hint" id="add_pppoe_hint" style="font-size:11px; margin-top:4px; color:var(--muted);"></div>
                 </div>
                 <div id="add_pppoe_manual_input" style="display:none">
-                  <input class="fc" id="add_pppoe_username_manual" placeholder="Ketik username@bionfiber.net" onblur="enforceBionPppoeDomain(this)" style="font-family:monospace; font-weight:600;">
+                  <input class="fc" id="add_pppoe_username_manual" placeholder="Contoh: user123 atau user@domain" style="font-family:monospace; font-weight:600;">
                 </div>
               </div>
               <div class="fg">
@@ -1493,6 +1505,24 @@
                   <button type="button" class="btn btn-g btn-sm" onclick="document.getElementById('add_pppoe_password').value=generateRandomPassword(6)" title="Acak Password"><i class="bi bi-shuffle"></i></button>
                 </div>
               </div>
+            </div>
+
+            <!-- Opsi Kirim & Sinkronkan Secret ke RADIUS Database Server -->
+            <div style="margin-top:14px; padding:12px 14px; background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.25); border-radius:10px;">
+              <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; margin:0;">
+                <input type="checkbox" name="sync_to_radius" id="add_sync_to_radius" value="1" checked onchange="toggleRadiusSync('add', this.checked)" style="width:18px; height:18px; margin-top:2px; accent-color:var(--primary); cursor:pointer;">
+                <div style="flex:1;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap;">
+                    <span style="font-weight:700; font-size:12.5px; color:var(--text); display:flex; align-items:center; gap:6px;">
+                      <i class="bi bi-broadcast-pin text-primary"></i> Kirim & Sinkronkan Secret ke Database RADIUS Server
+                    </span>
+                    <span class="badge" id="add_radius_sync_pill" style="background:rgba(16,185,129,0.18); color:#10b981; font-size:10px; border:1px solid rgba(16,185,129,0.3);"><i class="bi bi-check-circle-fill me-1"></i> RADIUS Aktif</span>
+                  </div>
+                  <div style="font-size:11px; color:var(--muted); margin-top:3px; line-height:1.45;">
+                    Username dan Password PPPoE akan didaftarkan ke server RADIUS database (port UDP 1812) sehingga router MikroTik dapat mengotentikasi pelanggan secara terpusat (Full RADIUS atau Backup MikroTik Local).
+                  </div>
+                </div>
+              </label>
             </div>
           </div>
 
@@ -1590,7 +1620,7 @@
               </div>
               <div class="fg">
                 <label class="fl"><i class="bi bi-hdd-network text-info me-1"></i> ODC (Optical Distribution Cabinet)</label>
-                <select class="fs" name="odc_id" id="add_odc_id" onchange="handleOdcChange('add'); autoGenerateCustomerCode('add');">
+                <select class="fs" name="odc_id" id="add_odc_id" onchange="handleOdcChange('add');">
                   <option value="">-- Tanpa ODC --</option>
                   <% if (typeof odcs !== 'undefined') { %>
                     <% odcs.forEach(o => { %>
@@ -1604,7 +1634,7 @@
             <div class="form-row">
               <div class="fg">
                 <label class="fl"><i class="bi bi-distribute-vertical text-warning me-1"></i> ODP (Optical Distribution Point)</label>
-                <select class="fs" name="odp_id" id="add_odp_id" onchange="handleOdpChange('add'); autoGenerateCustomerCode('add');">
+                <select class="fs" name="odp_id" id="add_odp_id" onchange="handleOdpChange('add');">
                   <option value="">-- Tanpa ODP --</option>
                   <% if (typeof odps !== 'undefined') { %>
                     <% odps.forEach(o => { %>
@@ -1615,7 +1645,7 @@
               </div>
               <div class="fg">
                 <label class="fl"><i class="bi bi-plug text-success me-1"></i> Nomor Port ODP</label>
-                <input class="fc" type="number" min="1" max="64" name="odp_port" id="add_odp_port" oninput="autoGenerateCustomerCode('add')" placeholder="Contoh: 1 s/d 16">
+                <input class="fc" type="number" min="1" max="64" name="odp_port" id="add_odp_port" placeholder="Contoh: 1 s/d 16">
               </div>
             </div>
 
@@ -1826,7 +1856,7 @@
           <div class="form-row">
             <div class="fg">
               <label class="fl"><i class="bi bi-geo-alt-fill text-warning me-1"></i> Area / Wilayah Layanan</label>
-              <select class="fs" name="area" id="e_area" onchange="autoGenerateCustomerCode('edit')">
+              <select class="fs" name="area" id="e_area">
                 <option value="">-- Pilih Wilayah / Area --</option>
                 <% if (typeof masterAreas !== 'undefined' && masterAreas && masterAreas.length > 0) { %>
                   <% masterAreas.forEach(a => { %>
@@ -1970,14 +2000,14 @@
             </div>
 
             <!-- Card RADIUS -->
-            <div class="auth-mode-card <%= !isRadiusActive ? 'disabled' : '' %>" id="auth_card_edit_radius" onclick="selectAuthModeCard('edit', 1)">
+            <div class="auth-mode-card" id="auth_card_edit_radius" onclick="selectAuthModeCard('edit', 1)">
               <div class="auth-mode-icon" style="background:rgba(99,102,241,0.15); color:var(--primary); border:1px solid rgba(99,102,241,0.3);">
                 <i class="bi bi-broadcast-pin"></i>
               </div>
               <div style="flex:1; min-width:0;">
                 <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
                   <span style="font-weight:700; font-size:13px; color:var(--text);">RADIUS Database Server</span>
-                  <span class="badge" style="background:rgba(99,102,241,0.2); color:var(--primary); font-size:10px;"><%= isRadiusActive ? 'Terpusat di Database' : 'Nonaktif di Settings' %></span>
+                  <span class="badge" style="background:rgba(99,102,241,0.2); color:var(--primary); font-size:10px;"><%= isRadiusActive ? 'Server Berjalan' : 'Siap Sinkron (Offline)' %></span>
                 </div>
                 <div style="font-size:11px; color:var(--muted); margin-top:4px; line-height:1.45;">
                   Kredensial tersimpan di database Billing. MikroTik mengarahkan auth PPP ke port 1812 RADIUS.
@@ -2026,6 +2056,24 @@
                 </div>
                 <small class="text-muted" style="font-size:10px; display:block; margin-top:2px;">Kosongkan jika password tidak ingin diubah.</small>
               </div>
+            </div>
+
+            <!-- Opsi Kirim / Sinkronkan Secret ke RADIUS Database Server (Edit) -->
+            <div style="margin-top:14px; padding:12px 14px; background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.25); border-radius:10px;">
+              <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; margin:0;">
+                <input type="checkbox" name="sync_to_radius" id="e_sync_to_radius" value="1" onchange="toggleRadiusSync('edit', this.checked)" style="width:18px; height:18px; margin-top:2px; accent-color:var(--primary); cursor:pointer;">
+                <div style="flex:1;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap;">
+                    <span style="font-weight:700; font-size:12.5px; color:var(--text); display:flex; align-items:center; gap:6px;">
+                      <i class="bi bi-broadcast-pin text-primary"></i> Kirim & Sinkronkan Secret ke RADIUS Server
+                    </span>
+                    <span class="badge" id="e_radius_sync_pill" style="background:rgba(16,185,129,0.18); color:#10b981; font-size:10px; border:1px solid rgba(16,185,129,0.3);"><i class="bi bi-check-circle-fill me-1"></i> RADIUS Aktif</span>
+                  </div>
+                  <div style="font-size:11px; color:var(--muted); margin-top:3px; line-height:1.45;">
+                    Username dan Password PPPoE akan didaftarkan ke server RADIUS database (port UDP 1812) sehingga router MikroTik dapat mengotentikasi pelanggan via RADIUS.
+                  </div>
+                </div>
+              </label>
             </div>
           </div>
 
@@ -2121,7 +2169,7 @@
               </div>
               <div class="fg">
                 <label class="fl"><i class="bi bi-hdd-network text-info me-1"></i> ODC (Optical Distribution Cabinet)</label>
-                <select class="fs" name="odc_id" id="e_odc_id" onchange="handleOdcChange('edit'); autoGenerateCustomerCode('edit');">
+                <select class="fs" name="odc_id" id="e_odc_id" onchange="handleOdcChange('edit');">
                   <option value="">-- Tanpa ODC --</option>
                   <% if (typeof odcs !== 'undefined') { %>
                     <% odcs.forEach(o => { %>
@@ -2135,7 +2183,7 @@
             <div class="form-row">
               <div class="fg">
                 <label class="fl"><i class="bi bi-distribute-vertical text-warning me-1"></i> ODP (Optical Distribution Point)</label>
-                <select class="fs" name="odp_id" id="e_odp_id" onchange="handleOdpChange('edit'); autoGenerateCustomerCode('edit');">
+                <select class="fs" name="odp_id" id="e_odp_id" onchange="handleOdpChange('edit');">
                   <option value="">-- Tanpa ODP --</option>
                   <% if (typeof odps !== 'undefined') { %>
                     <% odps.forEach(o => { %>
@@ -2146,7 +2194,7 @@
               </div>
               <div class="fg">
                 <label class="fl"><i class="bi bi-plug text-success me-1"></i> Nomor Port ODP</label>
-                <input class="fc" type="number" min="1" max="64" name="odp_port" id="e_odp_port" oninput="autoGenerateCustomerCode('edit')" placeholder="Contoh: 1 s/d 16">
+                <input class="fc" type="number" min="1" max="64" name="odp_port" id="e_odp_port" placeholder="Contoh: 1 s/d 16">
               </div>
             </div>
 
@@ -4200,6 +4248,11 @@ function selectAuthModeCard(type, val) {
   const inputEl = document.getElementById(type === 'add' ? 'add_is_radius' : 'e_is_radius');
   if (inputEl) inputEl.value = isRadius ? '1' : '0';
 
+  const chkEl = document.getElementById(type === 'add' ? 'add_sync_to_radius' : 'e_sync_to_radius');
+  if (chkEl) chkEl.checked = isRadius;
+
+  updateRadiusSyncPill(type, isRadius);
+
   const cardMikrotik = document.getElementById(`auth_card_${type}_mikrotik`);
   const cardRadius = document.getElementById(`auth_card_${type}_radius`);
   if (cardMikrotik) cardMikrotik.classList.toggle('active', !isRadius);
@@ -4219,6 +4272,37 @@ function selectAuthModeCard(type, val) {
   }
 
   handleAuthModeChange(type, isRadius ? '1' : '0');
+}
+
+function toggleRadiusSync(type, isChecked) {
+  const isRadius = Boolean(isChecked);
+  const inputEl = document.getElementById(type === 'add' ? 'add_is_radius' : 'e_is_radius');
+  if (inputEl) inputEl.value = isRadius ? '1' : '0';
+
+  const cardMikrotik = document.getElementById(`auth_card_${type}_mikrotik`);
+  const cardRadius = document.getElementById(`auth_card_${type}_radius`);
+  if (cardMikrotik) cardMikrotik.classList.toggle('active', !isRadius);
+  if (cardRadius) cardRadius.classList.toggle('active', isRadius);
+
+  updateRadiusSyncPill(type, isRadius);
+  handleAuthModeChange(type, isRadius ? '1' : '0');
+}
+
+function updateRadiusSyncPill(type, isRadius) {
+  const pill = document.getElementById(type === 'add' ? 'add_radius_sync_pill' : 'e_radius_sync_pill');
+  if (pill) {
+    if (isRadius) {
+      pill.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> RADIUS Aktif';
+      pill.style.background = 'rgba(16,185,129,0.18)';
+      pill.style.color = '#10b981';
+      pill.style.borderColor = 'rgba(16,185,129,0.3)';
+    } else {
+      pill.innerHTML = '<i class="bi bi-dash-circle me-1"></i> MikroTik Lokal Saja';
+      pill.style.background = 'rgba(245,158,11,0.18)';
+      pill.style.color = '#f59e0b';
+      pill.style.borderColor = 'rgba(245,158,11,0.3)';
+    }
+  }
 }
 
 function handleAuthModeChange(type, val) {
@@ -4470,14 +4554,15 @@ async function loadAvailableOnus() {
   try {
     const res = await fetch('/admin/api/customers/available-onus');
     const data = await res.json();
+    const list = data.devices || data.onus || [];
 
-    if (!data.ok || !Array.isArray(data.onus)) {
-      if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:#ef4444;"><i class="bi bi-exclamation-triangle me-1"></i> ${data.message || 'GenieACS tidak terhubung atau belum ada modem terdeteksi.'}</td></tr>`;
+    if (!data.ok || !Array.isArray(list)) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:#ef4444;"><i class="bi bi-exclamation-triangle me-1"></i> ${data.error || data.message || 'GenieACS tidak terhubung atau belum ada modem terdeteksi.'}</td></tr>`;
       return;
     }
 
-    availableOnusCache = data.onus;
-    renderOnuTable(data.onus);
+    availableOnusCache = list;
+    renderOnuTable(list);
   } catch (err) {
     if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:#ef4444;"><i class="bi bi-exclamation-triangle me-1"></i> Koneksi gagal: ${err.message}</td></tr>`;
   }
@@ -4487,26 +4572,29 @@ function renderOnuTable(onus) {
   const tbody = document.getElementById('onu_picker_tbody');
   if (!tbody) return;
 
-  if (onus.length === 0) {
+  if (!onus || onus.length === 0) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--muted);">Tidak ada modem ONU yang terdeteksi di GenieACS. Pastikan ONU telah disetting ACS URL.</td></tr>';
     return;
   }
 
   tbody.innerHTML = onus.map((o) => {
-    const isPaired = o.is_paired;
+    const snVal = o.serialNumber || o.sn || '-';
+    const isPaired = o.isAssigned || o.is_paired;
+    const pairedWith = o.assignedTo || o.paired_with || 'Pelanggan';
     const pairedBadge = isPaired 
-      ? `<span class="badge bw" style="font-size:10px;"><i class="bi bi-link-45deg me-1"></i>Terpasang: ${o.paired_with || 'Pelanggan'}</span>`
+      ? `<span class="badge bw" style="font-size:10px;"><i class="bi bi-link-45deg me-1"></i>Terpasang: ${pairedWith}</span>`
       : `<span class="badge bs" style="font-size:10px;"><i class="bi bi-check-circle me-1"></i>Tersedia / Bebas</span>`;
 
-    const tagEsc = (o.genieacs_tag || o.sn || '').replace(/'/g, "\\'");
-    const snEsc = (o.sn || '').replace(/'/g, "\\'");
+    const tagVal = o.tag || o.genieacs_tag || '';
+    const tagEsc = (tagVal || snVal || '').replace(/'/g, "\\'");
+    const snEsc = (snVal || '').replace(/'/g, "\\'");
 
     return `
       <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:10px; font-weight:700; font-family:monospace; color:var(--primary);">${o.sn || '-'}</td>
-        <td style="padding:10px;">${o.model || o.manufacturer || 'ONT Generic'}</td>
+        <td style="padding:10px; font-weight:700; font-family:monospace; color:var(--primary);">${snVal}</td>
+        <td style="padding:10px;">${o.model || o.productClass || o.manufacturer || 'ONT Generic'}</td>
         <td style="padding:10px; font-family:monospace; font-size:11px;">${o.ip || '-'}</td>
-        <td style="padding:10px; font-family:monospace; font-size:11px;">${o.genieacs_tag || '-'}</td>
+        <td style="padding:10px; font-family:monospace; font-size:11px;">${tagVal || '-'}</td>
         <td style="padding:10px;">${pairedBadge}</td>
         <td style="padding:10px; text-align:center;">
           <button type="button" class="btn btn-p btn-sm" style="font-size:11px; padding:3px 10px;" onclick="selectOnuForCustomer('${snEsc}', '${tagEsc}')">
@@ -4572,22 +4660,68 @@ async function openSecretPickerModal(target = 'add') {
   }
 }
 
+function setPppoeSourceMode(target, mode) {
+  const srcInput = document.getElementById(target + '_pppoe_source');
+  const btnNew = document.getElementById('btn_mode_pppoe_new');
+  const btnMikrotik = document.getElementById('btn_mode_pppoe_mikrotik');
+  const badge = document.getElementById(target + '_pppoe_mode_badge');
+
+  if (srcInput) srcInput.value = mode;
+
+  if (mode === 'mikrotik') {
+    if (btnNew) {
+      btnNew.style.background = 'transparent';
+      btnNew.style.color = 'var(--text)';
+      btnNew.classList.add('btn-g');
+    }
+    if (btnMikrotik) {
+      btnMikrotik.style.background = 'var(--primary)';
+      btnMikrotik.style.color = '#fff';
+      btnMikrotik.classList.remove('btn-g');
+    }
+    if (badge) {
+      badge.innerHTML = '<span><i class="bi bi-cloud-check-fill text-success me-1"></i> <strong>Mode: Ambil dari MikroTik</strong> — Memetakan secret eksisting yang sedang running tanpa menimpa/membuat ulang di router.</span>';
+      badge.style.background = 'rgba(16,185,129,0.08)';
+      badge.style.borderColor = 'rgba(16,185,129,0.3)';
+    }
+    openSecretPickerModal(target);
+  } else {
+    if (btnNew) {
+      btnNew.style.background = 'var(--primary)';
+      btnNew.style.color = '#fff';
+      btnNew.classList.remove('btn-g');
+    }
+    if (btnMikrotik) {
+      btnMikrotik.style.background = 'transparent';
+      btnMikrotik.style.color = 'var(--primary)';
+      btnMikrotik.classList.add('btn-g');
+    }
+    if (badge) {
+      badge.innerHTML = '<span><i class="bi bi-info-circle text-primary me-1"></i> <strong>Mode: Buat Baru</strong> — Kredensial akan otomatis didaftarkan ke MikroTik <code>/ppp secret</code> saat formulir disimpan.</span>';
+      badge.style.background = 'rgba(99,102,241,0.08)';
+      badge.style.borderColor = 'rgba(99,102,241,0.3)';
+    }
+  }
+}
+
 function renderSecretPickerTable(secrets) {
   const tbody = document.getElementById('secret_picker_tbody');
   if (!tbody) return;
-  if (secrets.length === 0) {
+  if (!secrets || secrets.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--muted);">Tidak ada secret yang belum terdaftar di MikroTik.</td></tr>';
     return;
   }
   tbody.innerHTML = secrets.map((s) => {
-    const nameEsc = (s.name || '').replace(/'/g, "\\'");
+    const uName = s.username || s.name || '-';
+    const nameEsc = uName.replace(/'/g, "\\'");
     const passEsc = (s.password || '').replace(/'/g, "\\'");
-    const rId = s._router_id || '';
+    const rId = s._router_id || s.router_id || '';
+    const ipAddr = s.remoteAddress || s['remote-address'] || '-';
     return `
       <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:10px; font-weight:700; font-family:monospace; color:var(--primary);">${s.name || '-'}</td>
+        <td style="padding:10px; font-weight:700; font-family:monospace; color:var(--primary);">${uName}</td>
         <td style="padding:10px;"><span class="badge bp" style="font-size:10px;">${s.profile || 'default'}</span></td>
-        <td style="padding:10px; font-family:monospace;">${s['remote-address'] || '-'}</td>
+        <td style="padding:10px; font-family:monospace;">${ipAddr}</td>
         <td style="padding:10px; color:var(--muted);">${s.comment || '-'}</td>
         <td style="padding:10px; text-align:center;">
           <button type="button" class="btn btn-p btn-sm" style="font-size:11px; padding:3px 10px;" onclick="applySecretToForm('${nameEsc}', '${passEsc}', '${rId}')">
@@ -4607,15 +4741,48 @@ function applySecretToForm(name, pass, routerId) {
     const tagField = document.getElementById('add_genieacs_tag');
     const routerSelect = document.getElementById('add_router_select');
     const nameField = document.querySelector('#addModal input[name="name"]');
+    const srcInput = document.getElementById('add_pppoe_source');
 
     if (userField) userField.value = name;
     if (userManual) userManual.value = name;
     if (passField) passField.value = pass || generateRandomPassword(6);
-    if (tagField) tagField.value = name;
+    if (tagField && (!tagField.value || tagField.value.trim() === '')) tagField.value = name;
     if (routerSelect && routerId) routerSelect.value = routerId;
+    if (srcInput) srcInput.value = 'mikrotik';
+
+    // Otomatis aktifkan opsi kirim secret ke RADIUS saat memilih dari MikroTik
+    toggleRadiusSync('add', true);
+    const addChk = document.getElementById('add_sync_to_radius');
+    if (addChk) addChk.checked = true;
+
+    const btnNew = document.getElementById('btn_mode_pppoe_new');
+    const btnMikrotik = document.getElementById('btn_mode_pppoe_mikrotik');
+    const badge = document.getElementById('add_pppoe_mode_badge');
+    if (btnNew) { btnNew.style.background = 'transparent'; btnNew.style.color = 'var(--text)'; btnNew.classList.add('btn-g'); }
+    if (btnMikrotik) { btnMikrotik.style.background = 'var(--primary)'; btnMikrotik.style.color = '#fff'; btnMikrotik.classList.remove('btn-g'); }
+    if (badge) {
+      badge.innerHTML = `<span><i class="bi bi-check2-circle text-success me-1"></i> <strong>Terpilih dari MikroTik:</strong> <code>${name}</code> (Mapping Aktif & Siap Disinkronkan ke RADIUS Server)</span>`;
+      badge.style.background = 'rgba(16,185,129,0.08)';
+      badge.style.borderColor = 'rgba(16,185,129,0.3)';
+    }
+
     if (nameField && !nameField.value) {
       nameField.value = name.replace(/@.*$/, '').replace(/[_\-\.]/g, ' ').toUpperCase();
     }
+  } else if (secretPickerTarget === 'edit') {
+    const userField = document.getElementById('e_pppoe');
+    const passField = document.getElementById('e_pppoe_password');
+    const routerSelect = document.getElementById('e_router_id');
+    const tagField = document.getElementById('e_tag');
+
+    if (userField) userField.value = name;
+    if (passField) passField.value = pass || '';
+    if (tagField && (!tagField.value || tagField.value.trim() === '')) tagField.value = name;
+    if (routerSelect && routerId) routerSelect.value = routerId;
+
+    toggleRadiusSync('edit', true);
+    const editChk = document.getElementById('e_sync_to_radius');
+    if (editChk) editChk.checked = true;
   }
   closeModal('secretPickerModal');
 }
@@ -4654,9 +4821,12 @@ function editCust(idx) {
   document.getElementById('e_router_id').value=c.router_id||'';
   document.getElementById('e_connection_type').value=c.connection_type||'pppoe';
   document.getElementById('e_pppoe').value=c.pppoe_username||'';
-  if (document.getElementById('e_pppoe_password')) document.getElementById('e_pppoe_password').value=c.pppoe_password||'';
-  if (document.getElementById('e_is_radius')) document.getElementById('e_is_radius').value=(c.is_radius !== 0 ? '1' : '0');
-  selectAuthModeCard('edit', (c.is_radius !== 0 && c.is_radius !== '0') ? 1 : 0);
+  const isCustRadius = (c.is_radius !== 0 && c.is_radius !== '0' && c.is_radius !== null);
+  if (document.getElementById('e_is_radius')) document.getElementById('e_is_radius').value = isCustRadius ? '1' : '0';
+  selectAuthModeCard('edit', isCustRadius ? 1 : 0);
+  const editChk = document.getElementById('e_sync_to_radius');
+  if (editChk) editChk.checked = isCustRadius;
+  updateRadiusSyncPill('edit', isCustRadius);
   document.getElementById('e_static_ip').value=c.static_ip||'';
   document.getElementById('e_mac_address').value=c.mac_address||'';
   document.getElementById('e_hotspot_username').value=c.hotspot_username||'';
@@ -5138,6 +5308,13 @@ async function autoGenerateCustomerCode(type = 'add') {
 
   if (!codeInput) return;
 
+  // Jika input kode sudah terisi manual oleh admin, konfirmasi sebelum menimpa
+  if (codeInput.value && codeInput.value.trim()) {
+    if (!confirm('Kode pelanggan saat ini sudah terisi (' + codeInput.value + '). Apakah Anda ingin menggantinya dengan kode generate baru?')) {
+      return;
+    }
+  }
+
   let areaVal = '';
   let areaCodeAttr = '';
   if (areaSelect && areaSelect.selectedIndex > 0) {
@@ -5153,25 +5330,6 @@ async function autoGenerateCustomerCode(type = 'add') {
     const data = await res.json();
     if (data.ok && data.customer_code) {
       codeInput.value = data.customer_code;
-
-      if (type === 'add') {
-        const pppoeUsernameDefault = document.querySelector('#addModal input[name="pppoe_username"]');
-        const pppoeUsernameManual = document.getElementById('add_pppoe_username_manual');
-        const pppoeWithDomain = data.pppoe_username || (data.customer_code.toLowerCase() + '@bionfiber.net');
-
-        if (pppoeUsernameDefault) pppoeUsernameDefault.value = pppoeWithDomain;
-        if (pppoeUsernameManual) pppoeUsernameManual.value = pppoeWithDomain;
-
-        const passInput = document.getElementById('add_pppoe_password');
-        if (passInput && !passInput.value) {
-          passInput.value = generateRandomPassword(6);
-        }
-
-        const tagInput = document.querySelector('#addModal input[name="genieacs_tag"]');
-        if (tagInput && (!tagInput.value || tagInput.value.trim() === '')) {
-          tagInput.value = pppoeWithDomain;
-        }
-      }
       return;
     }
   } catch (e) {
@@ -5183,40 +5341,11 @@ async function autoGenerateCustomerCode(type = 'add') {
   const year2 = String(new Date().getFullYear()).slice(-2);
   const fallbackCode = `${finalArea}${year2}001`;
   codeInput.value = fallbackCode;
-
-  if (type === 'add') {
-    const pppoeUsernameDefault = document.querySelector('#addModal input[name="pppoe_username"]');
-    const pppoeUsernameManual = document.getElementById('add_pppoe_username_manual');
-    const pppoeWithDomain = fallbackCode.toLowerCase() + '@bionfiber.net';
-
-    if (pppoeUsernameDefault) pppoeUsernameDefault.value = pppoeWithDomain;
-    if (pppoeUsernameManual) pppoeUsernameManual.value = pppoeWithDomain;
-
-    const passInput = document.getElementById('add_pppoe_password');
-    if (passInput && !passInput.value) {
-      passInput.value = generateRandomPassword(6);
-    }
-
-    const tagInput = document.querySelector('#addModal input[name="genieacs_tag"]');
-    if (tagInput && (!tagInput.value || tagInput.value.trim() === '')) {
-      tagInput.value = pppoeWithDomain;
-    }
-  }
 }
 
 function enforceBionPppoeDomain(el) {
-  if (!el || !el.value) return;
-  let val = el.value.trim();
-  if (!val) return;
-  const domain = '@bionfiber.net';
-  if (!val.toLowerCase().endsWith(domain)) {
-    if (val.includes('@')) {
-      val = val.split('@')[0] + domain;
-    } else {
-      val = val + domain;
-    }
-  }
-  el.value = val;
+  // Tidak memaksa domain @bionfiber.net agar akun running eksisting MikroTik tidak rusak
+  return;
 }
 
 function triggerAutoGenerateCode(type) {

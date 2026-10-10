@@ -1092,7 +1092,7 @@ router.get('/api/customers/available-onus', requireAdminSession, async (req, res
       };
     });
 
-    return res.json({ ok: true, devices });
+    return res.json({ ok: true, devices, onus: devices });
   } catch (e) {
     logger.error('[API available-onus] Error:', e.message);
     return res.json({ ok: false, error: e.message, devices: [] });
@@ -2479,8 +2479,9 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
     }
 
     const radiusEnabled = getSetting('radius_enabled', '0') === '1';
-    // Ketika RADIUS offline, paksa is_radius = 0 (MikroTik mode) agar secret SELALU dibuat ke MikroTik
-    const isRadius = radiusEnabled ? (req.body.is_radius !== undefined ? (Number(req.body.is_radius) === 1 ? 1 : 0) : 0) : 0;
+    // Opsi kirim ke RADIUS: jika sync_to_radius dicentang atau is_radius = 1
+    const wantsRadius = (req.body.sync_to_radius === '1' || req.body.sync_to_radius === 1 || Number(req.body.is_radius) === 1);
+    const isRadius = wantsRadius ? 1 : 0;
     req.body.is_radius = isRadius;
 
     customerSvc.createCustomer(req.body);
@@ -2497,20 +2498,31 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
     //          Hanya CREATE (jika belum ada) atau UPDATE PROFILE (jika sudah ada)
     // ========================================================================
     const shouldSyncToMikrotik = !radiusEnabled || !isRadius;
-    if (connectionType === 'pppoe' && req.body.pppoe_username && shouldSyncToMikrotik) {
+    if (connectionType === 'pppoe' && req.body.pppoe_username) {
       const password = String(req.body.pppoe_password || '').trim();
       const remoteAddress = String(req.body.pppoe_remote_address || '').trim();
+      const pppoeSource = String(req.body.pppoe_source || 'new').trim().toLowerCase();
       
-      // If manual input (password provided), create PPPoE secret in MikroTik
-      if (password) {
-        let targetProfile = '';
-        if (req.body.status === 'suspended') {
-          targetProfile = req.body.isolir_profile || 'isolir';
-        } else if (req.body.package_id) {
-          const pkg = customerSvc.getPackageById(req.body.package_id);
-          if (pkg) targetProfile = pkg.name;
+      let targetProfile = '';
+      if (req.body.status === 'suspended') {
+        targetProfile = req.body.isolir_profile || 'isolir';
+      } else if (req.body.package_id) {
+        const pkg = customerSvc.getPackageById(req.body.package_id);
+        if (pkg) targetProfile = pkg.name;
+      }
+
+      if (pppoeSource === 'mikrotik') {
+        // Mode Ambil dari MikroTik: secret eksisting sudah running, perbarui profile jika ada
+        if (targetProfile) {
+          try {
+            await mikrotikService.setPppoeProfile(req.body.pppoe_username, targetProfile, req.body.router_id);
+            logger.info(`[Add Customer] Mapped existing PPPoE secret "${req.body.pppoe_username}" in MikroTik to profile "${targetProfile}" (RADIUS sync: ${isRadius ? 'YES' : 'NO'})`);
+          } catch (mErr) {
+            logger.warn(`[Add Customer] Info mapping secret MikroTik: ${mErr.message}`);
+          }
         }
-        
+      } else if (shouldSyncToMikrotik) {
+        // Mode Buat Baru di MikroTik
         if (targetProfile) {
           try {
             const secretComment = [req.body.name, req.body.nik].filter(Boolean).join(' / ') || req.body.name;
@@ -2524,18 +2536,16 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
             });
             logger.info(`[Add Customer] Created PPPoE secret "${req.body.pppoe_username}" in MikroTik (RADIUS ${radiusEnabled ? 'ON' : 'OFF'})`);
           } catch (mErr) {
-            logger.error('Mikrotik create PPPoE secret error:', mErr);
+            if (mErr.message && mErr.message.toLowerCase().includes('already')) {
+              logger.info(`[Add Customer] Secret "${req.body.pppoe_username}" sudah ada di MikroTik, dialihkan ke mapping profil.`);
+              await mikrotikService.setPppoeProfile(req.body.pppoe_username, targetProfile, req.body.router_id).catch(() => {});
+            } else {
+              logger.error('Mikrotik create PPPoE secret error:', mErr);
+            }
           }
         }
       } else {
-        // If from MikroTik list (no password input), just update profile
-        let targetProfile = '';
-        if (req.body.status === 'suspended') {
-          targetProfile = req.body.isolir_profile || 'isolir';
-        } else if (req.body.package_id) {
-          const pkg = customerSvc.getPackageById(req.body.package_id);
-          if (pkg) targetProfile = pkg.name;
-        }
+        // Fallback jika tidak ada password, update profile
         if (targetProfile) {
           try {
             await mikrotikService.setPppoeProfile(req.body.pppoe_username, targetProfile, req.body.router_id);
@@ -2544,6 +2554,28 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
             logger.error('Mikrotik sync error (create):', mErr);
           }
         }
+      }
+    }
+
+    // TAUTKAN TAG KE GENIEACS JIKA SN TERSEDIA
+    const ontSn = String(req.body.ont_sn || '').trim();
+    const tagToApply = String(req.body.genieacs_tag || req.body.customer_code || req.body.pppoe_username || '').trim();
+    if (ontSn && tagToApply) {
+      try {
+        const dev = await customerDevice.findDeviceByTag(ontSn);
+        if (dev && dev._id) {
+          const servers = genieacsApi.getAllACSServers();
+          for (const srv of servers) {
+            try {
+              const ax = genieacsApi.createAxiosInstance(srv);
+              await ax.post(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(tagToApply)}`, {});
+              logger.info(`[Add Customer] Tag "${tagToApply}" berhasil disinkronkan ke perangkat GenieACS (${dev._id})`);
+              break;
+            } catch (errTag) {}
+          }
+        }
+      } catch (acsTagErr) {
+        logger.warn(`[Add Customer] Tidak dapat sinkronisasi tag ke GenieACS: ${acsTagErr.message}`);
       }
     }
     if (connectionType === 'hotspot' && req.body.hotspot_username) {
@@ -2611,8 +2643,9 @@ router.post('/customers/:id/update', requireAdminSession, (req, res, next) => {
     const defaultRouterId = multiRouterMode ? null : getSetting('default_router_id', null);
 
     const radiusEnabled = getSetting('radius_enabled', '0') === '1';
-    // Ketika RADIUS offline, paksa is_radius = 0 (MikroTik mode) agar secret SELALU ada di MikroTik
-    const isRadius = radiusEnabled ? (req.body.is_radius !== undefined ? (Number(req.body.is_radius) === 1 ? 1 : 0) : 0) : 0;
+    // Opsi kirim ke RADIUS: jika sync_to_radius dicentang atau is_radius = 1
+    const wantsRadius = (req.body.sync_to_radius === '1' || req.body.sync_to_radius === 1 || Number(req.body.is_radius) === 1);
+    const isRadius = wantsRadius ? 1 : 0;
     req.body.is_radius = isRadius;
     const shouldSyncToMikrotik = !radiusEnabled || !isRadius;
 

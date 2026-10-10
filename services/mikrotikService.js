@@ -694,13 +694,6 @@ async function createPppoeSecret({ username, password, profile, remoteAddress, r
   let conn = null;
   try {
     let finalUsername = String(username || '').trim();
-    if (finalUsername && !finalUsername.toLowerCase().endsWith('@bionfiber.net')) {
-      if (finalUsername.includes('@')) {
-        finalUsername = finalUsername.split('@')[0] + '@bionfiber.net';
-      } else {
-        finalUsername = finalUsername + '@bionfiber.net';
-      }
-    }
 
     conn = await getConnection(routerId);
     const secretData = {

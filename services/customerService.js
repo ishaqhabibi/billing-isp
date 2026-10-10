@@ -174,17 +174,7 @@ function getCustomerById(id) {
 
 function formatBionPppoe(username) {
   if (!username) return '';
-  let u = String(username).trim();
-  if (!u) return '';
-  const domain = '@bionfiber.net';
-  if (!u.toLowerCase().endsWith(domain)) {
-    if (u.includes('@')) {
-      u = u.split('@')[0] + domain;
-    } else {
-      u = u + domain;
-    }
-  }
-  return u;
+  return String(username).trim();
 }
 
 function createCustomer(data) {
@@ -279,6 +269,9 @@ function updateCustomer(id, data) {
   const pppoeUsername = data.pppoe_username !== undefined
     ? formatBionPppoe(data.pppoe_username)
     : (prev ? prev.pppoe_username : '');
+  const pppoePassword = (data.pppoe_password !== undefined && String(data.pppoe_password).trim() !== '')
+    ? String(data.pppoe_password).trim()
+    : (prev ? (prev.pppoe_password || '') : '');
   const ontSn = data.ont_sn !== undefined
     ? (data.ont_sn ? String(data.ont_sn).trim() : '')
     : (prev ? (prev.ont_sn || '') : '');
@@ -311,7 +304,7 @@ function updateCustomer(id, data) {
     data.lat || '',
     data.lng || '',
     data.genieacs_tag || '', pppoeUsername,
-    data.pppoe_password || '',
+    pppoePassword,
     data.pppoe_remote_address || '',
     data.isolir_profile || 'isolir',
     data.status || 'active',
