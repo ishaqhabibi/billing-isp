@@ -734,7 +734,7 @@ function getOnlineSessions() {
       FROM radius_accounting ra
       LEFT JOIN customers c ON (c.pppoe_username = ra.username OR c.name = ra.username)
       WHERE ra.status_type IN (1, 3)
-      ORDER BY ra.updated_at DESC LIMIT 100
+      ORDER BY ra.updated_at DESC LIMIT 500
     `).all();
   } catch (e) {
     return [];
@@ -792,5 +792,6 @@ module.exports = {
   getStatus,
   getOnlineSessions,
   getAccountingLogs,
-  disconnectSession
+  disconnectSession,
+  findUserCredentials
 };

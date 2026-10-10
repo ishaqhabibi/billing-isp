@@ -52,6 +52,11 @@
                 <span style="font-weight:normal; opacity:0.8; margin-left:8px;">
                     &bull; Last Inform: <%= (function(d){ if(!d) return 'Belum Pernah'; var s = String(d).trim().replace(' ', 'T'); var dt = new Date(s); return isNaN(dt.getTime()) ? String(d) : dt.toLocaleString('id-ID'); })(device.lastInform) %>
                 </span>
+                <% if (typeof fromCache !== 'undefined' && fromCache) { %>
+                    <span class="badge" style="background:rgba(59,130,246,0.18); color:#60a5fa; font-size:11px; font-weight:700; margin-left:8px; border:1px solid rgba(59,130,246,0.3); border-radius:6px; padding:2px 8px;" title="Snapshot Cache Aktif (Buka Instan)">
+                        <i class="bi bi-lightning-charge-fill text-warning"></i> Cache Cepat
+                    </span>
+                <% } %>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
                 <button type="button" class="btn btn-g btn-sm" id="btn_refresh_tr069" onclick="refreshDeviceTR069('<%= device.id || device.serialNumber %>')" title="Tarik pembaruan data real-time via TR-069">
@@ -464,10 +469,14 @@ async function refreshDeviceTR069(deviceId) {
     const data = await res.json();
     if (data.success) {
       alert(data.message || 'Perintah sinkronisasi TR-069 berhasil dikirim ke perangkat! Halaman akan dimuat ulang.');
-      setTimeout(() => location.reload(), 1500);
+      setTimeout(() => {
+        window.location.href = window.location.pathname + '?refresh=1';
+      }, 1500);
     } else {
       alert('Info: ' + (data.message || 'Antrean perintah TR-069 dibuat. Tunggu beberapa saat lalu refresh halaman.'));
-      setTimeout(() => location.reload(), 2000);
+      setTimeout(() => {
+        window.location.href = window.location.pathname + '?refresh=1';
+      }, 2000);
     }
   } catch (err) {
     alert('Gagal menyinkronkan TR-069: ' + err.message);

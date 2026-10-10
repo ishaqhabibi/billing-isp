@@ -51,7 +51,7 @@ function updateThemeToggleIcons(theme) {
 // Immediate run
 (function() {
   try {
-    const saved = localStorage.getItem('app-theme') || 'dark';
+    const saved = localStorage.getItem('app-theme') || 'light';
     applyAppTheme(saved);
   } catch (e) {}
 })();
@@ -59,7 +59,7 @@ function updateThemeToggleIcons(theme) {
 // Re-apply when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   try {
-    const saved = localStorage.getItem('app-theme') || 'dark';
+    const saved = localStorage.getItem('app-theme') || 'light';
     applyAppTheme(saved);
   } catch (e) {}
 });

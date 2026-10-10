@@ -1225,17 +1225,14 @@ Ketik alamat IP tujuan untuk menguji konektivitas &amp; latency.</div>
   async function loadNocSessions() {
     const routerId = getRouterId();
     try {
-      const [pRes, aRes, hRes, haRes] = await Promise.all([
-        fetch(`/admin/api/mikrotik/secrets?routerId=${routerId}`),
-        fetch(`/admin/api/mikrotik/active-pppoe?routerId=${routerId}`),
-        fetch(`/admin/api/mikrotik/hotspot-users?routerId=${routerId}`),
-        fetch(`/admin/api/mikrotik/active-hotspot?routerId=${routerId}`)
-      ]);
+      const res = await fetch(`/admin/api/mikrotik/noc-session-summary?routerId=${routerId}`);
+      if (!res.ok) return;
+      const data = await res.json();
 
-      const secrets = pRes.ok ? await pRes.json() : [];
-      const pppoeActive = aRes.ok ? await aRes.json() : [];
-      const hotspotUsers = hRes.ok ? await hRes.json() : [];
-      const hotspotActive = haRes.ok ? await haRes.json() : [];
+      const secrets = data.secrets || [];
+      const pppoeActive = data.pppoeActive || [];
+      const hotspotUsers = data.hotspotUsers || [];
+      const hotspotActive = data.hotspotActive || [];
 
       // Update KPI counters
       const pOnEl = document.getElementById('pppoe-online-count');
@@ -1430,11 +1427,11 @@ Ketik alamat IP tujuan untuk menguji konektivitas &amp; latency.</div>
       loadRackPorts();
     }, 5000);
 
-    // 10s for active PPPoE & Hotspot sessions preview
+    // 20s for active PPPoE & Hotspot sessions preview (single unified session)
     sessionTimer = setInterval(() => {
-      if (!isAutoRefreshEnabled) return;
+      if (!isAutoRefreshEnabled || document.hidden) return;
       loadNocSessions();
-    }, 10000);
+    }, 20000);
   }
 
   function stopPolling() {

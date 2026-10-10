@@ -1079,7 +1079,7 @@ async function loadDevices() {
           </td>
           <td>
             <div><span class="badge ${isOn ? 'ds-on' : 'ds-off'}"><span class="dot ${isOn ? 'dot-on' : 'dot-off'}"></span>${isOn ? I18N.online : I18N.offline}</span></div>
-            <div style="font-size:11px;color:var(--muted);margin-top:4px" title="RX Power"><i class="bi bi-activity"></i> ${d.rxPower}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px" title="RX Power"><i class="bi bi-activity"></i> ${d.rxPower !== '-' ? (d.rxPower.includes('dBm') ? d.rxPower : d.rxPower + ' dBm') : '-'}</div>
             <div style="font-size:11px;color:var(--muted)" title="Uptime"><i class="bi bi-clock-history"></i> ${d.uptime}</div>
             <div style="font-size:11px;color:var(--muted)" title="${I18N.lastSync}"><i class="bi bi-hourglass-split"></i> ${d.lastSyncAgo || '-'}</div>
             ${syncBadge}

@@ -162,11 +162,15 @@ async function resolveDeviceToken(input) {
 
 const parameterPaths = {
   serialNumber: [
+    '_deviceId._SerialNumber',
+    '_deviceId.SerialNumber',
     'DeviceID.SerialNumber',
     'InternetGatewayDevice.DeviceInfo.SerialNumber',
     'Device.DeviceInfo.SerialNumber'
   ],
   model: [
+    '_deviceId._ProductClass',
+    '_deviceId.ProductClass',
     'DeviceID.ProductClass',
     'InternetGatewayDevice.DeviceInfo.ModelName',
     'Device.DeviceInfo.ModelName',
@@ -268,7 +272,13 @@ const parameterPaths = {
   uptime: [
     'VirtualParameters.getdeviceuptime',
     'InternetGatewayDevice.DeviceInfo.UpTime',
-    'Device.DeviceInfo.UpTime'
+    'Device.DeviceInfo.UpTime',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Uptime',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANPPPConnection.1.Uptime',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.Uptime',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANIPConnection.1.Uptime',
+    'Device.PPP.Interface.1.Uptime',
+    'Device.IP.Interface.1.Uptime'
   ],
   userConnected: [
     'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDeviceNumberOfEntries',
@@ -490,9 +500,11 @@ function collectRefreshObjects(device) {
     // Fiberhome / multi-AP dual band 5GHz
     objects.push('InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.AssociatedDevice');
     objects.push('InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice');
-    // PPPoE WAN connection & Uptime
+    // PPPoE WAN connection & Uptime (Fiberhome D2 / F3 multi-instance)
     objects.push('InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection');
-    // Optical Redaman (Fiberhome & Generic GPON)
+    objects.push('InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANPPPConnection');
+    // Optical Redaman (Fiberhome D2 & F3 - GPON Interface Config & PON Manage)
+    objects.push('InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig');
     objects.push('InternetGatewayDevice.X_FH_PON_MANAGE');
     objects.push('InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_FH_WANGponLinkConfig');
     objects.push('InternetGatewayDevice.WANDevice.1.WANPONInterfaceConfig');
@@ -919,11 +931,21 @@ function mapDeviceData(device, tag, isPppoeActive = false) {
     
     return days + "d " + hrs + ":" + mins + ":" + secs;
   }
-  const uptime = formatUptime(uptimeRaw);
+  let uptime = formatUptime(uptimeRaw);
   const pppoeUptime = extractPppoeUptime(device);
+  if (!uptime || uptime === 'N/A' || uptime === '-') {
+    uptime = pppoeUptime || '-';
+  }
 
-  const serialNumber = getParameterWithPaths(device, parameterPaths.serialNumber);
-  const productClass = getParameterWithPaths(device, parameterPaths.model);
+  let serialNumber = getParameterWithPaths(device, parameterPaths.serialNumber);
+  if (!serialNumber || serialNumber === 'N/A' || serialNumber === '-') {
+    serialNumber = device?._deviceId?._SerialNumber || (device?._id ? (device._id.split('-')[2] || device._id) : '-');
+  }
+
+  let productClass = getParameterWithPaths(device, parameterPaths.model);
+  if (!productClass || productClass === 'N/A' || productClass === '-') {
+    productClass = device?._deviceId?._ProductClass || (device?._id ? (device._id.split('-')[1] || '-') : '-');
+  }
   const softwareVersion = getParameterWithPaths(device, parameterPaths.softwareVersion);
   const wifiPassword = getParameterWithPaths(device, parameterPaths.wifiPassword);
   const model = productClass;
@@ -1542,7 +1564,23 @@ async function listAllDevices(limit = 999999, acsId = null) {
       const instance = genieacsApi.createAxiosInstance(server);
       const params = {
         limit,
-        projection: '_id,_tags,_lastInform,DeviceID.SerialNumber,VirtualParameters,InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Username,InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.2.Username,InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.ExternalIPAddress,Device.PPP.Interface.1.Username,Device.PPP.Interface.1.ExternalIPAddress,InternetGatewayDevice.DeviceInfo.ModelName,InternetGatewayDevice.DeviceInfo.SoftwareVersion,InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID,InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.TotalAssociations,InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.TotalAssociations,InternetGatewayDevice.LANDevice.1.Hosts.HostNumberOfEntries,Device.WiFi.AccessPoint.1.AssociatedDeviceNumberOfEntries,Device.Hosts.HostNumberOfEntries,InternetGatewayDevice.LANDevice.1.Hosts.Host,Device.Hosts.Host'
+        projection: [
+          '_id',
+          '_tags',
+          '_lastInform',
+          '_deviceId',
+          'VirtualParameters',
+          'InternetGatewayDevice.WANDevice',
+          'InternetGatewayDevice.DeviceInfo',
+          'InternetGatewayDevice.X_FH_PON_MANAGE',
+          'InternetGatewayDevice.LANDevice.1.WLANConfiguration',
+          'InternetGatewayDevice.LANDevice.1.Hosts',
+          'Device.PPP',
+          'Device.WiFi',
+          'Device.Hosts',
+          'Device.Optical',
+          'Device.XPON'
+        ].join(',')
       };
       let response;
       try {

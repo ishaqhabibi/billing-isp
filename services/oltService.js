@@ -67,6 +67,26 @@ const BRAND_PROFILES = {
   ],
   hsgq: [
     {
+      name: 'HSGQ_NATIVE_GPON',
+      status_table: '1.3.6.1.4.1.50224.3.12.2.1.4',
+      name_table:   '1.3.6.1.4.1.50224.3.12.2.1.2',
+      sn_table:     '1.3.6.1.4.1.50224.3.12.2.1.15',
+      tx_power_table: '1.3.6.1.4.1.50224.3.12.3.1.5',
+      rx_power_table: '1.3.6.1.4.1.50224.3.12.3.1.4',
+      distance_table: '1.3.6.1.4.1.50224.3.12.2.1.19',
+      distance_tenths_meter: false,
+      firmware_table: '1.3.6.1.4.1.50224.3.12.2.1.13',
+      uptime_table:   '1.3.6.1.4.1.50224.3.12.2.1.23',
+      temp_table:     '1.3.6.1.4.1.50224.3.12.3.1.8',
+      voltage_table:  '1.3.6.1.4.1.50224.3.12.3.1.7',
+      last_up_table:  '1.3.6.1.4.1.50224.3.12.2.1.20',
+      vendor_table:   '1.3.6.1.4.1.50224.3.12.2.1.8',
+      model_table:    '1.3.6.1.4.1.50224.3.12.2.1.9',
+      unauth_sn_table: '1.3.6.1.4.1.50224.3.12.8.1.5',
+      unauth_type_table: '1.3.6.1.4.1.50224.3.12.8.1.6',
+      probe_oid:    '1.3.6.1.4.1.50224.3.12.2.1.4',
+    },
+    {
       name: 'HSGQ_EPON',
       status_table: '1.3.6.1.4.1.3320.101.10.1.1.26',
       name_table:   '1.3.6.1.4.1.3320.101.10.1.1.79',
@@ -234,10 +254,17 @@ const ONLINE_VALUES = {
 };
 
 const getOnlineValues = (brandKey, profile) => {
-  const base = ONLINE_VALUES[brandKey] || [1, 3];
   const profileName = String(profile?.name || '').toLowerCase();
   const nameOid = String(profile?.name_table || '');
-  const isHiosoGpon = (brandKey === 'hioso' || brandKey === 'hsgq')
+  const statusOid = String(profile?.status_table || '');
+
+  // Native HSGQ GPON (MIB 1.3.6.1.4.1.50224): 1 = Online, 2 = Offline
+  if (brandKey === 'hsgq' && (statusOid.includes('.50224.') || profileName.includes('native'))) {
+    return [1, '1', 'online', 'up'];
+  }
+
+  const base = ONLINE_VALUES[brandKey] || [1, 3];
+  const isHiosoGpon = (brandKey === 'hioso')
     && (profileName.includes('gpon') || nameOid.includes('.25355.3.3.'));
   if (isHiosoGpon) return [2, 3, 4];
   return base;
@@ -256,9 +283,14 @@ const SYSTEM_OIDS = {
     uplink_tx: '1.3.6.1.2.1.31.1.1.1.10.1',      // ifHCOutOctets (uplink port 1)
   },
   hsgq: {
-    temp:      '1.3.6.1.4.1.3320.101.11.1.12.1', // Temp sensor
-    cpu:       '1.3.6.1.4.1.3320.101.11.1.13.1', // CPU Usage
-    ram:       '1.3.6.1.4.1.3320.101.11.1.14.1', // RAM Usage
+    temp:      '1.3.6.1.4.1.50224.3.1.1.23.0', // Suhu OLT (°C)
+    cpu:       '1.3.6.1.4.1.50224.3.1.1.18.0', // CPU Usage (%)
+    ram_total: '1.3.6.1.4.1.50224.3.1.1.26.0', // Total RAM (KB)
+    ram_used:  '1.3.6.1.4.1.50224.3.1.1.28.0', // Used RAM (KB)
+    fans:      '1.3.6.1.4.1.50224.3.1.1.21.0', // Fan info
+    power:     '1.3.6.1.4.1.50224.3.1.1.24.0', // Power DC/AC
+    model:     '1.3.6.1.4.1.50224.3.1.1.19.0', // Model: HSGQ-G04ID
+    firmware:  '1.3.6.1.4.1.50224.3.1.1.6.0',  // Firmware
     uplink_rx: '1.3.6.1.2.1.31.1.1.1.6.1',
     uplink_tx: '1.3.6.1.2.1.31.1.1.1.10.1',
   },
@@ -307,6 +339,14 @@ const SYSTEM_OIDS = {
 };
 
 const CARD_OIDS = {
+  hsgq: {
+    type:   '1.3.6.1.4.1.50224.3.2.1.1.2',  // Port name: PON01, GE01, XGE01
+    status: '1.3.6.1.4.1.50224.3.2.1.1.6',  // 1 = UP, 2 = DOWN
+    ports:  '1.3.6.1.4.1.50224.3.2.1.1.5',  // Speed (Mbps)
+    serial: '1.3.6.1.4.1.50224.3.2.4.1.7',  // SFP Serial
+    cpu:    '1.3.6.1.4.1.50224.3.2.4.1.8',  // SFP Temp
+    ram:    '1.3.6.1.4.1.50224.3.2.4.1.11', // SFP Tx Power
+  },
   zte: {
     type:   '1.3.6.1.4.1.3902.1082.500.10.2.2.4.1.4',
     status: '1.3.6.1.4.1.3902.1082.500.10.2.2.4.1.6',
@@ -515,9 +555,12 @@ async function testOltSnmp(id) {
       tryTelnetFallback(err.message || 'SNMP Session error');
     });
 
-    // Query sysDescr (1.3.6.1.2.1.1.1.0), sysUpTime (1.3.6.1.2.1.1.3.0), sysName (1.3.6.1.2.1.1.5.0)
+    const testOids = (olt.brand || '').toLowerCase() === 'hsgq'
+      ? ['1.3.6.1.2.1.1.1.0', '1.3.6.1.2.1.1.3.0', '1.3.6.1.2.1.1.5.0', '1.3.6.1.4.1.50224.3.1.1.19.0', '1.3.6.1.4.1.50224.3.1.1.6.0']
+      : ['1.3.6.1.2.1.1.1.0', '1.3.6.1.2.1.1.3.0', '1.3.6.1.2.1.1.5.0'];
+
     session.get(
-      ['1.3.6.1.2.1.1.1.0', '1.3.6.1.2.1.1.3.0', '1.3.6.1.2.1.1.5.0'],
+      testOids,
       async (err, varbinds) => {
         clearTimeout(timer);
         const latencyMs = Date.now() - startTime;
@@ -528,19 +571,32 @@ async function testOltSnmp(id) {
           return tryTelnetFallback('Tidak ada respons varbind dari OLT');
         }
 
-        const sysDescr = varbinds[0] && !snmp.isVarbindError(varbinds[0]) ? varbinds[0].value.toString() : 'N/A';
+        let sysDescr = varbinds[0] && !snmp.isVarbindError(varbinds[0]) ? varbinds[0].value.toString() : 'N/A';
         const sysUpTime = varbinds[1] && !snmp.isVarbindError(varbinds[1]) ? decodeUptime(varbinds[1].value) : 'N/A';
         const sysName = varbinds[2] && !snmp.isVarbindError(varbinds[2]) ? varbinds[2].value.toString() : 'N/A';
 
+        if (varbinds[3] && !snmp.isVarbindError(varbinds[3])) {
+          const modelStr = varbinds[3].value.toString().trim();
+          let fwStr = '';
+          if (varbinds[4] && !snmp.isVarbindError(varbinds[4])) {
+            fwStr = Buffer.isBuffer(varbinds[4].value)
+              ? varbinds[4].value.toString('utf8').replace(/\0/g, '').trim()
+              : String(varbinds[4].value).trim();
+          }
+          sysDescr = fwStr ? `${modelStr} (Firmware: ${fwStr})` : modelStr;
+        }
+
         finish({
           success: true,
+          via: 'snmp',
           latencyMs,
           sysDescr,
           sysUpTime,
           sysName,
           host,
           port,
-          brand: olt.brand
+          brand: olt.brand,
+          note: `Koneksi SNMP Berhasil (UDP Port ${port}) - SNMP v2c responsif`
         });
       }
     );
@@ -617,7 +673,7 @@ const decodeUptime = (ticks) => {
   return `${days}d ${hours}h ${minutes}m`;
 };
 
-const hiosoOnuIdFromIndex = (index) => {
+const hiosoOnuIdFromIndex = (index, brand) => {
   if (index == null) return null;
   const s = String(index).trim();
   if (!s) return null;
@@ -627,13 +683,21 @@ const hiosoOnuIdFromIndex = (index) => {
     if (parts.length >= 2) {
       const onu = parseInt(parts[parts.length - 1], 10);
       const port = parseInt(parts[parts.length - 2], 10);
-      if (Number.isFinite(port) && Number.isFinite(onu)) return `0/${port}:${onu}`;
+      if (Number.isFinite(port) && Number.isFinite(onu)) return `${port}/${onu}`;
     }
     return null;
   }
 
   const intIdx = parseInt(s, 10);
   if (!Number.isFinite(intIdx)) return null;
+
+  // HSGQ GPON integer index (e.g. 16777728 -> port = 2, onu = 0 -> "2/0")
+  if (brand === 'hsgq' || intIdx >= 16777216) {
+    const port = (intIdx >> 8) & 0xff;
+    const onu = intIdx & 0xff;
+    if (port > 0) return `${port}/${onu}`;
+  }
+
   let port = (intIdx >> 16) & 0xff;
   if (port === 0 || port > 16) port = (intIdx >> 8) & 0xff;
   const onu = intIdx & 0xff;
@@ -1409,19 +1473,26 @@ const walkSample = async (session, baseOid, maxItems = 3) => {
   return values;
 };
 
-/**
- * Test apakah sebuah OID probe memberikan respons SNMP getNext yang valid
- */
 const probeOid = async (session, oid) => {
   try {
+    if (!oid) return false;
+    if (oid.endsWith('.0')) {
+      const vb = await new Promise((rv, rj) => {
+        session.get([oid], (err, vbs) => {
+          if (err) rj(err);
+          else rv(vbs && vbs[0]);
+        });
+      });
+      if (!vb || vb.type === snmp.ObjectType.EndOfMibView || vb.type === snmp.ObjectType.NoSuchObject || vb.type === snmp.ObjectType.NoSuchInstance) return false;
+      return true;
+    }
     const vb = await new Promise((rv, rj) => {
       session.getNext([oid], (err, vbs) => {
         if (err) rj(err);
-        else rv(vbs[0]);
+        else rv(vbs && vbs[0]);
       });
     });
     if (!vb || vb.type === snmp.ObjectType.EndOfMibView || vb.type === snmp.ObjectType.NoSuchObject) return false;
-    // Cek apakah hasil masih di bawah OID ini atau sub-treenya ada data
     return oidUnderBase(vb.oid, oid);
   } catch (e) {
     return false;
@@ -1433,21 +1504,35 @@ const probeOid = async (session, oid) => {
  * Kembalikan array nilai (atau null jika error/tidak ada).
  */
 const snmpGet = async (session, oids) => {
+  if (!Array.isArray(oids) || oids.length === 0) return [];
+  const cleanOids = oids.map(o => (typeof o === 'string' && o.trim().length > 0 ? o.trim() : null));
+  const validOids = cleanOids.filter(Boolean);
+  if (validOids.length === 0) return cleanOids.map(() => null);
+
   try {
     const vbs = await new Promise((rv, rj) => {
-      session.get(oids, (err, result) => {
+      session.get(validOids, (err, result) => {
         if (err) rj(err);
         else rv(result);
       });
     });
-    return vbs.map(vb => {
-      if (!vb || vb.type === snmp.ObjectType.NoSuchObject ||
-          vb.type === snmp.ObjectType.NoSuchInstance ||
-          vb.type === snmp.ObjectType.EndOfMibView) return null;
-      return vb.value;
+
+    const resultMap = new Map();
+    (vbs || []).forEach(vb => {
+      if (vb && vb.oid) {
+        if (vb.type === snmp.ObjectType.NoSuchObject ||
+            vb.type === snmp.ObjectType.NoSuchInstance ||
+            vb.type === snmp.ObjectType.EndOfMibView) {
+          resultMap.set(vb.oid, null);
+        } else {
+          resultMap.set(vb.oid, vb.value);
+        }
+      }
     });
+
+    return cleanOids.map(oid => (oid ? (resultMap.has(oid) ? resultMap.get(oid) : null) : null));
   } catch (e) {
-    return oids.map(() => null);
+    return cleanOids.map(() => null);
   }
 };
 
@@ -1512,10 +1597,17 @@ const getByIdx = (map, idx) => {
   if (!map) return undefined;
   if (map[idx] != null) return map[idx];
 
+  const strIdx = String(idx);
+  if (map[`${strIdx}.0.0`] != null) return map[`${strIdx}.0.0`];
+  if (map[`${strIdx}.0`] != null) return map[`${strIdx}.0`];
+
   const keys = Object.keys(map);
   if (keys.length === 0) return undefined;
 
-  const idxParts = String(idx).split('.').filter(Boolean);
+  const prefixMatch = keys.find(k => k === strIdx || k.startsWith(strIdx + '.'));
+  if (prefixMatch) return map[prefixMatch];
+
+  const idxParts = strIdx.split('.').filter(Boolean);
   const maxSegments = Math.min(6, idxParts.length);
 
   for (let seg = 2; seg <= maxSegments; seg++) {
@@ -1544,12 +1636,21 @@ const pickFirstPlausible = (candidates) => {
 };
 
 const computeRxDbm = (brand, raw) => {
+  if (raw == null) return null;
+  const n = bufferToInt(raw);
+  if (n != null && (n === 0 || n === 65535 || n === -2147483648 || n === 2147483647)) return null;
+
+  if (brand === 'hsgq') {
+    if (n != null) {
+      if (Math.abs(n) > 50) return n / 100;
+      return n;
+    }
+  }
+
   const signal = parseSignal(raw);
   if (signal != null) return signal;
 
-  const n = bufferToInt(raw);
   if (n == null) return null;
-  if (n === 0 || n === 65535) return null;
 
   const signed = (n >= 0 && n <= 65535) ? toSigned16(n) : n;
   if (signed == null) return null;
@@ -1629,14 +1730,19 @@ const pickSnTable = async (session, activeProfile) => {
 
 const parseSignal = (val) => {
   if (val == null) return null;
-  if (typeof val === 'number') return Number.isFinite(val) ? val : null;
-  if (typeof val === 'bigint') return null;
-  const s = safeToString(val);
-  if (!s) return null;
-  const m = s.match(/[-+]?\d*\.?\d+/);
-  if (!m) return null;
-  const num = Number(m[0]);
-  if (!Number.isFinite(num)) return null;
+  let num = null;
+  if (typeof val === 'number') {
+    num = Number.isFinite(val) ? val : null;
+  } else if (typeof val === 'bigint') {
+    return null;
+  } else {
+    const s = safeToString(val);
+    if (!s) return null;
+    const m = s.match(/[-+]?\d*\.?\d+/);
+    if (!m) return null;
+    num = Number(m[0]);
+  }
+  if (num == null || !Number.isFinite(num)) return null;
   const abs = Math.abs(num);
   if (abs > 500) return num / 100;
   if (abs > 50) return num / 10;
@@ -1887,6 +1993,25 @@ const fetchSystemMetrics = async (session, brandKey, stats, oltId) => {
       if (txN != null) stats.uplink_tx = txN;
     }
 
+    if (brandKey === 'hsgq' && oids.ram_total && oids.ram_used) {
+      const [rt, ru, fanV, modelV, fwV] = await snmpGet(session, [
+        oids.ram_total, oids.ram_used, oids.fans, oids.model, oids.firmware
+      ]);
+      const rtN = bufferToInt(rt);
+      const ruN = bufferToInt(ru);
+      if (rtN && ruN) {
+        stats.ram = `${Math.round((ruN / rtN) * 100)}%`;
+      }
+      if (fanV) {
+        stats.fan = safeToString(fanV);
+      }
+      if (modelV || fwV) {
+        const mStr = (safeToString(modelV) || 'HSGQ OLT').replace(/\0/g, '').trim();
+        const fStr = (safeToString(fwV) || '').replace(/\0/g, '').trim();
+        stats.sysDescr = fStr ? `${mStr} (${fStr})` : mStr;
+      }
+    }
+
     if (stats.cpu === 'N/A') {
       const hrCpu = await getHrCpuPercent(session);
       if (hrCpu != null) stats.cpu = `${hrCpu}%`;
@@ -1907,6 +2032,50 @@ const fetchCardMetrics = async (session, brandKey, stats) => {
   if (!oids) return;
 
   try {
+    if (brandKey === 'hsgq') {
+      const nameMap = await slowWalk(session, oids.type);
+      const statusMap = await slowWalk(session, oids.status);
+      const speedMap = await slowWalk(session, oids.ports);
+      const sfpSerialMap = oids.serial ? await slowWalk(session, oids.serial) : {};
+      const sfpTempMap = oids.cpu ? await slowWalk(session, oids.cpu) : {};
+      const sfpTxMap = oids.ram ? await slowWalk(session, oids.ram) : {};
+
+      const cards = [];
+      for (const [idx, nameVal] of Object.entries(nameMap)) {
+        let pName = safeToString(nameVal);
+        if (Buffer.isBuffer(nameVal)) {
+          pName = nameVal.toString('utf8').replace(/\0/g, '').trim();
+        }
+        if (!pName) continue;
+        const stInt = bufferToInt(statusMap[idx]);
+        const isUp = stInt === 1;
+        const speed = bufferToInt(speedMap[idx]);
+        const sfpSerial = safeToString(sfpSerialMap[idx]) || '-';
+        const sfpTempRaw = bufferToInt(sfpTempMap[idx]);
+        const sfpTemp = sfpTempRaw ? `${(sfpTempRaw / 100).toFixed(1)}°C` : '-';
+        const sfpTxRaw = bufferToInt(sfpTxMap[idx]);
+        const sfpTx = (sfpTxRaw && sfpTxRaw !== -2147483648) ? `${(sfpTxRaw / 100).toFixed(2)} dBm` : '-';
+
+        let pType = 'ETHERNET PORT';
+        if (pName.startsWith('PON')) pType = `GPON PORT (${speed ? (speed / 1000).toFixed(1) + 'G' : '2.5G'})`;
+        else if (pName.startsWith('XGE')) pType = 'UPLINK 10G SFP+';
+        else if (pName.startsWith('GE')) pType = 'GE 1G COPPER';
+
+        cards.push({
+          index: pName,
+          type: pType,
+          status: isUp ? 'INSERVICE' : 'STANDBY',
+          ports: pName.startsWith('PON') ? 128 : 1,
+          serial: (sfpSerial && !sfpSerial.startsWith('HEX:00')) ? sfpSerial : '-',
+          cpu: sfpTemp,
+          ram: sfpTx !== '-' ? `Tx: ${sfpTx}` : '-'
+        });
+      }
+      if (cards.length > 0) {
+        stats.cards = cards;
+      }
+      return;
+    }
     const typeMap   = await slowWalk(session, oids.type);
     const statusMap = await slowWalk(session, oids.status);
     const portMap   = await slowWalk(session, oids.ports);
@@ -1983,6 +2152,22 @@ const decodeRxPower = (brand, val) => {
   const rx = computeRxDbm(brand, val);
   if (rx == null) return 'N/A';
   return rx.toFixed(2);
+};
+
+const computeTxDbm = (brand, raw) => {
+  if (raw == null) return null;
+  const n = bufferToInt(raw);
+  if (n == null || n === -2147483648 || n === 65535) return null;
+  if (brand === 'hsgq' || brand === 'huawei' || brand === 'zte') {
+    if (Math.abs(n) > 50) return n / 100;
+  }
+  return computeRxDbm(brand, raw);
+};
+
+const decodeTxPower = (brand, val) => {
+  const tx = computeTxDbm(brand, val);
+  if (tx == null) return 'N/A';
+  return tx.toFixed(2);
 };
 
 function translateOfflineReason(brand, rawValue) {
@@ -2317,6 +2502,11 @@ async function getOltStatsInternal(id, full = false) {
         let fwMap = {};
         let upMap = {};
         let reasonMap = {};
+        let tempMap = {};
+        let voltMap = {};
+        let lastUpMap = {};
+        let vendorMap = {};
+        let modelMap = {};
 
         // OPTIMIZATION: Only fetch detailed metrics if full=true
         // Summary mode: skip rx/tx/distance/firmware/uptime/reason walks
@@ -2355,6 +2545,22 @@ async function getOltStatsInternal(id, full = false) {
           if (activeProfile.offline_reason_table) {
             tasks.push(() => slowWalk(session, activeProfile.offline_reason_table).then(res => reasonMap = res));
           }
+          // 8. Temp & Voltage & Last Up
+          if (activeProfile.temp_table) {
+            tasks.push(() => slowWalk(session, activeProfile.temp_table).then(res => tempMap = res));
+          }
+          if (activeProfile.voltage_table) {
+            tasks.push(() => slowWalk(session, activeProfile.voltage_table).then(res => voltMap = res));
+          }
+          if (activeProfile.last_up_table) {
+            tasks.push(() => slowWalk(session, activeProfile.last_up_table).then(res => lastUpMap = res));
+          }
+          if (activeProfile.vendor_table) {
+            tasks.push(() => slowWalk(session, activeProfile.vendor_table).then(res => vendorMap = res));
+          }
+          if (activeProfile.model_table) {
+            tasks.push(() => slowWalk(session, activeProfile.model_table).then(res => modelMap = res));
+          }
 
           // OPTIMIZATION: Tune concurrency per brand
           // ZTE handles 5, others 3-4
@@ -2364,7 +2570,7 @@ async function getOltStatsInternal(id, full = false) {
             'hioso': 3,
             'vsol': 4,
             'cdata': 3,
-            'hsgq': 3
+            'hsgq': 4
           };
           const concurrency = concurrencyMap[detectedBrandKey] || 4;
           await limitConcurrency(tasks, concurrency);
@@ -2383,8 +2589,8 @@ async function getOltStatsInternal(id, full = false) {
           const stInt = bufferToInt(stRaw);
           const stStr = stRaw == null ? '' : String(stRaw).trim().toLowerCase();
           const isUp = stInt != null
-            ? onlineVals.includes(stInt)
-            : (stStr === 'online' || stStr === 'up' || stStr === 'on' || stStr === 'operation');
+            ? (onlineVals.includes(stInt) || onlineVals.includes(String(stInt)) || (detectedBrandKey === 'hsgq' && stInt === 1))
+            : (stStr === 'online' || stStr === 'up' || stStr === 'on' || stStr === 'operation' || stStr === '1');
 
           const nameRaw = getByIdx(nameMap, idx);
           const nameStr = nameRaw == null ? '' : String(nameRaw).replace(/\0/g, '').trim();
@@ -2398,7 +2604,7 @@ async function getOltStatsInternal(id, full = false) {
 
           const sn   = snVal ? decodeSn(snVal) : '-';
           const rx   = decodeRxPower(detectedBrandKey, rxVal);
-          const tx   = decodeRxPower(detectedBrandKey, txVal);
+          const tx   = decodeTxPower(detectedBrandKey, txVal);
           const distInt = bufferToInt(distVal);
           let distance = '-';
           if (activeProfile.distance_table && distInt != null && distInt > 0) {
@@ -2407,7 +2613,36 @@ async function getOltStatsInternal(id, full = false) {
           }
           const firmware = safeToString(fwVal) || '-';
           const onuUptime = upVal ? decodeUptime(bufferToInt(upVal)) : '-';
-          const onuId = hiosoOnuIdFromIndex(idx);
+          const onuId = hiosoOnuIdFromIndex(idx, detectedBrandKey);
+
+          // Temp & Voltage & Last Up
+          let onuTemp = 'N/A';
+          const tRaw = getByIdx(tempMap, idx);
+          const tInt = bufferToInt(tRaw);
+          if (tInt != null && tInt > 0 && tInt < 12000) {
+            onuTemp = (tInt > 200 ? (tInt / 100).toFixed(1) : tInt.toFixed(1)) + '°C';
+          }
+
+          let onuVolt = 'N/A';
+          const vRaw = getByIdx(voltMap, idx);
+          const vInt = bufferToInt(vRaw);
+          if (vInt != null && vInt > 0 && vInt < 1000) {
+            onuVolt = (vInt / 100).toFixed(2) + 'V';
+          }
+
+          const lastUpRaw = getByIdx(lastUpMap, idx);
+          const lastUp = safeToString(lastUpRaw) || null;
+
+          const vendorRaw = getByIdx(vendorMap, idx);
+          const modelRaw  = getByIdx(modelMap, idx);
+          let vendor = vendorRaw ? safeToString(vendorRaw).replace(/\0/g, '').trim() : null;
+          let model  = modelRaw ? safeToString(modelRaw).replace(/\0/g, '').trim() : null;
+          if (vendor === 'FHTT') vendor = 'FiberHome';
+          if (!vendor && sn) {
+            if (sn.startsWith('FHTT')) vendor = 'FiberHome';
+            else if (sn.startsWith('ZTEG')) vendor = 'ZTE';
+            else if (sn.startsWith('HWTC')) vendor = 'Huawei';
+          }
           
           if (isUp) stats.onus_online++;
           else stats.onus_offline++;
@@ -2435,7 +2670,12 @@ async function getOltStatsInternal(id, full = false) {
               rx: rxShown,
               distance,
               firmware,
-              uptime: onuUptime
+              vendor: vendor || null,
+              model: model || null,
+              uptime: onuUptime,
+              temp: onuTemp,
+              voltage: onuVolt,
+              last_up: lastUp
             });
           }
         }

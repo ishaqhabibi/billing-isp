@@ -1,10 +1,14 @@
 <!DOCTYPE html>
-<html lang="<%= lang || 'id' %>">
+<html lang="<%= (typeof lang !== 'undefined' && lang) ? lang : 'id' %>">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title><%= t('admin.radius.title', 'Pengaturan RADIUS') %> | <%= company %></title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/admin.css?v=2.7">
+  <script src="/js/theme.js"></script>
   <style>
     @keyframes spin { to { transform: rotate(360deg); } }
     /* RADIUS Modern Redesign Layout */
@@ -280,7 +284,99 @@
       100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
 
-    /* ── KPI STAT GRID (Modern Enterprise Cards) ── */
+    /* ── EXECUTIVE RADIUS HEADER BAR ── */
+    .radius-header-bar {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      margin-bottom: 20px;
+    }
+    .radius-header-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .daemon-state-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.3px;
+    }
+    .daemon-state-badge.online {
+      background: rgba(16, 185, 129, 0.12);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+    .daemon-state-badge.stopped {
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+    .live-pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 0 rgba(16, 185, 129, 0.6);
+      animation: pulseDotLive 1.8s infinite;
+    }
+    .stopped-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ef4444;
+    }
+    @keyframes pulseDotLive {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    .radius-secret-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--text);
+    }
+    .btn-icon-subtle {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-size: 13px;
+      transition: all 0.15s;
+    }
+    .btn-icon-subtle:hover {
+      color: var(--primary);
+      background: var(--pdim);
+    }
+    .radius-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* ── KPI STAT GRID (Statis, Informative, Modern NOC Cards) ── */
     .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
     @media(max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
     @media(max-width: 580px) { .kpi-grid { grid-template-columns: 1fr; } }
@@ -288,10 +384,10 @@
     .kpi-card {
       background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
       padding: 16px 18px; position: relative; overflow: hidden;
-      transition: all 0.2s ease; cursor: pointer; user-select: none;
+      cursor: default; user-select: auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
       display: flex; flex-direction: column; justify-content: space-between;
     }
-    .kpi-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.2); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
     .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
     .kpi-card.c-primary::before { background: linear-gradient(90deg, #0052cc, #38bdf8); }
     .kpi-card.c-success::before { background: linear-gradient(90deg, #10b981, #34d399); }
@@ -300,7 +396,7 @@
 
     .kpi-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .kpi-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .kpi-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; background: var(--bg3); }
+    .kpi-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; background: var(--bg3); }
     .kpi-card.c-primary .kpi-icon { color: #38bdf8; background: rgba(0,82,204,0.12); }
     .kpi-card.c-success .kpi-icon { color: #10b981; background: rgba(16,185,129,0.12); }
     .kpi-card.c-warning .kpi-icon { color: #f59e0b; background: rgba(245,158,11,0.12); }
@@ -308,6 +404,71 @@
 
     .kpi-val { font-size: 24px; font-weight: 800; line-height: 1.1; color: var(--text); font-variant-numeric: tabular-nums; margin-bottom: 8px; display: flex; align-items: baseline; gap: 6px; }
     .kpi-bottom { font-size: 11.5px; color: var(--muted); border-top: 1px dashed var(--border); padding-top: 8px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* ── BADGES & DATA CHIPS ── */
+    .traffic-in-badge {
+      color: #38bdf8; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;
+    }
+    .traffic-out-badge {
+      color: #34d399; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;
+    }
+    .mac-chip {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text);
+      background: var(--bg3); border: 1px solid var(--border); padding: 2px 7px;
+      border-radius: 5px; cursor: pointer; transition: all 0.15s;
+    }
+    .mac-chip:hover { border-color: var(--primary); color: var(--primary); }
+    .ip-chip {
+      font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700;
+      color: #10b981; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .dur-badge {
+      font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 11.5px;
+      padding: 2px 8px; border-radius: 6px; background: rgba(0, 82, 204, 0.12); color: var(--primary);
+    }
+
+    /* ── PAGINATION BAR COMPONENT ── */
+    .pagination-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.015);
+    }
+    .page-nav-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 7px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .page-nav-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .page-nav-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .custom-select-v2 {
+      background: var(--bg3);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 12.5px;
+      outline: none;
+    }
+    .custom-select-v2:focus {
+      border-color: var(--primary);
+    }
 
     /* ── SEGMENTED NAVIGATION TABS ── */
     .segmented-control {
@@ -534,26 +695,50 @@
     </div>
     <% } %>
 
-    <!-- SUMMARY STAT CARDS (4 Modern Enterprise KPI Cards) -->
-    <div class="kpi-grid">
-      <div class="kpi-card <%= radiusStatus.running ? 'c-primary' : 'c-warning' %>" onclick="switchTab('settings')" title="Klik untuk membuka pengaturan server">
-        <div class="kpi-top">
-          <span class="kpi-label">Status Server RADIUS</span>
-          <div class="kpi-icon"><i class="bi bi-broadcast"></i></div>
+    <!-- EXECUTIVE NOC HEADER BAR: TAMPILAN UTAMA PERTAMA KALI -->
+    <div class="radius-header-bar">
+      <div class="radius-header-left">
+        <!-- Daemon State Badge -->
+        <div class="daemon-state-badge <%= radiusStatus.running ? 'online' : 'stopped' %>">
+          <span class="live-pulse-dot"></span>
+          <div>
+            <div class="state-label">
+              <%= radiusStatus.running ? 'DAEMON RADIUS AKTIF' : 'DAEMON RADIUS NON-AKTIF' %>
+            </div>
+            <div class="state-ports">
+              UDP Auth: <strong><%= radiusStatus.authPort %></strong> &bull; Acct: <strong><%= radiusStatus.acctPort %></strong>
+            </div>
+          </div>
         </div>
-        <div class="kpi-val" style="<%= radiusStatus.running ? 'color:#38bdf8;' : 'color:#f59e0b;' %>">
-          <span><%= radiusStatus.running ? 'ONLINE' : 'STOPPED' %></span>
-          <span class="live-dot" style="<%= radiusStatus.running ? 'background:#10b981;' : 'background:#ef4444;' %>"></span>
-        </div>
-        <div class="kpi-bottom">
-          <span>UDP Auth: <strong><%= radiusStatus.authPort %></strong></span>
-          <span>Acct: <strong><%= radiusStatus.acctPort %></strong></span>
+
+        <!-- Global Shared Secret Chip -->
+        <div class="radius-secret-chip" title="Shared Secret global yang digunakan oleh Router MikroTik NAS">
+          <span class="chip-label">Shared Secret:</span>
+          <span class="chip-val font-mono" id="headerSecretMasked">••••••••</span>
+          <button type="button" class="btn-icon-subtle" onclick="toggleHeaderSecret('<%= radiusStatus.secret %>', this)" title="Tampilkan / Sembunyikan Secret">
+            <i class="bi bi-eye"></i>
+          </button>
+          <button type="button" class="btn-icon-subtle" onclick="copyText('<%= radiusStatus.secret %>', this)" title="Salin Secret ke Clipboard">
+            <i class="bi bi-copy"></i>
+          </button>
         </div>
       </div>
 
-      <div class="kpi-card c-success" onclick="switchTab('online')" title="Klik untuk melihat sesi online">
+      <div class="radius-header-actions">
+        <button type="button" class="btn btn-p btn-sm" onclick="openTestAuthModal()" title="Simulasi dial otentikasi RADIUS Access-Request">
+          <i class="bi bi-shield-check"></i> Uji Autentikasi
+        </button>
+        <button type="button" class="btn btn-g btn-sm" onclick="switchTab('settings')" title="Buka Form Konfigurasi Server">
+          <i class="bi bi-sliders"></i> Konfigurasi
+        </button>
+      </div>
+    </div>
+
+    <!-- SUMMARY STAT CARDS (4 Static Modern NOC Metric Cards - Non Clickable) -->
+    <div class="kpi-grid">
+      <div class="kpi-card <%= radiusStatus.running ? 'c-primary' : 'c-warning' %>">
         <div class="kpi-top">
-          <span class="kpi-label">Sesi RADIUS Online</span>
+          <span class="kpi-label">Sesi PPPoE / IPoE Aktif</span>
           <div class="kpi-icon"><i class="bi bi-wifi"></i></div>
         </div>
         <div class="kpi-val" style="color:#10b981;">
@@ -561,29 +746,27 @@
           <span style="font-size:12px;color:var(--muted);font-weight:600;">Sesi Aktif</span>
         </div>
         <div class="kpi-bottom">
-          <span>Koneksi PPPoE / IPoE Terhubung</span>
-          <i class="bi bi-chevron-right" style="font-size:11px;"></i>
+          <span>Koneksi dial pelanggan online secara real-time</span>
         </div>
       </div>
 
-      <div class="kpi-card c-purple" onclick="switchTab('nas')" title="Klik untuk mengelola router NAS">
+      <div class="kpi-card c-purple">
         <div class="kpi-top">
-          <span class="kpi-label">Router NAS Terdaftar</span>
+          <span class="kpi-label">Router NAS MikroTik</span>
           <div class="kpi-icon"><i class="bi bi-router"></i></div>
         </div>
         <div class="kpi-val" style="color:#a78bfa;">
           <span><%= nasList.length %></span>
-          <span style="font-size:12px;color:var(--muted);font-weight:600;">Router Client</span>
+          <span style="font-size:12px;color:var(--muted);font-weight:600;">Router NAS</span>
         </div>
         <div class="kpi-bottom">
-          <span>Network Access Server Aktif</span>
-          <i class="bi bi-chevron-right" style="font-size:11px;"></i>
+          <span>Port CoA / PoD Disconnect: <strong>3799</strong></span>
         </div>
       </div>
 
-      <div class="kpi-card c-warning" onclick="switchTab('accounting')" title="Klik untuk membuka log accounting">
+      <div class="kpi-card c-warning">
         <div class="kpi-top">
-          <span class="kpi-label">Trafik RADIUS Hari Ini</span>
+          <span class="kpi-label">Trafik Accounting Hari Ini</span>
           <div class="kpi-icon"><i class="bi bi-activity"></i></div>
         </div>
         <div class="kpi-val" style="color:#fbbf24;">
@@ -591,8 +774,21 @@
           <span style="font-size:13px;font-weight:700;">MB</span>
         </div>
         <div class="kpi-bottom">
-          <span><strong><%= typeof todayEvents !== 'undefined' ? todayEvents : 0 %></strong> Log Accounting Dicatat</span>
-          <i class="bi bi-chevron-right" style="font-size:11px;"></i>
+          <span><strong><%= typeof todayEvents !== 'undefined' ? todayEvents : 0 %></strong> Paket Accounting Dicatat</span>
+        </div>
+      </div>
+
+      <div class="kpi-card c-primary">
+        <div class="kpi-top">
+          <span class="kpi-label">Database Akun RADIUS</span>
+          <div class="kpi-icon"><i class="bi bi-people-fill"></i></div>
+        </div>
+        <div class="kpi-val" style="color:#38bdf8;">
+          <span id="kpi-users-count"><%= typeof radiusUsers !== 'undefined' ? radiusUsers.length : 0 %></span>
+          <span style="font-size:12px;color:var(--muted);font-weight:600;">Akun Pelanggan</span>
+        </div>
+        <div class="kpi-bottom">
+          <span>Kredensial tersinkronisasi database billing</span>
         </div>
       </div>
     </div>
@@ -607,16 +803,16 @@
         <i class="bi bi-people-fill"></i> Database Akun RADIUS
         <span class="seg-count" id="badge-users-count"><%= typeof radiusUsers !== 'undefined' ? radiusUsers.length : 0 %></span>
       </button>
-      <button type="button" class="seg-btn" id="tab-btn-settings" onclick="switchTab('settings')">
-        <i class="bi bi-sliders"></i> Pengaturan RADIUS
-      </button>
       <button type="button" class="seg-btn" id="tab-btn-nas" onclick="switchTab('nas')">
-        <i class="bi bi-router"></i> Daftar NAS Router
+        <i class="bi bi-router"></i> Router NAS Client
         <span class="seg-count"><%= nasList.length %></span>
       </button>
       <button type="button" class="seg-btn" id="tab-btn-accounting" onclick="switchTab('accounting')">
         <i class="bi bi-journal-text"></i> Log Accounting
         <span class="seg-count"><%= acctLogs ? acctLogs.length : 0 %></span>
+      </button>
+      <button type="button" class="seg-btn" id="tab-btn-settings" onclick="switchTab('settings')">
+        <i class="bi bi-sliders"></i> Konfigurasi Server
       </button>
     </div>
 
@@ -1132,6 +1328,7 @@
                   <th style="width:45px;">#</th>
                   <th>Username &amp; Pelanggan</th>
                   <th>IP Address &amp; Router NAS</th>
+                  <th>MAC ONT / Calling Station</th>
                   <th>Trafik Data (In / Out)</th>
                   <th>Durasi Sesi</th>
                   <th>Waktu Update</th>
@@ -1157,8 +1354,9 @@
                         data-username="<%= (s.username || '').toLowerCase() %>" 
                         data-customer="<%= (s.customer_name || '').toLowerCase() %>" 
                         data-ip="<%= s.framed_ip || '' %>" 
-                        data-nas="<%= s.nas_ip || '' %>">
-                      <td style="color:var(--muted);font-size:11px;font-family:monospace;"><%= idx + 1 %></td>
+                        data-nas="<%= s.nas_ip || '' %>"
+                        data-mac="<%= (s.calling_station_id || '').toLowerCase() %>">
+                      <td style="color:var(--muted);font-size:11px;font-family:monospace;" class="row-num"><%= idx + 1 %></td>
                       <td>
                         <div style="font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;">
                           <span><%= s.username %></span>
@@ -1179,6 +1377,18 @@
                             NAS: <%= s.nas_ip || '-' %>
                           </span>
                         </div>
+                      </td>
+                      <td>
+                        <% if (s.calling_station_id) { %>
+                          <div style="display:flex;align-items:center;gap:4px;">
+                            <span class="mac-chip"><%= s.calling_station_id %></span>
+                            <button type="button" class="btn-copy-sm" onclick="copyText('<%= s.calling_station_id %>', this)" title="Salin MAC ONT">
+                              <i class="bi bi-copy"></i>
+                            </button>
+                          </div>
+                        <% } else { %>
+                          <span style="color:var(--muted);font-size:11px;">-</span>
+                        <% } %>
                       </td>
                       <td>
                         <div style="display:flex;flex-direction:column;gap:2px;font-size:11px;font-family:monospace;">
@@ -1227,6 +1437,26 @@
               </div>
             </div>
 
+          </div>
+
+          <!-- Pagination Bar for Online Sessions -->
+          <div class="pagination-bar" id="onlinePaginationBar">
+            <div class="pagination-info">
+              Menampilkan <strong id="onlinePageStart">1</strong> - <strong id="onlinePageEnd">15</strong> dari <strong id="onlinePageTotal"><%= onlineSessions.length %></strong> sesi aktif
+            </div>
+            <div class="pagination-controls">
+              <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
+                <span>Baris:</span>
+                <select id="onlinePageSize" class="custom-select-v2" onchange="changeOnlinePageSize(this.value)">
+                  <option value="15" selected>15</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                  <option value="99999">Semua</option>
+                </select>
+              </div>
+              <div class="page-nav-btns" id="onlineNavBtns"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -1312,6 +1542,25 @@
                 <% } %>
               </tbody>
             </table>
+          </div>
+
+          <!-- Pagination Bar for Accounting Logs -->
+          <div class="pagination-bar" id="acctPaginationBar">
+            <div class="pagination-info">
+              Menampilkan <strong id="acctPageStart">1</strong> - <strong id="acctPageEnd">25</strong> dari <strong id="acctPageTotal"><%= acctLogs ? acctLogs.length : 0 %></strong> log
+            </div>
+            <div class="pagination-controls">
+              <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
+                <span>Baris:</span>
+                <select id="acctPageSize" class="custom-select-v2" onchange="changeAcctPageSize(this.value)">
+                  <option value="25" selected>25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                  <option value="99999">Semua</option>
+                </select>
+              </div>
+              <div class="page-nav-btns" id="acctNavBtns"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -1554,6 +1803,26 @@
               </tbody>
             </table>
           </div>
+
+          <!-- Pagination Bar for Users Database -->
+          <div class="pagination-bar" id="usersPaginationBar">
+            <div class="pagination-info">
+              Menampilkan <strong id="usersPageStart">1</strong> - <strong id="usersPageEnd">15</strong> dari <strong id="usersPageTotal"><%= typeof radiusUsers !== 'undefined' ? radiusUsers.length : 0 %></strong> akun
+            </div>
+            <div class="pagination-controls">
+              <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
+                <span>Baris:</span>
+                <select id="usersPageSize" class="custom-select-v2" onchange="changeUsersPageSize(this.value)">
+                  <option value="15" selected>15</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                  <option value="99999">Semua</option>
+                </select>
+              </div>
+              <div class="page-nav-btns" id="usersNavBtns"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1681,6 +1950,53 @@
   </div>
 </div>
 
+<!-- MODAL UJI AUTENTIKASI RADIUS -->
+<div class="mo" id="testAuthModal">
+  <div class="mb" style="max-width: 520px;">
+    <div class="mh">
+      <div class="mt"><i class="bi bi-shield-check text-primary me-2"></i> Uji Autentikasi Klien RADIUS</div>
+      <button type="button" class="mc" onclick="closeModal('testAuthModal')">&times;</button>
+    </div>
+    <form id="testAuthForm" onsubmit="executeTestAuth(event)">
+      <div class="mbody">
+        <div style="padding:10px 14px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:8px;font-size:12px;color:var(--text);margin-bottom:16px;line-height:1.5;">
+          <i class="bi bi-info-circle text-primary me-1"></i> Simulasikan pertukaran paket <code>Access-Request</code> untuk menguji apakah kredensial dial pelanggan valid dan atribut rate-limit apa yang akan diinjeksi ke router.
+        </div>
+
+        <div class="fg">
+          <label class="fl">Username PPPoE / Hotspot <span style="color:var(--danger);">*</span></label>
+          <div class="input-icon-wrap">
+            <i class="bi bi-person input-icon"></i>
+            <input type="text" id="test_auth_username" class="fc font-monospace" placeholder="Contoh: user123 atau nomor telepon" required autocomplete="off">
+          </div>
+        </div>
+
+        <div class="fg">
+          <label class="fl">Password / Secret PPPoE <span style="color:var(--danger);">*</span></label>
+          <div style="position:relative;">
+            <input type="password" id="test_auth_password" class="fc font-monospace" placeholder="Masukkan password..." required autocomplete="off" style="padding-right:45px;">
+            <button type="button" class="btn-copy-sm" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);" onclick="toggleSecretVisibility('test_auth_password', this)" title="Lihat password">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Result Box -->
+        <div id="testAuthResultBox" style="display:none;margin-top:16px;padding:14px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);">
+          <div id="testAuthResultHeader" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"></div>
+          <div id="testAuthResultDetails" style="font-size:12px;color:var(--text);line-height:1.6;"></div>
+        </div>
+      </div>
+      <div class="mf">
+        <button type="button" class="btn btn-g" onclick="closeModal('testAuthModal')">Tutup</button>
+        <button type="submit" class="btn btn-p" id="testAuthSubmitBtn">
+          <i class="bi bi-lightning-charge-fill"></i> Kirim Uji Autentikasi
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
   function switchTab(tabId) {
     document.querySelectorAll('.mtab, .seg-btn').forEach(b => b.classList.remove('active'));
@@ -1698,6 +2014,188 @@
     } catch(e) {}
   }
 
+  // ─── HEADER CONTROLS & TEST AUTH ───
+  function toggleHeaderSecret(secret, btn) {
+    const el = document.getElementById('headerSecretMasked');
+    if (!el) return;
+    if (el.textContent === '••••••••') {
+      el.textContent = secret;
+      el.style.color = 'var(--primary)';
+      if (btn) btn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+    } else {
+      el.textContent = '••••••••';
+      el.style.color = '';
+      if (btn) btn.innerHTML = '<i class="bi bi-eye"></i>';
+    }
+  }
+
+  function openTestAuthModal(prefillUser) {
+    if (prefillUser) {
+      const userIn = document.getElementById('test_auth_username');
+      if (userIn) userIn.value = prefillUser;
+    }
+    const resBox = document.getElementById('testAuthResultBox');
+    if (resBox) resBox.style.display = 'none';
+    showModal('testAuthModal');
+    setTimeout(() => {
+      const input = document.getElementById(prefillUser ? 'test_auth_password' : 'test_auth_username');
+      if (input) input.focus();
+    }, 150);
+  }
+
+  async function executeTestAuth(e) {
+    e.preventDefault();
+    const username = (document.getElementById('test_auth_username')?.value || '').trim();
+    const password = (document.getElementById('test_auth_password')?.value || '').trim();
+    const btn = document.getElementById('testAuthSubmitBtn');
+    const resBox = document.getElementById('testAuthResultBox');
+    const resHeader = document.getElementById('testAuthResultHeader');
+    const resDetails = document.getElementById('testAuthResultDetails');
+
+    if (!username) {
+      showToast('d', 'Username PPPoE wajib diisi.');
+      return;
+    }
+
+    const origText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-clockwise spin me-1"></i> Menguji Autentikasi...';
+
+    try {
+      const res = await fetch('/admin/radius/test-auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (res.ok && data && data.success) {
+        resBox.style.display = 'block';
+        const isAccept = data.packet === 'Access-Accept';
+
+        resHeader.innerHTML = `
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="badge ${isAccept ? 'bs' : 'bd'}" style="font-size:12px;padding:4px 10px;">
+              <i class="bi bi-${isAccept ? 'check-circle-fill' : 'x-circle-fill'} me-1"></i> ${data.packet}
+            </span>
+            <span style="font-weight:700;color:var(--text);font-size:13px;">${isAccept ? 'Kredensial Valid' : 'Autentikasi Ditolak'}</span>
+          </div>
+          <span style="font-family:monospace;font-size:11px;color:var(--muted);">${data.duration_ms} ms</span>
+        `;
+
+        let detailHtml = '';
+        if (data.reason) {
+          detailHtml += `<div style="color:${isAccept ? 'var(--success)' : 'var(--danger)'};margin-bottom:8px;"><i class="bi bi-info-circle me-1"></i> ${data.reason}</div>`;
+        }
+        if (data.customer_name) {
+          detailHtml += `<div>Nama Pelanggan: <strong style="color:var(--text);">${data.customer_name}</strong></div>`;
+        }
+        if (data.service_status) {
+          detailHtml += `<div>Status Layanan: <strong>${data.service_status === 'active' ? '<span style="color:#10b981;">Aktif</span>' : '<span style="color:#ef4444;">Terisolir</span>'}</strong> (Paket: <strong>${data.package_name || '-'}</strong>)</div>`;
+        }
+
+        if (data.attributes && Object.keys(data.attributes).length > 0) {
+          detailHtml += `<div style="margin-top:8px;font-weight:600;font-size:11.5px;color:var(--muted);">Atribut RADIUS Response:</div>`;
+          detailHtml += `<div style="background:var(--bg2);padding:8px 10px;border-radius:6px;font-family:monospace;font-size:11px;margin-top:4px;">`;
+          for (const [k, v] of Object.entries(data.attributes)) {
+            detailHtml += `<div style="display:flex;justify-content:space-between;padding:2px 0;">
+              <span style="color:#94a3b8;">${k}</span>
+              <strong style="color:#38bdf8;">${v}</strong>
+            </div>`;
+          }
+          detailHtml += `</div>`;
+        }
+
+        resDetails.innerHTML = detailHtml;
+      } else {
+        showToast('d', (data && data.message) || 'Gagal memproses simulasi autentikasi.');
+      }
+    } catch (err) {
+      showToast('d', 'Gagal komunikasi server: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = origText;
+    }
+  }
+
+  // ─── PAGINATION ENGINE ───
+  let onlinePage = 1, onlinePageSize = 15;
+  let usersPage = 1, usersPageSize = 15;
+  let acctPage = 1, acctPageSize = 25;
+
+  function renderPaginationControls(containerId, currentPage, totalPages, goToFnName) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    if (totalPages <= 1) {
+      container.innerHTML = '';
+      return;
+    }
+
+    let html = '';
+    const prevDisabled = currentPage <= 1 ? 'disabled' : '';
+    html += `<button type="button" class="page-nav-btn ${prevDisabled}" onclick="${goToFnName}(${currentPage - 1})" title="Halaman Sebelumnya" ${prevDisabled ? 'disabled' : ''}><i class="bi bi-chevron-left"></i></button>`;
+
+    let startP = Math.max(1, currentPage - 2);
+    let endP = Math.min(totalPages, startP + 4);
+    if (endP - startP < 4) {
+      startP = Math.max(1, endP - 4);
+    }
+
+    if (startP > 1) {
+      html += `<button type="button" class="page-nav-btn" onclick="${goToFnName}(1)">1</button>`;
+      if (startP > 2) html += `<span style="color:var(--muted);padding:0 2px;">...</span>`;
+    }
+
+    for (let p = startP; p <= endP; p++) {
+      html += `<button type="button" class="page-nav-btn ${p === currentPage ? 'active' : ''}" onclick="${goToFnName}(${p})">${p}</button>`;
+    }
+
+    if (endP < totalPages) {
+      if (endP < totalPages - 1) html += `<span style="color:var(--muted);padding:0 2px;">...</span>`;
+      html += `<button type="button" class="page-nav-btn" onclick="${goToFnName}(${totalPages})">${totalPages}</button>`;
+    }
+
+    const nextDisabled = currentPage >= totalPages ? 'disabled' : '';
+    html += `<button type="button" class="page-nav-btn ${nextDisabled}" onclick="${goToFnName}(${currentPage + 1})" title="Halaman Selanjutnya" ${nextDisabled ? 'disabled' : ''}><i class="bi bi-chevron-right"></i></button>`;
+
+    container.innerHTML = html;
+  }
+
+  function changeOnlinePageSize(val) {
+    onlinePageSize = parseInt(val, 10) || 15;
+    onlinePage = 1;
+    filterRadiusOnlineTable();
+  }
+  function goToOnlinePage(p) {
+    onlinePage = p;
+    filterRadiusOnlineTable();
+  }
+
+  function changeUsersPageSize(val) {
+    usersPageSize = parseInt(val, 10) || 15;
+    usersPage = 1;
+    filterRadiusUsersTable();
+  }
+  function goToUsersPage(p) {
+    usersPage = p;
+    filterRadiusUsersTable();
+  }
+
+  function changeAcctPageSize(val) {
+    acctPageSize = parseInt(val, 10) || 25;
+    acctPage = 1;
+    filterAccountingTable();
+  }
+  function goToAcctPage(p) {
+    acctPage = p;
+    filterAccountingTable();
+  }
+
   // Restore active tab from hash or localStorage
   document.addEventListener('DOMContentLoaded', () => {
     let initialTab = 'online';
@@ -1712,9 +2210,10 @@
     }
     switchTab(initialTab);
 
-    // Initial table filter check
+    // Initial table filter check & pagination
     filterRadiusOnlineTable();
     filterRadiusUsersTable();
+    filterAccountingTable();
 
     // Start auto-refresh by default if checked
     const autoBox = document.getElementById('autoRefreshOnline');
@@ -1767,41 +2266,73 @@
     }
   }
 
-  // ─── SEARCH & FILTER ONLINE SESSIONS ───
+  // ─── SEARCH, FILTER & PAGINATE ONLINE SESSIONS ───
   function filterRadiusOnlineTable() {
     const q = (document.getElementById('radiusSearchInput')?.value || '').toLowerCase().trim();
     const nasFilter = (document.getElementById('radiusNasFilter')?.value || '').trim();
     const clearBtn = document.getElementById('radiusClearSearch');
     if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
 
-    const rows = document.querySelectorAll('.radius-session-row');
-    let visibleCount = 0;
+    const rows = Array.from(document.querySelectorAll('.radius-session-row'));
+    const matchedRows = [];
 
     rows.forEach(r => {
       const username = r.getAttribute('data-username') || '';
       const customer = r.getAttribute('data-customer') || '';
       const ip = r.getAttribute('data-ip') || '';
       const nas = r.getAttribute('data-nas') || '';
+      const mac = r.getAttribute('data-mac') || '';
 
-      const matchQ = !q || username.includes(q) || customer.includes(q) || ip.includes(q) || nas.includes(q);
+      const matchQ = !q || username.includes(q) || customer.includes(q) || ip.includes(q) || nas.includes(q) || mac.includes(q);
       const matchNas = !nasFilter || nas === nasFilter;
 
       if (matchQ && matchNas) {
-        r.style.display = '';
-        visibleCount++;
+        matchedRows.push(r);
       } else {
         r.style.display = 'none';
       }
     });
 
+    const totalMatched = matchedRows.length;
+    const totalPages = Math.ceil(totalMatched / onlinePageSize) || 1;
+    if (onlinePage > totalPages) onlinePage = 1;
+    if (onlinePage < 1) onlinePage = 1;
+
+    const startIdx = (onlinePage - 1) * onlinePageSize;
+    const endIdx = onlinePageSize >= 99999 ? totalMatched : Math.min(startIdx + onlinePageSize, totalMatched);
+
+    matchedRows.forEach((r, idx) => {
+      if (idx >= startIdx && idx < endIdx) {
+        r.style.display = '';
+        const numCell = r.querySelector('.row-num');
+        if (numCell) numCell.textContent = idx + 1;
+      } else {
+        r.style.display = 'none';
+      }
+    });
+
+    // Update Counter Texts
     const countEl = document.getElementById('filteredSessionCount');
-    if (countEl) countEl.textContent = visibleCount;
+    if (countEl) countEl.textContent = totalMatched;
+
+    const pStart = document.getElementById('onlinePageStart');
+    const pEnd = document.getElementById('onlinePageEnd');
+    const pTotal = document.getElementById('onlinePageTotal');
+    if (pStart) pStart.textContent = totalMatched === 0 ? '0' : (startIdx + 1);
+    if (pEnd) pEnd.textContent = endIdx;
+    if (pTotal) pTotal.textContent = totalMatched;
+
+    // Render Navigation Buttons
+    renderPaginationControls('onlineNavBtns', onlinePage, totalPages, 'goToOnlinePage');
 
     const searchEmpty = document.getElementById('radiusOnlineSearchEmpty');
     const tableEl = document.getElementById('radiusOnlineTable');
+    const paginationBar = document.getElementById('onlinePaginationBar');
+
     if (rows.length > 0) {
-      if (searchEmpty) searchEmpty.style.display = visibleCount === 0 ? 'block' : 'none';
-      if (tableEl) tableEl.style.display = visibleCount === 0 ? 'none' : '';
+      if (searchEmpty) searchEmpty.style.display = totalMatched === 0 ? 'block' : 'none';
+      if (tableEl) tableEl.style.display = totalMatched === 0 ? 'none' : '';
+      if (paginationBar) paginationBar.style.display = totalMatched === 0 ? 'none' : 'flex';
     }
   }
 
@@ -1810,6 +2341,7 @@
     const nasFilter = document.getElementById('radiusNasFilter');
     if (searchInput) searchInput.value = '';
     if (nasFilter) nasFilter.value = '';
+    onlinePage = 1;
     filterRadiusOnlineTable();
     if (searchInput) searchInput.focus();
   }
@@ -1845,7 +2377,6 @@
       if (res.ok && data && data.success) {
         showToast('s', data.message || `Sesi user "${username}" berhasil diputus.`);
 
-        // Animate row removal
         const row = btn ? btn.closest('tr') : null;
         if (row) {
           row.style.transition = 'all 0.35s ease';
@@ -2008,13 +2539,23 @@
       const stStr = formatDuration(s.session_time || 0);
       const rowKey = s.session_id ? `sess-${String(s.session_id).replace(/[^a-zA-Z0-9_-]/g, '')}` : `user-${s.username}`;
 
+      const macHtml = s.calling_station_id
+        ? `<div style="display:flex;align-items:center;gap:4px;">
+             <span class="mac-chip">${s.calling_station_id}</span>
+             <button type="button" class="btn-copy-sm" onclick="copyText('${s.calling_station_id}', this)" title="Salin MAC ONT">
+               <i class="bi bi-copy"></i>
+             </button>
+           </div>`
+        : `<span style="color:var(--muted);font-size:11px;">-</span>`;
+
       html += `
         <tr id="radius-row-${rowKey}" class="radius-session-row" 
             data-username="${(s.username || '').toLowerCase()}" 
             data-customer="${(s.customer_name || '').toLowerCase()}" 
             data-ip="${s.framed_ip || ''}" 
-            data-nas="${s.nas_ip || ''}">
-          <td style="color:var(--muted);font-size:11px;font-family:monospace;">${idx + 1}</td>
+            data-nas="${s.nas_ip || ''}"
+            data-mac="${(s.calling_station_id || '').toLowerCase()}">
+          <td style="color:var(--muted);font-size:11px;font-family:monospace;" class="row-num">${idx + 1}</td>
           <td>
             <div style="font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;">
               <span>${s.username}</span>
@@ -2036,6 +2577,7 @@
               </span>
             </div>
           </td>
+          <td>${macHtml}</td>
           <td>
             <div style="display:flex;flex-direction:column;gap:2px;font-size:11px;font-family:monospace;">
               <span style="color:#38bdf8;"><i class="bi bi-arrow-up"></i> ${inMB}</span>
@@ -2071,20 +2613,21 @@
       return;
     }
 
-    const headers = ['No', 'Username', 'Nama Pelanggan', 'Framed IP', 'NAS IP', 'Upload', 'Download', 'Durasi', 'Waktu Update'];
+    const headers = ['No', 'Username', 'Nama Pelanggan', 'Framed IP', 'NAS IP', 'MAC ONT', 'Upload', 'Download', 'Durasi', 'Waktu Update'];
     const csvRows = [headers.join(',')];
 
     rows.forEach((r, idx) => {
       const cols = r.querySelectorAll('td');
-      if (cols.length >= 7) {
+      if (cols.length >= 8) {
         const username = r.getAttribute('data-username') || '';
         const customer = (cols[1].querySelector('div:last-child')?.textContent || '').trim();
         const framedIp = r.getAttribute('data-ip') || '';
         const nasIp = r.getAttribute('data-nas') || '';
-        const upload = (cols[3].querySelector('span:first-child')?.textContent || '').replace(/[^\d.MGK B]/g, '').trim();
-        const download = (cols[3].querySelector('span:last-child')?.textContent || '').replace(/[^\d.MGK B]/g, '').trim();
-        const duration = (cols[4]?.textContent || '').trim();
-        const updatedAt = (cols[5]?.textContent || '').trim();
+        const mac = r.getAttribute('data-mac') || '';
+        const upload = (cols[4].querySelector('span:first-child')?.textContent || '').replace(/[^\d.MGK B]/g, '').trim();
+        const download = (cols[4].querySelector('span:last-child')?.textContent || '').replace(/[^\d.MGK B]/g, '').trim();
+        const duration = (cols[5]?.textContent || '').trim();
+        const updatedAt = (cols[6]?.textContent || '').trim();
 
         csvRows.push([
           idx + 1,
@@ -2092,6 +2635,7 @@
           `"${customer}"`,
           `"${framedIp}"`,
           `"${nasIp}"`,
+          `"${mac}"`,
           `"${upload}"`,
           `"${download}"`,
           `"${duration}"`,
@@ -2111,19 +2655,52 @@
     showToast('s', 'File CSV sesi online berhasil diunduh.');
   }
 
+  // ─── ACCOUNTING LOGS FILTER & PAGINATION ───
   function filterAccountingTable() {
     const q = (document.getElementById('accountingSearchInput')?.value || '').toLowerCase().trim();
-    const rows = document.querySelectorAll('.accounting-row');
+    const rows = Array.from(document.querySelectorAll('.accounting-row'));
+    const matchedRows = [];
+
     rows.forEach(r => {
       const username = r.getAttribute('data-username') || '';
       const nas = r.getAttribute('data-nas') || '';
       const sess = r.getAttribute('data-session') || '';
       if (!q || username.includes(q) || nas.includes(q) || sess.includes(q)) {
+        matchedRows.push(r);
+      } else {
+        r.style.display = 'none';
+      }
+    });
+
+    const totalMatched = matchedRows.length;
+    const totalPages = Math.ceil(totalMatched / acctPageSize) || 1;
+    if (acctPage > totalPages) acctPage = 1;
+    if (acctPage < 1) acctPage = 1;
+
+    const startIdx = (acctPage - 1) * acctPageSize;
+    const endIdx = acctPageSize >= 99999 ? totalMatched : Math.min(startIdx + acctPageSize, totalMatched);
+
+    matchedRows.forEach((r, idx) => {
+      if (idx >= startIdx && idx < endIdx) {
         r.style.display = '';
       } else {
         r.style.display = 'none';
       }
     });
+
+    // Update Counter Texts
+    const pStart = document.getElementById('acctPageStart');
+    const pEnd = document.getElementById('acctPageEnd');
+    const pTotal = document.getElementById('acctPageTotal');
+    if (pStart) pStart.textContent = totalMatched === 0 ? '0' : (startIdx + 1);
+    if (pEnd) pEnd.textContent = endIdx;
+    if (pTotal) pTotal.textContent = totalMatched;
+
+    // Render Navigation Buttons
+    renderPaginationControls('acctNavBtns', acctPage, totalPages, 'goToAcctPage');
+
+    const paginationBar = document.getElementById('acctPaginationBar');
+    if (paginationBar) paginationBar.style.display = totalMatched === 0 ? 'none' : 'flex';
   }
 
   function exportAccountingCsv() {
@@ -2162,7 +2739,7 @@
     showToast('s', 'File CSV log accounting berhasil diunduh.');
   }
 
-  // ─── RADIUS USER DATABASE LOGIC (TAB USERS) ───
+  // ─── RADIUS USER DATABASE FILTER & PAGINATION (TAB USERS) ───
   function filterRadiusUsersTable() {
     const q = (document.getElementById('radiusUserSearchInput')?.value || '').toLowerCase().trim();
     const statusFilter = (document.getElementById('radiusUserStatusFilter')?.value || '').trim();
@@ -2170,8 +2747,8 @@
     const clearBtn = document.getElementById('radiusUserClearSearch');
     if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
 
-    const rows = document.querySelectorAll('.radius-user-row');
-    let visibleCount = 0;
+    const rows = Array.from(document.querySelectorAll('.radius-user-row'));
+    const matchedRows = [];
 
     rows.forEach(r => {
       const username = r.getAttribute('data-username') || '';
@@ -2187,15 +2764,44 @@
       const matchMode = !modeFilter || mode === modeFilter;
 
       if (matchQ && matchStatus && matchMode) {
-        r.style.display = '';
-        visibleCount++;
+        matchedRows.push(r);
       } else {
         r.style.display = 'none';
       }
     });
 
+    const totalMatched = matchedRows.length;
+    const totalPages = Math.ceil(totalMatched / usersPageSize) || 1;
+    if (usersPage > totalPages) usersPage = 1;
+    if (usersPage < 1) usersPage = 1;
+
+    const startIdx = (usersPage - 1) * usersPageSize;
+    const endIdx = usersPageSize >= 99999 ? totalMatched : Math.min(startIdx + usersPageSize, totalMatched);
+
+    matchedRows.forEach((r, idx) => {
+      if (idx >= startIdx && idx < endIdx) {
+        r.style.display = '';
+      } else {
+        r.style.display = 'none';
+      }
+    });
+
+    // Update Counter Texts
     const countEl = document.getElementById('filteredUserCount');
-    if (countEl) countEl.textContent = visibleCount;
+    if (countEl) countEl.textContent = totalMatched;
+
+    const pStart = document.getElementById('usersPageStart');
+    const pEnd = document.getElementById('usersPageEnd');
+    const pTotal = document.getElementById('usersPageTotal');
+    if (pStart) pStart.textContent = totalMatched === 0 ? '0' : (startIdx + 1);
+    if (pEnd) pEnd.textContent = endIdx;
+    if (pTotal) pTotal.textContent = totalMatched;
+
+    // Render Navigation Buttons
+    renderPaginationControls('usersNavBtns', usersPage, totalPages, 'goToUsersPage');
+
+    const paginationBar = document.getElementById('usersPaginationBar');
+    if (paginationBar) paginationBar.style.display = totalMatched === 0 ? 'none' : 'flex';
   }
 
   function clearRadiusUserSearch() {
@@ -2205,6 +2811,7 @@
     if (input) input.value = '';
     if (statusFilter) statusFilter.value = '';
     if (modeFilter) modeFilter.value = '';
+    usersPage = 1;
     filterRadiusUsersTable();
     if (input) input.focus();
   }

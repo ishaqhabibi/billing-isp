@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="<%= lang || 'id' %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Data Modem (ONU) | <%= company %></title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css?v=2.7">
+  <script src="/js/theme.js"></script>
+  <style>
+    .onus-dashboard { display: flex; flex-direction: column; gap: 18px; }
+
+    /* Top Unit Bar */
+    .olt-header-bar {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .olt-select-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .custom-select-v2 {
+      background: var(--bg3);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 13.5px;
+      min-width: 280px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .custom-select-v2:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.18);
+    }
+
+    /* ── KPI RIBBON CARDS (CLICK TO FILTER) ── */
+    .kpi-ribbon {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    @media(max-width: 992px) { .kpi-ribbon { grid-template-columns: repeat(2, 1fr); } }
+    @media(max-width: 520px) { .kpi-ribbon { grid-template-columns: 1fr; } }
+
+    .kpi-stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: default;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .kpi-stat-card.c-blue::before { background: #0052cc; }
+    .kpi-stat-card.c-green::before { background: #10b981; }
+    .kpi-stat-card.c-red::before { background: #ef4444; }
+    .kpi-stat-card.c-amber::before { background: #f59e0b; }
+
+    .kpi-stat-info { display: flex; flex-direction: column; gap: 2px; }
+    .kpi-stat-label { font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-stat-val { font-size: 24px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+    .kpi-stat-sub { font-size: 11px; color: var(--muted); }
+    .kpi-stat-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .c-blue .kpi-stat-icon { background: rgba(0, 82, 204, 0.12); color: var(--primary); }
+    .c-green .kpi-stat-icon { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+    .c-red .kpi-stat-icon { background: rgba(239, 68, 68, 0.12); color: #dc2626; }
+    .c-amber .kpi-stat-icon { background: rgba(245, 158, 11, 0.12); color: #d97706; }
+
+    /* ── FILTER TOOLBAR ── */
+    .filter-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+    .filter-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .search-box-wrap {
+      position: relative;
+      min-width: 290px;
+      max-width: 450px;
+      flex: 1;
+    }
+    .search-box-wrap i.bi-search {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .search-box-wrap input {
+      padding-left: 36px;
+      padding-right: 32px;
+      height: 38px;
+      border-radius: 9px;
+      font-size: 13px;
+      background: var(--bg3);
+      color: var(--text);
+      border: 1px solid var(--border);
+      width: 100%;
+    }
+    .search-clear-x {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      display: none;
+    }
+
+    .filter-dropdowns {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Modern Table Container */
+    .table-container-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+      position: relative;
+    }
+    .table-responsive { width: 100%; overflow-x: auto; }
+    
+    table.onu-data-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    table.onu-data-table th {
+      background: var(--bg3);
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+    table.onu-data-table th:hover {
+      color: var(--text);
+    }
+    table.onu-data-table th i.sort-icon {
+      font-size: 10px;
+      margin-left: 4px;
+    }
+    table.onu-data-table th:first-child { border-top-left-radius: 10px; cursor: default; }
+    table.onu-data-table th:last-child { border-top-right-radius: 10px; text-align: right; cursor: default; }
+
+    table.onu-data-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text);
+      vertical-align: middle;
+    }
+    table.onu-data-table tbody tr:hover td {
+      background: var(--bg3);
+    }
+
+    /* Badges & Typography */
+    .port-chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 11.5px;
+      color: var(--text);
+      background: var(--bg3);
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .client-title {
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .client-sub {
+      font-size: 11.5px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .client-sub a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    .client-sub a:hover {
+      text-decoration: underline;
+    }
+
+    .device-model-badge {
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(139, 92, 246, 0.12);
+      color: #8b5cf6;
+      border: 1px solid rgba(139, 92, 246, 0.25);
+    }
+    .sn-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      padding: 3px 8px;
+      border-radius: 6px;
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .sn-tag:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: rgba(0, 82, 204, 0.08);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .status-badge.up {
+      background: rgba(16, 185, 129, 0.14);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .status-badge.down {
+      background: rgba(239, 68, 68, 0.14);
+      color: #dc2626;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .rx-cell-box {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .rx-val-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .rx-bar-mini {
+      height: 4px;
+      width: 70px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .rx-bar-mini-fill {
+      height: 100%;
+      border-radius: 99px;
+    }
+
+    .rx-good { color: #10b981; }
+    .rx-good .rx-bar-mini-fill { background: #10b981; }
+    .rx-warn { color: #d97706; }
+    .rx-warn .rx-bar-mini-fill { background: #f59e0b; }
+    .rx-crit { color: #dc2626; }
+    .rx-crit .rx-bar-mini-fill { background: #ef4444; }
+
+    .action-btn-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.18s ease;
+      font-size: 13px;
+    }
+    .action-btn-circle:hover {
+      color: var(--text);
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
+    .action-btn-circle.btn-act-reboot:hover { background: rgba(239, 68, 68, 0.15); color: #dc2626; border-color: rgba(239, 68, 68, 0.4); }
+    .action-btn-circle.btn-act-detail:hover { background: rgba(0, 82, 204, 0.12); color: var(--primary); border-color: var(--primary); }
+    .action-btn-circle.btn-act-acs:hover { background: rgba(16, 185, 129, 0.12); color: #10b981; border-color: rgba(16, 185, 129, 0.4); }
+
+    /* Pagination */
+    .pagination-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .page-nav-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 7px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .page-nav-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .page-nav-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(3px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      border-radius: 14px;
+    }
+    body.light-theme .loading-overlay { background: rgba(255, 255, 255, 0.78); }
+
+    .copied-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #10b981;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 13px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      z-index: 99999;
+      display: none;
+      animation: fadeIn 0.2s ease;
+    }
+    .diag-box {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+    .diag-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--border);
+      font-size: 13px;
+    }
+    .diag-item:last-child { border-bottom: none; }
+    .diag-item .label { color: var(--muted); }
+    .diag-item .val { font-weight: 700; color: var(--text); font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+<div class="mw">
+  <!-- Topbar Header -->
+  <div class="topbar">
+    <div class="tb-title">
+      <button class="hb-menu" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+      <i class="bi bi-hdd-network text-primary"></i>
+      <span>Data Modem (ONU)</span>
+    </div>
+    <div class="tb-right">
+      <div class="d-flex align-items-center gap-2">
+        <a href="/admin/olts" class="btn btn-g btn-sm" id="btnBackToDashboard" title="Kembali ke Dashboard Ringkasan">
+          <i class="bi bi-speedometer2 me-1"></i> Dashboard OLT
+        </a>
+        <button class="btn btn-g btn-sm" onclick="runDiagnosticPrompt()" title="Diagnostik SNMP Cepat">
+          <i class="bi bi-activity"></i> Test SNMP
+        </button>
+        <button type="button" class="btn btn-g btn-sm theme-toggle-btn" onclick="toggleAppTheme()" title="Ganti Mode Terang / Gelap" style="padding:4px 9px;">
+          <i class="bi bi-moon-stars-fill theme-toggle-icon" style="color:#fbbf24"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="page">
+    <% if (msg) { %>
+      <div class="alert alert-<%= msg.type==='error'?'d':'s' %>"><%= msg.text %></div>
+    <% } %>
+
+    <!-- UNIFIED SUB-NAVIGATION TABS -->
+    <div class="mtabs" style="margin-bottom:20px;">
+      <a href="/admin/olts" class="mtab" id="linkTabDashboard"><i class="bi bi-speedometer2"></i> Dashboard Ringkasan OLT</a>
+      <a href="/admin/olts/onus" class="mtab active"><i class="bi bi-hdd-network"></i> Data Modem ONU</a>
+      <a href="/admin/onu-provision" class="mtab"><i class="bi bi-hdd-network-fill"></i> Provisioning ONU</a>
+      <a href="/admin/acs" class="mtab"><i class="bi bi-broadcast"></i> GenieACS Pro</a>
+      <a href="/admin/onu-stickers" class="mtab"><i class="bi bi-printer"></i> Stiker Modem ONU</a>
+    </div>
+
+    <% if (olts.length === 0) { %>
+      <div class="olt-main-box" style="padding: 60px 24px; text-align: center;">
+        <h4 style="font-weight: 800; color: var(--text);">Belum Ada OLT Terdaftar</h4>
+        <p style="color: var(--muted); font-size: 14px;">Silakan tambahkan OLT terlebih dahulu.</p>
+        <a href="/admin/olts" class="btn btn-p">Ke Dashboard OLT</a>
+      </div>
+    <% } else { %>
+
+    <div class="onus-dashboard">
+      <!-- OLT Selector & Quick Stats Strip -->
+      <div class="olt-header-bar">
+        <div class="olt-select-wrap">
+          <label class="fw-bold text-muted small text-uppercase mb-0">
+            <i class="bi bi-hdd-network me-1"></i> Perangkat OLT:
+          </label>
+          <select id="olt-selector" class="custom-select-v2" onchange="handleOltChange()">
+            <% olts.forEach(olt => { %>
+              <option value="<%= olt.id %>" data-brand="<%= olt.brand %>" data-host="<%= olt.host %>" 
+                <%= (typeof selectedOltId !== 'undefined' && String(olt.id) === String(selectedOltId)) ? 'selected' : '' %>
+                <%= !olt.is_active ? 'disabled' : '' %>>
+                <%= olt.name %> (<%= (olt.brand || '').toUpperCase() %> - <%= olt.host %>)
+              </option>
+            <% }) %>
+          </select>
+          <button class="btn btn-g btn-sm" onclick="refreshCurrentOlt()" title="Perbarui data OLT via SNMP">
+            <i class="bi bi-arrow-clockwise" id="refreshIcon"></i> Refresh SNMP
+          </button>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+          <span class="text-muted small"><i class="bi bi-clock me-1"></i> Update: <strong id="last-update-time">-</strong></span>
+          <button class="btn btn-g btn-sm" onclick="exportOnuCsv()" title="Download file CSV spreadsheet">
+            <i class="bi bi-file-earmark-spreadsheet me-1 text-success"></i> Export CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 KPI Ribbon Quick Filter Cards -->
+      <!-- 4 KPI Summary Cards (Informasi & Monitoring) -->
+      <div class="kpi-ribbon">
+        <div class="kpi-stat-card c-blue">
+          <div class="kpi-stat-info">
+            <span class="kpi-stat-label">Total Modem</span>
+            <span class="kpi-stat-val" id="kpi-total-val">-</span>
+            <span class="kpi-stat-sub">Terdaftar di OLT</span>
+          </div>
+          <div class="kpi-stat-icon"><i class="bi bi-router"></i></div>
+        </div>
+
+        <div class="kpi-stat-card c-green">
+          <div class="kpi-stat-info">
+            <span class="kpi-stat-label">Online Normal</span>
+            <span class="kpi-stat-val text-success" id="kpi-online-val">-</span>
+            <span class="kpi-stat-sub" id="kpi-online-pct">0% aktif</span>
+          </div>
+          <div class="kpi-stat-icon"><i class="bi bi-wifi"></i></div>
+        </div>
+
+        <div class="kpi-stat-card c-red">
+          <div class="kpi-stat-info">
+            <span class="kpi-stat-label">Offline / Putus</span>
+            <span class="kpi-stat-val text-danger" id="kpi-offline-val">0</span>
+            <span class="kpi-stat-sub">LOS / Power Off</span>
+          </div>
+          <div class="kpi-stat-icon"><i class="bi bi-wifi-off"></i></div>
+        </div>
+
+        <div class="kpi-stat-card c-amber">
+          <div class="kpi-stat-info">
+            <span class="kpi-stat-label">Redaman Lemah</span>
+            <span class="kpi-stat-val text-warning" id="kpi-weak-val">0</span>
+            <span class="kpi-stat-sub">&lt; -24 dBm (Rentan RTO)</span>
+          </div>
+          <div class="kpi-stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
+        </div>
+      </div>
+
+      <!-- Filter Toolbar -->
+      <div class="filter-card">
+        <div class="filter-top-row">
+          <div class="search-box-wrap">
+            <i class="bi bi-search"></i>
+            <input type="text" id="onu-search-input" placeholder="Cari Nama Pelanggan, PPPoE, Serial (FHTT...), Port (2/0)..." onkeyup="handleSearchInput()" autocomplete="off">
+            <button type="button" class="search-clear-x" id="searchClearBtn" onclick="clearSearch()">&times;</button>
+          </div>
+
+          <div class="filter-dropdowns">
+            <!-- Filter Status Koneksi -->
+            <select id="filter-status" class="custom-select-v2" style="min-width: 155px; height: 38px;" onchange="applyFilters()">
+              <option value="all">Semua Status</option>
+              <option value="online">Online Saja</option>
+              <option value="offline">Offline / Putus</option>
+              <option value="weak">Redaman Lemah (&lt; -24 dBm)</option>
+            </select>
+
+            <!-- Port PON Filter -->
+            <select id="filter-pon-port" class="custom-select-v2" style="min-width: 160px; height: 38px;" onchange="applyFilters()">
+              <option value="all">Semua Port PON</option>
+              <option value="PON 1">PON 1</option>
+              <option value="PON 2">PON 2</option>
+              <option value="PON 3">PON 3</option>
+              <option value="PON 4">PON 4</option>
+            </select>
+
+            <!-- Kualitas Redaman Filter -->
+            <select id="filter-optical-quality" class="custom-select-v2" style="min-width: 175px; height: 38px;" onchange="applyFilters()">
+              <option value="all">Semua Redaman</option>
+              <option value="good">Sinyal Bagus (&gt;= -22 dBm)</option>
+              <option value="warn">Waspada (-22 s/d -25 dBm)</option>
+              <option value="crit">Kritis (&lt; -25 dBm)</option>
+            </select>
+
+            <!-- Filter Status Billing -->
+            <select id="filter-billing-link" class="custom-select-v2" style="min-width: 160px; height: 38px;" onchange="applyFilters()">
+              <option value="all">Semua Pelanggan</option>
+              <option value="linked">Terhubung ke Billing</option>
+              <option value="unlinked">Belum Di-mapping</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modern Data Table Card -->
+      <div class="table-container-card">
+        <div id="loading-overlay" class="loading-overlay">
+          <div class="text-center">
+            <div class="spinner-border text-primary" role="status" style="width: 2.2rem; height: 2.2rem;"></div>
+            <div class="mt-2 fw-bold text-white small" id="loadingText">Mengambil data modem via SNMP...</div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="onu-data-table" id="onu-main-table">
+            <thead>
+              <tr>
+                <th style="width: 45px;">No</th>
+                <th data-sort="port" onclick="sortTable('port')">Port / ID <i class="bi bi-sort-down sort-icon text-primary"></i></th>
+                <th data-sort="name" onclick="sortTable('name')">Pelanggan / Alias ONU <i class="bi bi-arrow-down-up sort-icon text-muted"></i></th>
+                <th data-sort="sn" onclick="sortTable('sn')">Perangkat &amp; Serial Number <i class="bi bi-arrow-down-up sort-icon text-muted"></i></th>
+                <th data-sort="status" onclick="sortTable('status')">Status <i class="bi bi-arrow-down-up sort-icon text-muted"></i></th>
+                <th data-sort="rx" onclick="sortTable('rx')">Redaman RX <i class="bi bi-arrow-down-up sort-icon text-muted"></i></th>
+                <th>Daya TX</th>
+                <th data-sort="dist" onclick="sortTable('dist')">Jarak Kabel <i class="bi bi-arrow-down-up sort-icon text-muted"></i></th>
+                <th>Hardware &amp; Uptime</th>
+                <th style="text-align: right;">Aksi Cepat</th>
+              </tr>
+            </thead>
+            <tbody id="onu-table-body">
+              <tr>
+                <td colspan="10" class="text-center p-5 text-muted">
+                  <div style="font-size: 28px; margin-bottom: 8px;"><i class="bi bi-arrow-repeat spin"></i></div>
+                  Menghubungi OLT via SNMP...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Bar -->
+        <div class="pagination-bar">
+          <div id="pagination-info">Menampilkan 0 dari 0 modem</div>
+          <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2">
+              <span class="small">Per halaman:</span>
+              <select id="rows-per-page" class="custom-select-v2" style="min-width: 75px; padding: 4px 8px; height: 32px; font-size: 12px;" onchange="changeRowsPerPage()">
+                <option value="15">15</option>
+                <option value="25" selected>25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="9999">Semua</option>
+              </select>
+            </div>
+            <div class="page-btn-group" id="pagination-buttons"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/sidebar', { activePage: 'olts', company }) %>
+
+<!-- MODAL: Detail Diagnostik Optik ONU -->
+<div class="mo" id="onuDetailModal">
+  <div class="md" style="max-width: 620px;">
+    <div class="mh">
+      <h5 class="mtitle"><i class="bi bi-speedometer2 text-primary me-2"></i>Diagnostik Optik &amp; Parameter Modem</h5>
+      <button type="button" class="mc" onclick="closeModal('onuDetailModal')">&times;</button>
+    </div>
+    <div class="mbody" id="onuDetailModalBody">
+      <!-- Diisi dinamis via JS -->
+    </div>
+    <div class="mf">
+      <button type="button" class="btn btn-g" onclick="closeModal('onuDetailModal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Reboot ONU -->
+<div class="mo" id="rebootOnuModal">
+  <div class="md" style="max-width: 440px;">
+    <div class="mh">
+      <h5 class="mtitle text-danger"><i class="bi bi-arrow-repeat me-2"></i>Konfirmasi Reboot Modem</h5>
+      <button type="button" class="mc" onclick="closeModal('rebootOnuModal')">&times;</button>
+    </div>
+    <div class="mbody">
+      <p class="mb-2">Apakah Anda yakin ingin me-reboot perangkat modem pelanggan berikut?</p>
+      <div class="diag-box mb-3">
+        <div class="diag-item"><span class="label">Nama Modem:</span> <span class="val" id="rebootOnuName">-</span></div>
+        <div class="diag-item"><span class="label">Port / ID:</span> <span class="val text-primary" id="rebootOnuId">-</span></div>
+        <div class="diag-item"><span class="label">Serial Number:</span> <span class="val font-monospace" id="rebootOnuSn">-</span></div>
+      </div>
+      <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i>Sinyal reboot akan dikirim ke OLT via SNMP. Koneksi modem akan terputus sementara selama 1-2 menit hingga modem menyala kembali.</p>
+    </div>
+    <div class="mf">
+      <button type="button" class="btn btn-g" onclick="closeModal('rebootOnuModal')">Batal</button>
+      <button type="button" class="btn btn-d" id="btnConfirmReboot" onclick="executeRebootOnu()">Ya, Reboot Sekarang</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Ubah Nama ONU -->
+<div class="mo" id="renameOnuModal">
+  <div class="md" style="max-width: 440px;">
+    <div class="mh">
+      <h5 class="mtitle"><i class="bi bi-pencil-square text-primary me-2"></i>Ubah Alias Modem di OLT</h5>
+      <button type="button" class="mc" onclick="closeModal('renameOnuModal')">&times;</button>
+    </div>
+    <div class="mbody">
+      <div class="mb-3">
+        <label class="form-label small text-muted">ID / Port ONU</label>
+        <input type="text" class="fc" id="renameOnuId" readonly style="background:var(--bg3);">
+      </div>
+      <div class="mb-3">
+        <label class="form-label small text-muted">Nama Alias Baru</label>
+        <input type="text" class="fc" id="renameOnuNewName" placeholder="Contoh: Bpk-Ahmad-RT02" maxlength="32">
+        <div class="text-muted small mt-1">Maksimal 32 karakter (disarankan alfanumerik &amp; strip).</div>
+      </div>
+    </div>
+    <div class="mf">
+      <button type="button" class="btn btn-g" onclick="closeModal('renameOnuModal')">Batal</button>
+      <button type="button" class="btn btn-p" id="btnConfirmRename" onclick="executeRenameOnu()">Simpan Perubahan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Test SNMP -->
+<div class="mo" id="testSnmpModal">
+  <div class="md" style="max-width: 480px;">
+    <div class="mh">
+      <h5 class="mtitle"><i class="bi bi-activity text-primary me-2"></i>Hasil Uji SNMP OLT</h5>
+      <button type="button" class="mc" onclick="closeModal('testSnmpModal')">&times;</button>
+    </div>
+    <div class="mbody" id="testSnmpModalBody"></div>
+    <div class="mf">
+      <button type="button" class="btn btn-g" onclick="closeModal('testSnmpModal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<div class="copied-toast" id="copiedToast">
+  <i class="bi bi-check-circle-fill me-1"></i> Serial Number berhasil disalin ke clipboard!
+</div>
+
+<script>
+let allOnus = [];
+let filteredOnus = [];
+let currentFilterStatus = 'all';
+let currentSearch = '';
+let currentPonPort = 'all';
+let currentOpticalQuality = 'all';
+let currentBillingLink = 'all';
+let currentPage = 1;
+let rowsPerPage = 25;
+let currentOltId = null;
+let currentActionOnu = null;
+let sortField = 'port';
+let sortDirection = 'asc';
+
+function showToast() {
+  const t = document.getElementById('copiedToast');
+  if (!t) return;
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 2000);
+}
+
+function copyToClipboard(text) {
+  if (!text || text === '-') return;
+  navigator.clipboard.writeText(text).then(showToast).catch(() => {
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    showToast();
+  });
+}
+
+function openModal(id) {
+  const m = document.getElementById(id);
+  if (m) m.classList.add('show');
+}
+function closeModal(id) {
+  const m = document.getElementById(id);
+  if (m) m.classList.remove('show');
+}
+
+function handleOltChange() {
+  const sel = document.getElementById('olt-selector');
+  const id = sel ? sel.value : '';
+  if (id) {
+    try {
+      const url = new URL(window.location);
+      url.searchParams.set('olt_id', id);
+      window.history.replaceState({}, '', url);
+
+      const linkDash = document.getElementById('linkTabDashboard');
+      const btnBack = document.getElementById('btnBackToDashboard');
+      if (linkDash) linkDash.href = `/admin/olts?olt_id=${id}`;
+      if (btnBack) btnBack.href = `/admin/olts?olt_id=${id}`;
+    } catch (_) {}
+    loadOnuData(id);
+  }
+}
+
+function refreshCurrentOlt() {
+  const sel = document.getElementById('olt-selector');
+  if (sel && sel.value) loadOnuData(sel.value);
+}
+
+async function loadOnuData(oltId) {
+  currentOltId = oltId;
+  const overlay = document.getElementById('loading-overlay');
+  const icon = document.getElementById('refreshIcon');
+  if (overlay) overlay.style.display = 'flex';
+  if (icon) icon.classList.add('spin');
+
+  try {
+    const res = await fetch(`/admin/olts/${oltId}/stats?full=true`);
+    const data = await res.json();
+
+    allOnus = Array.isArray(data.onus) ? data.onus : [];
+
+    updatePonPortFilterOptions();
+
+    // Update KPI Ribbon
+    const total = allOnus.length;
+    const online = allOnus.filter(o => String(o.status).toLowerCase() === 'online').length;
+    const offline = total - online;
+    const weak = allOnus.filter(o => {
+      const r = parseFloat(o.rx);
+      return Number.isFinite(r) && r < -24;
+    }).length;
+
+    const onlinePct = total > 0 ? Math.round((online / total) * 100) : 0;
+
+    document.getElementById('kpi-total-val').textContent = total + ' Unit';
+    document.getElementById('kpi-online-val').textContent = online + ' Unit';
+    document.getElementById('kpi-online-pct').textContent = onlinePct + '% aktif';
+    document.getElementById('kpi-offline-val').textContent = offline + ' Unit';
+    document.getElementById('kpi-weak-val').textContent = weak + ' Unit';
+    document.getElementById('last-update-time').textContent = new Date().toLocaleTimeString('id-ID');
+
+    currentPage = 1;
+    applyFilters();
+  } catch (err) {
+    console.error('Error fetching ONU stats:', err);
+    document.getElementById('onu-table-body').innerHTML = `
+      <tr>
+        <td colspan="10" class="text-center p-4 text-danger">
+          <i class="bi bi-exclamation-triangle me-1"></i> Gagal mengambil data OLT via SNMP: ${err.message}
+        </td>
+      </tr>
+    `;
+  } finally {
+    if (overlay) overlay.style.display = 'none';
+    if (icon) icon.classList.remove('spin');
+  }
+}
+
+function updatePonPortFilterOptions() {
+  const sel = document.getElementById('filter-pon-port');
+  if (!sel) return;
+
+  const ports = new Set();
+  allOnus.forEach(o => {
+    const rawId = String(o.id || o.index || '');
+    if (rawId.includes('/')) {
+      const p = rawId.split('/')[0];
+      ports.add('PON ' + p);
+    }
+  });
+
+  const curVal = sel.value;
+  sel.innerHTML = '<option value="all">Semua Port PON</option>';
+  Array.from(ports).sort().forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = p;
+    sel.appendChild(opt);
+  });
+  if (curVal && sel.querySelector(`option[value="${curVal}"]`)) {
+    sel.value = curVal;
+  }
+}
+
+function handleSearchInput() {
+  const val = document.getElementById('onu-search-input').value.trim();
+  currentSearch = val.toLowerCase();
+  document.getElementById('searchClearBtn').style.display = currentSearch ? 'block' : 'none';
+  currentPage = 1;
+  applyFilters();
+}
+
+function clearSearch() {
+  document.getElementById('onu-search-input').value = '';
+  currentSearch = '';
+  document.getElementById('searchClearBtn').style.display = 'none';
+  currentPage = 1;
+  applyFilters();
+}
+
+function applyFilters() {
+  const statusEl = document.getElementById('filter-status');
+  if (statusEl) currentFilterStatus = statusEl.value;
+  currentPonPort = document.getElementById('filter-pon-port').value;
+  currentOpticalQuality = document.getElementById('filter-optical-quality').value;
+  currentBillingLink = document.getElementById('filter-billing-link').value;
+
+  filteredOnus = allOnus.filter(o => {
+    const st = String(o.status || '').toLowerCase();
+    const rx = parseFloat(o.rx);
+
+    // 1. Status Filter
+    if (currentFilterStatus === 'online' && st !== 'online') return false;
+    if (currentFilterStatus === 'offline' && st === 'online') return false;
+    if (currentFilterStatus === 'weak') {
+      if (!Number.isFinite(rx) || rx >= -24) return false;
+    }
+
+    // 2. Optical Quality Filter
+    if (currentOpticalQuality === 'good') {
+      if (!Number.isFinite(rx) || rx < -22) return false;
+    } else if (currentOpticalQuality === 'warn') {
+      if (!Number.isFinite(rx) || rx >= -22 || rx < -25) return false;
+    } else if (currentOpticalQuality === 'crit') {
+      if (!Number.isFinite(rx) || rx >= -25) return false;
+    }
+
+    // 3. Billing Link Filter
+    if (currentBillingLink === 'linked' && !o.customer_id) return false;
+    if (currentBillingLink === 'unlinked' && o.customer_id) return false;
+
+    // 4. Port PON Filter
+    if (currentPonPort !== 'all') {
+      const targetPortNum = currentPonPort.replace('PON ', '');
+      const rawId = String(o.id || o.index || '');
+      const portPart = rawId.split('/')[0];
+      if (portPart !== targetPortNum) return false;
+    }
+
+    // 5. Search Filter
+    if (currentSearch) {
+      const name = String(o.name || '').toLowerCase();
+      const custName = String(o.customer_name || '').toLowerCase();
+      const ppp = String(o.pppoe_username || '').toLowerCase();
+      const sn = String(o.sn || '').toLowerCase();
+      const id = String(o.id || o.index || '').toLowerCase();
+      const model = String(o.model || '').toLowerCase();
+      const dist = String(o.distance || '').toLowerCase();
+
+      if (!name.includes(currentSearch) && !custName.includes(currentSearch) && !ppp.includes(currentSearch) &&
+          !sn.includes(currentSearch) && !id.includes(currentSearch) && !model.includes(currentSearch) && !dist.includes(currentSearch)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  // Apply Sorting
+  sortFilteredOnus();
+  renderTable();
+}
+
+function sortTable(field) {
+  if (sortField === field) {
+    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortField = field;
+    sortDirection = 'asc';
+  }
+  updateSortIcons();
+  sortFilteredOnus();
+  renderTable();
+}
+
+function updateSortIcons() {
+  document.querySelectorAll('th[data-sort]').forEach(th => {
+    const f = th.getAttribute('data-sort');
+    const icon = th.querySelector('.sort-icon');
+    if (!icon) return;
+    if (f === sortField) {
+      icon.className = `bi bi-sort-${sortDirection === 'asc' ? 'down' : 'up'} sort-icon text-primary`;
+    } else {
+      icon.className = 'bi bi-arrow-down-up sort-icon text-muted';
+    }
+  });
+}
+
+function sortFilteredOnus() {
+  filteredOnus.sort((a, b) => {
+    let valA = a[sortField];
+    let valB = b[sortField];
+
+    if (sortField === 'rx') {
+      valA = parseFloat(a.rx) || -999;
+      valB = parseFloat(b.rx) || -999;
+    } else if (sortField === 'dist') {
+      valA = parseInt(a.distance) || 0;
+      valB = parseInt(b.distance) || 0;
+    } else if (sortField === 'port') {
+      valA = String(a.id || a.index || '');
+      valB = String(b.id || b.index || '');
+    } else {
+      valA = String(valA || '').toLowerCase();
+      valB = String(valB || '').toLowerCase();
+    }
+
+    if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+    if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+}
+
+function changeRowsPerPage() {
+  rowsPerPage = parseInt(document.getElementById('rows-per-page').value) || 25;
+  currentPage = 1;
+  renderTable();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('onu-table-body');
+  if (!tbody) return;
+
+  const total = filteredOnus.length;
+  if (total === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="10" class="text-center p-5 text-muted">
+          <i class="bi bi-inbox" style="font-size: 32px; display:block; margin-bottom: 8px;"></i>
+          Tidak ada modem yang cocok dengan filter atau kata kunci pencarian.
+        </td>
+      </tr>
+    `;
+    document.getElementById('pagination-info').textContent = 'Menampilkan 0 dari 0 modem';
+    document.getElementById('pagination-buttons').innerHTML = '';
+    return;
+  }
+
+  const totalPages = Math.ceil(total / rowsPerPage);
+  if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
+
+  const startIdx = (currentPage - 1) * rowsPerPage;
+  const endIdx = Math.min(startIdx + rowsPerPage, total);
+  const pageItems = filteredOnus.slice(startIdx, endIdx);
+
+  let html = '';
+  pageItems.forEach((o, i) => {
+    const rowNo = startIdx + i + 1;
+    const isUp = String(o.status || '').toLowerCase() === 'online';
+    const rxNum = parseFloat(o.rx);
+
+    // Optical Quality styling
+    let rxClass = 'rx-crit';
+    let rxPct = 30;
+    let rxQualityText = 'Kritis';
+    if (isUp && Number.isFinite(rxNum)) {
+      if (rxNum >= -22) {
+        rxClass = 'rx-good';
+        rxPct = 95;
+        rxQualityText = 'Bagus';
+      } else if (rxNum >= -25) {
+        rxClass = 'rx-warn';
+        rxPct = 65;
+        rxQualityText = 'Waspada';
+      }
+    }
+
+    // Device Vendor & Model
+    const vendorName = o.vendor || 'FiberHome';
+    const modelName = o.model || 'HG6145D2';
+
+    // Customer & Alias Name
+    const hasCust = !!o.customer_name;
+    const custDisplay = hasCust
+      ? `<a href="/admin/customers/${o.customer_id}" class="text-primary fw-bold" title="Buka Detail Pelanggan">${escapeHtml(o.customer_name)}</a>`
+      : `<span class="fw-bold">${escapeHtml(o.name || 'Modem-' + o.id)}</span>`;
+
+    const subInfo = [];
+    if (hasCust && o.name) subInfo.push(`<span title="Alias OLT">${escapeHtml(o.name)}</span>`);
+    if (o.pppoe_username) subInfo.push(`<span class="text-muted" title="Akun PPPoE"><i class="bi bi-person me-1"></i>${escapeHtml(o.pppoe_username)}</span>`);
+
+    // Hardware Uptime & Temp
+    const tempVolt = (o.temp && o.temp !== 'N/A') ? `${o.temp}` : '';
+    const uptimeStr = o.uptime || '-';
+
+    html += `
+      <tr>
+        <td class="text-muted small">${rowNo}</td>
+        <td>
+          <span class="port-chip" title="Port PON dan ONU Index">
+            <i class="bi bi-broadcast text-primary"></i> ${o.id || o.index}
+          </span>
+        </td>
+        <td>
+          <div class="client-title">${custDisplay}</div>
+          <div class="client-sub">${subInfo.join(' • ') || '<span class="text-muted">Tanpa Nama Pelanggan</span>'}</div>
+        </td>
+        <td>
+          <div class="d-flex flex-column gap-1">
+            <div class="d-flex align-items-center gap-1">
+              <span class="device-model-badge">${vendorName} ${modelName}</span>
+            </div>
+            <span class="sn-tag" onclick="copyToClipboard('${o.sn}')" title="Klik untuk menyalin Serial Number">
+              <i class="bi bi-clipboard text-muted"></i> ${o.sn}
+            </span>
+          </div>
+        </td>
+        <td>
+          <span class="status-badge ${isUp ? 'up' : 'down'}">
+            <i class="bi bi-circle-fill" style="font-size:6px"></i> ${isUp ? 'Online' : 'Offline'}
+          </span>
+          ${!isUp && o.offline_reason ? `<div class="text-danger small mt-1" style="font-size:10px;">${escapeHtml(o.offline_reason)}</div>` : ''}
+        </td>
+        <td>
+          <div class="rx-cell-box ${rxClass}">
+            <span class="rx-val-badge">
+              <i class="bi ${rxClass === 'rx-good' ? 'bi-check2' : (rxClass === 'rx-warn' ? 'bi-exclamation-triangle' : 'bi-lightning-charge')}"></i>
+              ${o.rx || '-'}
+            </span>
+            <div class="rx-bar-mini" title="Kualitas Sinyal: ${rxQualityText}">
+              <div class="rx-bar-mini-fill" style="width: ${rxPct}%;"></div>
+            </div>
+          </div>
+        </td>
+        <td class="font-monospace small">${o.tx || '-'}</td>
+        <td class="font-monospace small text-muted">${o.distance || '-'}</td>
+        <td>
+          <div class="small fw-semibold">${uptimeStr}</div>
+          <div class="text-muted small font-monospace">${tempVolt ? tempVolt + (o.voltage ? ' • ' + o.voltage : '') : '-'}</div>
+        </td>
+        <td style="text-align: right; white-space: nowrap;">
+          <div class="d-inline-flex gap-1">
+            <button type="button" class="action-btn-circle btn-act-detail" onclick="openDetailModal(${startIdx + i})" title="Diagnostik Optik &amp; Sinyal">
+              <i class="bi bi-speedometer2"></i>
+            </button>
+            <a href="/admin/acs?search=${encodeURIComponent(o.sn || '')}" class="action-btn-circle btn-act-acs" title="Buka GenieACS Pro (${o.sn})">
+              <i class="bi bi-router"></i>
+            </a>
+            <button type="button" class="action-btn-circle" onclick="openRenameModal('${o.id || o.index}', '${escapeHtml(o.name || '')}')" title="Ubah Nama di OLT">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button type="button" class="action-btn-circle btn-act-reboot" onclick="openRebootModal('${o.id || o.index}', '${escapeHtml(o.name || '')}', '${o.sn}')" title="Reboot Modem Remote">
+              <i class="bi bi-arrow-repeat"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+  document.getElementById('pagination-info').textContent = `Menampilkan ${startIdx + 1} - ${endIdx} dari ${total} modem terdaftar`;
+
+  renderPaginationButtons(totalPages);
+}
+
+function renderPaginationButtons(totalPages) {
+  const container = document.getElementById('pagination-buttons');
+  if (!container) return;
+
+  if (totalPages <= 1) {
+    container.innerHTML = '';
+    return;
+  }
+
+  let btns = `
+    <button class="page-nav-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+      <i class="bi bi-chevron-left"></i>
+    </button>
+  `;
+
+  for (let p = 1; p <= totalPages; p++) {
+    if (p === 1 || p === totalPages || (p >= currentPage - 1 && p <= currentPage + 1)) {
+      btns += `<button class="page-nav-btn ${p === currentPage ? 'active' : ''}" onclick="goToPage(${p})">${p}</button>`;
+    } else if (p === currentPage - 2 || p === currentPage + 2) {
+      btns += `<span class="px-1 text-muted">...</span>`;
+    }
+  }
+
+  btns += `
+    <button class="page-nav-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+      <i class="bi bi-chevron-right"></i>
+    </button>
+  `;
+  container.innerHTML = btns;
+}
+
+function goToPage(p) {
+  currentPage = p;
+  renderTable();
+}
+
+function openDetailModal(idx) {
+  const item = filteredOnus[idx];
+  if (!item) return;
+
+  const isUp = String(item.status || '').toLowerCase() === 'online';
+  const rxNum = parseFloat(item.rx);
+  let rxEval = 'Sinyal Tidak Terbaca';
+  let rxColor = '#94a3b8';
+  let rxRecommendation = 'Periksa apakah kabel dropcore tersambung dan laser SFP OLT aktif.';
+
+  if (isUp && Number.isFinite(rxNum)) {
+    if (rxNum >= -22) {
+      rxEval = 'Sangat Bagus (Optimal)';
+      rxColor = '#10b981';
+      rxRecommendation = 'Redaman optik sangat ideal untuk kapasitas bandwidth tinggi tanpa packet loss.';
+    } else if (rxNum >= -25) {
+      rxEval = 'Normal / Cukup';
+      rxColor = '#d97706';
+      rxRecommendation = 'Koneksi stabil, tetapi disarankan memeriksa konektor patchcord jika terjadi penurunan.';
+    } else {
+      rxEval = 'Kritis / Redup';
+      rxColor = '#dc2626';
+      rxRecommendation = 'Redaman terlalu redup (< -25 dBm). Rentan terjadi RTO. Perlu dilakukan perapian sambungan / splicing ulang.';
+    }
+  }
+
+  const b = document.getElementById('onuDetailModalBody');
+  b.innerHTML = `
+    <div class="diag-box mb-3">
+      <div class="diag-item">
+        <span class="label">Identitas Pelanggan:</span>
+        <span class="val text-primary">${item.customer_name ? escapeHtml(item.customer_name) : 'Belum Ditautkan'}</span>
+      </div>
+      <div class="diag-item">
+        <span class="label">Nama Modem di OLT:</span>
+        <span class="val">${escapeHtml(item.name || '-')}</span>
+      </div>
+      <div class="diag-item">
+        <span class="label">Port PON / Index:</span>
+        <span class="val font-monospace">${item.id || item.index || '-'}</span>
+      </div>
+      <div class="diag-item">
+        <span class="label">Perangkat:</span>
+        <span class="val">${item.vendor || 'FiberHome'} ${item.model || 'HG6145D2'}</span>
+      </div>
+      <div class="diag-item">
+        <span class="label">Serial Number (SN):</span>
+        <span class="val font-monospace">${item.sn || '-'}</span>
+      </div>
+      <div class="diag-item">
+        <span class="label">Status Operasional:</span>
+        <span class="val ${isUp ? 'text-success' : 'text-danger'}">${isUp ? '● Online (Aktif)' : '● Offline'}</span>
+      </div>
+    </div>
+
+    <h6 class="fw-bold mb-2 small text-uppercase text-muted"><i class="bi bi-speedometer2 me-1 text-primary"></i>Kualitas Redaman &amp; Optical Power</h6>
+    <div class="diag-box mb-3">
+      <div class="diag-item">
+        <span class="label">Daya Terima Optik (Rx Power):</span>
+        <span class="val" style="color:${rxColor}; font-size:16px;">${item.rx || '-'} <small class="fw-normal">(${rxEval})</small></span>
+      </div>
+      <div class="diag-item">
+        <span class="label">Daya Pancar Modem (Tx Power):</span>
+        <span class="val">${item.tx || '-'}</span>
+      </div>
+      <div class="diag-item">
+        <span class="label">Jarak Kabel Fiber (ODN):</span>
+        <span class="val">${item.distance ? item.distance : '-'}</span>
+      </div>
+      <div class="p-2 mt-2 rounded-2 small" style="background:rgba(0,82,204,0.06); border:1px dashed var(--border); font-size:12px;">
+        <i class="bi bi-info-circle text-primary me-1"></i> ${rxRecommendation}
+      </div>
+    </div>
+
+    <h6 class="fw-bold mb-2 small text-uppercase text-muted"><i class="bi bi-cpu me-1 text-danger"></i>Parameter Fisik &amp; Uptime Modem</h6>
+    <div class="diag-box">
+      <div class="diag-item"><span class="label">Suhu Transceiver Modem:</span> <span class="val">${item.temp || '-'}</span></div>
+      <div class="diag-item"><span class="label">Voltase Suplai Adaptor:</span> <span class="val">${item.voltage || '-'}</span></div>
+      <div class="diag-item"><span class="label">Waktu Aktif (Uptime):</span> <span class="val">${item.uptime || '-'}</span></div>
+      <div class="diag-item"><span class="label">Terakhir Online:</span> <span class="val">${item.last_up || '-'}</span></div>
+    </div>
+  `;
+
+  openModal('onuDetailModal');
+}
+
+function openRebootModal(id, name, sn) {
+  currentActionOnu = id;
+  document.getElementById('rebootOnuId').textContent = id;
+  document.getElementById('rebootOnuName').textContent = name;
+  document.getElementById('rebootOnuSn').textContent = sn;
+  openModal('rebootOnuModal');
+}
+
+async function executeRebootOnu() {
+  if (!currentOltId || !currentActionOnu) return;
+  const btn = document.getElementById('btnConfirmReboot');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengirim sinyal reboot...';
+
+  try {
+    const res = await fetch(`/admin/olts/${currentOltId}/onu/${encodeURIComponent(currentActionOnu)}/reboot`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      alert('Perintah reboot berhasil dikirim ke modem.');
+      closeModal('rebootOnuModal');
+      setTimeout(refreshCurrentOlt, 1500);
+    } else {
+      alert('Gagal reboot: ' + (data.error || 'Unknown error'));
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Ya, Reboot Sekarang';
+  }
+}
+
+function openRenameModal(id, currentName) {
+  currentActionOnu = id;
+  document.getElementById('renameOnuId').value = id;
+  document.getElementById('renameOnuNewName').value = currentName;
+  openModal('renameOnuModal');
+}
+
+async function executeRenameOnu() {
+  if (!currentOltId || !currentActionOnu) return;
+  const newName = document.getElementById('renameOnuNewName').value.trim();
+  if (!newName) {
+    alert('Nama alias tidak boleh kosong');
+    return;
+  }
+
+  const btn = document.getElementById('btnConfirmRename');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+
+  try {
+    const res = await fetch(`/admin/olts/${currentOltId}/onu/${encodeURIComponent(currentActionOnu)}/rename`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newName })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert('Nama alias modem berhasil diubah.');
+      closeModal('renameOnuModal');
+      refreshCurrentOlt();
+    } else {
+      alert('Gagal ubah nama: ' + (data.error || 'Unknown error'));
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Simpan Perubahan';
+  }
+}
+
+function exportOnuCsv() {
+  if (!allOnus || allOnus.length === 0) {
+    alert('Tidak ada data modem untuk diexport.');
+    return;
+  }
+
+  const headers = ['No', 'Port_ID', 'Pelanggan', 'Nama_Alias_OLT', 'PPPoE_User', 'Vendor', 'Model', 'Serial_Number', 'Status', 'TX_Power_dBm', 'RX_Power_dBm', 'Jarak_FO', 'Suhu', 'Voltase', 'Uptime'];
+  const rows = allOnus.map((o, idx) => [
+    idx + 1,
+    `"${o.id || o.index || ''}"`,
+    `"${(o.customer_name || '').replace(/"/g, '""')}"`,
+    `"${(o.name || '').replace(/"/g, '""')}"`,
+    `"${(o.pppoe_username || '').replace(/"/g, '""')}"`,
+    `"${o.vendor || 'FiberHome'}"`,
+    `"${o.model || 'HG6145D2'}"`,
+    `"${o.sn || ''}"`,
+    `"${o.status || ''}"`,
+    `"${o.tx || ''}"`,
+    `"${o.rx || ''}"`,
+    `"${o.distance || ''}"`,
+    `"${o.temp || ''}"`,
+    `"${o.voltage || ''}"`,
+    `"${o.uptime || ''}"`
+  ]);
+
+  const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `Daftar_Modem_OLT_${currentOltId}_${new Date().toISOString().slice(0,10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function runDiagnosticPrompt() {
+  const sel = document.getElementById('olt-selector');
+  if (!sel || !sel.value) return;
+  openModal('testSnmpModal');
+  const b = document.getElementById('testSnmpModalBody');
+  b.innerHTML = '<div class="text-center p-4"><div class="spinner-border text-primary"></div><div class="mt-2 text-muted small">Menguji respon SNMP OLT...</div></div>';
+  fetch(`/admin/olts/${sel.value}/test-snmp`, { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        b.innerHTML = `
+          <div class="text-center mb-3">
+            <div style="width:48px; height:48px; border-radius:50%; background:rgba(16,185,129,0.15); color:#10b981; display:inline-flex; align-items:center; justify-content:center; font-size:24px;">
+              <i class="bi bi-check2-circle"></i>
+            </div>
+            <h6 class="fw-bold mt-2 text-success">Koneksi SNMP v2c Berhasil</h6>
+            <span class="badge bs">Latency: ${data.latencyMs} ms</span>
+          </div>
+          <div class="diag-box">
+            <div class="diag-item"><span class="label">Host:</span><span class="val">${data.host}:${data.port}</span></div>
+            <div class="diag-item"><span class="label">System Name:</span><span class="val">${data.sysName || '-'}</span></div>
+            <div class="diag-item"><span class="label">System Uptime:</span><span class="val text-primary">${data.sysUpTime || '-'}</span></div>
+            <div class="diag-item" style="flex-direction:column; align-items:flex-start; gap:4px;">
+              <span class="label">Firmware:</span>
+              <span class="val" style="font-size:12px;">${data.sysDescr || '-'}</span>
+            </div>
+          </div>
+        `;
+      } else {
+        b.innerHTML = `
+          <div class="text-center mb-3 text-danger">
+            <i class="bi bi-x-circle" style="font-size:36px;"></i>
+            <h6 class="fw-bold mt-2">Koneksi SNMP Gagal</h6>
+            <p class="small text-muted">${data.error || 'Tidak ada respons SNMP.'}</p>
+          </div>
+        `;
+      }
+    })
+    .catch(e => {
+      b.innerHTML = `<div class="text-center text-danger p-3">${e.message}</div>`;
+    });
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const sel = document.getElementById('olt-selector');
+  const urlParams = new URLSearchParams(window.location.search);
+  const paramOltId = urlParams.get('olt_id');
+
+  if (paramOltId && sel) {
+    sel.value = paramOltId;
+  }
+  if (sel && !sel.value) {
+    const activeOpt = Array.from(sel.options).find(opt => opt.value && !opt.disabled);
+    if (activeOpt) sel.value = activeOpt.value;
+  }
+
+  if (sel && sel.value) {
+    handleOltChange();
+  }
+});
+</script>
+</body>
+</html>

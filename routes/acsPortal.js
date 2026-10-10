@@ -361,9 +361,13 @@ function getNestedValue(obj, path) {
         if (current && typeof current === 'object' && current.hasOwnProperty('_value')) {
             return current._value;
         }
-        // If it is an unpopulated TR-069 node (e.g. { _object: false, _writable: true }), return null
-        if (current && typeof current === 'object' && ('_object' in current || '_writable' in current)) {
+        // If it is an unpopulated TR-069 leaf node (e.g. { _object: false, _writable: true/false }), return null
+        if (current && typeof current === 'object' && current._object === false && !('_value' in current)) {
             return null;
+        }
+        if (current && typeof current === 'object' && ('_object' in current || '_writable' in current) && !('_value' in current)) {
+            const childKeys = Object.keys(current).filter(k => !k.startsWith('_'));
+            if (childKeys.length === 0) return null;
         }
         return current;
     } catch (e) {
@@ -1794,10 +1798,63 @@ router.get('/search', async (req, res, next) => {
     return router.handle(req, res, next);
 });
 
+// ── IN-MEMORY TELEMETRY CACHE (ISP ENTERPRISE PATTERN) ──
+const deviceDetailCache = new Map();
+const DEVICE_CACHE_TTL_MS = 3 * 60 * 1000; // 3 menit TTL
+
+function getCachedDeviceDetail(key) {
+    if (!key) return null;
+    const cleanKey = String(key).trim().toLowerCase();
+    const entry = deviceDetailCache.get(cleanKey);
+    if (!entry) return null;
+    if (Date.now() - entry.ts > DEVICE_CACHE_TTL_MS) {
+        deviceDetailCache.delete(cleanKey);
+        return null;
+    }
+    return entry.payload;
+}
+
+function setCachedDeviceDetail(keys, payload) {
+    const ts = Date.now();
+    if (deviceDetailCache.size > 500) {
+        const oldestKey = deviceDetailCache.keys().next().value;
+        deviceDetailCache.delete(oldestKey);
+    }
+    for (const k of keys) {
+        if (k) {
+            const cleanKey = String(k).trim().toLowerCase();
+            deviceDetailCache.set(cleanKey, { payload, ts });
+        }
+    }
+}
+
+function invalidateDeviceCache(deviceIdOrSn) {
+    if (!deviceIdOrSn) return;
+    const clean = String(deviceIdOrSn).trim().toLowerCase();
+    for (const k of Array.from(deviceDetailCache.keys())) {
+        if (k === clean || k.includes(clean) || clean.includes(k)) {
+            deviceDetailCache.delete(k);
+        }
+    }
+}
+
 router.get('/device/:deviceId', async (req, res) => {
     try {
         const acsId = String(req.query.acsId || req.query.acs || '').trim() || null;
         const deviceToken = String(req.params.deviceId || '');
+        const forceRefresh = req.query.refresh === '1' || req.query.nocache === '1';
+
+        // Check Fast In-Memory Cache first (ISP Pattern: instant < 20ms response)
+        if (!forceRefresh) {
+            const cachedPayload = getCachedDeviceDetail(deviceToken);
+            if (cachedPayload) {
+                return res.render('admin/acs_device', {
+                    ...cachedPayload,
+                    user: req.session,
+                    fromCache: true
+                });
+            }
+        }
 
         const servers = getACSServers(acsId);
         const targetServers = servers.length > 0 ? servers : getACSServers();
@@ -1877,7 +1934,7 @@ router.get('/device/:deviceId', async (req, res) => {
             } catch (e) {}
         }
 
-        const activeSessionsMap = await mikrotikSvc.getActivePppoeSessionsMap().catch(() => new Map());
+        const activeSessionsMap = await (mikrotikSvc.getAllActiveSessionsMap ? mikrotikSvc.getAllActiveSessionsMap() : mikrotikSvc.getActivePppoeSessionsMap()).catch(() => new Map());
 
         // 4. Fallback to customerDevice legacy data if raw deviceData not found
         if (!deviceData) {
@@ -1893,8 +1950,7 @@ router.get('/device/:deviceId', async (req, res) => {
                     rssi: null
                 })) : [];
 
-                return res.render('admin/acs_device', {
-                    user: req.session,
+                const fallbackPayload = {
                     device: {
                         id: legacyData.phone || deviceToken,
                         phone: legacyData.phone || deviceToken,
@@ -1935,10 +1991,20 @@ router.get('/device/:deviceId', async (req, res) => {
                         ssid: legacyData.ssid24 || legacyData.ssid || '-'
                     },
                     clients,
+                    clients24: clients.filter(c => c.band === '2.4GHz'),
+                    clients5: clients.filter(c => c.band === '5GHz'),
+                    clientsLAN: clients.filter(c => c.band === 'LAN' || (!c.isWiFi && c.band !== '2.4GHz' && c.band !== '5GHz')),
                     isOnline,
                     acsId: selectedServer.id,
                     acsName: selectedServer.name,
                     currentPage: 'acs_pro'
+                };
+                setCachedDeviceDetail([deviceToken, legacyData.serialNumber, legacyData.pppoeUsername], fallbackPayload);
+
+                return res.render('admin/acs_device', {
+                    ...fallbackPayload,
+                    user: req.session,
+                    fromCache: false
                 });
             }
 
@@ -2063,7 +2129,10 @@ router.get('/device/:deviceId', async (req, res) => {
         const hwVersion = getNestedValue(deviceData, 'InternetGatewayDevice.DeviceInfo.HardwareVersion') || 
                           getNestedValue(deviceData, 'Device.DeviceInfo.HardwareVersion') || '-';
 
-        let rawClients = await getLANHosts(deviceData._id, selectedServer);
+        let rawClients = parseLANHostsFromDevice(deviceData, deviceData);
+        if ((!rawClients || rawClients.length === 0) && selectedServer?.id !== 'builtin') {
+            rawClients = await getLANHosts(deviceData._id, selectedServer);
+        }
         if ((!rawClients || rawClients.length === 0) && deviceData) {
             try {
                 const activeWifiMap = new Map();
@@ -2238,8 +2307,7 @@ router.get('/device/:deviceId', async (req, res) => {
             };
         }
 
-        res.render('admin/acs_device', {
-            user: req.session,
+        const renderPayload = {
             device: {
                 id: deviceData._id,
                 phone: deviceData._id,
@@ -2288,6 +2356,20 @@ router.get('/device/:deviceId', async (req, res) => {
             acsId: selectedServer.id,
             acsName: selectedServer.name,
             currentPage: 'acs_pro'
+        };
+
+        // Cache the snapshot (FiberHome fast reload / ISP pattern)
+        setCachedDeviceDetail([
+            deviceToken,
+            deviceData._id,
+            deviceData._deviceId?._SerialNumber,
+            pppoeUser
+        ], renderPayload);
+
+        res.render('admin/acs_device', {
+            ...renderPayload,
+            user: req.session,
+            fromCache: false
         });
     } catch (err) {
         console.error('Error loading ACS device detail:', err);
@@ -2588,12 +2670,14 @@ router.post('/api/remote-enable/:deviceId', requireAdmin, async (req, res) => {
 router.post('/api/reboot/:deviceId', requireAdmin, async (req, res) => {
     try {
         const { acsId } = req.body;
+        const deviceId = String(req.params.deviceId || '');
+        invalidateDeviceCache(deviceId);
+
         const servers = getACSServers(acsId);
         if (servers.length === 0) return res.json({ success: false, message: 'ACS not found' });
         
         const server = servers[0];
         const baseUrl = normalizeUrl(server.url);
-        const deviceId = String(req.params.deviceId || '');
         
         await axios.post(
             `${baseUrl}/devices/${encodeURIComponent(deviceId)}/tasks`,
@@ -2610,6 +2694,7 @@ router.post('/api/reboot/:deviceId', requireAdmin, async (req, res) => {
 router.post('/api/refresh/:deviceId', requireAdmin, async (req, res) => {
     try {
         const deviceId = String(req.params.deviceId || '');
+        invalidateDeviceCache(deviceId);
         const result = await customerDevice.requestRefresh(deviceId, {
             type: 'admin',
             id: req.session?.adminId || null,
@@ -2633,6 +2718,7 @@ router.post('/api/bulk/refresh', requireAdmin, async (req, res) => {
         
         const promises = devices.map(async (d) => {
             const deviceId = String(d.id || '');
+            invalidateDeviceCache(deviceId);
             const result = await customerDevice.requestRefresh(deviceId, {
                 type: 'admin',
                 id: req.session?.adminId || null,
@@ -3352,5 +3438,7 @@ router.get('/search', requireAdminSession, async (req, res) => {
     if (acs) params.append('acs', acs);
     res.redirect(`/admin/acs?${params.toString()}`);
 });
+
+router.invalidateDeviceCache = invalidateDeviceCache;
 
 module.exports = router;

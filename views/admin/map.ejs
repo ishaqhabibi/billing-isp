@@ -1,29 +1,270 @@
 <!DOCTYPE html>
-<html lang="<%= lang || 'id' %>">
+<html lang="<%= (typeof lang !== 'undefined' && lang) ? lang : 'id' %>">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title><%= title %> | <%= company %></title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/admin.css?v=2.7">
+  <script src="/js/theme.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.Editable/1.2.0/Leaflet.Editable.js"></script>
   <style>
-    /* Main Layout & Map */
-    #map { height: calc(100vh - 270px); min-height: 480px; border-radius: 12px; margin-top: 10px; z-index: 1; background: var(--bg2); border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
-    
-    /* Stats Cards on Map (2 Cards: ONU Aktif & ONU Tidak Aktif) */
-    .map-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px; }
-    @media (max-width: 600px) { .map-stats { grid-template-columns: 1fr; } }
-    .msc { padding: 12px 16px; border-radius: 12px; background: var(--bg2); border: 1px solid var(--border); display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .msc-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+    /* Topbar Modernization */
+    .topbar .tb-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Executive ODN Telemetry & Status HUD */
+    .odn-hud-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 1100px) {
+      .odn-hud-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .odn-hud-grid { grid-template-columns: 1fr; }
+    }
+    .odn-hud-card {
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .odn-hud-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
+    .odn-hud-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
     .msc-p { background: rgba(59,130,246,0.15); color: #3b82f6; }
     .msc-s { background: rgba(16,185,129,0.15); color: #10b981; }
     .msc-d { background: rgba(239,68,68,0.15); color: #ef4444; }
     .msc-w { background: rgba(245,158,11,0.15); color: #f59e0b; }
     .msc-v { background: rgba(139,92,246,0.15); color: #8b5cf6; }
-    .msc-info .val { font-size: 20px; font-weight: 800; line-height: 1.2; color: var(--text); }
-    .msc-info .lbl { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+    .odn-hud-info { min-width: 0; flex: 1; }
+    .odn-hud-val {
+      font-size: 20px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1.2;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .odn-hud-lbl {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 2px;
+    }
+    .odn-hud-sub {
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 2px;
+    }
+
+    /* Map Viewport & Controls */
+    .map-viewport-wrapper {
+      position: relative;
+      margin-top: 10px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+      background: var(--bg2);
+    }
+    #map {
+      height: calc(100vh - 290px);
+      min-height: 520px;
+      width: 100%;
+      border-radius: 14px;
+      z-index: 1;
+      background: var(--bg2);
+    }
+
+    /* Floating ODN Map Legend */
+    .map-floating-legend {
+      position: absolute;
+      bottom: 22px;
+      right: 16px;
+      z-index: 800;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #f8fafc;
+      border-radius: 10px;
+      padding: 10px 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      font-size: 11px;
+      transition: all 0.25s ease;
+      min-width: 220px;
+      user-select: none;
+    }
+    html[data-theme="light"] .map-floating-legend {
+      background: rgba(255, 255, 255, 0.92);
+      color: #1e293b;
+      border-color: rgba(0, 0, 0, 0.15);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    .map-legend-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-size: 10.5px;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      cursor: pointer;
+    }
+    html[data-theme="light"] .map-legend-head {
+      border-bottom-color: rgba(0,0,0,0.08);
+    }
+    .map-legend-items {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+    }
+    .legend-badge {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+    .legend-line {
+      width: 18px;
+      height: 3px;
+      border-radius: 2px;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .map-floating-legend.collapsed .map-legend-items {
+      display: none;
+    }
+    .map-floating-legend.collapsed {
+      padding: 6px 12px;
+      min-width: auto;
+    }
+    .map-floating-legend.collapsed .map-legend-head {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    /* Table Client-side Pagination Bar */
+    .table-pagination-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--bg3);
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      border-bottom-left-radius: 10px;
+      border-bottom-right-radius: 10px;
+    }
+    .pagination-info {
+      font-weight: 600;
+      color: var(--text);
+    }
+    .pagination-info strong {
+      color: var(--primary);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .pagination-size-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+    }
+    .table-per-page-select {
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      font-size: 11.5px;
+      font-weight: 700;
+      outline: none;
+      cursor: pointer;
+    }
+    .pagination-nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .pg-btn {
+      min-width: 28px;
+      height: 28px;
+      padding: 0 6px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .pg-btn:hover:not(:disabled) {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--bg);
+    }
+    .pg-btn.active {
+      background: var(--primary) !important;
+      border-color: var(--primary) !important;
+      color: #ffffff !important;
+      box-shadow: 0 2px 6px var(--pdim);
+    }
+    .pg-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
 
     /* Map Search & Control Toolbar */
     .map-toolbar {
@@ -284,19 +525,19 @@
     .onu-marker-name {
       font-weight: 800;
       font-size: 11px;
-      color: #ffffff;
-      text-shadow: 
-        -1.5px -1.5px 0 #0f172a,  
-         1.5px -1.5px 0 #0f172a,
-        -1.5px  1.5px 0 #0f172a,
-         1.5px  1.5px 0 #0f172a,
-         0 2px 5px rgba(0,0,0,0.95);
+      color: #ffffff !important;
+      background: rgba(15, 23, 42, 0.94) !important;
+      border: 1px solid rgba(16, 185, 129, 0.75) !important;
+      padding: 2.5px 8px;
+      border-radius: 6px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.65);
       letter-spacing: 0.2px;
-      line-height: 1.1;
-      max-width: 130px;
+      line-height: 1.2;
+      max-width: 220px;
       overflow: hidden;
       text-overflow: ellipsis;
       display: inline-block;
+      text-shadow: none;
     }
     .hide-marker-labels .onu-marker-label,
     .hide-marker-labels .odp-marker-label {
@@ -347,19 +588,19 @@
     .odp-marker-name {
       font-weight: 800;
       font-size: 11px;
-      color: #fde047;
-      text-shadow: 
-        -1.5px -1.5px 0 #0f172a,  
-         1.5px -1.5px 0 #0f172a,
-        -1.5px  1.5px 0 #0f172a,
-         1.5px  1.5px 0 #0f172a,
-         0 2px 5px rgba(0,0,0,0.95);
+      color: #fef08a !important;
+      background: rgba(15, 23, 42, 0.94) !important;
+      border: 1px solid rgba(245, 158, 11, 0.8) !important;
+      padding: 2.5px 8px;
+      border-radius: 6px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.65);
       letter-spacing: 0.2px;
-      line-height: 1.1;
-      max-width: 130px;
+      line-height: 1.2;
+      max-width: 220px;
       overflow: hidden;
       text-overflow: ellipsis;
       display: inline-block;
+      text-shadow: none;
     }
 
     /* ODC Marker Node */
@@ -406,19 +647,19 @@
     .odc-marker-name {
       font-weight: 800;
       font-size: 11px;
-      color: #c084fc;
-      text-shadow: 
-        -1.5px -1.5px 0 #0f172a,  
-         1.5px -1.5px 0 #0f172a,
-        -1.5px  1.5px 0 #0f172a,
-         1.5px  1.5px 0 #0f172a,
-         0 2px 5px rgba(0,0,0,0.95);
+      color: #f3e8ff !important;
+      background: rgba(15, 23, 42, 0.94) !important;
+      border: 1px solid rgba(139, 92, 246, 0.8) !important;
+      padding: 2.5px 8px;
+      border-radius: 6px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.65);
       letter-spacing: 0.2px;
-      line-height: 1.1;
-      max-width: 140px;
+      line-height: 1.2;
+      max-width: 240px;
       overflow: hidden;
       text-overflow: ellipsis;
       display: inline-block;
+      text-shadow: none;
     }
     .hide-marker-labels .odc-marker-label {
       display: none !important;
@@ -468,19 +709,19 @@
     .olt-marker-name {
       font-weight: 900;
       font-size: 11.5px;
-      color: #38bdf8;
-      text-shadow: 
-        -1.5px -1.5px 0 #0f172a,  
-         1.5px -1.5px 0 #0f172a,
-        -1.5px  1.5px 0 #0f172a,
-         1.5px  1.5px 0 #0f172a,
-         0 2px 5px rgba(0,0,0,0.95);
+      color: #ffffff !important;
+      background: #0284c7 !important;
+      border: 1.5px solid #ffffff !important;
+      padding: 3px 10px;
+      border-radius: 6px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.75);
       letter-spacing: 0.3px;
-      line-height: 1.1;
-      max-width: 150px;
+      line-height: 1.2;
+      max-width: 280px;
       overflow: hidden;
       text-overflow: ellipsis;
       display: inline-block;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
     }
     .hide-marker-labels .olt-marker-label {
       display: none !important;
@@ -766,12 +1007,167 @@
       background: #f8fafc;
     }
 
-    /* Leaflet Popups Dark & Light Integration */
-    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+    /* Leaflet Popups Dark & Light Integration & Button Text Contrast */
+    .leaflet-popup-content-wrapper {
       background: var(--bg2) !important;
       color: var(--text) !important;
       border: 1px solid var(--border) !important;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.35) !important;
+      border-radius: 14px !important;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.35) !important;
+    }
+    .leaflet-popup-tip {
+      background: var(--bg2) !important;
+      border: 1px solid var(--border) !important;
+    }
+    .leaflet-popup-content {
+      margin: 14px 16px !important;
+      color: var(--text) !important;
+      font-size: 12.5px !important;
+      line-height: 1.5 !important;
+    }
+    .leaflet-popup-content a {
+      color: var(--primary);
+    }
+    .leaflet-popup-content .popup-actions {
+      display: flex !important;
+      gap: 6px !important;
+      flex-wrap: wrap !important;
+      margin-top: 10px !important;
+    }
+    .leaflet-popup-content .btn,
+    .leaflet-popup-content-wrapper .btn {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 4px !important;
+      padding: 6px 12px !important;
+      border-radius: 7px !important;
+      font-size: 11.5px !important;
+      font-weight: 700 !important;
+      text-decoration: none !important;
+      line-height: 1.2 !important;
+      cursor: pointer !important;
+      transition: all 0.15s ease !important;
+    }
+    /* Primary button in popup (e.g. Manajemen OLT, Jalur) - Guaranteed White Text & Icons */
+    .leaflet-popup-content-wrapper a.btn-p,
+    .leaflet-popup-content-wrapper button.btn-p,
+    .leaflet-popup-content a.btn-p,
+    .leaflet-popup-content button.btn-p,
+    .leaflet-container a.btn-p,
+    .leaflet-container button.btn-p,
+    .leaflet-popup-content a.btn-p *,
+    .leaflet-popup-content button.btn-p *,
+    .leaflet-container a.btn-p *,
+    .leaflet-container button.btn-p * {
+      background-color: #0284c7 !important;
+      color: #ffffff !important;
+      fill: #ffffff !important;
+      border-color: #0284c7 !important;
+    }
+    .leaflet-popup-content a.btn-p:hover,
+    .leaflet-popup-content a.btn-p:focus,
+    .leaflet-popup-content button.btn-p:hover,
+    .leaflet-container a.btn-p:hover,
+    .leaflet-container button.btn-p:hover {
+      background-color: #0369a1 !important;
+      color: #ffffff !important;
+    }
+    /* Secondary/Gray button in popup */
+    .leaflet-popup-content-wrapper a.btn-g,
+    .leaflet-popup-content-wrapper button.btn-g,
+    .leaflet-popup-content a.btn-g,
+    .leaflet-popup-content button.btn-g,
+    .leaflet-container a.btn-g,
+    .leaflet-container button.btn-g,
+    .leaflet-popup-content a.btn-g *,
+    .leaflet-popup-content button.btn-g *,
+    .leaflet-container a.btn-g *,
+    .leaflet-container button.btn-g * {
+      background: var(--bg3) !important;
+      color: var(--text) !important;
+      border: 1px solid var(--border) !important;
+    }
+    .leaflet-popup-content-wrapper a.btn-g:hover,
+    .leaflet-popup-content a.btn-g:hover {
+      background: var(--bg) !important;
+      color: var(--text) !important;
+    }
+    /* Warning button in popup */
+    .leaflet-popup-content-wrapper a.btn-warning,
+    .leaflet-popup-content-wrapper button.btn-warning,
+    .leaflet-popup-content a.btn-warning,
+    .leaflet-popup-content button.btn-warning,
+    .leaflet-container a.btn-warning,
+    .leaflet-container button.btn-warning,
+    .leaflet-popup-content a.btn-warning *,
+    .leaflet-popup-content button.btn-warning *,
+    .leaflet-container a.btn-warning *,
+    .leaflet-container button.btn-warning * {
+      background: #f59e0b !important;
+      color: #0f172a !important;
+      border: 1px solid #d97706 !important;
+      font-weight: 800 !important;
+    }
+    .leaflet-popup-content-wrapper a.btn-warning:hover,
+    .leaflet-popup-content a.btn-warning:hover {
+      background: #d97706 !important;
+      color: #ffffff !important;
+    }
+    /* WhatsApp button in popup */
+    .leaflet-popup-content-wrapper a.btn-wa,
+    .leaflet-popup-content-wrapper button.btn-wa,
+    .leaflet-popup-content a.btn-wa,
+    .leaflet-popup-content button.btn-wa,
+    .leaflet-container a.btn-wa,
+    .leaflet-container button.btn-wa,
+    .leaflet-popup-content a.btn-wa *,
+    .leaflet-popup-content button.btn-wa *,
+    .leaflet-container a.btn-wa *,
+    .leaflet-container button.btn-wa * {
+      background: #16a34a !important;
+      color: #ffffff !important;
+      fill: #ffffff !important;
+      border: 1px solid #15803d !important;
+      font-weight: 800 !important;
+    }
+    /* Info button in popup */
+    .leaflet-popup-content-wrapper a.btn-info,
+    .leaflet-popup-content-wrapper button.btn-info,
+    .leaflet-popup-content a.btn-info,
+    .leaflet-popup-content button.btn-info,
+    .leaflet-container a.btn-info,
+    .leaflet-container button.btn-info,
+    .leaflet-popup-content a.btn-info *,
+    .leaflet-popup-content button.btn-info *,
+    .leaflet-container a.btn-info *,
+    .leaflet-container button.btn-info * {
+      background: #0ea5e9 !important;
+      color: #ffffff !important;
+      border: 1px solid #0284c7 !important;
+    }
+    /* Danger button in popup */
+    .leaflet-popup-content-wrapper a.btn-d,
+    .leaflet-popup-content-wrapper button.btn-d,
+    .leaflet-popup-content a.btn-d,
+    .leaflet-popup-content button.btn-d,
+    .leaflet-container a.btn-d,
+    .leaflet-container button.btn-d,
+    .leaflet-popup-content a.btn-d *,
+    .leaflet-popup-content button.btn-d *,
+    .leaflet-container a.btn-d *,
+    .leaflet-container button.btn-d * {
+      background: #ef4444 !important;
+      color: #ffffff !important;
+      border: 1px solid #dc2626 !important;
+    }
+    /* Outline secondary button in popup */
+    .leaflet-popup-content-wrapper .btn-outline-secondary,
+    .leaflet-popup-content .btn-outline-secondary,
+    .leaflet-container .btn-outline-secondary {
+      background: transparent !important;
+      color: var(--text) !important;
+      border: 1px solid var(--border) !important;
     }
 
     /* Modal Picker Maps */
@@ -802,16 +1198,25 @@
   <div class="topbar">
     <div class="tb-title">
       <button class="hb-menu" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
-      <i class="bi bi-map"></i>
-      <span><%= title %></span>
+      <i class="bi bi-geo-alt-fill text-primary" style="font-size: 20px;"></i>
+      <div>
+        <div style="font-weight: 800; font-size: 16px; line-height: 1.2;"><%= t('admin.map.title', 'Peta Topologi ODN & FTTH') %></div>
+        <div style="font-size: 11.5px; color: var(--muted); font-weight: 500;">Geospasial Distribusi Jaringan & Monitoring Redaman Optik</div>
+      </div>
     </div>
-    <div class="tb-right" style="display: flex; gap: 8px; flex-wrap: wrap;">
-      <button class="btn btn-sm" id="btnSyncGenieacs" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; border: 1px solid #0284c7; font-weight: 700;" onclick="triggerGenieacsOpticalSync()" title="Sinkronisasi redaman Rx dari GenieACS TR-069">
-        <i class="bi bi-broadcast-pin"></i> 📡 Sync Redaman GenieACS
+    <div class="tb-right" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+      <button class="btn btn-sm" id="btnSyncGenieacs" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; border: 1px solid #0284c7; font-weight: 700; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);" onclick="triggerGenieacsOpticalSync()" title="Sinkronisasi redaman Rx dari ACS TR-069">
+        <i class="bi bi-broadcast-pin me-1"></i> Sinkron Redaman ACS
       </button>
-      <button class="btn btn-sm" style="background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #0284c7; color:#fff; font-weight: 700;" onclick="openAddOltModal()"><i class="bi bi-hdd-rack-fill"></i> Tambah OLT</button>
-      <button class="btn btn-sm" style="background:#8b5cf6; border:1px solid #7c3aed; color:#fff;" onclick="openAddOdcModal()"><i class="bi bi-diagram-3-fill"></i> Tambah ODC</button>
-      <button class="btn btn-p btn-sm" onclick="openAddOdpModal()"><i class="bi bi-box-seam-fill"></i> <%= t('admin.map.add_odp', 'Tambah ODP') %></button>
+      <button class="btn btn-sm" style="background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #0284c7; color:#fff; font-weight: 700;" onclick="openAddOltModal()">
+        <i class="bi bi-hdd-rack-fill me-1"></i> Tambah OLT
+      </button>
+      <button class="btn btn-sm" style="background:#8b5cf6; border:1px solid #7c3aed; color:#fff; font-weight: 700;" onclick="openAddOdcModal()">
+        <i class="bi bi-diagram-3-fill me-1"></i> Tambah ODC
+      </button>
+      <button class="btn btn-p btn-sm" style="font-weight: 700;" onclick="openAddOdpModal()">
+        <i class="bi bi-box-seam-fill me-1"></i> Tambah ODP
+      </button>
     </div>
   </div>
 
@@ -820,34 +1225,61 @@
       <div class="alert alert-<%= msg.type==='error'?'d':'s' %>"><%= msg.text %></div>
     <% } %>
 
-    <!-- Quick Stats FTTH Telemetry: 4 Cards -->
-    <div class="map-stats" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
-      <div class="msc">
-        <div class="msc-icon msc-s" style="box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);"><i class="bi bi-router-fill"></i></div>
-        <div class="msc-info">
-          <div class="val text-success"><%= customers.filter(c => c.status === 'active').length %></div>
-          <div class="lbl">ONU Aktif (Online)</div>
+    <!-- Executive ODN Telemetry & Status HUD: 4 Cards -->
+    <div class="odn-hud-grid">
+      <div class="odn-hud-card">
+        <div class="odn-hud-icon msc-s" style="box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);">
+          <i class="bi bi-router-fill"></i>
+        </div>
+        <div class="odn-hud-info">
+          <div class="odn-hud-lbl">ONU Aktif (Online)</div>
+          <div class="odn-hud-val text-success"><%= customers.filter(c => c.status === 'active').length %></div>
+          <div class="odn-hud-sub" style="color: #10b981;">
+            <i class="bi bi-broadcast"></i> Terhubung ke Jaringan
+          </div>
         </div>
       </div>
-      <div class="msc">
-        <div class="msc-icon msc-d"><i class="bi bi-slash-circle-fill"></i></div>
-        <div class="msc-info">
-          <div class="val text-danger"><%= customers.filter(c => c.status !== 'active').length %></div>
-          <div class="lbl">ONU Isolir / Nonaktif</div>
+
+      <div class="odn-hud-card">
+        <div class="odn-hud-icon msc-d" style="box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);">
+          <i class="bi bi-slash-circle-fill"></i>
+        </div>
+        <div class="odn-hud-info">
+          <div class="odn-hud-lbl">ONU Isolir / Nonaktif</div>
+          <div class="odn-hud-val text-danger"><%= customers.filter(c => c.status !== 'active').length %></div>
+          <div class="odn-hud-sub" style="color: #ef4444;">
+            <i class="bi bi-pause-circle"></i> Layanan Dihentikan
+          </div>
         </div>
       </div>
-      <div class="msc">
-        <div class="msc-icon" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9;"><i class="bi bi-diagram-3-fill"></i></div>
-        <div class="msc-info">
-          <div class="val" style="color: #0ea5e9;"><%= (typeof olts !== 'undefined' && olts ? olts.length : 0) %> OLT • <%= (typeof odcs !== 'undefined' && odcs ? odcs.length : 0) %> ODC • <%= odps.length %> ODP</div>
-          <div class="lbl">Topologi ODN Jaringan</div>
+
+      <div class="odn-hud-card">
+        <div class="odn-hud-icon" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; box-shadow: 0 0 10px rgba(14, 165, 233, 0.25);">
+          <i class="bi bi-diagram-3-fill"></i>
+        </div>
+        <div class="odn-hud-info">
+          <div class="odn-hud-lbl">Topologi ODN Fisik</div>
+          <div class="odn-hud-val" style="color: #0ea5e9; font-size: 15px; font-weight: 700;">
+            <%= (typeof olts !== 'undefined' && olts ? olts.length : 0) %> OLT • <%= (typeof odcs !== 'undefined' && odcs ? odcs.length : 0) %> ODC • <%= odps.length %> ODP
+          </div>
+          <div class="odn-hud-sub" style="color: #0284c7;">
+            <i class="bi bi-layers-half"></i> Sentral ➔ Feeder ➔ Distribusi
+          </div>
         </div>
       </div>
-      <div class="msc">
-        <div class="msc-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;"><i class="bi bi-exclamation-octagon-fill"></i></div>
-        <div class="msc-info">
-          <div class="val text-danger"><%= customers.filter(c => c.optical_status === 'critical' || (c.optical_rx_power && Number(c.optical_rx_power) <= -27)).length %></div>
-          <div class="lbl">Redaman Kritis (&le; -27 dBm)</div>
+
+      <div class="odn-hud-card">
+        <div class="odn-hud-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);">
+          <i class="bi bi-exclamation-octagon-fill"></i>
+        </div>
+        <div class="odn-hud-info">
+          <div class="odn-hud-lbl">Redaman Kritis (&le; -27 dBm)</div>
+          <div class="odn-hud-val text-danger">
+            <%= customers.filter(c => c.optical_status === 'critical' || (c.optical_rx_power && Number(c.optical_rx_power) <= -27)).length %>
+          </div>
+          <div class="odn-hud-sub" style="color: #f43f5e;">
+            <i class="bi bi-activity"></i> Potensi Gangguan Serat
+          </div>
         </div>
       </div>
     </div>
@@ -874,7 +1306,7 @@
           id="mapGlobalSearch" 
           class="map-search-input" 
           type="text" 
-          placeholder="Cari nama pelanggan, PPPoE, No HP, SN ONU, alamat, ODC, ODP..."
+          placeholder="Cari pelanggan, PPPoE, No HP, SN ONU, alamat, ODC, ODP... (Ctrl+K)"
           autocomplete="off"
         >
         <button id="mapSearchClearBtn" class="map-search-clear" onclick="clearMapSearch()" title="Hapus pencarian">&times;</button>
@@ -883,7 +1315,7 @@
         <div id="mapSearchDropdown" class="map-search-dropdown">
           <div class="ms-header">
             <span id="msHeaderCount">Hasil Pencarian</span>
-            <span><kbd style="background:#e2e8f0; padding:1px 4px; border-radius:4px; font-size:10px;">ESC</kbd> tutup</span>
+            <span><kbd style="background:var(--bg); border:1px solid var(--border); padding:2px 5px; border-radius:4px; font-size:10px;">ESC</kbd> tutup</span>
           </div>
           <div id="msResultsList"></div>
         </div>
@@ -921,16 +1353,60 @@
         <button type="button" class="map-pill-btn active" id="pillLabels" onclick="toggleMarkerLabels()" title="Sembunyikan/Tampilkan label nama di marker">
           <i class="bi bi-tag-fill text-primary"></i> <span id="labelToggleText">Label: ON</span>
         </button>
-        <button type="button" class="map-pill-btn" onclick="fitAllMarkers()" title="Pusatkan peta ke semua titik">
+        <button type="button" class="map-pill-btn" onclick="fitAllMarkers()" title="Pusatkan peta ke seluruh titik entitas">
           <i class="bi bi-arrows-fullscreen"></i> Fit Peta
         </button>
       </div>
     </div>
 
-    <!-- The Map Container -->
-    <div id="map"></div>
+    <!-- Map Viewport Wrapper with Floating ODN Legend -->
+    <div class="map-viewport-wrapper">
+      <div id="map"></div>
 
-    <!-- Bottom Tabbed Panel: ONU Pelanggan, ODP & ODC -->
+      <!-- Floating ODN Map Legend -->
+      <div class="map-floating-legend" id="mapOdnLegend">
+        <div class="map-legend-head" onclick="toggleOdnLegend()" title="Klik untuk meminimalkan / memperluas legenda topologi">
+          <span><i class="bi bi-layers-half me-1 text-primary"></i> Legenda Topologi ODN</span>
+          <i class="bi bi-chevron-down" id="legendChevron"></i>
+        </div>
+        <div class="map-legend-items">
+          <div class="legend-row">
+            <span class="legend-badge" style="background: #0284c7; border: 1px solid #38bdf8;"></span>
+            <span>Sentral OLT (NOC)</span>
+          </div>
+          <div class="legend-row">
+            <span class="legend-badge" style="background: #8b5cf6; border: 1px solid #c084fc;"></span>
+            <span>Kabinet Feeder (ODC)</span>
+          </div>
+          <div class="legend-row">
+            <span class="legend-badge" style="background: #f59e0b; border: 1px solid #fde047;"></span>
+            <span>Kotak Distribusi (ODP)</span>
+          </div>
+          <div class="legend-row">
+            <span class="legend-badge" style="background: #10b981; border: 1px solid #6ee7b7; border-radius: 50%;"></span>
+            <span>ONU Pelanggan Aktif</span>
+          </div>
+          <div class="legend-row">
+            <span class="legend-badge" style="background: #ef4444; border: 1px solid #fca5a5; border-radius: 50%;"></span>
+            <span>ONU Pelanggan Isolir</span>
+          </div>
+          <div class="legend-row">
+            <span class="legend-line" style="background: #0ea5e9;"></span>
+            <span>Kabel Feeder OLT ➔ ODC</span>
+          </div>
+          <div class="legend-row">
+            <span class="legend-line" style="background: #8b5cf6;"></span>
+            <span>Kabel Distribusi ODC ➔ ODP</span>
+          </div>
+          <div class="legend-row">
+            <span class="legend-line" style="background: #10b981;"></span>
+            <span>Drop Cable ke Pelanggan</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Tabbed Panel: ONU Pelanggan, ODP, ODC & OLT -->
     <div class="data-tabs-panel">
       <div class="data-tabs-nav">
         <button type="button" class="tab-btn active" onclick="switchDataTab('onu-tab', this)">
@@ -938,20 +1414,20 @@
           <span>Daftar ONU Pelanggan</span>
           <span class="tab-badge"><%= customers.length %></span>
         </button>
-        <button type="button" class="tab-btn" onclick="switchDataTab('olt-tab', this)">
-          <i class="bi bi-hdd-rack-fill" style="color: #0ea5e9;"></i>
-          <span>Daftar OLT (Central)</span>
-          <span class="tab-badge"><%= (typeof olts !== 'undefined' && olts) ? olts.length : 0 %></span>
-        </button>
         <button type="button" class="tab-btn" onclick="switchDataTab('odp-tab', this)">
-          <i class="bi bi-box-seam-fill"></i>
-          <span>Daftar ODP (Box)</span>
+          <i class="bi bi-box-seam-fill text-warning"></i>
+          <span>Kotak Distribusi (ODP)</span>
           <span class="tab-badge"><%= odps.length %></span>
         </button>
         <button type="button" class="tab-btn" onclick="switchDataTab('odc-tab', this)">
           <i class="bi bi-diagram-3-fill" style="color: #8b5cf6;"></i>
-          <span>Daftar ODC (Cabinet)</span>
+          <span>Kabinet Feeder (ODC)</span>
           <span class="tab-badge"><%= (typeof odcs !== 'undefined' && odcs) ? odcs.length : 0 %></span>
+        </button>
+        <button type="button" class="tab-btn" onclick="switchDataTab('olt-tab', this)">
+          <i class="bi bi-hdd-rack-fill" style="color: #0ea5e9;"></i>
+          <span>Sentral OLT (Pusat)</span>
+          <span class="tab-badge"><%= (typeof olts !== 'undefined' && olts) ? olts.length : 0 %></span>
         </button>
       </div>
 
@@ -1077,6 +1553,7 @@
             </tbody>
           </table>
         </div>
+        <div class="table-pagination-bar" id="custPaginationBar"></div>
       </div>
 
       <!-- TAB 2: DAFTAR ODP -->
@@ -1159,6 +1636,7 @@
             </tbody>
           </table>
         </div>
+        <div class="table-pagination-bar" id="odpPaginationBar"></div>
       </div>
 
       <!-- TAB 3: DAFTAR ODC -->
@@ -1228,6 +1706,7 @@
             </tbody>
           </table>
         </div>
+        <div class="table-pagination-bar" id="odcPaginationBar"></div>
       </div>
 
       <!-- TAB 4: PERANGKAT OLT PUSAT -->
@@ -1316,6 +1795,7 @@
             </tbody>
           </table>
         </div>
+        <div class="table-pagination-bar" id="oltPaginationBar"></div>
       </div>
     </div>
 
@@ -2158,19 +2638,19 @@
             </div>
             <div>
               <div style="font-weight:900; font-size:14px; color:var(--text); line-height:1.2;">${escapeHtml(olt.name)}</div>
-              <div style="font-size:11px; font-weight:700; color:#0284c7;">PERANGKAT OLT PUSAT (NOC)</div>
+              <div style="font-size:11px; font-weight:700; color:var(--primary);">PERANGKAT OLT PUSAT (NOC)</div>
             </div>
           </div>
-          <div style="font-size:12px; margin-bottom:4px;"><strong>IP / Host:</strong> <code style="color:#0284c7; font-weight:700;">${escapeHtml(olt.host || '-')}</code></div>
-          <div style="font-size:12px; margin-bottom:4px;"><strong>Brand / Vendor:</strong> <span class="badge" style="background:rgba(2,132,199,0.15); color:#0284c7;">${escapeHtml((olt.brand || 'ZTE').toUpperCase())}</span></div>
+          <div style="font-size:12px; margin-bottom:4px;"><strong>IP / Host:</strong> <code style="color:var(--primary); font-weight:700; background:rgba(2,132,199,0.1); padding:2px 6px; border-radius:4px;">${escapeHtml(olt.host || '-')}</code></div>
+          <div style="font-size:12px; margin-bottom:4px;"><strong>Brand / Vendor:</strong> <span class="badge" style="background:rgba(2,132,199,0.18); color:var(--primary); font-weight:800; border:1px solid rgba(2,132,199,0.3); padding:2px 6px; border-radius:4px;">${escapeHtml((olt.brand || 'ZTE').toUpperCase())}</span></div>
           <div style="font-size:12px; margin-bottom:4px;"><strong>Status:</strong> <span class="badge ${olt.is_active ? 'bs' : 'bd'}">${olt.is_active ? 'Aktif' : 'Nonaktif'}</span></div>
-          <div style="font-size:12px; margin-bottom:4px;"><strong>ODC Terhubung:</strong> <span class="badge" style="background:#8b5cf6; color:#fff; padding:2px 6px; border-radius:4px; font-size:11px;">${connectedOdcs.length} ODC</span></div>
+          <div style="font-size:12px; margin-bottom:4px;"><strong>ODC Terhubung:</strong> <span class="badge" style="background:#8b5cf6; color:#fff; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:700;">${connectedOdcs.length} ODC</span></div>
           ${olt.description ? `<div style="font-size:12px; margin-bottom:4px;"><strong>${I18N.popupDescription}:</strong> ${escapeHtml(olt.description)}</div>` : ''}
           <div style="font-size:11.5px; font-family:monospace; margin-bottom:8px; color:var(--muted);"><strong>${I18N.popupLocation}:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
-          <div class="popup-actions" style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
-            <button class="btn btn-sm btn-g" onclick="focusOlt(${olt.id})"><i class="bi bi-geo-alt me-1"></i>Fokus</button>
-            <button class="btn btn-sm btn-warning" onclick="openSetOltLocationModal(${olt.id}, '${escapeHtml(olt.name)}', '${lat}', '${lng}')"><i class="bi bi-pin-map me-1"></i>Ubah Lokasi</button>
-            <a href="/admin/olts" class="btn btn-sm btn-p"><i class="bi bi-gear me-1"></i>Manajemen OLT</a>
+          <div class="popup-actions" style="margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-sm btn-g" onclick="focusOlt(${olt.id})" style="background:var(--bg3) !important; color:var(--text) !important; border:1px solid var(--border) !important;"><i class="bi bi-geo-alt me-1"></i>Fokus</button>
+            <button type="button" class="btn btn-sm btn-warning" onclick="openSetOltLocationModal(${olt.id}, '${escapeHtml(olt.name)}', '${lat}', '${lng}')" style="background:#f59e0b !important; color:#0f172a !important; font-weight:800;"><i class="bi bi-pin-map me-1" style="color:#0f172a !important;"></i>Ubah Lokasi</button>
+            <a href="/admin/olts" class="btn btn-sm btn-p" style="background:#0284c7 !important; color:#ffffff !important; font-weight:800;"><i class="bi bi-gear-fill me-1" style="color:#ffffff !important;"></i><span style="color:#ffffff !important;">Manajemen OLT</span></a>
           </div>
         </div>
       `);
@@ -2223,12 +2703,12 @@
           <div style="font-size:12px; margin-bottom:4px;"><strong>ODP Terhubung:</strong> <span class="badge" style="background:#8b5cf6; color:#fff; padding:2px 6px; border-radius:4px; font-size:11px;">${odc.connected_odp_count || 0} ODP</span></div>
           <div style="font-size:12px; margin-bottom:4px;"><strong>${I18N.popupDescription}:</strong> ${escapeHtml(odc.description || '-')}</div>
           <div style="font-size:11.5px; font-family:monospace; margin-bottom:8px; color:var(--muted);"><strong>${I18N.popupLocation}:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
-          <div class="popup-actions" style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
-            <button class="btn btn-sm btn-warning" onclick="openRecordOpticalModal('odc', ${odc.id}, '${escapeHtml(odc.name)}', '${escapeHtml(odc.pon_port || 'PON Out')}')"><i class="bi bi-speedometer2 me-1"></i>Catat dBm</button>
-            <button class="btn btn-sm btn-outline-secondary" onclick="openOpticalHistory('odc', ${odc.id}, '${escapeHtml(odc.name)}', 'ODC Cabinet')"><i class="bi bi-activity me-1"></i>Riwayat</button>
-            <button class="btn btn-sm btn-p" onclick='editOdc(${JSON.stringify(odc)})'><i class="bi bi-pencil me-1"></i>${I18N.popupEdit}</button>
-            <button class="btn btn-sm btn-d" onclick="promptDeleteOdc(${odc.id}, '${escapeHtml(odc.name)}')"><i class="bi bi-trash me-1"></i>${I18N.popupDelete}</button>
-            <button class="btn btn-sm btn-g" onclick="focusOdc(${odc.id})"><i class="bi bi-geo-alt me-1"></i>Fokus</button>
+          <div class="popup-actions" style="margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-sm btn-warning" onclick="openRecordOpticalModal('odc', ${odc.id}, '${escapeHtml(odc.name)}', '${escapeHtml(odc.pon_port || 'PON Out')}')" style="background:#f59e0b !important; color:#0f172a !important; font-weight:800;"><i class="bi bi-speedometer2 me-1" style="color:#0f172a !important;"></i>Catat dBm</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openOpticalHistory('odc', ${odc.id}, '${escapeHtml(odc.name)}', 'ODC Cabinet')" style="color:var(--text) !important; border:1px solid var(--border) !important;"><i class="bi bi-activity me-1"></i>Riwayat</button>
+            <button type="button" class="btn btn-sm btn-p" onclick='editOdc(${JSON.stringify(odc)})' style="background:#8b5cf6 !important; border-color:#7c3aed !important; color:#ffffff !important; font-weight:800;"><i class="bi bi-pencil-fill me-1" style="color:#ffffff !important;"></i>${I18N.popupEdit}</button>
+            <button type="button" class="btn btn-sm btn-d" onclick="promptDeleteOdc(${odc.id}, '${escapeHtml(odc.name)}')" style="background:#ef4444 !important; color:#ffffff !important; font-weight:800;"><i class="bi bi-trash-fill me-1" style="color:#ffffff !important;"></i>${I18N.popupDelete}</button>
+            <button type="button" class="btn btn-sm btn-g" onclick="focusOdc(${odc.id})" style="background:var(--bg3) !important; color:var(--text) !important; border:1px solid var(--border) !important;"><i class="bi bi-geo-alt me-1"></i>Fokus</button>
           </div>
         </div>
       `);
@@ -2281,12 +2761,12 @@
           <div style="font-size:12px; margin-bottom:4px;"><strong>Splitter:</strong> ${odp.splitter_ratio || '1:8'} | <strong>Kapasitas:</strong> <span class="badge" style="background:#2563eb; color:#fff; padding:2px 6px; border-radius:4px; font-size:11px;">${odp.connected_customer_count || 0} / ${odp.total_ports || 8} Port</span></div>
           <div style="font-size:12px; margin-bottom:4px;"><strong>${I18N.popupDescription}:</strong> ${escapeHtml(odp.description || '-')}</div>
           <div style="font-size:11.5px; font-family:monospace; margin-bottom:8px; color:var(--muted);"><strong>${I18N.popupLocation}:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
-          <div class="popup-actions" style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
-            <button class="btn btn-sm btn-warning" onclick="openRecordOpticalModal('odp', ${odp.id}, '${escapeHtml(odp.name)}', 'Port Out')"><i class="bi bi-speedometer2 me-1"></i>Catat dBm</button>
-            <button class="btn btn-sm btn-outline-secondary" onclick="openOpticalHistory('odp', ${odp.id}, '${escapeHtml(odp.name)}', 'ODP Distribution')"><i class="bi bi-activity me-1"></i>Riwayat</button>
-            <button class="btn btn-sm btn-p" onclick='editOdp(${JSON.stringify(odp)})'><i class="bi bi-pencil me-1"></i>${I18N.popupEdit}</button>
-            <button class="btn btn-sm btn-d" onclick="promptDeleteOdp(${odp.id}, '${escapeHtml(odp.name)}')"><i class="bi bi-trash me-1"></i>${I18N.popupDelete}</button>
-            <button class="btn btn-sm btn-g" onclick="focusOdp(${odp.id})"><i class="bi bi-geo-alt me-1"></i>Fokus</button>
+          <div class="popup-actions" style="margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-sm btn-warning" onclick="openRecordOpticalModal('odp', ${odp.id}, '${escapeHtml(odp.name)}', 'Port Out')" style="background:#f59e0b !important; color:#0f172a !important; font-weight:800;"><i class="bi bi-speedometer2 me-1" style="color:#0f172a !important;"></i>Catat dBm</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openOpticalHistory('odp', ${odp.id}, '${escapeHtml(odp.name)}', 'ODP Distribution')" style="color:var(--text) !important; border:1px solid var(--border) !important;"><i class="bi bi-activity me-1"></i>Riwayat</button>
+            <button type="button" class="btn btn-sm btn-p" onclick='editOdp(${JSON.stringify(odp)})' style="background:#0284c7 !important; color:#ffffff !important; font-weight:800;"><i class="bi bi-pencil-fill me-1" style="color:#ffffff !important;"></i>${I18N.popupEdit}</button>
+            <button type="button" class="btn btn-sm btn-d" onclick="promptDeleteOdp(${odp.id}, '${escapeHtml(odp.name)}')" style="background:#ef4444 !important; color:#ffffff !important; font-weight:800;"><i class="bi bi-trash-fill me-1" style="color:#ffffff !important;"></i>${I18N.popupDelete}</button>
+            <button type="button" class="btn btn-sm btn-g" onclick="focusOdp(${odp.id})" style="background:var(--bg3) !important; color:var(--text) !important; border:1px solid var(--border) !important;"><i class="bi bi-geo-alt me-1"></i>Fokus</button>
           </div>
         </div>
       `);
@@ -2478,13 +2958,13 @@
             </div>
           </div>
 
-          <div class="popup-actions" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
-             ${cust.odp_id ? `<button onclick="snapCustomerCableRoad(${cust.id})" class="btn btn-sm btn-info" title="Snap otomatis mengikuti rute jalan raya/gang (OSRM)"><i class="bi bi-signpost-2-fill me-1"></i>Snap Jalan</button>` : ''}
-             <button onclick="startCableDrawing(${cust.id}, ${lat}, ${lng}, ${cust.odp_id})" class="btn btn-sm btn-p" title="Gambar atau edit lekukan kabel"><i class="bi bi-pencil-fill me-1"></i>Jalur</button>
-             <button onclick="openRecordOpticalModal('customer', ${cust.id}, '${escapeHtml(cust.name)}', 'ONU RX')" class="btn btn-sm btn-warning" title="Catat Pengukuran Redaman"><i class="bi bi-speedometer2"></i></button>
-             <button onclick="openOpticalHistory('customer', ${cust.id}, '${escapeHtml(cust.name)}', 'ONU Pelanggan')" class="btn btn-sm btn-outline-secondary" title="Riwayat Redaman"><i class="bi bi-activity"></i></button>
-             <a href="/admin/customers?search=${encodeURIComponent(cust.name || '')}" class="btn btn-sm btn-g"><i class="bi bi-eye me-1"></i>Detail</a>
-             ${cust.phone ? `<a href="${waLink}" target="_blank" class="btn btn-sm btn-wa"><i class="bi bi-whatsapp"></i> Chat</a>` : ''}
+          <div class="popup-actions" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:12px;">
+             ${cust.odp_id ? `<button type="button" onclick="snapCustomerCableRoad(${cust.id})" class="btn btn-sm btn-info" style="background:#0ea5e9 !important; color:#ffffff !important; font-weight:800;" title="Snap otomatis rute jalan (OSRM)"><i class="bi bi-signpost-2-fill me-1" style="color:#ffffff !important;"></i>Snap Jalan</button>` : ''}
+             <button type="button" onclick="startCableDrawing(${cust.id}, ${lat}, ${lng}, ${cust.odp_id})" class="btn btn-sm btn-p" style="background:#0284c7 !important; color:#ffffff !important; font-weight:800;" title="Gambar atau edit jalur kabel"><i class="bi bi-pencil-fill me-1" style="color:#ffffff !important;"></i>Jalur</button>
+             <button type="button" onclick="openRecordOpticalModal('customer', ${cust.id}, '${escapeHtml(cust.name)}', 'ONU RX')" class="btn btn-sm btn-warning" style="background:#f59e0b !important; color:#0f172a !important; font-weight:800;" title="Catat Pengukuran Redaman"><i class="bi bi-speedometer2" style="color:#0f172a !important;"></i></button>
+             <button type="button" onclick="openOpticalHistory('customer', ${cust.id}, '${escapeHtml(cust.name)}', 'ONU Pelanggan')" class="btn btn-sm btn-outline-secondary" style="color:var(--text) !important; border:1px solid var(--border) !important;" title="Riwayat Redaman"><i class="bi bi-activity"></i></button>
+             <a href="/admin/customers?search=${encodeURIComponent(cust.name || '')}" class="btn btn-sm btn-g" style="background:var(--bg3) !important; color:var(--text) !important; border:1px solid var(--border) !important;"><i class="bi bi-eye me-1"></i>Detail</a>
+             ${cust.phone ? `<a href="${waLink}" target="_blank" class="btn btn-sm btn-wa" style="background:#16a34a !important; color:#ffffff !important; font-weight:800;"><i class="bi bi-whatsapp me-1" style="color:#ffffff !important;"></i>Chat WA</a>` : ''}
           </div>
         </div>
       `);
@@ -2589,23 +3069,28 @@
       let html = '';
       currentSearchResults.slice(0, 30).forEach((item, index) => {
         if (item.type === 'olt') {
-        const o = item.data;
-        const hasGps = Boolean(o.lat && o.lng);
-        itemEl.innerHTML = `
-          <div class="ms-icon" style="background: rgba(2, 132, 199, 0.18); color: #0284c7;">
-            <i class="bi bi-hdd-rack-fill"></i>
-          </div>
-          <div class="ms-info">
-            <div class="ms-title">${highlightMatch(o.name, q)} <span class="badge" style="background:#0284c7; color:#fff; font-size:10px; margin-left:4px;">OLT PUSAT</span></div>
-            <div class="ms-sub">
-              <span><i class="bi bi-hdd-network"></i> ${highlightMatch(o.host || '-', q)}</span>
-              <span><i class="bi bi-cpu"></i> ${escapeHtml(o.brand || 'ZTE')}</span>
-              ${!hasGps ? '<span class="text-warning"><i class="bi bi-exclamation-triangle"></i> Belum ada GPS</span>' : ''}
+          const o = item.data;
+          const hasGps = Boolean(o.lat && o.lng);
+          html += `
+            <div class="ms-item" data-index="${index}" onclick="selectSearchResult(${index})">
+              <div class="ms-item-icon" style="background: rgba(2, 132, 199, 0.18); color: #0284c7;">
+                <i class="bi bi-hdd-rack-fill"></i>
+              </div>
+              <div class="ms-item-info">
+                <div class="ms-item-name">
+                  <span>${highlightMatch(o.name, query)}</span>
+                  <span style="font-size: 10px; color: #0284c7; font-weight: 700;">(Sentral OLT NOC)</span>
+                  ${!hasGps ? '<span style="color:#ef4444; font-size:10px; font-weight:700;"><i class="bi bi-exclamation-triangle"></i> Tanpa GPS</span>' : ''}
+                </div>
+                <div class="ms-item-meta">
+                  <span>Host: ${highlightMatch(o.host || '-', query)}</span> • 
+                  <span>Brand: ${escapeHtml(o.brand || 'ZTE')}</span>
+                </div>
+              </div>
+              <span class="ms-item-badge" style="background: rgba(2, 132, 199, 0.15); color: #0284c7; border: 1px solid rgba(2, 132, 199, 0.3);">OLT</span>
             </div>
-          </div>
-          <div class="ms-type" style="color: #0284c7;">OLT</div>
-        `;
-      } else if (item.type === 'customer') {
+          `;
+        } else if (item.type === 'customer') {
           const c = item.data;
           const isActive = c.status === 'active';
           const hasGps = Boolean(c.lat && c.lng);
@@ -2987,6 +3472,17 @@
     }
   }
 
+  // ─── FLOATING ODN LEGEND TOGGLE ──────────────────────────────────────────
+  function toggleOdnLegend() {
+    const legend = document.getElementById('mapOdnLegend');
+    const chevron = document.getElementById('legendChevron');
+    if (!legend) return;
+    legend.classList.toggle('collapsed');
+    if (chevron) {
+      chevron.className = legend.classList.contains('collapsed') ? 'bi bi-chevron-up' : 'bi bi-chevron-down';
+    }
+  }
+
   // ─── TABBED DATA PANEL LOGIC ──────────────────────────────────────────────
   function switchDataTab(tabId, btn) {
     document.querySelectorAll('.data-tabs-panel .tab-content').forEach(el => el.classList.remove('active'));
@@ -2997,6 +3493,167 @@
     if (btn) btn.classList.add('active');
   }
 
+  // ─── CLIENT-SIDE DATA PAGINATOR ENGINE ────────────────────────────────────
+  const TablePaginators = {
+    customer: {
+      currentPage: 1,
+      pageSize: 15,
+      allMatchedRows: [],
+      tbodyId: 'customersTableBody',
+      barId: 'custPaginationBar',
+      singularLabel: 'pelanggan'
+    },
+    odp: {
+      currentPage: 1,
+      pageSize: 15,
+      allMatchedRows: [],
+      tbodyId: 'odpsTbody',
+      barId: 'odpPaginationBar',
+      singularLabel: 'ODP'
+    },
+    odc: {
+      currentPage: 1,
+      pageSize: 15,
+      allMatchedRows: [],
+      tbodyId: 'odcsTbody',
+      barId: 'odcPaginationBar',
+      singularLabel: 'ODC'
+    },
+    olt: {
+      currentPage: 1,
+      pageSize: 15,
+      allMatchedRows: [],
+      tbodyId: 'oltsTbody',
+      barId: 'oltPaginationBar',
+      singularLabel: 'OLT'
+    }
+  };
+
+  function setTablePage(type, newPage) {
+    const p = TablePaginators[type];
+    if (!p) return;
+    const totalPages = p.pageSize > 0 ? Math.ceil(p.allMatchedRows.length / p.pageSize) : 1;
+    if (newPage < 1) newPage = 1;
+    if (totalPages > 0 && newPage > totalPages) newPage = totalPages;
+    p.currentPage = newPage;
+    renderTablePage(type);
+  }
+
+  function setTablePageSize(type, newSize) {
+    const p = TablePaginators[type];
+    if (!p) return;
+    p.pageSize = parseInt(newSize, 10);
+    p.currentPage = 1;
+    renderTablePage(type);
+  }
+
+  function renderTablePage(type) {
+    const p = TablePaginators[type];
+    if (!p) return;
+    const tbody = document.getElementById(p.tbodyId);
+    const bar = document.getElementById(p.barId);
+    if (!tbody || !bar) return;
+
+    // All original data rows in this table
+    const allRows = Array.from(tbody.querySelectorAll('tr[data-id], tr[data-name]'));
+    
+    // First hide everything
+    allRows.forEach(r => r.style.display = 'none');
+
+    // Remove old empty match notification row
+    const oldEmpty = tbody.querySelector('.tr-no-matched-data');
+    if (oldEmpty) oldEmpty.remove();
+
+    const total = p.allMatchedRows.length;
+    if (total === 0) {
+      const colCount = tbody.closest('table').querySelectorAll('thead th').length || 7;
+      const emptyTr = document.createElement('tr');
+      emptyTr.className = 'tr-no-matched-data';
+      emptyTr.innerHTML = `<td colspan="${colCount}" style="padding: 24px; text-align: center; color: var(--muted); font-size: 13px;"><i class="bi bi-search me-1"></i> Tidak ada data ${p.singularLabel} yang sesuai dengan filter pencarian.</td>`;
+      tbody.appendChild(emptyTr);
+
+      bar.innerHTML = `
+        <div class="pagination-info">Tidak ada data ditemukan</div>
+        <div class="pagination-size-wrap">
+          <span>Baris:</span>
+          <select class="table-per-page-select" onchange="setTablePageSize('${type}', this.value)">
+            <option value="15" ${p.pageSize === 15 ? 'selected' : ''}>15</option>
+            <option value="25" ${p.pageSize === 25 ? 'selected' : ''}>25</option>
+            <option value="50" ${p.pageSize === 50 ? 'selected' : ''}>50</option>
+            <option value="100" ${p.pageSize === 100 ? 'selected' : ''}>100</option>
+            <option value="-1" ${p.pageSize === -1 ? 'selected' : ''}>Semua</option>
+          </select>
+        </div>
+      `;
+      return;
+    }
+
+    let start = 0;
+    let end = total;
+    let totalPages = 1;
+
+    if (p.pageSize > 0) {
+      totalPages = Math.ceil(total / p.pageSize);
+      if (p.currentPage > totalPages) p.currentPage = totalPages;
+      if (p.currentPage < 1) p.currentPage = 1;
+      start = (p.currentPage - 1) * p.pageSize;
+      end = Math.min(start + p.pageSize, total);
+    } else {
+      p.currentPage = 1;
+      totalPages = 1;
+      start = 0;
+      end = total;
+    }
+
+    // Show matching rows in slice
+    for (let i = start; i < end; i++) {
+      if (p.allMatchedRows[i]) {
+        p.allMatchedRows[i].style.display = '';
+      }
+    }
+
+    // Build pagination navigation markup
+    let navHtml = '';
+    if (totalPages > 1) {
+      const cur = p.currentPage;
+      navHtml += `<button type="button" class="pg-btn" ${cur === 1 ? 'disabled' : ''} onclick="setTablePage('${type}', 1)" title="Halaman Pertama"><i class="bi bi-chevron-double-left"></i></button>`;
+      navHtml += `<button type="button" class="pg-btn" ${cur === 1 ? 'disabled' : ''} onclick="setTablePage('${type}', ${cur - 1})" title="Sebelumnya"><i class="bi bi-chevron-left"></i></button>`;
+
+      let pStart = Math.max(1, cur - 2);
+      let pEnd = Math.min(totalPages, cur + 2);
+      if (pEnd - pStart < 4) {
+        if (pStart === 1) pEnd = Math.min(totalPages, pStart + 4);
+        else if (pEnd === totalPages) pStart = Math.max(1, pEnd - 4);
+      }
+
+      for (let page = pStart; page <= pEnd; page++) {
+        navHtml += `<button type="button" class="pg-btn ${page === cur ? 'active' : ''}" onclick="setTablePage('${type}', ${page})">${page}</button>`;
+      }
+
+      navHtml += `<button type="button" class="pg-btn" ${cur === totalPages ? 'disabled' : ''} onclick="setTablePage('${type}', ${cur + 1})" title="Berikutnya"><i class="bi bi-chevron-right"></i></button>`;
+      navHtml += `<button type="button" class="pg-btn" ${cur === totalPages ? 'disabled' : ''} onclick="setTablePage('${type}', ${totalPages})" title="Halaman Terakhir"><i class="bi bi-chevron-double-right"></i></button>`;
+    }
+
+    bar.innerHTML = `
+      <div class="pagination-info">
+        Menampilkan <strong>${start + 1}</strong> - <strong>${end}</strong> dari <strong>${total}</strong> ${p.singularLabel}
+      </div>
+      <div class="pagination-size-wrap">
+        <span>Tampilkan:</span>
+        <select class="table-per-page-select" onchange="setTablePageSize('${type}', this.value)">
+          <option value="15" ${p.pageSize === 15 ? 'selected' : ''}>15 / hal</option>
+          <option value="25" ${p.pageSize === 25 ? 'selected' : ''}>25 / hal</option>
+          <option value="50" ${p.pageSize === 50 ? 'selected' : ''}>50 / hal</option>
+          <option value="100" ${p.pageSize === 100 ? 'selected' : ''}>100 / hal</option>
+          <option value="-1" ${p.pageSize === -1 ? 'selected' : ''}>Semua</option>
+        </select>
+      </div>
+      <div class="pagination-nav">
+        ${navHtml}
+      </div>
+    `;
+  }
+
   // Filter Customer Table
   const custTableSearch = document.getElementById('customerTableSearch');
   const custGpsFilter = document.getElementById('customerGpsFilter');
@@ -3004,10 +3661,11 @@
 
   function filterCustomerTable() {
     if (!custTbody) return;
-    const q = (custTableSearch.value || '').trim().toLowerCase();
+    const q = (custTableSearch ? custTableSearch.value : '').trim().toLowerCase();
     const gpsFilter = custGpsFilter ? custGpsFilter.value : 'all';
-    const rows = custTbody.querySelectorAll('tr[data-id]');
+    const rows = Array.from(custTbody.querySelectorAll('tr[data-id]'));
 
+    const matched = [];
     rows.forEach(r => {
       const name = r.getAttribute('data-name') || '';
       const pppoe = r.getAttribute('data-pppoe') || '';
@@ -3025,8 +3683,14 @@
       else if (gpsFilter === 'active') matchGps = (status === 'active');
       else if (gpsFilter === 'suspended') matchGps = (status !== 'active');
 
-      r.style.display = (matchText && matchGps) ? '' : 'none';
+      if (matchText && matchGps) {
+        matched.push(r);
+      }
     });
+
+    TablePaginators.customer.allMatchedRows = matched;
+    TablePaginators.customer.currentPage = 1;
+    renderTablePage('customer');
   }
 
   if (custTableSearch) {
@@ -3180,61 +3844,90 @@
   }
 
   // Filter OLT Table Search
-  (function bindOltSearch() {
+  function filterOltTable() {
     const input = document.getElementById('oltTableSearch');
     const tbody = document.getElementById('oltsTbody');
-    if (!input || !tbody) return;
-
-    input.addEventListener('input', () => {
-      const q = (input.value || '').trim().toLowerCase();
-      const rows = tbody.querySelectorAll('tr[data-id]');
-      rows.forEach(r => {
-        const name = r.getAttribute('data-name') || '';
-        const host = r.getAttribute('data-host') || '';
-        r.style.display = (!q || name.includes(q) || host.includes(q)) ? '' : 'none';
-      });
+    if (!tbody) return;
+    const q = input ? String(input.value || '').trim().toLowerCase() : '';
+    const rows = Array.from(tbody.querySelectorAll('tr[data-id]'));
+    const matched = [];
+    rows.forEach(r => {
+      const name = String(r.getAttribute('data-name') || '');
+      const host = String(r.getAttribute('data-host') || '');
+      if (!q || name.includes(q) || host.includes(q)) {
+        matched.push(r);
+      }
     });
+    TablePaginators.olt.allMatchedRows = matched;
+    TablePaginators.olt.currentPage = 1;
+    renderTablePage('olt');
+  }
+
+  (function bindOltSearch() {
+    const input = document.getElementById('oltTableSearch');
+    if (!input) return;
+    input.addEventListener('input', filterOltTable);
   })();
 
   // Filter ODP Table
-  (function bindOdpSearch() {
+  function filterOdpTable() {
     const input = document.getElementById('odpSearch');
     const tbody = document.getElementById('odpsTbody');
-    if (!input || !tbody) return;
+    if (!tbody) return;
+    const q = input ? String(input.value || '').trim().toLowerCase() : '';
+    const rows = Array.from(tbody.querySelectorAll('tr[data-name]'));
+    const matched = [];
+    rows.forEach(r => {
+      const name = String(r.getAttribute('data-name') || '');
+      const desc = String(r.getAttribute('data-desc') || '');
+      if (!q || name.includes(q) || desc.includes(q)) {
+        matched.push(r);
+      }
+    });
+    TablePaginators.odp.allMatchedRows = matched;
+    TablePaginators.odp.currentPage = 1;
+    renderTablePage('odp');
+  }
 
-    function apply() {
-      const q = String(input.value || '').trim().toLowerCase();
-      const rows = Array.from(tbody.querySelectorAll('tr[data-name]'));
-      rows.forEach(r => {
-        const name = String(r.getAttribute('data-name') || '');
-        const desc = String(r.getAttribute('data-desc') || '');
-        r.style.display = !q || name.includes(q) || desc.includes(q) ? '' : 'none';
-      });
-    }
-
-    input.addEventListener('input', apply);
-    apply();
+  (function bindOdpSearch() {
+    const input = document.getElementById('odpSearch');
+    if (!input) return;
+    input.addEventListener('input', filterOdpTable);
   })();
 
   // Filter ODC Table
-  (function bindOdcSearch() {
+  function filterOdcTable() {
     const input = document.getElementById('odcSearch');
     const tbody = document.getElementById('odcsTbody');
-    if (!input || !tbody) return;
+    if (!tbody) return;
+    const q = input ? String(input.value || '').trim().toLowerCase() : '';
+    const rows = Array.from(tbody.querySelectorAll('tr[data-name]'));
+    const matched = [];
+    rows.forEach(r => {
+      const name = String(r.getAttribute('data-name') || '');
+      const desc = String(r.getAttribute('data-desc') || '');
+      if (!q || name.includes(q) || desc.includes(q)) {
+        matched.push(r);
+      }
+    });
+    TablePaginators.odc.allMatchedRows = matched;
+    TablePaginators.odc.currentPage = 1;
+    renderTablePage('odc');
+  }
 
-    function apply() {
-      const q = String(input.value || '').trim().toLowerCase();
-      const rows = Array.from(tbody.querySelectorAll('tr[data-name]'));
-      rows.forEach(r => {
-        const name = String(r.getAttribute('data-name') || '');
-        const desc = String(r.getAttribute('data-desc') || '');
-        r.style.display = !q || name.includes(q) || desc.includes(q) ? '' : 'none';
-      });
-    }
-
-    input.addEventListener('input', apply);
-    apply();
+  (function bindOdcSearch() {
+    const input = document.getElementById('odcSearch');
+    if (!input) return;
+    input.addEventListener('input', filterOdcTable);
   })();
+
+  // Initialize all 4 paginated tables immediately
+  setTimeout(() => {
+    filterCustomerTable();
+    filterOdpTable();
+    filterOdcTable();
+    filterOltTable();
+  }, 100);
 
   // ─── SMART DELETE IMPLEMENTATION ──────────────────────────────────────────
   async function promptDeleteOdp(id, name) {

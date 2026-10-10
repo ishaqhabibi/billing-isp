@@ -647,10 +647,23 @@ router.get('/olts', requireAdminSession, async (req, res) => {
   const olts = oltSvc.getAllOlts();
   
   res.render('admin/olts', { 
-    title: 'Manajemen OLT', 
+    title: 'Dashboard OLT', 
     company: company(), 
     activePage: 'olts', 
     olts, 
+    msg: flashMsg(req) 
+  });
+});
+
+router.get(['/olts/onus', '/olts-onus'], requireAdminSession, async (req, res) => {
+  const olts = oltSvc.getAllOlts();
+  
+  res.render('admin/olts_onus', { 
+    title: 'Data Modem ONU', 
+    company: company(), 
+    activePage: 'olts', 
+    olts, 
+    selectedOltId: req.query.olt_id || null,
     msg: flashMsg(req) 
   });
 });
@@ -5403,6 +5416,7 @@ router.post('/api/device/:tag/ssid', requireAdmin, express.json(), async (req, r
   const ok = await customerDevice.updateSSID(req.params.tag, ssid);
   // Kirim notifikasi WhatsApp ke pelanggan
   if (ok) {
+    acsPortal.invalidateDeviceCache?.(req.params.tag);
     try {
       const tag = req.params.tag;
       const cust = customerSvc.findCustomerByAny(tag);
@@ -5428,6 +5442,7 @@ router.post('/api/device/:tag/password', requireAdmin, express.json(), async (re
   const ok = await customerDevice.updatePassword(req.params.tag, password);
   // Kirim notifikasi WhatsApp ke pelanggan
   if (ok) {
+    acsPortal.invalidateDeviceCache?.(req.params.tag);
     try {
       const tag = req.params.tag;
       const cust = customerSvc.findCustomerByAny(tag);
@@ -5448,6 +5463,7 @@ router.post('/api/device/:tag/password', requireAdmin, express.json(), async (re
 });
 
 router.post('/api/device/:tag/reboot', requireAdmin, async (req, res) => {
+  acsPortal.invalidateDeviceCache?.(req.params.tag);
   const result = await customerDevice.requestReboot(req.params.tag);
   res.json(result);
 });
@@ -5456,6 +5472,7 @@ router.post('/api/device/:tag/wifi', requireAdmin, express.json(), async (req, r
   try {
     const { ssid, password, ssid24, password24, ssid5, password5, notifyWa } = req.body;
     const tag = req.params.tag;
+    acsPortal.invalidateDeviceCache?.(tag);
     
     const s24 = (ssid24 !== undefined ? ssid24 : ssid) ? String(ssid24 || ssid).trim() : null;
     const p24 = (password24 !== undefined ? password24 : password) ? String(password24 || password).trim() : null;
@@ -6613,6 +6630,10 @@ router.get('/api/mikrotik/active-pppoe', requireAdmin, async (req, res) => {
 
 router.get('/api/mikrotik/active-hotspot', requireAdmin, async (req, res) => {
   try { res.json(await mikrotikService.getHotspotActive(req.query.routerId)); } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get('/api/mikrotik/noc-session-summary', requireAdmin, async (req, res) => {
+  try { res.json(await mikrotikService.getNocSessionSummary(req.query.routerId)); } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 router.get('/api/mikrotik/ip-pools', requireAdmin, async (req, res) => {
@@ -8326,11 +8347,18 @@ router.post('/onu-provision/delete', requireAdminSession, restrictToAdmin, expre
 // --- RADIUS SERVER MANAGEMENT ---
 const radiusSvc = require('../services/radiusServerService');
 
-router.get('/radius-settings', requireAdminSession, restrictToAdmin, async (req, res) => {
+router.get(['/radius-settings', '/radius/online', '/radius/users', '/radius/nas', '/radius/accounting', '/radius-online', '/radius-users'], requireAdminSession, restrictToAdmin, async (req, res) => {
   try {
+    let defaultTab = 'settings';
+    if (req.path.includes('/online') || req.path === '/radius-online') defaultTab = 'online';
+    else if (req.path.includes('/users') || req.path === '/radius-users') defaultTab = 'users';
+    else if (req.path.includes('/nas')) defaultTab = 'nas';
+    else if (req.path.includes('/accounting')) defaultTab = 'accounting';
+    else if (req.query.tab) defaultTab = req.query.tab;
+
     const radiusStatus = radiusSvc.getStatus();
     const onlineSessions = radiusSvc.getOnlineSessions();
-    const acctLogs = radiusSvc.getAccountingLogs(100);
+    const acctLogs = radiusSvc.getAccountingLogs(200);
     const nasList = db.prepare(`SELECT * FROM radius_nas ORDER BY id DESC`).all() || [];
 
     const todayStats = db.prepare(`
@@ -8362,10 +8390,11 @@ router.get('/radius-settings', requireAdminSession, restrictToAdmin, async (req,
     req.session._msg = null;
 
     res.render('admin/radius-settings', {
-      title: 'Pengaturan RADIUS',
+      title: defaultTab === 'online' ? 'Sesi Aktif RADIUS' : (defaultTab === 'users' ? 'Database Akun RADIUS' : 'Pengaturan RADIUS'),
       company: company(),
       activePage: 'radius_settings',
       session: req.session,
+      defaultTab,
       radiusStatus,
       onlineSessions,
       acctLogs,
@@ -8462,6 +8491,36 @@ router.get('/api/radius/online-sessions', requireAdmin, async (req, res) => {
   try {
     const sessions = radiusSvc.getOnlineSessions();
     res.json({ success: true, sessions, count: sessions.length });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+router.post('/api/radius/test-auth', requireAdmin, async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username) return res.status(400).json({ success: false, error: 'Username wajib diisi.' });
+    const user = radiusSvc.findUserCredentials(username);
+    if (!user) {
+      return res.json({ success: false, auth: 'REJECT', reason: 'User tidak ditemukan di database billing / RADIUS.' });
+    }
+    if (user.secret !== password) {
+      return res.json({ success: false, auth: 'REJECT', reason: 'Password / Secret tidak cocok (Access-Reject).' });
+    }
+    const isIsolated = user.status !== 'active';
+    return res.json({
+      success: true,
+      auth: 'ACCEPT',
+      user: {
+        username: user.username,
+        packageName: user.packageName || '-',
+        speedUp: user.speedUp ? `${user.speedUp} Mbps` : '-',
+        speedDown: user.speedDown ? `${user.speedDown} Mbps` : '-',
+        staticIp: user.staticIp || 'Dinamis (IP Pool)',
+        status: user.status,
+        isIsolated
+      }
+    });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
   }
@@ -8676,4 +8735,85 @@ router.post('/radius/user/update-password', requireAdminSession, restrictToAdmin
   }
 });
 
+router.post('/radius/test-auth', requireAdminSession, restrictToAdmin, async (req, res) => {
+  const startTime = Date.now();
+  try {
+    const username = String(req.body.username || '').trim();
+    const password = String(req.body.password || '').trim();
+
+    if (!username) {
+      return res.status(400).json({ success: false, message: 'Username PPPoE wajib diisi.' });
+    }
+
+    const creds = radiusSvc.findUserCredentials ? radiusSvc.findUserCredentials(username) : null;
+    const durationMs = Date.now() - startTime;
+
+    if (!creds) {
+      return res.json({
+        success: true,
+        matched: false,
+        packet: 'Access-Reject',
+        code: 3,
+        username,
+        reason: 'User tidak ditemukan dalam database billing (customers / pppoe_users / vouchers).',
+        duration_ms: durationMs,
+        attributes: {}
+      });
+    }
+
+    // Bandingkan password (plain text PAP)
+    const isPasswordMatch = (String(creds.secret || '') === password);
+    if (!isPasswordMatch) {
+      return res.json({
+        success: true,
+        matched: true,
+        authenticated: false,
+        packet: 'Access-Reject',
+        code: 3,
+        username,
+        account_type: creds.type,
+        reason: 'Kredensial ditolak: Password yang dimasukkan tidak cocok dengan database billing.',
+        duration_ms: durationMs,
+        attributes: {}
+      });
+    }
+
+    // Password valid -> susun simulasi atribut Access-Accept
+    const rStatus = radiusSvc.getStatus();
+    const isSuspended = (creds.status !== 'active');
+    const attributes = {};
+
+    if (isSuspended) {
+      attributes['Framed-Pool'] = rStatus.isolirPool || 'isolir';
+      attributes['Mikrotik-Group'] = rStatus.isolirPool || 'isolir';
+      attributes['Mikrotik-Rate-Limit'] = rStatus.isolirRateLimit || '512k/512k';
+    } else {
+      if (creds.staticIp) {
+        attributes['Framed-IP-Address'] = creds.staticIp;
+      }
+      const sUp = creds.speedUp ? (creds.speedUp >= 1000 ? Math.round(creds.speedUp / 1000) + 'M' : creds.speedUp + 'k') : (rStatus.defaultRateLimit || '10M/10M').split('/')[0];
+      const sDown = creds.speedDown ? (creds.speedDown >= 1000 ? Math.round(creds.speedDown / 1000) + 'M' : creds.speedDown + 'k') : (rStatus.defaultRateLimit || '10M/10M').split('/')[1] || '10M';
+      attributes['Mikrotik-Rate-Limit'] = `${sUp}/${sDown}`;
+    }
+
+    return res.json({
+      success: true,
+      matched: true,
+      authenticated: true,
+      packet: 'Access-Accept',
+      code: 2,
+      username,
+      account_type: creds.type,
+      service_status: creds.status,
+      package_name: creds.packageName || 'Standar',
+      duration_ms: durationMs,
+      attributes
+    });
+  } catch (err) {
+    logger.error('Error testing RADIUS auth:', err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;
+

@@ -61,8 +61,8 @@ try {
 const connectionProbeCache = new Map();
 const listCache = new Map();
 
-// CACHE DISABLED untuk data yang selalu akurat
-const CACHE_ENABLED = false; // Set false untuk disable cache
+// In-memory short-TTL cache for API queries to reduce redundant MikroTik logins
+const CACHE_ENABLED = true; // Enabled for high-performance and log spam reduction
 
 function cacheKey(routerId, name) {
   const rid = routerId == null || String(routerId).trim() === '' ? 'default' : String(routerId).trim();
@@ -951,6 +951,66 @@ async function getHotspotActive(routerId = null) {
     return cached || [];
   } finally {
     if (conn && conn.api) conn.api.close();
+  }
+}
+
+/**
+ * Mengambil ringkasan sesi & total user untuk NOC Dashboard (/admin/mikrotik)
+ * dalam SATU sesi koneksi tunggal via API untuk mencegah spam login di MikroTik.
+ */
+async function getNocSessionSummary(routerId = null) {
+  const ck = cacheKey(routerId, 'nocSessionSummary');
+  const cached = getCachedList(ck, 8000); // 8 detik TTL cache
+  if (cached) return cached;
+
+  let conn = null;
+  try {
+    conn = await getConnection(routerId);
+
+    // Ambil data dalam 1 koneksi yang sama via Promise.all tanpa re-login berulang kali
+    const [rawSecrets, rawPppActive, rawHsUsers, rawHsActive] = await Promise.all([
+      withTimeout(conn.api.send([
+        '/ppp/secret/print',
+        '=.proplist=.id,name,disabled,service'
+      ]), 10000, 'noc-secrets').catch(() => []),
+
+      withTimeout(conn.api.send([
+        '/ppp/active/print',
+        '=.proplist=.id,name,address,uptime,caller-id'
+      ]), 8000, 'noc-pppoe-active').catch(() => []),
+
+      withTimeout(conn.api.send([
+        '/ip/hotspot/user/print',
+        '=.proplist=.id,name,disabled'
+      ]), 10000, 'noc-hs-users').catch(() => []),
+
+      withTimeout(conn.api.send([
+        '/ip/hotspot/active/print',
+        '=.proplist=.id,user,name,address,uptime'
+      ]), 8000, 'noc-hs-active').catch(() => [])
+    ]);
+
+    const secrets = Array.isArray(rawSecrets) ? rawSecrets.map(augmentRow) : [];
+    const pppoeActive = Array.isArray(rawPppActive) ? rawPppActive.map(augmentRow) : [];
+    const hotspotUsers = Array.isArray(rawHsUsers) ? rawHsUsers.map(augmentRow) : [];
+    const hotspotActive = Array.isArray(rawHsActive) ? rawHsActive.map(augmentRow) : [];
+
+    const result = {
+      secrets,
+      pppoeActive,
+      hotspotUsers,
+      hotspotActive
+    };
+
+    setCachedList(ck, result);
+    return result;
+  } catch (err) {
+    logger.warn(`[MikroTik] Warning getting NOC session summary: ${err.message}`);
+    return cached || { secrets: [], pppoeActive: [], hotspotUsers: [], hotspotActive: [] };
+  } finally {
+    if (conn && conn.api) {
+      try { conn.api.close(); } catch {}
+    }
   }
 }
 
@@ -2290,6 +2350,7 @@ module.exports = {
   getCachedActiveSessionsMap,
   isSessionsCacheStale,
   getHotspotActive,
+  getNocSessionSummary,
   getIpPools,
   addPppoeProfile,
   updatePppoeProfile,
