@@ -599,6 +599,28 @@
       flex-shrink: 0;
       z-index: 3;
     }
+    .odp-marker-pin.odp-cap-empty {
+      background: linear-gradient(135deg, #10b981, #059669) !important;
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.45), 0 2px 6px rgba(0,0,0,0.35) !important;
+    }
+    .odp-marker-pin.odp-cap-available {
+      background: linear-gradient(135deg, #0284c7, #0369a1) !important;
+      box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.45), 0 2px 6px rgba(0,0,0,0.35) !important;
+    }
+    .odp-marker-pin.odp-cap-warning {
+      background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.45), 0 2px 6px rgba(0,0,0,0.35) !important;
+    }
+    .odp-marker-pin.odp-cap-full {
+      background: linear-gradient(135deg, #ef4444, #b91c1c) !important;
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.6), 0 2px 10px rgba(239,68,68,0.7) !important;
+      animation: odpFullPulse 1.8s infinite !important;
+    }
+    @keyframes odpFullPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.35); }
+      100% { transform: scale(1); }
+    }
     .odp-marker-label {
       position: absolute;
       top: 28px;
@@ -2558,9 +2580,24 @@
               <span class="legend-badge" style="background: #8b5cf6; border: 1px solid #c084fc;"></span>
               <span>Kabinet Feeder (ODC)</span>
             </div>
-            <div class="legend-row">
-              <span class="legend-badge" style="background: #f59e0b; border: 1px solid #fde047;"></span>
-              <span>Kotak Distribusi (ODP)</span>
+            <div style="border-top:1px solid rgba(255,255,255,0.08); margin:4px 0; padding-top:4px;">
+              <div style="font-size:10px; font-weight:700; color:var(--muted); margin-bottom:4px;"><i class="bi bi-box-seam me-1"></i>Status Kapasitas ODP:</div>
+              <div class="legend-row">
+                <span class="legend-badge" style="background: #10b981; border: 1px solid #34d399;"></span>
+                <span>ODP Kosong (0%)</span>
+              </div>
+              <div class="legend-row">
+                <span class="legend-badge" style="background: #0284c7; border: 1px solid #38bdf8;"></span>
+                <span>ODP Tersedia (1-74%)</span>
+              </div>
+              <div class="legend-row">
+                <span class="legend-badge" style="background: #f59e0b; border: 1px solid #fbbf24;"></span>
+                <span>ODP Waspada (75-99%)</span>
+              </div>
+              <div class="legend-row">
+                <span class="legend-badge" style="background: #ef4444; border: 1px solid #f87171;"></span>
+                <span>ODP Penuh (100%)</span>
+              </div>
             </div>
             <div class="legend-row">
               <span class="legend-badge" style="background: #10b981; border: 1px solid #6ee7b7; border-radius: 50%;"></span>
@@ -3564,11 +3601,33 @@
       const lat = parseFloat(odp.lat);
       const lng = parseFloat(odp.lng);
       
+      const totalPorts = parseInt(odp.total_ports || odp.port_capacity || 8, 10);
+      const usedPorts = parseInt(odp.connected_customer_count || odp.customer_count || odp.connected_count || 0, 10);
+      const pct = totalPorts > 0 ? Math.round((usedPorts / totalPorts) * 100) : 0;
+      
+      let capClass = 'odp-cap-empty';
+      let capStatus = 'Kosong';
+      let capBadgeColor = '#10b981';
+
+      if (usedPorts >= totalPorts) {
+        capClass = 'odp-cap-full';
+        capStatus = 'PENUH';
+        capBadgeColor = '#ef4444';
+      } else if (pct >= 75) {
+        capClass = 'odp-cap-warning';
+        capStatus = 'Hampir Penuh';
+        capBadgeColor = '#f59e0b';
+      } else if (usedPorts > 0) {
+        capClass = 'odp-cap-available';
+        capStatus = 'Tersedia';
+        capBadgeColor = '#0284c7';
+      }
+      
       const odpIcon = L.divIcon({
         className: 'custom-onu-icon',
         html: `
           <div class="odp-marker-node" id="odp-node-${odp.id}">
-            <div class="odp-marker-pin" title="${escapeHtml(odp.name)} (ODP)">
+            <div class="odp-marker-pin ${capClass}" title="${escapeHtml(odp.name)} (${usedPorts}/${totalPorts} Port - ${capStatus})">
               <i class="bi bi-box-seam-fill"></i>
             </div>
             <div class="odp-marker-label">
@@ -3585,12 +3644,12 @@
       marker.bindPopup(`
         <div class="popup-content">
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:6px;">
-            <div style="width:32px; height:32px; border-radius:8px; background:rgba(245,158,11,0.18); color:#f59e0b; display:flex; align-items:center; justify-content:center; font-size:16px;">
+            <div style="width:32px; height:32px; border-radius:8px; background:${capBadgeColor}22; color:${capBadgeColor}; display:flex; align-items:center; justify-content:center; font-size:16px;">
               <i class="bi bi-box-seam-fill"></i>
             </div>
             <div>
               <div style="font-weight:900; font-size:13.5px; color:var(--text); line-height:1.2;">${escapeHtml(odp.name)}</div>
-              <div style="font-size:11px; font-weight:700; color:#f59e0b;">KOTAK DISTRIBUSI ODP</div>
+              <div style="font-size:11px; font-weight:700; color:${capBadgeColor};">KOTAK DISTRIBUSI ODP (${capStatus.toUpperCase()})</div>
             </div>
           </div>
           ${odp.odc_name ? `<div style="font-size:12px; margin-bottom:3px;"><i class="bi bi-diagram-3-fill" style="color:#8b5cf6;"></i> <strong>ODC Induk:</strong> ${escapeHtml(odp.odc_name)} ${odp.odc_out_port ? `(${escapeHtml(odp.odc_out_port)})` : ''}</div>` : ''}
@@ -3599,7 +3658,7 @@
             <div>In: <strong>${odp.input_power_dbm !== null ? odp.input_power_dbm + ' dBm' : '<span style="color:var(--muted)">-</span>'}</strong></div>
             <div>Out: <strong class="text-primary">${odp.output_power_dbm !== null ? odp.output_power_dbm + ' dBm' : '<span style="color:var(--muted)">-</span>'}</strong></div>
           </div>
-          <div style="font-size:12px; margin-bottom:4px;"><strong>Splitter:</strong> ${odp.splitter_ratio || '1:8'} | <strong>Kapasitas:</strong> <span class="badge" style="background:#2563eb; color:#fff; padding:2px 6px; border-radius:4px; font-size:11px;">${odp.connected_customer_count || 0} / ${odp.total_ports || 8} Port</span></div>
+          <div style="font-size:12px; margin-bottom:4px;"><strong>Splitter:</strong> ${odp.splitter_ratio || '1:8'} | <strong>Kapasitas:</strong> <span class="badge" style="background:${capBadgeColor}; color:#fff; padding:2px 8px; border-radius:4px; font-size:11px;"><i class="bi bi-plug-fill me-1"></i>${usedPorts} / ${totalPorts} Port (${capStatus})</span></div>
           <div style="font-size:12px; margin-bottom:4px;"><strong>${I18N.popupDescription}:</strong> ${escapeHtml(odp.description || '-')}</div>
           <div style="font-size:11.5px; font-family:monospace; margin-bottom:8px; color:var(--muted);"><strong>${I18N.popupLocation}:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
           <div class="popup-actions" style="margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap;">

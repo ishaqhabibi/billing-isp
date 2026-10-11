@@ -914,6 +914,90 @@ router.get('/api/customers/next-code', requireAdminSession, (req, res) => {
   }
 });
 
+// ── HELPER: PARSER COMMENT MIKROTIK (STANDAR ISP BESAR) ──
+function parseMikrotikComment(comment, secretName = '') {
+  const result = {
+    customer_code: '',
+    name: '',
+    phone: '',
+    odp_name: '',
+    odp_port: null,
+    address: '',
+    raw: String(comment || '').trim()
+  };
+
+  const raw = result.raw;
+  if (!raw) {
+    result.customer_code = String(secretName || '').trim();
+    return result;
+  }
+
+  // 1. Cek kode pelanggan berformat bracket: [CUST001] atau [PLG-01]
+  const bracketMatch = raw.match(/^\[([a-zA-Z0-9\-_]+)\]\s*(.*)$/);
+  let remaining = raw;
+  if (bracketMatch) {
+    result.customer_code = bracketMatch[1].trim();
+    remaining = bracketMatch[2].trim();
+  }
+
+  // 2. Format delimited pipa (|) atau titik koma (;)
+  const delimiter = remaining.includes('|') ? '|' : (remaining.includes(';') ? ';' : null);
+  if (delimiter) {
+    const parts = remaining.split(delimiter).map(p => p.trim()).filter(Boolean);
+    parts.forEach((part) => {
+      // Cek apakah nomor telepon / WhatsApp
+      const cleanPhone = part.replace(/[\s\-\+]/g, '');
+      if (/^(08|628|\+628)[0-9]{7,13}$/.test(part.replace(/\s+/g, '')) || (/^[0-9]{9,15}$/.test(cleanPhone) && !part.toLowerCase().includes('odp'))) {
+        if (!result.phone) result.phone = part;
+        return;
+      }
+
+      // Cek informasi ODP & Port (misal: ODP-MWR-01:P03, ODP-01:3, dll)
+      const odpMatch = part.match(/(?:ODP[-\s]?([a-zA-Z0-9\-_]+))(?:\s*[:\/,\-]\s*(?:P|Port\s*)?([0-9]{1,2}))?/i);
+      if (odpMatch) {
+        if (!result.odp_name) result.odp_name = odpMatch[1].toUpperCase().startsWith('ODP') ? odpMatch[1] : 'ODP-' + odpMatch[1];
+        if (odpMatch[2] && !result.odp_port) result.odp_port = parseInt(odpMatch[2], 10);
+        return;
+      }
+
+      // Bagian pertama biasanya Nama, selanjutnya Alamat
+      if (!result.name) {
+        result.name = part;
+      } else if (!result.address) {
+        result.address = part;
+      }
+    });
+  } else {
+    // Format bebas (nama, telepon dlm kurung/spasi, ODP)
+    const phoneMatch = remaining.match(/(?:\(?\+?62|\(?0)8[0-9]{1,3}\)?[\s\-]?[0-9]{3,4}[\s\-]?[0-9]{3,5}/);
+    if (phoneMatch) {
+      result.phone = phoneMatch[0].replace(/[\(\)\s\-]/g, '');
+      remaining = remaining.replace(phoneMatch[0], ' ');
+    }
+
+    const odpMatch = remaining.match(/(?:ODP[-\s]?([a-zA-Z0-9\-_]+))(?:\s*[:\/,\-]\s*(?:P|Port\s*)?([0-9]{1,2}))?/i);
+    if (odpMatch) {
+      result.odp_name = odpMatch[1].toUpperCase().startsWith('ODP') ? odpMatch[1] : 'ODP-' + odpMatch[1];
+      if (odpMatch[2]) result.odp_port = parseInt(odpMatch[2], 10);
+      remaining = remaining.replace(odpMatch[0], ' ');
+    }
+
+    remaining = remaining.replace(/[\(\)\[\]\:\/\,\-]+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (remaining) {
+      result.name = remaining;
+    }
+  }
+
+  if (!result.customer_code) {
+    result.customer_code = String(secretName || '').trim();
+  }
+  if (!result.name) {
+    result.name = result.customer_code || String(secretName || '').trim();
+  }
+
+  return result;
+}
+
 // ── API: RAHASIA / SECRET MIKROTIK YANG BELUM DICATAT DI BILLING ──
 router.get('/api/customers/unregistered-secrets', requireAdminSession, async (req, res) => {
   let conn = null;
@@ -949,14 +1033,18 @@ router.get('/api/customers/unregistered-secrets', requireAdminSession, async (re
     const unregistered = secrets.filter(s => {
       const uname = String(s.name || '').trim().toLowerCase();
       return uname && !registeredUsers.has(uname);
-    }).map(s => ({
-      username: s.name,
-      password: String(s.password || ''),
-      profile: s.profile || '-',
-      comment: s.comment || '',
-      remoteAddress: s['remote-address'] || '',
-      disabled: s.disabled === 'true' || s.disabled === true
-    }));
+    }).map(s => {
+      const parsed = parseMikrotikComment(s.comment, s.name);
+      return {
+        username: s.name,
+        password: String(s.password || ''),
+        profile: s.profile || '-',
+        comment: s.comment || '',
+        parsedComment: parsed,
+        remoteAddress: s['remote-address'] || '',
+        disabled: s.disabled === 'true' || s.disabled === true
+      };
+    });
 
     return res.json({
       ok: true,
@@ -1341,6 +1429,21 @@ router.get('/api/odps/:id/relations', requireAdminSession, (req, res) => {
   try {
     const rels = odpSvc.getOdpRelations(req.params.id);
     res.json({ ok: true, ...rels });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+router.get('/api/odps/:id/ports', requireAdminSession, (req, res) => {
+  try {
+    const odpId = Number(req.params.id);
+    if (!odpId) return res.status(400).json({ ok: false, error: 'ID ODP tidak valid.' });
+    const excludeId = req.query.exclude_customer_id || req.query.customerId || null;
+    const portData = odpSvc.getOdpPortSlots(odpId, excludeId);
+    if (!portData) {
+      return res.status(404).json({ ok: false, error: 'ODP tidak ditemukan.' });
+    }
+    res.json({ ok: true, ...portData });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
@@ -2332,6 +2435,99 @@ router.get('/customers', requireAdminSession, requireSidebarMenuAccess('customer
   });
 });
 
+// ── HELPER FORMAT KOMENTAR MIKROTIK STANDAR NOC ISP ──
+function formatStandardMikrotikComment(data) {
+  const code = String(data.customer_code || data.pppoe_username || '').trim().toUpperCase();
+  const name = String(data.name || '').trim().toUpperCase();
+  const phone = String(data.phone || '').trim();
+  let odpInfo = '';
+  if (data.odp_id) {
+    try {
+      const odpRow = db.prepare('SELECT name FROM odps WHERE id = ?').get(data.odp_id);
+      if (odpRow && odpRow.name) {
+        odpInfo = odpRow.name + (data.odp_port ? ':' + data.odp_port : '');
+      }
+    } catch (_) {}
+  }
+  if (!odpInfo && data.odp_port) {
+    odpInfo = 'PORT:' + data.odp_port;
+  }
+  const addr = String(data.address || '').trim().replace(/[\r\n]+/g, ' ').substring(0, 45);
+
+  const parts = [];
+  if (name) parts.push(name);
+  if (phone) parts.push(phone);
+  if (odpInfo) parts.push(odpInfo);
+  if (addr) parts.push(addr);
+
+  return (code ? `[${code}] ` : '') + parts.join(' | ');
+}
+
+// ── HELPER MULTI-TAGGING GENIEACS ONT STANDAR NOC ISP ──
+async function syncGenieacsNocTags(ontSn, customerData) {
+  const cleanSn = String(ontSn || '').trim();
+  if (!cleanSn) return;
+  try {
+    const dev = await customerDevice.findDeviceByTag(cleanSn);
+    if (!dev || !dev._id) {
+      logger.info(`[GenieACS Sync] Device SN "${cleanSn}" belum online / belum terdaftar di ACS.`);
+      return;
+    }
+
+    let odpName = '';
+    if (customerData.odp_id) {
+      try {
+        const odp = db.prepare('SELECT name FROM odps WHERE id = ?').get(customerData.odp_id);
+        if (odp && odp.name) odpName = odp.name.replace(/\s+/g, '-').toUpperCase();
+      } catch (_) {}
+    }
+
+    let pkgName = '';
+    if (customerData.package_id) {
+      try {
+        const pkg = db.prepare('SELECT name FROM packages WHERE id = ?').get(customerData.package_id);
+        if (pkg && pkg.name) pkgName = pkg.name.replace(/\s+/g, '').toUpperCase();
+      } catch (_) {}
+    }
+
+    const tagsToApply = [];
+    const code = String(customerData.customer_code || customerData.pppoe_username || '').trim().toUpperCase();
+    if (code) tagsToApply.push(`ID:${code}`);
+
+    const port = customerData.odp_port ? String(customerData.odp_port).padStart(2, '0') : '';
+    if (odpName) {
+      tagsToApply.push(`ODP:${odpName}${port ? '-P' + port : ''}`);
+    }
+    if (pkgName) {
+      tagsToApply.push(`PKG:${pkgName}`);
+    }
+    if (customerData.genieacs_custom_tag) {
+      const customTags = String(customerData.genieacs_custom_tag).split(/[\s,]+/);
+      for (const ct of customTags) {
+        if (ct && ct.trim()) tagsToApply.push(ct.trim().toUpperCase());
+      }
+    }
+
+    if (tagsToApply.length === 0) return;
+
+    const servers = genieacsApi.getAllACSServers();
+    for (const srv of servers) {
+      try {
+        const ax = genieacsApi.createAxiosInstance(srv);
+        for (const t of tagsToApply) {
+          try {
+            await ax.post(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(t)}`, {});
+          } catch (_) {}
+        }
+        logger.info(`[GenieACS Sync] Sukses menempelkan multi-tag [${tagsToApply.join(', ')}] ke ONT ${cleanSn} (${dev._id})`);
+        break;
+      } catch (_) {}
+    }
+  } catch (err) {
+    logger.warn(`[GenieACS Sync] Info tagging ONT ${cleanSn}: ${err.message}`);
+  }
+}
+
 router.post('/customers', requireAdminSession, (req, res, next) => {
   customerPhotosUpload(req, res, (err) => {
     if (err) {
@@ -2525,7 +2721,7 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
         // Mode Buat Baru di MikroTik
         if (targetProfile) {
           try {
-            const secretComment = [req.body.name, req.body.nik].filter(Boolean).join(' / ') || req.body.name;
+            const secretComment = formatStandardMikrotikComment(req.body);
             await mikrotikService.createPppoeSecret({
               username: req.body.pppoe_username,
               password: password,
@@ -2557,26 +2753,9 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
       }
     }
 
-    // TAUTKAN TAG KE GENIEACS JIKA SN TERSEDIA
-    const ontSn = String(req.body.ont_sn || '').trim();
-    const tagToApply = String(req.body.genieacs_tag || req.body.customer_code || req.body.pppoe_username || '').trim();
-    if (ontSn && tagToApply) {
-      try {
-        const dev = await customerDevice.findDeviceByTag(ontSn);
-        if (dev && dev._id) {
-          const servers = genieacsApi.getAllACSServers();
-          for (const srv of servers) {
-            try {
-              const ax = genieacsApi.createAxiosInstance(srv);
-              await ax.post(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(tagToApply)}`, {});
-              logger.info(`[Add Customer] Tag "${tagToApply}" berhasil disinkronkan ke perangkat GenieACS (${dev._id})`);
-              break;
-            } catch (errTag) {}
-          }
-        }
-      } catch (acsTagErr) {
-        logger.warn(`[Add Customer] Tidak dapat sinkronisasi tag ke GenieACS: ${acsTagErr.message}`);
-      }
+    // TAUTKAN MULTI-TAG TERSTRUKTUR KE GENIEACS JIKA SN TERSEDIA
+    if (req.body.ont_sn) {
+      await syncGenieacsNocTags(req.body.ont_sn, req.body);
     }
     if (connectionType === 'hotspot' && req.body.hotspot_username) {
       const disabled = String(req.body.status || 'active').toLowerCase() !== 'active';
@@ -2789,7 +2968,7 @@ router.post('/customers/:id/update', requireAdminSession, (req, res, next) => {
             const secrets = await mikrotikService.getPppoeSecrets(req.body.router_id);
             const existingSecret = secrets.find(s => String(s.name || '').trim() === newUsername);
             
-            const secretComment = [req.body.name, req.body.nik].filter(Boolean).join(' / ') || req.body.name;
+            const secretComment = formatStandardMikrotikComment(req.body);
             if (existingSecret) {
               // Secret sudah ada, update profile & comment
               await mikrotikService.setPppoeProfile(newUsername, targetProfile, req.body.router_id);
@@ -2855,6 +3034,11 @@ router.post('/customers/:id/update', requireAdminSession, (req, res, next) => {
       } catch (mErr) {
         logger.warn(`[Update] Mikrotik sync error (update hotspot): ${mErr.message}`);
       }
+    }
+
+    // TAUTKAN MULTI-TAG TERSTRUKTUR KE GENIEACS JIKA SN TERSEDIA
+    if (req.body.ont_sn) {
+      await syncGenieacsNocTags(req.body.ont_sn, req.body);
     }
 
     req.session._msg = { type: 'success', text: 'Data pelanggan berhasil diperbarui.' };

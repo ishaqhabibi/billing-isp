@@ -9,6 +9,7 @@ function getAllOdps() {
   return db.prepare(`
     SELECT 
       o.*, 
+      COALESCE(o.port_capacity, 8) as total_ports,
       olt.name as olt_name,
       odc.name as odc_name,
       podp.name as parent_odp_name,
@@ -26,6 +27,7 @@ function getOdpById(id) {
   return db.prepare(`
     SELECT 
       o.*, 
+      COALESCE(o.port_capacity, 8) as total_ports,
       olt.name as olt_name,
       odc.name as odc_name,
       podp.name as parent_odp_name
@@ -207,15 +209,111 @@ function deleteOdp(id, action = 'unlink', targetOdpId = null) {
   return { ok: true };
 }
 
-function getOdpPortUsage(odpId) {
+function getOdpPortSlots(odpId, excludeCustomerId = null) {
   const odp = getOdpById(odpId);
   if (!odp) return null;
-  const usedRaw = db.prepare("SELECT pon_port FROM customers WHERE odp_id = ? AND pon_port IS NOT NULL AND TRIM(pon_port) != ''").all(odpId);
-  const usedPorts = Array.from(new Set(usedRaw.map(r => String(r.pon_port).trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'id-ID', { numeric: true }));
-  const capacity = Number(odp.port_capacity || 16) || 16;
-  const usedCount = usedPorts.length;
-  const remaining = Math.max(0, capacity - usedCount);
-  return { odpId: Number(odpId), capacity, usedCount, remaining, usedPorts };
+
+  const capacity = Number(odp.port_capacity || odp.total_ports || 8) || 8;
+  const customers = db.prepare(`
+    SELECT id, name, customer_code, pppoe_username, phone, status,
+           COALESCE(odp_port, odp_port_number) as port_num
+    FROM customers 
+    WHERE odp_id = ? AND (odp_port IS NOT NULL OR odp_port_number IS NOT NULL)
+  `).all(odpId);
+
+  const portMap = new Map();
+  customers.forEach(c => {
+    const pNum = Number(c.port_num);
+    if (pNum >= 1 && pNum <= capacity) {
+      portMap.set(pNum, c);
+    }
+  });
+
+  const excludeId = excludeCustomerId ? Number(excludeCustomerId) : null;
+  const slots = [];
+  let occupiedCount = 0;
+
+  for (let portNum = 1; portNum <= capacity; portNum++) {
+    const occupant = portMap.get(portNum) || null;
+    const isCurrentCustomer = !!(occupant && excludeId && Number(occupant.id) === excludeId);
+    const isOccupied = !!occupant;
+    const isUsed = isOccupied && !isCurrentCustomer;
+
+    if (isOccupied) occupiedCount++;
+
+    slots.push({
+      portNumber: portNum,
+      isOccupied: isOccupied,
+      isUsed: isUsed,
+      isCurrentCustomer: isCurrentCustomer,
+      customer: occupant ? {
+        id: occupant.id,
+        name: occupant.name,
+        customer_code: occupant.customer_code || '',
+        pppoe_username: occupant.pppoe_username || '',
+        phone: occupant.phone || '',
+        status: occupant.status || 'active'
+      } : null
+    });
+  }
+
+  const utilizationPercent = capacity > 0 ? Math.round((occupiedCount / capacity) * 100) : 0;
+  let status = 'empty';
+  let statusColor = '#10b981'; // Emerald Green
+  let statusBadge = 'Kosong';
+
+  if (occupiedCount >= capacity) {
+    status = 'full';
+    statusColor = '#ef4444'; // Red
+    statusBadge = 'Penuh';
+  } else if (utilizationPercent >= 75) {
+    status = 'warning';
+    statusColor = '#f59e0b'; // Amber
+    statusBadge = 'Hampir Penuh';
+  } else if (occupiedCount > 0) {
+    status = 'available';
+    statusColor = '#0284c7'; // Blue
+    statusBadge = 'Tersedia';
+  }
+
+  return {
+    odp: {
+      id: odp.id,
+      name: odp.name,
+      capacity: capacity,
+      total_ports: capacity,
+      odc_id: odp.odc_id,
+      odc_name: odp.odc_name,
+      splitter_ratio: odp.splitter_ratio || '1:8'
+    },
+    slots,
+    stats: {
+      capacity,
+      occupiedCount,
+      usedCount: occupiedCount,
+      availableCount: Math.max(0, capacity - occupiedCount),
+      utilizationPercent,
+      status,
+      statusColor,
+      statusBadge
+    }
+  };
+}
+
+function getOdpPortUsage(odpId) {
+  const slotsData = getOdpPortSlots(odpId);
+  if (!slotsData) return null;
+  const { odp, slots, stats } = slotsData;
+  const usedPorts = slots.filter(s => s.isOccupied).map(s => String(s.portNumber));
+  return {
+    odpId: Number(odpId),
+    capacity: stats.capacity,
+    usedCount: stats.occupiedCount,
+    remaining: stats.availableCount,
+    usedPorts,
+    slots,
+    stats
+  };
 }
 
 module.exports = {
@@ -225,5 +323,6 @@ module.exports = {
   updateOdp,
   getOdpRelations,
   deleteOdp,
+  getOdpPortSlots,
   getOdpPortUsage
 };

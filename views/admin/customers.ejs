@@ -751,6 +751,95 @@
     body.light-theme .autocomplete-item-name {
       color: #0f172a !important;
     }
+
+    /* ─── ODP PORT MATRIX & SLOTS SELECTOR ─── */
+    .odp-port-matrix-wrapper {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+    .odp-port-matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .odp-port-slot-card {
+      border-radius: 9px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-size: 11px;
+      position: relative;
+      user-select: none;
+    }
+    .odp-port-slot-card.port-slot-available {
+      background: rgba(16, 185, 129, 0.05);
+      border: 1px dashed rgba(16, 185, 129, 0.45);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .odp-port-slot-card.port-slot-available:hover {
+      background: rgba(16, 185, 129, 0.14);
+      border-color: #10b981;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.18);
+    }
+    .odp-port-slot-card.port-slot-selected {
+      background: rgba(99, 102, 241, 0.18) !important;
+      border: 2px solid var(--primary) !important;
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35), 0 4px 14px rgba(99, 102, 241, 0.25) !important;
+      color: var(--text) !important;
+      transform: translateY(-2px);
+    }
+    .odp-port-slot-card.port-slot-current {
+      background: rgba(2, 132, 199, 0.12);
+      border: 1.5px solid #0284c7;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .odp-port-slot-card.port-slot-current:hover {
+      background: rgba(2, 132, 199, 0.22);
+      transform: translateY(-2px);
+    }
+    .odp-port-slot-card.port-slot-occupied {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .odp-port-slot-card .port-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+    .odp-port-slot-card .port-card-num {
+      font-weight: 800;
+      font-family: monospace;
+      font-size: 11.5px;
+    }
+    .odp-port-slot-card .port-card-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .odp-port-slot-card .port-card-cust {
+      font-size: 10px;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-top: 2px;
+      line-height: 1.25;
+    }
   </style>
 </head>
 <body>
@@ -1261,24 +1350,6 @@
 
           <div class="form-row">
             <div class="fg">
-              <label class="fl" style="font-weight:700; color:var(--primary); display:flex; justify-content:space-between;">
-                <span><i class="bi bi-upc-scan"></i> Kode Pelanggan (ID) *</span>
-                <span style="font-size:10px; font-weight:normal; color:var(--muted);">Input Manual (Bebas)</span>
-              </label>
-              <div style="display:flex; gap:6px;">
-                <input class="fc" name="customer_code" id="add_customer_code" placeholder="Contoh: URG001, PLG-01, dll" style="font-family:monospace; font-weight:700; letter-spacing:1px; text-transform:uppercase;">
-                <button type="button" class="btn btn-g btn-sm" onclick="triggerAutoGenerateCode('add')" title="Generate Kode Otomatis"><i class="bi bi-magic text-primary"></i> Auto</button>
-              </div>
-              <small class="text-muted" style="font-size:11px;">Input manual sesuai format ISP Anda. Klik tombol <strong>Auto</strong> jika ingin rekomendasi nomor urut.</small>
-            </div>
-            <div class="fg">
-              <label class="fl"><i class="bi bi-card-text"></i> NIK / No. KTP (Opsional)</label>
-              <input class="fc" name="nik" placeholder="Contoh: 3201xxxxxxxxxxxx" maxlength="20">
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="fg">
               <label class="fl" style="font-weight:700;">Nama Lengkap Pelanggan *</label>
               <input class="fc" name="name" required placeholder="Contoh: Ahmad Fauzi">
             </div>
@@ -1289,6 +1360,10 @@
           </div>
 
           <div class="form-row">
+            <div class="fg">
+              <label class="fl"><i class="bi bi-card-text"></i> NIK / No. KTP (Opsional)</label>
+              <input class="fc" name="nik" placeholder="Contoh: 3201xxxxxxxxxxxx" maxlength="20">
+            </div>
             <div class="fg">
               <label class="fl"><i class="bi bi-geo-alt-fill text-warning me-1"></i> Area / Wilayah Layanan</label>
               <select class="fs" name="area" id="add_area">
@@ -1304,6 +1379,9 @@
                 <% } %>
               </select>
             </div>
+          </div>
+
+          <div class="form-row">
             <div class="fg">
               <label class="fl"><i class="bi bi-envelope me-1"></i> Email (Invoice & Notifikasi)</label>
               <input class="fc" name="email" type="email" placeholder="nama@email.com">
@@ -1326,7 +1404,7 @@
           <div class="form-row">
             <div class="fg">
               <label class="fl" style="font-weight:700; color:var(--primary);"><i class="bi bi-box-seam me-1"></i> Paket Internet *</label>
-              <select class="fs" name="package_id" id="add_package_id" required style="font-weight:600;">
+              <select class="fs" name="package_id" id="add_package_id" required style="font-weight:600;" onchange="updateGenieacsTagsPreview('add')">
                 <option value="">-- Pilih Paket Internet --</option>
                 <% packages.forEach(p => { %>
                 <option value="<%= p.id %>"><%= p.name %> — Rp <%= Number(p.price).toLocaleString('id-ID') %>/bln</option>
@@ -1498,11 +1576,21 @@
                   <input class="fc" id="add_pppoe_username_manual" placeholder="Contoh: user123 atau user@domain" style="font-family:monospace; font-weight:600;">
                 </div>
               </div>
-              <div class="fg">
+              <div class="fg" id="add_pppoe_password_group">
                 <label class="fl" style="font-weight:700;"><i class="bi bi-lock-fill text-warning me-1"></i> PPPoE Password *</label>
                 <div style="display:flex; gap:6px;">
                   <input class="fc" name="pppoe_password" id="add_pppoe_password" placeholder="Password login modem" required style="font-family:monospace; font-weight:600;">
                   <button type="button" class="btn btn-g btn-sm" onclick="document.getElementById('add_pppoe_password').value=generateRandomPassword(6)" title="Acak Password"><i class="bi bi-shuffle"></i></button>
+                </div>
+              </div>
+              <div class="fg" id="add_pppoe_password_mikrotik_info" style="display:none;">
+                <label class="fl" style="font-weight:700; color:#10b981;"><i class="bi bi-shield-check me-1"></i> Status Password PPPoE</label>
+                <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.28); border-radius:8px; padding:9px 12px; font-size:11.5px; color:#10b981; display:flex; align-items:center; gap:8px;">
+                  <i class="bi bi-check-circle-fill" style="font-size:16px;"></i>
+                  <div>
+                    <strong style="color:var(--text);">Password Menggunakan Secret MikroTik</strong>
+                    <div style="font-size:11px; color:var(--muted); margin-top:2px;">Secret sudah aktif di router. Tidak perlu mengisi password lagi.</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1584,28 +1672,75 @@
           <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
               <span style="font-size:12px; font-weight:700; color:var(--text);"><i class="bi bi-upc-scan text-primary me-1"></i> Identitas Modem Pelanggan</span>
-              <button type="button" class="btn btn-p btn-sm" onclick="openOnuPickerModal('add')" style="font-size:11px; padding:4px 10px;">
-                <i class="bi bi-search me-1"></i> Deteksi & Pilih Modem dari GenieACS
+              <button type="button" class="btn btn-g btn-sm" onclick="openOnuPickerModal('add')" style="font-size:11px; padding:3px 9px;">
+                <i class="bi bi-table me-1"></i> Buka Tabel Lengkap GenieACS
               </button>
             </div>
 
             <div class="form-row">
               <div class="fg">
                 <label class="fl" style="font-weight:700;"><i class="bi bi-barcode me-1"></i> Serial Number (SN) Modem ONU</label>
-                <input class="fc" name="ont_sn" id="add_ont_sn" placeholder="Contoh: ZTEGC0123456 / FH4B1234..." style="font-family:monospace; font-weight:700;">
-                <small class="text-muted" style="font-size:10.5px;">Ketik manual atau klik 'Deteksi & Pilih Modem' di atas.</small>
+                <div class="custom-autocomplete-wrap" id="add_ont_autocomplete_wrap">
+                  <div class="custom-autocomplete-input-wrap">
+                    <input class="fc" name="ont_sn" id="add_ont_sn" placeholder="Ketik SN (misal: ZTEGC0123... / 4 digit akhir)" autocomplete="off" onfocus="openOntDropdown('add')" oninput="filterOntDropdown('add', this.value)" style="font-family:monospace; font-weight:700;">
+                    <button type="button" class="autocomplete-toggle-btn" onclick="toggleOntDropdown('add')" title="Tampilkan daftar modem GenieACS">
+                      <i class="bi bi-chevron-down" id="add_ont_toggle_icon"></i>
+                    </button>
+                  </div>
+                  <div class="custom-autocomplete-dropdown" id="add_ont_dropdown" style="max-height:280px;"></div>
+                </div>
+                <small class="text-muted" style="font-size:10.5px; margin-top:4px; display:block;">
+                  Ketik SN untuk pencarian live atau klik panah untuk memilih modem yang aktif di GenieACS.
+                </small>
               </div>
               <div class="fg">
-                <label class="fl" style="font-weight:700;"><i class="bi bi-tag-fill text-warning me-1"></i> Tag GenieACS (TR-069)</label>
-                <input class="fc" name="genieacs_tag" id="add_genieacs_tag" placeholder="Disarankan sama dengan PPPoE Username" style="font-family:monospace;">
-                <small class="text-muted" style="font-size:10.5px;">Otomatis disamakan dengan ID / username PPPoE pelanggan.</small>
+                <label class="fl" style="font-weight:700;"><i class="bi bi-tag-fill text-warning me-1"></i> Tagging GenieACS (Standar NOC)</label>
+                <input type="hidden" name="genieacs_tag" id="add_genieacs_tag" value="">
+                <div style="background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:10px 12px;">
+                  <div style="font-size:10.5px; color:var(--muted); margin-bottom:6px;">
+                    Multi-Tag otomatis terstruktur untuk NOC:
+                  </div>
+                  <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;" id="add_genieacs_tags_preview">
+                    <span class="badge" id="add_tag_preview_id" style="background:rgba(99,102,241,0.18); color:var(--primary); border:1px solid rgba(99,102,241,0.35); padding:4px 8px; font-size:10.5px; font-family:monospace;">
+                      <i class="bi bi-person-badge me-1"></i>ID: <span id="add_tag_text_id">-</span>
+                    </span>
+                    <span class="badge" id="add_tag_preview_odp" style="background:rgba(245,158,11,0.18); color:#f59e0b; border:1px solid rgba(245,158,11,0.35); padding:4px 8px; font-size:10.5px; font-family:monospace;">
+                      <i class="bi bi-distribute-vertical me-1"></i>ODP: <span id="add_tag_text_odp">-</span>
+                    </span>
+                    <span class="badge" id="add_tag_preview_pkg" style="background:rgba(16,185,129,0.18); color:#10b981; border:1px solid rgba(16,185,129,0.35); padding:4px 8px; font-size:10.5px; font-family:monospace;">
+                      <i class="bi bi-speedometer2 me-1"></i>PKG: <span id="add_tag_text_pkg">-</span>
+                    </span>
+                  </div>
+                  <div style="margin-top:8px;">
+                    <input class="fc" name="genieacs_custom_tag" id="add_genieacs_custom_tag" placeholder="+ Tag Kustom (misal: VIP, ISOLIR)" style="font-size:11px; padding:4px 8px; height:auto;" oninput="updateGenieacsTagsPreview('add')">
+                  </div>
+                </div>
+                <small class="text-muted" style="font-size:10px; margin-top:4px; display:block;">
+                  NOC dapat memfilter ODP di GenieACS saat ada kabel putus.
+                </small>
               </div>
             </div>
           </div>
 
           <!-- FTTH Infrastructure -->
           <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
-            <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:12px;"><i class="bi bi-diagram-3-fill text-secondary me-1"></i> Topologi Distribusi FTTH</div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+              <div style="font-size:12px; font-weight:700; color:var(--text);"><i class="bi bi-diagram-3-fill text-secondary me-1"></i> Topologi Distribusi FTTH & ODC/ODP</div>
+              <span class="badge bp" style="font-size:10px;">ODC - ODP - Port</span>
+            </div>
+
+            <!-- Kode Pelanggan (Manual) Dipindahkan ke Bagian ODC/ODP -->
+            <div class="fg" style="margin-bottom:14px; background:rgba(99,102,241,0.03); border:1px solid rgba(99,102,241,0.22); border-radius:10px; padding:12px;">
+              <label class="fl" style="font-weight:700; color:var(--primary); display:flex; justify-content:space-between; align-items:center;">
+                <span><i class="bi bi-upc-scan me-1"></i> Kode Pelanggan (ID) *</span>
+                <span class="badge bp" style="font-size:9.5px; font-weight:600;">Input Manual / Secret PPP</span>
+              </label>
+              <input class="fc" name="customer_code" id="add_customer_code" placeholder="Contoh: CUST001, URG01, PLG-01, dll" style="font-family:monospace; font-weight:700; letter-spacing:1px; text-transform:uppercase;" oninput="syncCustomerCodeToPppoe('add', this.value)">
+              <small class="text-muted" style="font-size:11px; display:block; margin-top:4px;">
+                Kode pelanggan ini manual Anda tentukan dan otomatis disinkronkan ke <strong>Username PPPoE</strong> jika belum terisi.
+              </small>
+            </div>
+
             <div class="form-row">
               <div class="fg">
                 <label class="fl">Perangkat OLT</label>
@@ -1638,18 +1773,38 @@
                   <option value="">-- Tanpa ODP --</option>
                   <% if (typeof odps !== 'undefined') { %>
                     <% odps.forEach(o => { %>
-                      <option value="<%= o.id %>" data-name="<%= o.name %>" data-odc-id="<%= o.odc_id || '' %>"><%= o.name %></option>
+                      <option value="<%= o.id %>" data-name="<%= o.name %>" data-odc-id="<%= o.odc_id || '' %>" data-capacity="<%= o.port_capacity || o.total_ports || 8 %>"><%= o.name %></option>
                     <% }) %>
                   <% } %>
                 </select>
               </div>
               <div class="fg">
-                <label class="fl"><i class="bi bi-plug text-success me-1"></i> Nomor Port ODP</label>
-                <input class="fc" type="number" min="1" max="64" name="odp_port" id="add_odp_port" placeholder="Contoh: 1 s/d 16">
+                <label class="fl" style="display:flex; justify-content:space-between; align-items:center;">
+                  <span><i class="bi bi-plug-fill text-success me-1"></i> Nomor Port ODP</span>
+                  <span id="add_selected_port_badge" class="badge" style="background:rgba(255,255,255,0.06); color:var(--muted); font-size:10.5px; border:1px solid var(--border);">Belum dipilih</span>
+                </label>
+                <input type="hidden" name="odp_port" id="add_odp_port" value="">
+                <div id="add_port_display_box" class="fc" style="display:flex; align-items:center; justify-content:space-between; cursor:default; background:var(--bg3);">
+                  <span id="add_port_display_text" style="color:var(--muted); font-size:12px;">Pilih ODP di samping untuk melihat port</span>
+                  <button type="button" class="btn btn-g btn-sm" id="add_btn_clear_port" style="padding:2px 8px; font-size:10.5px; display:none;" onclick="clearSelectedOdpPort('add')">Reset</button>
+                </div>
               </div>
             </div>
 
-            <div class="form-row">
+            <!-- Visual ODP Port Slot Matrix Container -->
+            <div id="add_odp_ports_wrapper" class="odp-port-matrix-wrapper" style="display:none;">
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+                <div style="font-size:12px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px;">
+                  <i class="bi bi-grid-3x3-gap-fill text-primary"></i>
+                  <span>Matrix Port ODP</span>
+                  <span id="add_odp_port_stats_badge" class="badge" style="font-size:10.5px;"></span>
+                </div>
+                <small style="font-size:10.5px; color:var(--muted);"><i class="bi bi-info-circle me-1"></i>Klik slot port kosong (hijau) untuk memilih</small>
+              </div>
+              <div id="add_odp_ports_grid" class="odp-port-matrix-grid"></div>
+            </div>
+
+            <div class="form-row" style="margin-top:12px;">
               <div class="fg">
                 <label class="fl">Port PON OLT (Opsional)</label>
                 <input class="fc" name="pon_port" id="add_pon_port" placeholder="Contoh: PON 1/1/1">
@@ -1826,24 +1981,6 @@
 
           <div class="form-row">
             <div class="fg">
-              <label class="fl" style="font-weight:700; color:var(--primary); display:flex; justify-content:space-between;">
-                <span><i class="bi bi-upc-scan"></i> Kode Pelanggan (ID)</span>
-                <span style="font-size:10px; font-weight:normal; color:var(--muted);">Format Area & Urut</span>
-              </label>
-              <div style="display:flex; gap:6px;">
-                <input class="fc" name="customer_code" id="e_customer_code" style="font-family:monospace; font-weight:700; letter-spacing:1px; text-transform:uppercase;">
-                <button type="button" class="btn btn-g btn-sm" onclick="triggerAutoGenerateCode('edit')" title="Generate Kode Otomatis"><i class="bi bi-magic text-primary"></i> Auto</button>
-              </div>
-              <small class="text-muted" style="font-size:11px;">Format: <strong>[AREA][TAHUN][NO URUT]</strong></small>
-            </div>
-            <div class="fg">
-              <label class="fl"><i class="bi bi-card-text"></i> NIK / No. KTP</label>
-              <input class="fc" name="nik" id="e_nik" placeholder="Contoh: 3201xxxxxxxxxxxx" maxlength="20">
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="fg">
               <label class="fl" style="font-weight:700;">Nama Lengkap Pelanggan *</label>
               <input class="fc" name="name" id="e_name" required>
             </div>
@@ -1854,6 +1991,10 @@
           </div>
 
           <div class="form-row">
+            <div class="fg">
+              <label class="fl"><i class="bi bi-card-text"></i> NIK / No. KTP</label>
+              <input class="fc" name="nik" id="e_nik" placeholder="Contoh: 3201xxxxxxxxxxxx" maxlength="20">
+            </div>
             <div class="fg">
               <label class="fl"><i class="bi bi-geo-alt-fill text-warning me-1"></i> Area / Wilayah Layanan</label>
               <select class="fs" name="area" id="e_area">
@@ -1869,6 +2010,9 @@
                 <% } %>
               </select>
             </div>
+          </div>
+
+          <div class="form-row">
             <div class="fg">
               <label class="fl"><i class="bi bi-envelope me-1"></i> Email</label>
               <input class="fc" name="email" id="e_email" type="email">
@@ -1891,7 +2035,7 @@
           <div class="form-row">
             <div class="fg">
               <label class="fl" style="font-weight:700; color:var(--primary);"><i class="bi bi-box-seam me-1"></i> Paket Internet *</label>
-              <select class="fs" name="package_id" id="e_package" required style="font-weight:600;">
+              <select class="fs" name="package_id" id="e_package" required style="font-weight:600;" onchange="updateGenieacsTagsPreview('edit')">
                 <option value="">-- Pilih Paket Internet --</option>
                 <% packages.forEach(p => { %>
                 <option value="<%= p.id %>"><%= p.name %> — Rp <%= Number(p.price).toLocaleString('id-ID') %>/bln</option>
@@ -2048,13 +2192,23 @@
                 </div>
                 <div class="hint" id="e_pppoe_hint" style="font-size:11px; margin-top:4px; color:var(--muted);"></div>
               </div>
-              <div class="fg">
+              <div class="fg" id="e_pppoe_password_group">
                 <label class="fl" style="font-weight:700;"><i class="bi bi-lock-fill text-warning me-1"></i> PPPoE Password</label>
                 <div style="display:flex; gap:6px;">
                   <input class="fc" name="pppoe_password" id="e_pppoe_password" placeholder="Kosongkan jika tidak diubah" style="font-family:monospace; font-weight:600;">
                   <button type="button" class="btn btn-g btn-sm" onclick="document.getElementById('e_pppoe_password').value=generateRandomPassword(6)" title="Acak Password"><i class="bi bi-shuffle"></i></button>
                 </div>
                 <small class="text-muted" style="font-size:10px; display:block; margin-top:2px;">Kosongkan jika password tidak ingin diubah.</small>
+              </div>
+              <div class="fg" id="e_pppoe_password_mikrotik_info" style="display:none;">
+                <label class="fl" style="font-weight:700; color:#10b981;"><i class="bi bi-shield-check me-1"></i> Status Password PPPoE</label>
+                <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.28); border-radius:8px; padding:9px 12px; font-size:11.5px; color:#10b981; display:flex; align-items:center; gap:8px;">
+                  <i class="bi bi-check-circle-fill" style="font-size:16px;"></i>
+                  <div>
+                    <strong style="color:var(--text);">Password Menggunakan Secret MikroTik</strong>
+                    <div style="font-size:11px; color:var(--muted); margin-top:2px;">Secret sudah aktif di router. Tidak perlu mengisi password lagi.</div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -2135,26 +2289,75 @@
           <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
               <span style="font-size:12px; font-weight:700; color:var(--text);"><i class="bi bi-upc-scan text-primary me-1"></i> Identitas Modem Pelanggan</span>
-              <button type="button" class="btn btn-p btn-sm" onclick="openOnuPickerModal('edit')" style="font-size:11px; padding:4px 10px;">
-                <i class="bi bi-search me-1"></i> Deteksi & Ganti Modem dari GenieACS
+              <button type="button" class="btn btn-g btn-sm" onclick="openOnuPickerModal('edit')" style="font-size:11px; padding:3px 9px;">
+                <i class="bi bi-table me-1"></i> Buka Tabel Lengkap GenieACS
               </button>
             </div>
 
             <div class="form-row">
               <div class="fg">
                 <label class="fl" style="font-weight:700;"><i class="bi bi-barcode me-1"></i> Serial Number (SN) Modem ONU</label>
-                <input class="fc" name="ont_sn" id="e_ont_sn" placeholder="Contoh: ZTEGC0123456 / FH4B1234..." style="font-family:monospace; font-weight:700;">
+                <div class="custom-autocomplete-wrap" id="e_ont_autocomplete_wrap">
+                  <div class="custom-autocomplete-input-wrap">
+                    <input class="fc" name="ont_sn" id="e_ont_sn" placeholder="Ketik SN (misal: ZTEGC0123... / 4 digit akhir)" autocomplete="off" onfocus="openOntDropdown('edit')" oninput="filterOntDropdown('edit', this.value)" style="font-family:monospace; font-weight:700;">
+                    <button type="button" class="autocomplete-toggle-btn" onclick="toggleOntDropdown('edit')" title="Tampilkan daftar modem GenieACS">
+                      <i class="bi bi-chevron-down" id="e_ont_toggle_icon"></i>
+                    </button>
+                  </div>
+                  <div class="custom-autocomplete-dropdown" id="e_ont_dropdown" style="max-height:280px;"></div>
+                </div>
+                <small class="text-muted" style="font-size:10.5px; margin-top:4px; display:block;">
+                  Ketik SN untuk pencarian live atau klik panah untuk memilih modem yang aktif di GenieACS.
+                </small>
               </div>
               <div class="fg">
-                <label class="fl" style="font-weight:700;"><i class="bi bi-tag-fill text-warning me-1"></i> Tag GenieACS (TR-069)</label>
-                <input class="fc" name="genieacs_tag" id="e_tag" placeholder="Disarankan sama dengan PPPoE Username" style="font-family:monospace;">
+                <label class="fl" style="font-weight:700;"><i class="bi bi-tag-fill text-warning me-1"></i> Tagging GenieACS (Standar NOC)</label>
+                <input type="hidden" name="genieacs_tag" id="e_tag" value="">
+                <div style="background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:10px 12px;">
+                  <div style="font-size:10.5px; color:var(--muted); margin-bottom:6px;">
+                    Multi-Tag otomatis terstruktur untuk NOC:
+                  </div>
+                  <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;" id="e_genieacs_tags_preview">
+                    <span class="badge" id="e_tag_preview_id" style="background:rgba(99,102,241,0.18); color:var(--primary); border:1px solid rgba(99,102,241,0.35); padding:4px 8px; font-size:10.5px; font-family:monospace;">
+                      <i class="bi bi-person-badge me-1"></i>ID: <span id="e_tag_text_id">-</span>
+                    </span>
+                    <span class="badge" id="e_tag_preview_odp" style="background:rgba(245,158,11,0.18); color:#f59e0b; border:1px solid rgba(245,158,11,0.35); padding:4px 8px; font-size:10.5px; font-family:monospace;">
+                      <i class="bi bi-distribute-vertical me-1"></i>ODP: <span id="e_tag_text_odp">-</span>
+                    </span>
+                    <span class="badge" id="e_tag_preview_pkg" style="background:rgba(16,185,129,0.18); color:#10b981; border:1px solid rgba(16,185,129,0.35); padding:4px 8px; font-size:10.5px; font-family:monospace;">
+                      <i class="bi bi-speedometer2 me-1"></i>PKG: <span id="e_tag_text_pkg">-</span>
+                    </span>
+                  </div>
+                  <div style="margin-top:8px;">
+                    <input class="fc" name="genieacs_custom_tag" id="e_genieacs_custom_tag" placeholder="+ Tag Kustom (misal: VIP, ISOLIR)" style="font-size:11px; padding:4px 8px; height:auto;" oninput="updateGenieacsTagsPreview('edit')">
+                  </div>
+                </div>
+                <small class="text-muted" style="font-size:10px; margin-top:4px; display:block;">
+                  NOC dapat memfilter ODP di GenieACS saat ada kabel putus.
+                </small>
               </div>
             </div>
           </div>
 
           <!-- FTTH Infrastructure -->
           <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
-            <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:12px;"><i class="bi bi-diagram-3-fill text-secondary me-1"></i> Topologi Distribusi FTTH</div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+              <div style="font-size:12px; font-weight:700; color:var(--text);"><i class="bi bi-diagram-3-fill text-secondary me-1"></i> Topologi Distribusi FTTH & ODC/ODP</div>
+              <span class="badge bp" style="font-size:10px;">ODC - ODP - Port</span>
+            </div>
+
+            <!-- Kode Pelanggan Dipindahkan ke Sini -->
+            <div class="fg" style="margin-bottom:14px; background:rgba(99,102,241,0.03); border:1px solid rgba(99,102,241,0.22); border-radius:10px; padding:12px;">
+              <label class="fl" style="font-weight:700; color:var(--primary); display:flex; justify-content:space-between; align-items:center;">
+                <span><i class="bi bi-upc-scan me-1"></i> Kode Pelanggan (ID)</span>
+                <span class="badge bp" style="font-size:9.5px; font-weight:600;">Input Manual / Secret PPP</span>
+              </label>
+              <input class="fc" name="customer_code" id="e_customer_code" placeholder="Contoh: CUST001, URG01, PLG-01, dll" style="font-family:monospace; font-weight:700; letter-spacing:1px; text-transform:uppercase;" oninput="syncCustomerCodeToPppoe('edit', this.value)">
+              <small class="text-muted" style="font-size:11px; display:block; margin-top:4px;">
+                Kode unik pelanggan (digunakan sebagai ID pelanggan & kredensial koneksi).
+              </small>
+            </div>
+
             <div class="form-row">
               <div class="fg">
                 <label class="fl">Perangkat OLT</label>
@@ -2187,18 +2390,38 @@
                   <option value="">-- Tanpa ODP --</option>
                   <% if (typeof odps !== 'undefined') { %>
                     <% odps.forEach(o => { %>
-                      <option value="<%= o.id %>" data-name="<%= o.name %>" data-odc-id="<%= o.odc_id || '' %>"><%= o.name %></option>
+                      <option value="<%= o.id %>" data-name="<%= o.name %>" data-odc-id="<%= o.odc_id || '' %>" data-capacity="<%= o.port_capacity || o.total_ports || 8 %>"><%= o.name %></option>
                     <% }) %>
                   <% } %>
                 </select>
               </div>
               <div class="fg">
-                <label class="fl"><i class="bi bi-plug text-success me-1"></i> Nomor Port ODP</label>
-                <input class="fc" type="number" min="1" max="64" name="odp_port" id="e_odp_port" placeholder="Contoh: 1 s/d 16">
+                <label class="fl" style="display:flex; justify-content:space-between; align-items:center;">
+                  <span><i class="bi bi-plug-fill text-success me-1"></i> Nomor Port ODP</span>
+                  <span id="e_selected_port_badge" class="badge" style="background:rgba(255,255,255,0.06); color:var(--muted); font-size:10.5px; border:1px solid var(--border);">Belum dipilih</span>
+                </label>
+                <input type="hidden" name="odp_port" id="e_odp_port" value="">
+                <div id="e_port_display_box" class="fc" style="display:flex; align-items:center; justify-content:space-between; cursor:default; background:var(--bg3);">
+                  <span id="e_port_display_text" style="color:var(--muted); font-size:12px;">Pilih ODP di samping untuk melihat port</span>
+                  <button type="button" class="btn btn-g btn-sm" id="e_btn_clear_port" style="padding:2px 8px; font-size:10.5px; display:none;" onclick="clearSelectedOdpPort('edit')">Reset</button>
+                </div>
               </div>
             </div>
 
-            <div class="form-row">
+            <!-- Visual ODP Port Slot Matrix Container -->
+            <div id="e_odp_ports_wrapper" class="odp-port-matrix-wrapper" style="display:none;">
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+                <div style="font-size:12px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px;">
+                  <i class="bi bi-grid-3x3-gap-fill text-primary"></i>
+                  <span>Matrix Port ODP</span>
+                  <span id="e_odp_port_stats_badge" class="badge" style="font-size:10.5px;"></span>
+                </div>
+                <small style="font-size:10.5px; color:var(--muted);"><i class="bi bi-info-circle me-1"></i>Klik slot port kosong (hijau) untuk memilih</small>
+              </div>
+              <div id="e_odp_ports_grid" class="odp-port-matrix-grid"></div>
+            </div>
+
+            <div class="form-row" style="margin-top:12px;">
               <div class="fg">
                 <label class="fl">Port PON OLT (Opsional)</label>
                 <input class="fc" name="pon_port" id="e_pon_port" placeholder="Contoh: PON 1/1/1">
@@ -3265,6 +3488,12 @@ function openModal(id){
     if (id === 'addModal') {
       if (typeof switchCustModalTab === 'function') switchCustModalTab('add', 1);
       if (typeof selectAuthModeCard === 'function') selectAuthModeCard('add', 0);
+      if (typeof setPppoeSourceMode === 'function') setPppoeSourceMode('add', 'new');
+      if (typeof clearSelectedOdpPort === 'function') clearSelectedOdpPort('add');
+      if (typeof updateGenieacsTagsPreview === 'function') updateGenieacsTagsPreview('add');
+      const addOdpWrapper = document.getElementById('add_odp_ports_wrapper');
+      if (addOdpWrapper) addOdpWrapper.style.display = 'none';
+      if (typeof fetchAvailableOnus === 'function') fetchAvailableOnus();
     }
   }
 }
@@ -3384,6 +3613,211 @@ function previewDocFile(inputEl, boxId) {
   reader.readAsDataURL(file);
 }
 
+// ── SYNC KODE PELANGGAN KE PPPOE SECRET USERNAME & TAGS ──
+function syncCustomerCodeToPppoe(target = 'add', codeVal = '') {
+  const cleanCode = String(codeVal || '').trim();
+  if (target === 'add') {
+    const pppoeUserField = document.getElementById('add_pppoe_username');
+    const pppoeManual = document.getElementById('add_pppoe_username_manual');
+    const tagField = document.getElementById('add_genieacs_tag');
+
+    if (pppoeUserField && (!pppoeUserField.dataset.userEdited || pppoeUserField.dataset.userEdited === 'false')) {
+      pppoeUserField.value = cleanCode.toLowerCase();
+    }
+    if (pppoeManual && (!pppoeManual.dataset.userEdited || pppoeManual.dataset.userEdited === 'false')) {
+      pppoeManual.value = cleanCode.toLowerCase();
+    }
+    if (tagField) {
+      tagField.value = cleanCode.toUpperCase();
+    }
+    updateGenieacsTagsPreview('add');
+  } else if (target === 'edit') {
+    const tagField = document.getElementById('e_tag');
+    if (tagField) tagField.value = cleanCode.toUpperCase();
+    updateGenieacsTagsPreview('edit');
+  }
+}
+
+// ── NOC ISP GENIEACS MULTI-TAG PREVIEW FUNCTION ──
+function updateGenieacsTagsPreview(target = 'add') {
+  const prefix = target === 'add' ? 'add_' : 'e_';
+  const codeEl = document.getElementById(prefix + 'customer_code');
+  const userEl = document.getElementById(target === 'add' ? 'add_pppoe_username' : 'e_pppoe');
+  const odpEl = document.getElementById(prefix + 'odp_id');
+  const portEl = document.getElementById(prefix + 'odp_port');
+  const pkgEl = document.getElementById(target === 'add' ? 'add_package_id' : 'e_package');
+  const hiddenTag = document.getElementById(prefix === 'add_' ? 'add_genieacs_tag' : 'e_tag');
+
+  const textId = document.getElementById(prefix + 'tag_text_id');
+  const textOdp = document.getElementById(prefix + 'tag_text_odp');
+  const textPkg = document.getElementById(prefix + 'tag_text_pkg');
+
+  const cleanCode = (codeEl && codeEl.value ? codeEl.value.trim() : (userEl && userEl.value ? userEl.value.trim() : '')).toUpperCase();
+  let odpText = '';
+  if (odpEl && odpEl.selectedIndex > 0) {
+    odpText = odpEl.options[odpEl.selectedIndex].text.replace(/\s*\(.*\)$/, '').trim();
+  }
+  const portVal = portEl && portEl.value ? portEl.value.trim() : '';
+  let pkgText = '';
+  if (pkgEl && pkgEl.selectedIndex > 0) {
+    pkgText = pkgEl.options[pkgEl.selectedIndex].text.split('—')[0].trim();
+  }
+
+  const idTag = cleanCode ? cleanCode : '-';
+  const odpTag = odpText ? (odpText + (portVal ? `-P${String(portVal).padStart(2, '0')}` : '')) : '-';
+  const pkgTag = pkgText ? pkgText.replace(/[^a-zA-Z0-9_\-]/g, '') : '-';
+
+  if (textId) textId.textContent = idTag;
+  if (textOdp) textOdp.textContent = odpTag;
+  if (textPkg) textPkg.textContent = pkgTag;
+
+  if (hiddenTag) {
+    hiddenTag.value = cleanCode;
+  }
+}
+
+// ── ODP PORT SELECTOR & MATRIX GRID FUNCTIONS ──
+async function loadOdpPortMatrix(target = 'add', odpId, preselectedPort = null) {
+  const prefix = target === 'add' ? 'add_' : 'e_';
+  const wrapper = document.getElementById(prefix + 'odp_ports_wrapper');
+  const grid = document.getElementById(prefix + 'odp_ports_grid');
+  const statsBadge = document.getElementById(prefix + 'odp_port_stats_badge');
+  const displayBox = document.getElementById(prefix + 'port_display_box');
+  const displayText = document.getElementById(prefix + 'port_display_text');
+  const portInput = document.getElementById(prefix + 'odp_port');
+
+  if (!wrapper || !grid) return;
+  if (!odpId) {
+    wrapper.style.display = 'none';
+    if (displayText) displayText.textContent = 'Pilih ODP di samping untuk melihat port';
+    return;
+  }
+
+  wrapper.style.display = 'block';
+  grid.innerHTML = '<div style="grid-column: 1/-1; padding: 16px; text-align: center; color: var(--muted); font-size: 11px;"><i class="bi bi-hourglass-split me-1"></i> Memuat status port ODP...</div>';
+
+  try {
+    const excludeCustId = (target === 'edit' && typeof currentEditCustomerId !== 'undefined') ? currentEditCustomerId : '';
+    const res = await fetch(`/admin/api/odps/${encodeURIComponent(odpId)}/ports?exclude_customer_id=${encodeURIComponent(excludeCustId)}`);
+    const data = await res.json();
+
+    if (!data.ok || !data.slots) {
+      grid.innerHTML = `<div style="grid-column: 1/-1; padding: 12px; text-align: center; color: #ef4444; font-size: 11px;"><i class="bi bi-exclamation-triangle me-1"></i> ${data.error || 'Gagal memuat port ODP.'}</div>`;
+      return;
+    }
+
+    if (statsBadge && data.stats) {
+      statsBadge.textContent = `${data.stats.usedCount} / ${data.stats.capacity} Port (${data.stats.statusBadge})`;
+      statsBadge.style.background = data.stats.statusColor || 'var(--primary)';
+      statsBadge.style.color = '#ffffff';
+    }
+
+    const currentVal = (preselectedPort !== null && preselectedPort !== undefined && preselectedPort !== '')
+      ? Number(preselectedPort)
+      : (portInput && portInput.value ? Number(portInput.value) : null);
+
+    grid.innerHTML = data.slots.map(slot => {
+      const pNum = slot.portNumber;
+      const isSelected = (currentVal === pNum);
+      const isOccupiedByOther = slot.isOccupied && !slot.isCurrentCustomer;
+
+      if (isOccupiedByOther) {
+        const custName = slot.customer ? (slot.customer.name || 'Pelanggan') : 'Terpakai';
+        const custCode = slot.customer ? (slot.customer.customer_code || slot.customer.pppoe_username || '') : '';
+        const custMeta = custCode ? `[${custCode}] ${custName}` : custName;
+        return `
+          <div class="odp-port-slot-card port-slot-occupied" title="Port ${pNum} sudah terpakai oleh: ${custMeta}">
+            <div class="port-card-header">
+              <span class="port-card-num" style="color:var(--muted);"><i class="bi bi-plug-fill me-1"></i>Port ${String(pNum).padStart(2, '0')}</span>
+              <span class="port-card-badge" style="background:rgba(239,68,68,0.18); color:#ef4444; border:1px solid rgba(239,68,68,0.3);">Terpakai</span>
+            </div>
+            <div class="port-card-cust" title="${custMeta}">
+              <i class="bi bi-person-fill me-1"></i>${custName}
+            </div>
+          </div>
+        `;
+      } else if (slot.isCurrentCustomer) {
+        return `
+          <div class="odp-port-slot-card port-slot-current ${isSelected ? 'port-slot-selected' : ''}" id="${prefix}port_slot_${pNum}" onclick="selectOdpPort('${target}', ${pNum})" title="Port ${pNum} aktif milik pelanggan ini (klik untuk mempertahankan atau ganti)">
+            <div class="port-card-header">
+              <span class="port-card-num" style="color:#0284c7;"><i class="bi bi-plug-fill me-1"></i>Port ${String(pNum).padStart(2, '0')}</span>
+              <span class="port-card-badge" style="background:rgba(2,132,199,0.18); color:#0284c7; border:1px solid rgba(2,132,199,0.3);">Port Ini</span>
+            </div>
+            <div class="port-card-cust" style="color:#0284c7; font-weight:600;">
+              <i class="bi bi-check-circle-fill me-1"></i>Pelanggan Ini
+            </div>
+          </div>
+        `;
+      } else {
+        return `
+          <div class="odp-port-slot-card port-slot-available ${isSelected ? 'port-slot-selected' : ''}" id="${prefix}port_slot_${pNum}" onclick="selectOdpPort('${target}', ${pNum})" title="Port ${pNum} kosong / bebas (klik untuk memilih)">
+            <div class="port-card-header">
+              <span class="port-card-num" style="color:#10b981;"><i class="bi bi-plug me-1"></i>Port ${String(pNum).padStart(2, '0')}</span>
+              <span class="port-card-badge" style="background:rgba(16,185,129,0.18); color:#10b981; border:1px solid rgba(16,185,129,0.3);">Kosong</span>
+            </div>
+            <div class="port-card-cust" style="color:#10b981;">
+              <i class="bi bi-arrow-down-right-circle me-1"></i>Tersedia
+            </div>
+          </div>
+        `;
+      }
+    }).join('');
+
+    if (currentVal) {
+      selectOdpPort(target, currentVal, false);
+    }
+  } catch (err) {
+    grid.innerHTML = `<div style="grid-column: 1/-1; padding: 12px; text-align: center; color: #ef4444; font-size: 11px;"><i class="bi bi-exclamation-triangle me-1"></i> Gagal koneksi: ${err.message}</div>`;
+  }
+}
+
+function selectOdpPort(target = 'add', portNum, updateInput = true) {
+  const prefix = target === 'add' ? 'add_' : 'e_';
+  const portInput = document.getElementById(prefix + 'odp_port');
+  const displayText = document.getElementById(prefix + 'port_display_text');
+  const clearBtn = document.getElementById(prefix + 'btn_clear_port');
+  const badge = document.getElementById(prefix + 'selected_port_badge');
+
+  if (updateInput && portInput) portInput.value = portNum;
+
+  if (displayText) {
+    displayText.innerHTML = `<strong style="color:var(--text); font-family:monospace; font-size:13px;"><i class="bi bi-plug-fill text-success me-1"></i>Port ${String(portNum).padStart(2, '0')}</strong> <span class="badge bs" style="font-size:10px; margin-left:6px;"><i class="bi bi-check2"></i> Terpilih</span>`;
+  }
+  if (clearBtn) clearBtn.style.display = 'inline-block';
+  if (badge) {
+    badge.textContent = `Port ${portNum} Terpilih`;
+    badge.style.background = 'rgba(16,185,129,0.15)';
+    badge.style.color = '#10b981';
+    badge.style.borderColor = 'rgba(16,185,129,0.3)';
+  }
+
+  document.querySelectorAll(`#${prefix}odp_ports_grid .odp-port-slot-card`).forEach(el => el.classList.remove('port-slot-selected'));
+  const targetSlot = document.getElementById(`${prefix}port_slot_${portNum}`);
+  if (targetSlot) targetSlot.classList.add('port-slot-selected');
+  if (typeof updateGenieacsTagsPreview === 'function') updateGenieacsTagsPreview(target);
+}
+
+function clearSelectedOdpPort(target = 'add') {
+  const prefix = target === 'add' ? 'add_' : 'e_';
+  const portInput = document.getElementById(prefix + 'odp_port');
+  const displayText = document.getElementById(prefix + 'port_display_text');
+  const clearBtn = document.getElementById(prefix + 'btn_clear_port');
+  const badge = document.getElementById(prefix + 'selected_port_badge');
+
+  if (portInput) portInput.value = '';
+  if (displayText) displayText.textContent = 'Pilih ODP di samping untuk melihat port';
+  if (clearBtn) clearBtn.style.display = 'none';
+  if (badge) {
+    badge.textContent = 'Belum dipilih';
+    badge.style.background = 'rgba(255,255,255,0.06)';
+    badge.style.color = 'var(--muted)';
+    badge.style.borderColor = 'var(--border)';
+  }
+
+  document.querySelectorAll(`#${prefix}odp_ports_grid .odp-port-slot-card`).forEach(el => el.classList.remove('port-slot-selected'));
+  if (typeof updateGenieacsTagsPreview === 'function') updateGenieacsTagsPreview(target);
+}
+
 function handleOdpChange(type = 'add') {
   const prefix = type === 'add' ? 'add_' : 'e_';
   const odpSelect = document.getElementById(prefix + 'odp_id');
@@ -3397,6 +3831,16 @@ function handleOdpChange(type = 'add') {
       odcSelect.value = dataOdcId;
     }
   }
+
+  const selectedOdpId = odpSelect.value;
+  if (selectedOdpId) {
+    loadOdpPortMatrix(type, selectedOdpId);
+  } else {
+    clearSelectedOdpPort(type);
+    const wrapper = document.getElementById(prefix + 'odp_ports_wrapper');
+    if (wrapper) wrapper.style.display = 'none';
+  }
+  if (typeof updateGenieacsTagsPreview === 'function') updateGenieacsTagsPreview(type);
 }
 
 function handleOdcChange(type = 'add') {
@@ -4157,8 +4601,6 @@ const officeCoords = {
   lng: parseFloat(appSettings.office_lng) || 106.816666
 };
 
-function openModal(id){document.getElementById(id).classList.add('show')}
-function closeModal(id){document.getElementById(id).classList.remove('show')}
 
 function openPicker(type) {
   activePickerType = type;
@@ -4537,9 +4979,183 @@ async function executeQuickImport() {
   }
 }
 
-// ─── AVAILABLE ONU PICKER (GENIEACS TR-069) ───────────────────────────
+// ─── AVAILABLE ONU AUTOCOMPLETE & PICKER (GENIEACS TR-069) ─────────
 let availableOnusCache = [];
+let isLoadingOnus = false;
 let currentOnuPickerTarget = 'add';
+
+async function fetchAvailableOnus(force = false) {
+  if (!force && availableOnusCache.length > 0) return availableOnusCache;
+  if (isLoadingOnus) return availableOnusCache;
+  isLoadingOnus = true;
+  try {
+    const res = await fetch('/admin/api/customers/available-onus');
+    const data = await res.json();
+    const list = data.devices || data.onus || [];
+    if (Array.isArray(list)) {
+      availableOnusCache = list;
+    }
+  } catch (err) {
+    console.error('Failed to fetch available ONUs from GenieACS:', err);
+  } finally {
+    isLoadingOnus = false;
+  }
+  return availableOnusCache;
+}
+
+function openOntDropdown(type) {
+  const dropdownEl = document.getElementById(type === 'add' ? 'add_ont_dropdown' : 'e_ont_dropdown');
+  const iconEl = document.getElementById(type === 'add' ? 'add_ont_toggle_icon' : 'e_ont_toggle_icon');
+  const inputEl = document.getElementById(type === 'add' ? 'add_ont_sn' : 'e_ont_sn');
+  if (dropdownEl) {
+    dropdownEl.classList.add('show');
+    if (availableOnusCache.length === 0) {
+      dropdownEl.innerHTML = '<div style="padding:14px; text-align:center; color:var(--muted); font-size:11.5px;"><i class="bi bi-hourglass-split me-1"></i> Memindai modem TR-069 dari GenieACS...</div>';
+      fetchAvailableOnus().then(() => {
+        renderOntDropdown(type, inputEl ? inputEl.value : '');
+      });
+    } else {
+      renderOntDropdown(type, inputEl ? inputEl.value : '');
+    }
+  }
+  if (iconEl) iconEl.style.transform = 'rotate(180deg)';
+}
+
+function closeOntDropdown(type) {
+  const dropdownEl = document.getElementById(type === 'add' ? 'add_ont_dropdown' : 'e_ont_dropdown');
+  const iconEl = document.getElementById(type === 'add' ? 'add_ont_toggle_icon' : 'e_ont_toggle_icon');
+  if (dropdownEl) dropdownEl.classList.remove('show');
+  if (iconEl) iconEl.style.transform = 'rotate(0deg)';
+}
+
+function toggleOntDropdown(type) {
+  const dropdownEl = document.getElementById(type === 'add' ? 'add_ont_dropdown' : 'e_ont_dropdown');
+  if (dropdownEl && dropdownEl.classList.contains('show')) {
+    closeOntDropdown(type);
+  } else {
+    openOntDropdown(type);
+  }
+}
+
+function filterOntDropdown(type, val) {
+  openOntDropdown(type);
+  renderOntDropdown(type, val);
+}
+
+function renderOntDropdown(type, query = '') {
+  const dropdownEl = document.getElementById(type === 'add' ? 'add_ont_dropdown' : 'e_ont_dropdown');
+  if (!dropdownEl) return;
+
+  const q = String(query || '').trim().toLowerCase();
+  const list = availableOnusCache || [];
+
+  if (list.length === 0 && !isLoadingOnus) {
+    dropdownEl.innerHTML = `
+      <div style="padding:16px; text-align:center; color:var(--muted); font-size:11.5px;">
+        <i class="bi bi-exclamation-circle text-warning me-1"></i> Belum ada modem terdeteksi di GenieACS.<br>
+        <span style="font-size:10.5px;">Anda tetap dapat mengetik SN manual dari stiker perangkat.</span>
+      </div>
+    `;
+    return;
+  }
+
+  const filtered = q ? list.filter(o => {
+    const sn = String(o.serialNumber || o.sn || '').toLowerCase();
+    const model = String(o.model || o.productClass || '').toLowerCase();
+    const ip = String(o.ip || '').toLowerCase();
+    const tag = String(o.tag || o.genieacs_tag || '').toLowerCase();
+    const assigned = String(o.assignedTo || o.paired_with || '').toLowerCase();
+    return sn.includes(q) || model.includes(q) || ip.includes(q) || tag.includes(q) || assigned.includes(q);
+  }) : list;
+
+  if (filtered.length === 0) {
+    const qClean = q.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    dropdownEl.innerHTML = `
+      <div class="autocomplete-empty" style="padding:14px; text-align:center;">
+        <div style="margin-bottom:6px; color:var(--muted); font-size:11.5px;"><i class="bi bi-search me-1"></i> SN "<strong>${qClean}</strong>" tidak ditemukan di GenieACS</div>
+        <div style="font-size:11px; color:var(--primary); cursor:pointer; font-weight:600;" onclick="selectOntItem('${type}', '${q.replace(/'/g, "\\'")}', '')">
+          <i class="bi bi-check2-circle me-1"></i>Gunakan "${qClean}" sebagai SN Manual
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  filtered.slice(0, 40).forEach(o => {
+    const snVal = o.serialNumber || o.sn || '-';
+    const modelVal = o.model || o.productClass || 'Fiberhome/ZTE ONT';
+    const ipVal = o.ip || '';
+    const isAssigned = !!(o.isAssigned || o.is_paired);
+    const assignedTo = o.assignedTo || o.paired_with || '';
+    const rxVal = (o.rxPower !== undefined && o.rxPower !== null) ? Number(o.rxPower).toFixed(1) : null;
+    const tagVal = o.tag || o.genieacs_tag || '';
+
+    const snEsc = String(snVal).replace(/'/g, "\\'");
+    const tagEsc = String(tagVal).replace(/'/g, "\\'");
+    const rxParam = rxVal !== null ? rxVal : '';
+
+    let badgeStatus = '';
+    if (isAssigned) {
+      badgeStatus = `<span class="badge bw" style="font-size:9.5px; padding:2px 6px;"><i class="bi bi-link-45deg me-1"></i>${(assignedTo || 'Terpakai').replace(/</g, '&lt;')}</span>`;
+    } else {
+      badgeStatus = `<span class="badge bs" style="font-size:9.5px; padding:2px 6px;"><i class="bi bi-check-circle me-1"></i>Bebas</span>`;
+    }
+
+    let rxBadge = '';
+    if (rxVal !== null) {
+      const rxNum = parseFloat(rxVal);
+      const rxColor = (rxNum >= -24 && rxNum <= -8) ? '#10b981' : (rxNum < -27 ? '#ef4444' : '#f59e0b');
+      rxBadge = `<span style="font-family:monospace; font-size:10px; color:${rxColor};"><i class="bi bi-activity me-1"></i>${rxVal} dBm</span>`;
+    }
+
+    html += `
+      <div class="autocomplete-item" onclick="selectOntItem('${type}', '${snEsc}', '${tagEsc}', '${rxParam}')" style="padding:9px 12px; border-bottom:1px solid var(--border); cursor:pointer;">
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+            <span style="font-family:monospace; font-weight:800; font-size:12px; color:var(--primary);">${snVal}</span>
+            ${badgeStatus}
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; font-size:10.5px; color:var(--muted); margin-top:2px;">
+            <span><i class="bi bi-hdd-network me-1"></i>${modelVal}</span>
+            ${ipVal ? `<span>• IP: ${ipVal}</span>` : ''}
+            ${rxBadge ? `<span>• ${rxBadge}</span>` : ''}
+          </div>
+          ${isAssigned && assignedTo ? `<div style="font-size:10px; color:#f59e0b; margin-top:2px;"><i class="bi bi-person-fill me-1"></i>Terpasang: <strong>${assignedTo.replace(/</g, '&lt;')}</strong></div>` : ''}
+        </div>
+      </div>
+    `;
+  });
+
+  if (filtered.length > 40) {
+    html += `<div style="padding:8px; text-align:center; font-size:10.5px; color:var(--muted); border-top:1px solid rgba(255,255,255,0.04);">Menampilkan 40 dari ${filtered.length} modem. Ketik untuk mempersempit.</div>`;
+  }
+
+  dropdownEl.innerHTML = html;
+}
+
+function selectOntItem(type, sn, tag = '', rxPower = '') {
+  const snField = document.getElementById(type === 'add' ? 'add_ont_sn' : 'e_ont_sn');
+  const tagField = document.getElementById(type === 'add' ? 'add_genieacs_tag' : 'e_tag');
+  
+  if (snField) snField.value = sn;
+  if (tagField && (!tagField.value || !tagField.value.trim())) {
+    tagField.value = tag || sn;
+  }
+
+  if (rxPower) {
+    const rxInput = document.getElementById(type === 'add' ? 'add_initial_rx_power' : 'e_initial_rx_power');
+    if (rxInput && (!rxInput.value || !rxInput.value.trim())) {
+      rxInput.value = rxPower;
+      if (typeof updateRxBadge === 'function') updateRxBadge(type);
+    }
+  }
+
+  closeOntDropdown(type);
+  if (typeof updateGenieacsTagsPreview === 'function') {
+    updateGenieacsTagsPreview(type);
+  }
+}
 
 async function openOnuPickerModal(target = 'add') {
   currentOnuPickerTarget = target;
@@ -4552,16 +5168,11 @@ async function loadAvailableOnus() {
   if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--muted);"><i class="bi bi-hourglass-split"></i> Memindai modem TR-069 dari GenieACS...</td></tr>';
 
   try {
-    const res = await fetch('/admin/api/customers/available-onus');
-    const data = await res.json();
-    const list = data.devices || data.onus || [];
-
-    if (!data.ok || !Array.isArray(list)) {
-      if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:#ef4444;"><i class="bi bi-exclamation-triangle me-1"></i> ${data.error || data.message || 'GenieACS tidak terhubung atau belum ada modem terdeteksi.'}</td></tr>`;
+    const list = await fetchAvailableOnus(true);
+    if (!Array.isArray(list)) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:#ef4444;"><i class="bi bi-exclamation-triangle me-1"></i> GenieACS tidak terhubung atau belum ada modem terdeteksi.</td></tr>`;
       return;
     }
-
-    availableOnusCache = list;
     renderOnuTable(list);
   } catch (err) {
     if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:#ef4444;"><i class="bi bi-exclamation-triangle me-1"></i> Koneksi gagal: ${err.message}</td></tr>`;
@@ -4588,6 +5199,7 @@ function renderOnuTable(onus) {
     const tagVal = o.tag || o.genieacs_tag || '';
     const tagEsc = (tagVal || snVal || '').replace(/'/g, "\\'");
     const snEsc = (snVal || '').replace(/'/g, "\\'");
+    const rxParam = (o.rxPower !== undefined && o.rxPower !== null) ? Number(o.rxPower).toFixed(1) : '';
 
     return `
       <tr style="border-bottom:1px solid var(--border);">
@@ -4597,7 +5209,7 @@ function renderOnuTable(onus) {
         <td style="padding:10px; font-family:monospace; font-size:11px;">${tagVal || '-'}</td>
         <td style="padding:10px;">${pairedBadge}</td>
         <td style="padding:10px; text-align:center;">
-          <button type="button" class="btn btn-p btn-sm" style="font-size:11px; padding:3px 10px;" onclick="selectOnuForCustomer('${snEsc}', '${tagEsc}')">
+          <button type="button" class="btn btn-p btn-sm" style="font-size:11px; padding:3px 10px;" onclick="selectOnuForCustomer('${snEsc}', '${tagEsc}', '${rxParam}')">
             <i class="bi bi-check2 me-1"></i> Gunakan
           </button>
         </td>
@@ -4622,20 +5234,9 @@ function filterOnuList() {
   renderOnuTable(filtered);
 }
 
-function selectOnuForCustomer(sn, tag) {
-  const prefix = currentOnuPickerTarget === 'add' ? 'add_' : 'e_';
-  const tagField = currentOnuPickerTarget === 'add' ? document.getElementById('add_genieacs_tag') : document.getElementById('e_tag');
-  const snField = document.getElementById(prefix + 'ont_sn');
-
-  if (snField) snField.value = sn;
-  if (tagField) {
-    if (!tagField.value || tagField.value.trim() === '') {
-      tagField.value = tag || sn;
-    }
-  }
-
+function selectOnuForCustomer(sn, tag, rxPower = '') {
+  selectOntItem(currentOnuPickerTarget, sn, tag, rxPower);
   closeModal('onuPickerModal');
-  alert(`Modem ONU (SN: ${sn}) berhasil dipasangkan ke form!`);
 }
 
 // ─── SINGLE SECRET PICKER (FOR ADD CUSTOMER FORM) ────────────────────
@@ -4661,10 +5262,14 @@ async function openSecretPickerModal(target = 'add') {
 }
 
 function setPppoeSourceMode(target, mode) {
-  const srcInput = document.getElementById(target + '_pppoe_source');
+  const prefix = target === 'add' ? 'add_' : 'e_';
+  const srcInput = document.getElementById(prefix + 'pppoe_source');
   const btnNew = document.getElementById('btn_mode_pppoe_new');
   const btnMikrotik = document.getElementById('btn_mode_pppoe_mikrotik');
-  const badge = document.getElementById(target + '_pppoe_mode_badge');
+  const badge = document.getElementById(prefix + 'pppoe_mode_badge');
+  const pwdGroup = document.getElementById(prefix + 'pppoe_password_group');
+  const pwdInput = document.getElementById(prefix + 'pppoe_password');
+  const pwdInfo = document.getElementById(prefix + 'pppoe_password_mikrotik_info');
 
   if (srcInput) srcInput.value = mode;
 
@@ -4680,10 +5285,17 @@ function setPppoeSourceMode(target, mode) {
       btnMikrotik.classList.remove('btn-g');
     }
     if (badge) {
-      badge.innerHTML = '<span><i class="bi bi-cloud-check-fill text-success me-1"></i> <strong>Mode: Ambil dari MikroTik</strong> — Memetakan secret eksisting yang sedang running tanpa menimpa/membuat ulang di router.</span>';
+      badge.innerHTML = '<span><i class="bi bi-cloud-check-fill text-success me-1"></i> <strong>Mode: Ambil dari MikroTik</strong> — Memetakan secret aktif di router tanpa input password manual.</span>';
       badge.style.background = 'rgba(16,185,129,0.08)';
       badge.style.borderColor = 'rgba(16,185,129,0.3)';
     }
+    // Sembunyikan field password & hilangkan required
+    if (pwdGroup) pwdGroup.style.display = 'none';
+    if (pwdInput) {
+      pwdInput.removeAttribute('required');
+    }
+    if (pwdInfo) pwdInfo.style.display = 'block';
+
     openSecretPickerModal(target);
   } else {
     if (btnNew) {
@@ -4697,34 +5309,48 @@ function setPppoeSourceMode(target, mode) {
       btnMikrotik.classList.add('btn-g');
     }
     if (badge) {
-      badge.innerHTML = '<span><i class="bi bi-info-circle text-primary me-1"></i> <strong>Mode: Buat Baru</strong> — Kredensial akan otomatis didaftarkan ke MikroTik <code>/ppp secret</code> saat formulir disimpan.</span>';
+      badge.innerHTML = '<span><i class="bi bi-info-circle text-primary me-1"></i> <strong>Mode: Buat Baru</strong> — Kredensial akan didaftarkan ke MikroTik <code>/ppp secret</code> saat formulir disimpan.</span>';
       badge.style.background = 'rgba(99,102,241,0.08)';
       badge.style.borderColor = 'rgba(99,102,241,0.3)';
     }
+    // Tampilkan field password & aktifkan required (jika add)
+    if (pwdGroup) pwdGroup.style.display = 'block';
+    if (pwdInput && target === 'add') {
+      pwdInput.setAttribute('required', 'required');
+    }
+    if (pwdInfo) pwdInfo.style.display = 'none';
   }
 }
 
+let availableSecretsCache = [];
+
 function renderSecretPickerTable(secrets) {
+  availableSecretsCache = secrets || [];
   const tbody = document.getElementById('secret_picker_tbody');
   if (!tbody) return;
   if (!secrets || secrets.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--muted);">Tidak ada secret yang belum terdaftar di MikroTik.</td></tr>';
     return;
   }
-  tbody.innerHTML = secrets.map((s) => {
+  tbody.innerHTML = secrets.map((s, idx) => {
     const uName = s.username || s.name || '-';
-    const nameEsc = uName.replace(/'/g, "\\'");
-    const passEsc = (s.password || '').replace(/'/g, "\\'");
-    const rId = s._router_id || s.router_id || '';
+    const parsed = s.parsedComment || {};
     const ipAddr = s.remoteAddress || s['remote-address'] || '-';
+    const commentDisplay = s.comment 
+      ? `<div style="font-weight:600; color:var(--text);">${s.comment}</div>${parsed.name ? `<div style="font-size:10px; color:var(--primary); margin-top:2px;"><i class="bi bi-person me-1"></i>${parsed.name}${parsed.phone ? ' (' + parsed.phone + ')' : ''}${parsed.odp_name ? ' | ' + parsed.odp_name : ''}</div>` : ''}`
+      : '<span style="color:var(--muted)">-</span>';
+
     return `
       <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:10px; font-weight:700; font-family:monospace; color:var(--primary);">${uName}</td>
+        <td style="padding:10px; font-weight:700; font-family:monospace; color:var(--primary);">
+          ${uName}
+          ${parsed.customer_code ? `<span class="badge bp" style="font-size:9.5px; margin-left:4px;">ID: ${parsed.customer_code}</span>` : ''}
+        </td>
         <td style="padding:10px;"><span class="badge bp" style="font-size:10px;">${s.profile || 'default'}</span></td>
-        <td style="padding:10px; font-family:monospace;">${ipAddr}</td>
-        <td style="padding:10px; color:var(--muted);">${s.comment || '-'}</td>
+        <td style="padding:10px; font-family:monospace; font-size:11px;">${ipAddr}</td>
+        <td style="padding:10px;">${commentDisplay}</td>
         <td style="padding:10px; text-align:center;">
-          <button type="button" class="btn btn-p btn-sm" style="font-size:11px; padding:3px 10px;" onclick="applySecretToForm('${nameEsc}', '${passEsc}', '${rId}')">
+          <button type="button" class="btn btn-p btn-sm" style="font-size:11px; padding:3px 10px;" onclick="applySecretToFormByIndex(${idx})">
             <i class="bi bi-check2 me-1"></i> Pilih
           </button>
         </td>
@@ -4733,57 +5359,124 @@ function renderSecretPickerTable(secrets) {
   }).join('');
 }
 
-function applySecretToForm(name, pass, routerId) {
+function applySecretToFormByIndex(idx) {
+  const s = availableSecretsCache[idx];
+  if (!s) return;
+  const name = s.username || s.name || '';
+  const pass = s.password || '';
+  const routerId = s._router_id || s.router_id || '';
+  const parsed = s.parsedComment || {};
+
   if (secretPickerTarget === 'add') {
+    setPppoeSourceMode('add', 'mikrotik');
     const userField = document.querySelector('#addModal input[name="pppoe_username"]');
     const userManual = document.getElementById('add_pppoe_username_manual');
     const passField = document.getElementById('add_pppoe_password');
-    const tagField = document.getElementById('add_genieacs_tag');
     const routerSelect = document.getElementById('add_router_select');
     const nameField = document.querySelector('#addModal input[name="name"]');
+    const phoneField = document.querySelector('#addModal input[name="phone"]');
+    const addrField = document.querySelector('#addModal textarea[name="address"]');
+    const codeField = document.getElementById('add_customer_code');
     const srcInput = document.getElementById('add_pppoe_source');
 
+    // Kode Pelanggan & Username PPPoE (Secret = Kode Pelanggan)
+    const effectiveCode = parsed.customer_code || name;
+    if (codeField) codeField.value = effectiveCode;
     if (userField) userField.value = name;
     if (userManual) userManual.value = name;
-    if (passField) passField.value = pass || generateRandomPassword(6);
-    if (tagField && (!tagField.value || tagField.value.trim() === '')) tagField.value = name;
+    if (passField) {
+      passField.value = pass || '';
+      passField.removeAttribute('required');
+    }
     if (routerSelect && routerId) routerSelect.value = routerId;
     if (srcInput) srcInput.value = 'mikrotik';
 
-    // Otomatis aktifkan opsi kirim secret ke RADIUS saat memilih dari MikroTik
+    // Auto-populate data pelanggan dari parsed comment MikroTik
+    if (nameField) {
+      nameField.value = parsed.name || name.replace(/@.*$/, '').replace(/[_\-\.]/g, ' ').toUpperCase();
+    }
+    if (phoneField && parsed.phone) {
+      phoneField.value = parsed.phone;
+    }
+    if (addrField && parsed.address) {
+      addrField.value = parsed.address;
+    }
+
+    // Auto-match ODP & Port jika ada di comment
+    if (parsed.odp_name) {
+      const odpSelect = document.getElementById('add_odp_id');
+      if (odpSelect) {
+        const targetClean = parsed.odp_name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        for (let i = 0; i < odpSelect.options.length; i++) {
+          const optText = odpSelect.options[i].textContent.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (optText.includes(targetClean)) {
+            odpSelect.selectedIndex = i;
+            handleOdpChange('add');
+            if (parsed.odp_port) {
+              setTimeout(() => {
+                selectOdpPort('add', parsed.odp_port);
+                updateGenieacsTagsPreview('add');
+              }, 400);
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    // Aktifkan opsi kirim secret ke RADIUS
     toggleRadiusSync('add', true);
     const addChk = document.getElementById('add_sync_to_radius');
     if (addChk) addChk.checked = true;
 
-    const btnNew = document.getElementById('btn_mode_pppoe_new');
-    const btnMikrotik = document.getElementById('btn_mode_pppoe_mikrotik');
-    const badge = document.getElementById('add_pppoe_mode_badge');
-    if (btnNew) { btnNew.style.background = 'transparent'; btnNew.style.color = 'var(--text)'; btnNew.classList.add('btn-g'); }
-    if (btnMikrotik) { btnMikrotik.style.background = 'var(--primary)'; btnMikrotik.style.color = '#fff'; btnMikrotik.classList.remove('btn-g'); }
-    if (badge) {
-      badge.innerHTML = `<span><i class="bi bi-check2-circle text-success me-1"></i> <strong>Terpilih dari MikroTik:</strong> <code>${name}</code> (Mapping Aktif & Siap Disinkronkan ke RADIUS Server)</span>`;
-      badge.style.background = 'rgba(16,185,129,0.08)';
-      badge.style.borderColor = 'rgba(16,185,129,0.3)';
-    }
-
-    if (nameField && !nameField.value) {
-      nameField.value = name.replace(/@.*$/, '').replace(/[_\-\.]/g, ' ').toUpperCase();
-    }
+    updateGenieacsTagsPreview('add');
   } else if (secretPickerTarget === 'edit') {
     const userField = document.getElementById('e_pppoe');
     const passField = document.getElementById('e_pppoe_password');
     const routerSelect = document.getElementById('e_router_id');
-    const tagField = document.getElementById('e_tag');
+    const codeField = document.getElementById('e_customer_code');
+    const nameField = document.getElementById('e_name');
+    const phoneField = document.getElementById('e_phone');
+    const addrField = document.getElementById('e_address');
 
+    const effectiveCode = parsed.customer_code || name;
+    if (codeField) codeField.value = effectiveCode;
     if (userField) userField.value = name;
     if (passField) passField.value = pass || '';
-    if (tagField && (!tagField.value || tagField.value.trim() === '')) tagField.value = name;
     if (routerSelect && routerId) routerSelect.value = routerId;
+
+    if (nameField && parsed.name) nameField.value = parsed.name;
+    if (phoneField && parsed.phone) phoneField.value = parsed.phone;
+    if (addrField && parsed.address) addrField.value = parsed.address;
+
+    if (parsed.odp_name) {
+      const odpSelect = document.getElementById('e_odp_id');
+      if (odpSelect) {
+        const targetClean = parsed.odp_name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        for (let i = 0; i < odpSelect.options.length; i++) {
+          const optText = odpSelect.options[i].textContent.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (optText.includes(targetClean)) {
+            odpSelect.selectedIndex = i;
+            handleOdpChange('edit');
+            if (parsed.odp_port) {
+              setTimeout(() => {
+                selectOdpPort('edit', parsed.odp_port);
+                updateGenieacsTagsPreview('edit');
+              }, 400);
+            }
+            break;
+          }
+        }
+      }
+    }
 
     toggleRadiusSync('edit', true);
     const editChk = document.getElementById('e_sync_to_radius');
     if (editChk) editChk.checked = true;
+
+    updateGenieacsTagsPreview('edit');
   }
+
   closeModal('secretPickerModal');
 }
 
@@ -4839,7 +5532,15 @@ function editCust(idx) {
   document.getElementById('e_olt_id').value=c.olt_id||'';
   if (document.getElementById('e_odc_id')) document.getElementById('e_odc_id').value=c.odc_id||'';
   document.getElementById('e_odp_id').value=c.odp_id||'';
-  if (document.getElementById('e_odp_port')) document.getElementById('e_odp_port').value=c.odp_port||c.pon_port||'';
+  const customerPort = c.odp_port || c.odp_port_number || '';
+  if (document.getElementById('e_odp_port')) document.getElementById('e_odp_port').value = customerPort;
+  if (c.odp_id) {
+    loadOdpPortMatrix('edit', c.odp_id, customerPort);
+  } else {
+    clearSelectedOdpPort('edit');
+    const eOdpWrapper = document.getElementById('e_odp_ports_wrapper');
+    if (eOdpWrapper) eOdpWrapper.style.display = 'none';
+  }
   document.getElementById('e_pon_port').value=c.pon_port||'';
   if (document.getElementById('e_initial_rx_power')) {
     document.getElementById('e_initial_rx_power').value = (c.initial_rx_power !== null && c.initial_rx_power !== undefined && c.initial_rx_power !== '') ? c.initial_rx_power : '';
@@ -4863,6 +5564,8 @@ function editCust(idx) {
   if (document.getElementById('e_isolate_day')) document.getElementById('e_isolate_day').value = billDayVal;
   toggleConnectionFields('edit');
   switchCustModalTab('edit', 1);
+  updateGenieacsTagsPreview('edit');
+  if (typeof fetchAvailableOnus === 'function') fetchAvailableOnus();
   openModal('editModal');
   loadRouterLists('edit', c.router_id || '', c.id || '');
 }
@@ -5174,6 +5877,10 @@ document.addEventListener('click', (e) => {
     if (wrap && !wrap.contains(e.target)) {
       closePppoeDropdown(type);
     }
+    const wrapOnt = document.getElementById(type === 'add' ? 'add_ont_autocomplete_wrap' : 'e_ont_autocomplete_wrap');
+    if (wrapOnt && !wrapOnt.contains(e.target)) {
+      closeOntDropdown(type);
+    }
   });
 });
 
@@ -5181,6 +5888,8 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closePppoeDropdown('add');
     closePppoeDropdown('edit');
+    closeOntDropdown('add');
+    closeOntDropdown('edit');
   }
 });
 
