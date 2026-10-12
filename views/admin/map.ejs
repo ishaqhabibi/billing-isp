@@ -2999,7 +2999,8 @@
           </div>
           <div class="fg">
             <label class="fl"><i class="bi bi-grid-3x3 text-secondary"></i> Kapasitas Port Pelanggan</label>
-            <input type="number" name="total_ports" id="e_odp_total_ports" class="fc" min="1" max="64">
+            <input type="number" name="total_ports" id="e_odp_total_ports" class="fc" min="1" max="64" oninput="if (document.getElementById('e_odp_port_capacity')) document.getElementById('e_odp_port_capacity').value = this.value">
+            <input type="hidden" name="port_capacity" id="e_odp_port_capacity">
           </div>
         </div>
 
@@ -5637,7 +5638,9 @@
     if (parentSel) parentSel.value = odp.parent_odp_id || '';
     if (document.getElementById('e_odp_odc_out_port')) document.getElementById('e_odp_odc_out_port').value = odp.odc_out_port || '';
     if (document.getElementById('e_odp_splitter_ratio')) document.getElementById('e_odp_splitter_ratio').value = odp.splitter_ratio || '1:8';
-    if (document.getElementById('e_odp_total_ports')) document.getElementById('e_odp_total_ports').value = odp.total_ports || 8;
+    const odpCap = odp.total_ports || odp.port_capacity || 8;
+    if (document.getElementById('e_odp_total_ports')) document.getElementById('e_odp_total_ports').value = odpCap;
+    if (document.getElementById('e_odp_port_capacity')) document.getElementById('e_odp_port_capacity').value = odpCap;
     if (document.getElementById('e_odp_input_power_dbm')) document.getElementById('e_odp_input_power_dbm').value = (odp.input_power_dbm !== null && odp.input_power_dbm !== undefined) ? odp.input_power_dbm : '';
     if (document.getElementById('e_odp_output_power_dbm')) document.getElementById('e_odp_output_power_dbm').value = (odp.output_power_dbm !== null && odp.output_power_dbm !== undefined) ? odp.output_power_dbm : '';
     openModal('editOdpModal');

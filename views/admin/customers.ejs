@@ -1536,7 +1536,7 @@
 
         <div class="cust-header-actions">
           <button type="button" class="btn btn-w btn-sm cust-action-btn" onclick="openQuickImportModal()" title="Tarik data secret PPPoE MikroTik yang belum ada di billing">
-            <i class="bi bi-lightning-charge-fill text-warning"></i>
+            <i class="bi bi-lightning-charge-fill"></i>
             <span>Impor MikroTik</span>
             <span class="badge" id="unregisteredSecretsBadge" style="background:rgba(0,0,0,0.25);margin-left:4px;display:none;font-size:10px;">0</span>
           </button>
@@ -2166,6 +2166,8 @@
               </div>
             </div>
 
+            <div id="add_pppoe_mode_badge" style="font-size:11.5px; padding:7px 12px; border-radius:8px; border:1px solid rgba(99,102,241,0.25); background:rgba(99,102,241,0.06); margin-bottom:12px; display:none;"></div>
+
             <div class="form-row">
               <div class="fg">
                 <label class="fl">PPPoE Username *</label>
@@ -2707,7 +2709,22 @@
 
           <!-- Kredensial PPPoE Box -->
           <div id="e_pppoe_field" style="background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:14px;">
-            <div class="fw6 mb-2" style="font-size:12px; color:var(--text);"><i class="bi bi-key me-1 text-primary"></i> Kredensial Akun PPPoE</div>
+            <input type="hidden" name="pppoe_source" id="e_pppoe_source" value="new">
+            
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+              <span style="font-size:12px; font-weight:700; color:var(--text);"><i class="bi bi-key me-1 text-primary"></i> Kredensial Akun PPPoE</span>
+              <div style="display:flex; gap:6px;">
+                <button type="button" class="btn btn-sm" id="btn_edit_mode_pppoe_new" onclick="setPppoeSourceMode('edit', 'new')" style="font-size:11px; padding:4px 10px; background:var(--primary); color:#fff; border:none; border-radius:6px; font-weight:600;">
+                  <i class="bi bi-plus-circle me-1"></i> Secret Baru / Manual
+                </button>
+                <button type="button" class="btn btn-g btn-sm" id="btn_edit_mode_pppoe_mikrotik" onclick="setPppoeSourceMode('edit', 'mikrotik')" style="font-size:11px; padding:4px 10px;">
+                  <i class="bi bi-cloud-arrow-down me-1"></i> Ambil dari MikroTik
+                </button>
+              </div>
+            </div>
+
+            <div id="e_pppoe_mode_badge" style="font-size:11.5px; padding:7px 12px; border-radius:8px; border:1px solid rgba(99,102,241,0.25); background:rgba(99,102,241,0.06); margin-bottom:12px; display:none;"></div>
+
             <div class="form-row">
               <div class="fg">
                 <label class="fl">PPPoE Username *</label>
@@ -2733,7 +2750,7 @@
               <div class="fg" id="e_pppoe_password_mikrotik_info" style="display:none;">
                 <label class="fl" style="color:#10b981;">Status Password PPPoE</label>
                 <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.28); border-radius:8px; padding:9px 12px; font-size:11.5px; color:#10b981;">
-                  <i class="bi bi-check-circle-fill me-1"></i> Menggunakan secret yang sudah ada di router.
+                  <i class="bi bi-check-circle-fill me-1"></i> Menggunakan secret yang sudah ada di router (password tersimpan di MikroTik).
                 </div>
               </div>
             </div>
@@ -5325,8 +5342,14 @@ function toggleConnectionFields(type) {
   const pppoePasswordEl = document.getElementById(type === 'add' ? 'add_pppoe_password' : 'e_pppoe_password');
   const pppoeUsernameEl = type === 'add' ? null : document.getElementById('e_pppoe');
   if (pppoePasswordEl) {
+    const pppoeSource = document.getElementById(type === 'add' ? 'add_pppoe_source' : 'e_pppoe_source')?.value || 'new';
     if (connType === 'pppoe') {
-      pppoePasswordEl.setAttribute('required', '');
+      if (type === 'add' && pppoeSource === 'new') {
+        pppoePasswordEl.setAttribute('required', '');
+      } else {
+        // Pada modal Edit atau saat mapping dari MikroTik, password tidak wajib diisi
+        pppoePasswordEl.removeAttribute('required');
+      }
     } else {
       pppoePasswordEl.removeAttribute('required');
       pppoePasswordEl.value = '';
@@ -5763,10 +5786,17 @@ async function openSecretPickerModal(target = 'add') {
   if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--muted);"><i class="bi bi-hourglass-split"></i> Memuat daftar secret MikroTik...</td></tr>';
 
   try {
-    const res = await fetch('/admin/api/customers/unregistered-secrets');
+    const routerSelect = document.getElementById(target === 'add' ? 'add_router_select' : 'e_router_id');
+    const routerId = routerSelect ? routerSelect.value : '';
+    const currentUsername = target === 'edit' ? (document.getElementById('e_pppoe')?.value || '') : '';
+    const queryParts = [];
+    if (routerId) queryParts.push('router_id=' + encodeURIComponent(routerId));
+    if (currentUsername) queryParts.push('include_current=' + encodeURIComponent(currentUsername));
+    const url = '/admin/api/customers/unregistered-secrets' + (queryParts.length ? '?' + queryParts.join('&') : '');
+    const res = await fetch(url);
     const data = await res.json();
     if (!data.ok || !Array.isArray(data.secrets)) {
-      if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:24px; color:#ef4444;">${data.message || 'Gagal memuat secret.'}</td></tr>`;
+      if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:24px; color:#ef4444;">${data.message || data.error || 'Gagal memuat secret.'}</td></tr>`;
       return;
     }
     renderSecretPickerTable(data.secrets);
@@ -5775,11 +5805,11 @@ async function openSecretPickerModal(target = 'add') {
   }
 }
 
-function setPppoeSourceMode(target, mode) {
+function setPppoeSourceMode(target, mode, shouldOpenPicker = true) {
   const prefix = target === 'add' ? 'add_' : 'e_';
   const srcInput = document.getElementById(prefix + 'pppoe_source');
-  const btnNew = document.getElementById('btn_mode_pppoe_new');
-  const btnMikrotik = document.getElementById('btn_mode_pppoe_mikrotik');
+  const btnNew = document.getElementById(target === 'add' ? 'btn_mode_pppoe_new' : 'btn_edit_mode_pppoe_new');
+  const btnMikrotik = document.getElementById(target === 'add' ? 'btn_mode_pppoe_mikrotik' : 'btn_edit_mode_pppoe_mikrotik');
   const badge = document.getElementById(prefix + 'pppoe_mode_badge');
   const pwdGroup = document.getElementById(prefix + 'pppoe_password_group');
   const pwdInput = document.getElementById(prefix + 'pppoe_password');
@@ -5799,9 +5829,11 @@ function setPppoeSourceMode(target, mode) {
       btnMikrotik.classList.remove('btn-g');
     }
     if (badge) {
+      badge.style.display = 'block';
       badge.innerHTML = '<span><i class="bi bi-cloud-check-fill text-success me-1"></i> <strong>Mode: Ambil dari MikroTik</strong> — Memetakan secret aktif di router tanpa input password manual.</span>';
       badge.style.background = 'rgba(16,185,129,0.08)';
       badge.style.borderColor = 'rgba(16,185,129,0.3)';
+      badge.style.color = '#10b981';
     }
     // Sembunyikan field password & hilangkan required
     if (pwdGroup) pwdGroup.style.display = 'none';
@@ -5810,7 +5842,9 @@ function setPppoeSourceMode(target, mode) {
     }
     if (pwdInfo) pwdInfo.style.display = 'block';
 
-    openSecretPickerModal(target);
+    if (shouldOpenPicker) {
+      openSecretPickerModal(target);
+    }
   } else {
     if (btnNew) {
       btnNew.style.background = 'var(--primary)';
@@ -5823,14 +5857,20 @@ function setPppoeSourceMode(target, mode) {
       btnMikrotik.classList.add('btn-g');
     }
     if (badge) {
-      badge.innerHTML = '<span><i class="bi bi-info-circle text-primary me-1"></i> <strong>Mode: Buat Baru</strong> — Kredensial akan didaftarkan ke MikroTik <code>/ppp secret</code> saat formulir disimpan.</span>';
+      badge.style.display = 'block';
+      badge.innerHTML = '<span><i class="bi bi-info-circle text-primary me-1"></i> <strong>Mode: ' + (target === 'add' ? 'Secret Baru' : 'Input Manual / Ubah Password') + '</strong> — ' + (target === 'add' ? 'Kredensial akan didaftarkan ke MikroTik <code>/ppp secret</code> saat formulir disimpan.' : 'Masukkan password baru jika ingin mengubah password di MikroTik/RADIUS.') + '</span>';
       badge.style.background = 'rgba(99,102,241,0.08)';
       badge.style.borderColor = 'rgba(99,102,241,0.3)';
+      badge.style.color = 'var(--primary)';
     }
-    // Tampilkan field password & aktifkan required (jika add)
+    // Tampilkan field password & aktifkan required (hanya jika add)
     if (pwdGroup) pwdGroup.style.display = 'block';
-    if (pwdInput && target === 'add') {
-      pwdInput.setAttribute('required', 'required');
+    if (pwdInput) {
+      if (target === 'add') {
+        pwdInput.setAttribute('required', 'required');
+      } else {
+        pwdInput.removeAttribute('required');
+      }
     }
     if (pwdInfo) pwdInfo.style.display = 'none';
   }
@@ -5945,6 +5985,7 @@ function applySecretToFormByIndex(idx) {
 
     updateGenieacsTagsPreview('add');
   } else if (secretPickerTarget === 'edit') {
+    setPppoeSourceMode('edit', 'mikrotik', false);
     const userField = document.getElementById('e_pppoe');
     const passField = document.getElementById('e_pppoe_password');
     const routerSelect = document.getElementById('e_router_id');
@@ -5954,14 +5995,17 @@ function applySecretToFormByIndex(idx) {
     const addrField = document.getElementById('e_address');
 
     const effectiveCode = parsed.customer_code || name;
-    if (codeField) codeField.value = effectiveCode;
+    if (codeField && !codeField.value) codeField.value = effectiveCode;
     if (userField) userField.value = name;
-    if (passField) passField.value = pass || '';
+    if (passField) {
+      passField.value = pass || '';
+      passField.removeAttribute('required');
+    }
     if (routerSelect && routerId) routerSelect.value = routerId;
 
-    if (nameField && parsed.name) nameField.value = parsed.name;
-    if (phoneField && parsed.phone) phoneField.value = parsed.phone;
-    if (addrField && parsed.address) addrField.value = parsed.address;
+    if (nameField && parsed.name && !nameField.value) nameField.value = parsed.name;
+    if (phoneField && parsed.phone && !phoneField.value) phoneField.value = parsed.phone;
+    if (addrField && parsed.address && !addrField.value) addrField.value = parsed.address;
 
     if (parsed.odp_name) {
       const odpSelect = document.getElementById('e_odp_id');
@@ -5984,9 +6028,10 @@ function applySecretToFormByIndex(idx) {
       }
     }
 
-    toggleRadiusSync('edit', true);
+    // Default secret MikroTik router: mode MikroTik lokal
+    toggleRadiusSync('edit', false);
     const editChk = document.getElementById('e_sync_to_radius');
-    if (editChk) editChk.checked = true;
+    if (editChk) editChk.checked = false;
 
     updateGenieacsTagsPreview('edit');
   }
@@ -6033,14 +6078,28 @@ function editCust(idx) {
   document.getElementById('e_address').value=c.address||'';
   document.getElementById('e_package').value=c.package_id||'';
   document.getElementById('e_router_id').value=c.router_id||'';
-  document.getElementById('e_connection_type').value=c.connection_type||'pppoe';
+  const connType = c.connection_type || 'pppoe';
+  document.getElementById('e_connection_type').value = connType;
   document.getElementById('e_pppoe').value=c.pppoe_username||'';
+  const pppoePassEl = document.getElementById('e_pppoe_password');
+  if (pppoePassEl) {
+    pppoePassEl.value = '';
+    pppoePassEl.removeAttribute('required');
+  }
   const isCustRadius = (c.is_radius !== 0 && c.is_radius !== '0' && c.is_radius !== null);
   if (document.getElementById('e_is_radius')) document.getElementById('e_is_radius').value = isCustRadius ? '1' : '0';
   selectAuthModeCard('edit', isCustRadius ? 1 : 0);
   const editChk = document.getElementById('e_sync_to_radius');
   if (editChk) editChk.checked = isCustRadius;
   updateRadiusSyncPill('edit', isCustRadius);
+
+  if (connType === 'pppoe') {
+    if (!isCustRadius && c.pppoe_username) {
+      setPppoeSourceMode('edit', 'mikrotik', false);
+    } else {
+      setPppoeSourceMode('edit', 'new', false);
+    }
+  }
   document.getElementById('e_static_ip').value=c.static_ip||'';
   document.getElementById('e_mac_address').value=c.mac_address||'';
   document.getElementById('e_hotspot_username').value=c.hotspot_username||'';
@@ -6343,11 +6402,19 @@ function selectPppoeItem(type, username, password = '', profile = '') {
   const inputEl = document.getElementById(type === 'add' ? 'add_pppoe_username' : 'e_pppoe');
   if (inputEl) inputEl.value = username;
 
-  if (password) {
-    const passEl = document.getElementById(type === 'add' ? 'add_pppoe_password' : 'e_pppoe_password');
-    if (passEl && (!passEl.value || type === 'add')) {
+  const passEl = document.getElementById(type === 'add' ? 'add_pppoe_password' : 'e_pppoe_password');
+  if (password && passEl) {
+    if (!passEl.value || type === 'add') {
       passEl.value = password;
     }
+  }
+  if (passEl) {
+    passEl.removeAttribute('required');
+  }
+
+  // Aktifkan mode MikroTik (karena memilih secret yang sudah ada)
+  if (typeof setPppoeSourceMode === 'function') {
+    setPppoeSourceMode(type, 'mikrotik', false);
   }
 
   // Auto-fill GenieACS Tag if empty

@@ -1030,9 +1030,11 @@ router.get('/api/customers/unregistered-secrets', requireAdminSession, async (re
       (db.prepare("SELECT LOWER(pppoe_username) as u FROM customers WHERE pppoe_username != ''").all() || []).map(r => r.u)
     );
 
+    const includeCurrent = String(req.query.include_current || '').trim().toLowerCase();
+
     const unregistered = secrets.filter(s => {
       const uname = String(s.name || '').trim().toLowerCase();
-      return uname && !registeredUsers.has(uname);
+      return uname && (!registeredUsers.has(uname) || (includeCurrent && uname === includeCurrent));
     }).map(s => {
       const parsed = parseMikrotikComment(s.comment, s.name);
       return {
@@ -2600,10 +2602,13 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
         try {
           conn = await mikrotikService.getConnection(effectiveRouterId);
           const results = await conn.client.menu('/ppp/secret')
-            .where('service', 'pppoe')
             .where('name', username)
             .get();
-          if (!Array.isArray(results) || results.length === 0) throw new Error('PPPoE Username tidak ditemukan di MikroTik');
+          const match = Array.isArray(results) && results.find(r => {
+            const svc = String(r?.service || '').toLowerCase();
+            return svc === 'pppoe' || svc === 'any' || !svc;
+          });
+          if (!match) throw new Error('PPPoE Username tidak ditemukan di MikroTik');
         } finally {
           if (conn && conn.api) conn.api.close();
         }
@@ -2865,10 +2870,13 @@ router.post('/customers/:id/update', requireAdminSession, (req, res, next) => {
         try {
           conn = await mikrotikService.getConnection(effectiveRouterId);
           const results = await conn.client.menu('/ppp/secret')
-            .where('service', 'pppoe')
             .where('name', username)
             .get();
-          if (!Array.isArray(results) || results.length === 0) throw new Error('PPPoE Username tidak ditemukan di MikroTik');
+          const match = Array.isArray(results) && results.find(r => {
+            const svc = String(r?.service || '').toLowerCase();
+            return svc === 'pppoe' || svc === 'any' || !svc;
+          });
+          if (!match) throw new Error('PPPoE Username tidak ditemukan di MikroTik');
         } finally {
           if (conn && conn.api) conn.api.close();
         }

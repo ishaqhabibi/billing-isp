@@ -64,6 +64,11 @@ function createOdp(data) {
   const inputPwr = (data.input_power_dbm !== undefined && data.input_power_dbm !== '' && data.input_power_dbm !== null) ? parseFloat(data.input_power_dbm) : null;
   const outputPwr = (data.output_power_dbm !== undefined && data.output_power_dbm !== '' && data.output_power_dbm !== null) ? parseFloat(data.output_power_dbm) : null;
 
+  const rawPortCap = (data.port_capacity !== undefined && data.port_capacity !== '' && data.port_capacity !== null)
+    ? data.port_capacity
+    : (data.total_ports !== undefined && data.total_ports !== '' && data.total_ports !== null ? data.total_ports : null);
+  const finalPortCap = (rawPortCap !== null && !isNaN(parseInt(rawPortCap))) ? parseInt(rawPortCap) : 8;
+
   const stmt = db.prepare(`
     INSERT INTO odps (name, olt_id, odc_id, parent_odp_id, pon_port, odc_out_port, input_power_dbm, output_power_dbm, splitter_ratio, port_capacity, lat, lng, description)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -78,7 +83,7 @@ function createOdp(data) {
     inputPwr,
     outputPwr,
     String(data.splitter_ratio || '1:8').trim(),
-    data.port_capacity !== undefined && data.port_capacity !== null ? parseInt(data.port_capacity) : 16,
+    finalPortCap,
     String(data.lat || '').trim(),
     String(data.lng || '').trim(),
     String(data.description || '').trim()
@@ -106,21 +111,35 @@ function updateOdp(id, data) {
 
   let finalOdcId = odcId;
   let finalOltId = data.olt_id ? parseInt(data.olt_id) : null;
+  let finalPonPort = data.pon_port ? String(data.pon_port).trim() : null;
 
   if (odcId) {
-    const odc = db.prepare('SELECT id, name, olt_id FROM odcs WHERE id = ?').get(odcId);
+    const odc = db.prepare('SELECT id, name, olt_id, pon_port FROM odcs WHERE id = ?').get(odcId);
     if (!odc) throw new Error('ODC Induk yang dipilih tidak valid atau belum terdaftar.');
     if (!finalOltId && odc.olt_id) finalOltId = odc.olt_id;
+    if (!finalPonPort && odc.pon_port) finalPonPort = odc.pon_port;
   } else if (parentOdpId) {
-    const parent = db.prepare('SELECT id, name, odc_id, olt_id FROM odps WHERE id = ?').get(parentOdpId);
+    const parent = db.prepare('SELECT id, name, odc_id, olt_id, pon_port FROM odps WHERE id = ?').get(parentOdpId);
     if (!parent) throw new Error('ODP Induk Kaskade tidak valid atau belum terdaftar.');
     if (!finalOdcId && parent.odc_id) finalOdcId = parent.odc_id;
     if (!finalOltId && parent.olt_id) finalOltId = parent.olt_id;
+    if (!finalPonPort && parent.pon_port) finalPonPort = parent.pon_port;
+  }
+
+  const current = getOdpById(id);
+  if (!finalPonPort && current && current.pon_port) {
+    finalPonPort = current.pon_port;
   }
 
   const inputPwr = (data.input_power_dbm !== undefined && data.input_power_dbm !== '' && data.input_power_dbm !== null) ? parseFloat(data.input_power_dbm) : null;
   const outputPwr = (data.output_power_dbm !== undefined && data.output_power_dbm !== '' && data.output_power_dbm !== null) ? parseFloat(data.output_power_dbm) : null;
-  const current = getOdpById(id);
+
+  const rawPortCap = (data.port_capacity !== undefined && data.port_capacity !== '' && data.port_capacity !== null)
+    ? data.port_capacity
+    : (data.total_ports !== undefined && data.total_ports !== '' && data.total_ports !== null ? data.total_ports : null);
+  const finalPortCap = (rawPortCap !== null && !isNaN(parseInt(rawPortCap)))
+    ? parseInt(rawPortCap)
+    : (current && current.port_capacity ? current.port_capacity : 8);
 
   const stmt = db.prepare(`
     UPDATE odps 
@@ -132,12 +151,12 @@ function updateOdp(id, data) {
     finalOltId,
     finalOdcId,
     parentOdpId,
-    String(data.pon_port || '').trim(),
+    String(finalPonPort || '').trim(),
     data.odc_out_port ? parseInt(data.odc_out_port) : null,
     inputPwr,
     outputPwr,
     String(data.splitter_ratio || '1:8').trim(),
-    data.port_capacity !== undefined && data.port_capacity !== null ? parseInt(data.port_capacity) : 16,
+    finalPortCap,
     String(data.lat || '').trim(),
     String(data.lng || '').trim(),
     String(data.description || '').trim(),
