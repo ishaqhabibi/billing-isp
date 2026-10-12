@@ -3262,10 +3262,21 @@ router.post('/api/add-wan/:deviceId', requireAdmin, async (req, res) => {
 
         const deviceSn = String(deviceData._deviceId?._SerialNumber || deviceData._deviceId?.SerialNumber || deviceData._id || deviceId || '').trim();
 
-        // 3b. Sinkronisasi data ke tabel customers di database billing
+        // 3b. Sinkronisasi data ke tabel customers di database billing & GenieACS tags
         try {
             const targetCustId = customerId ? parseInt(customerId, 10) : null;
+            let matchedCust = null;
             if (targetCustId) {
+                matchedCust = db.prepare('SELECT id, name, customer_code, olt_id, pon_port, odp_port FROM customers WHERE id = ?').get(targetCustId);
+            } else if (trimmedPppoeUser) {
+                matchedCust = db.prepare('SELECT id, name, customer_code, olt_id, pon_port, odp_port FROM customers WHERE LOWER(pppoe_username) = LOWER(?) OR LOWER(pppoe_username) = LOWER(?)').get(trimmedPppoeUser, trimmedPppoeUser.replace('@bionfiber.net', ''));
+            }
+
+            if (matchedCust) {
+                const custCode = String(matchedCust.customer_code || matchedCust.id).trim();
+                const cleanName = String(matchedCust.name || '').trim().replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_');
+                const combinedTag = `${custCode}_${cleanName}`;
+
                 db.prepare(`
                     UPDATE customers 
                     SET ont_sn = COALESCE(NULLIF(?, ''), ont_sn),
@@ -3275,19 +3286,41 @@ router.post('/api/add-wan/:deviceId', requireAdmin, async (req, res) => {
                         wifi_password = COALESCE(NULLIF(?, ''), wifi_password),
                         genieacs_tag = COALESCE(NULLIF(?, ''), genieacs_tag)
                     WHERE id = ?
-                `).run(deviceSn, trimmedPppoeUser, trimmedPppoePass, wifiSsid24 || '', wifiPass24 || '', trimmedPppoeUser, targetCustId);
+                `).run(deviceSn, trimmedPppoeUser, trimmedPppoePass, wifiSsid24 || '', wifiPass24 || '', combinedTag, matchedCust.id);
+
+                // Tag CPE di GenieACS dengan Kode Pelanggan dan Nama Pelanggan (Standar NOC ISP)
+                if (custCode) {
+                    axios.post(`${baseUrl}/devices/${encodeURIComponent(deviceId)}/tags/${encodeURIComponent(custCode)}`, {}, config).catch(() => {});
+                }
+                if (cleanName && cleanName !== custCode) {
+                    axios.post(`${baseUrl}/devices/${encodeURIComponent(deviceId)}/tags/${encodeURIComponent(cleanName)}`, {}, config).catch(() => {});
+                }
+
+                // Sinkronisasi nama ONU ke OLT jika terdata
+                if (matchedCust.olt_id) {
+                    try {
+                        const oltSvc = require('../services/oltService');
+                        let oltName = combinedTag;
+                        if (oltName.length > 30) oltName = oltName.substring(0, 30);
+                        const index = matchedCust.pon_port || matchedCust.odp_port;
+                        let renamed = false;
+                        if (index) {
+                            try {
+                                await oltSvc.renameOnu(matchedCust.olt_id, index, oltName);
+                                renamed = true;
+                            } catch (_) {}
+                        }
+                        if (!renamed && deviceSn) {
+                            await oltSvc.renameOnuBySn(matchedCust.olt_id, deviceSn, oltName);
+                        }
+                    } catch (_) {}
+                }
             } else if (trimmedPppoeUser) {
                 db.prepare(`
                     UPDATE customers
-                    SET ont_sn = COALESCE(NULLIF(?, ''), ont_sn),
-                        genieacs_tag = COALESCE(NULLIF(?, ''), genieacs_tag)
+                    SET ont_sn = COALESCE(NULLIF(?, ''), ont_sn)
                     WHERE LOWER(pppoe_username) = LOWER(?) OR LOWER(pppoe_username) = LOWER(?)
-                `).run(deviceSn, trimmedPppoeUser, trimmedPppoeUser, trimmedPppoeUser.replace('@bionfiber.net', ''));
-            }
-
-            // Tag CPE di GenieACS dengan username PPPoE
-            if (trimmedPppoeUser) {
-                axios.post(`${baseUrl}/devices/${encodeURIComponent(deviceId)}/tags/${encodeURIComponent(trimmedPppoeUser)}`, {}, config).catch(() => {});
+                `).run(deviceSn, trimmedPppoeUser, trimmedPppoeUser.replace('@bionfiber.net', ''));
             }
         } catch (dbErr) {
             console.error('[AddWAN] Gagal sinkronisasi data pelanggan:', dbErr.message);
@@ -3466,30 +3499,58 @@ router.post('/map-customer', requireAdminSession, async (req, res) => {
         
         db.prepare('UPDATE customers SET ont_sn = ? WHERE id = ?').run(cleanSn, cId);
         
-        // Ambil data pelanggan untuk disinkronkan ke tag GenieACS
-        const cust = db.prepare('SELECT id, name, customer_code, pppoe_username, genieacs_tag FROM customers WHERE id = ?').get(cId);
+        // Ambil data pelanggan untuk disinkronkan ke tag GenieACS & OLT
+        const cust = db.prepare('SELECT id, name, customer_code, genieacs_tag, olt_id, pon_port, odp_port FROM customers WHERE id = ?').get(cId);
         if (cust) {
-            const tagVal = (cust.customer_code || cust.pppoe_username || cust.genieacs_tag || '').trim();
-            if (tagVal) {
-                db.prepare("UPDATE customers SET genieacs_tag = COALESCE(NULLIF(genieacs_tag, ''), ?) WHERE id = ?").run(tagVal, cId);
-                try {
-                    const dev = await customerDevice.findDeviceByTag(cleanSn);
-                    if (dev && dev._id) {
-                        const servers = genieacsApi.getAllACSServers();
-                        for (const srv of servers) {
-                            try {
-                                const ax = genieacsApi.createAxiosInstance(srv);
-                                await ax.post(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(tagVal)}`, {});
-                                break;
-                            } catch (eTag) {}
-                        }
+            const custCode = String(cust.customer_code || cust.id).trim();
+            const cleanName = String(cust.name || '').trim().replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_');
+            const primaryTag = custCode;
+            const nameTag = cleanName;
+            const combinedTag = `${custCode}_${cleanName}`;
+
+            db.prepare("UPDATE customers SET genieacs_tag = ? WHERE id = ?").run(combinedTag, cId);
+
+            // 1. Push Tag ke GenieACS: Hanya Kode Pelanggan dan Nama Pelanggan (tanpa PPPoE)
+            try {
+                const dev = await customerDevice.findDeviceByTag(cleanSn);
+                if (dev && dev._id) {
+                    const servers = genieacsApi.getAllACSServers();
+                    for (const srv of servers) {
+                        try {
+                            const ax = genieacsApi.createAxiosInstance(srv);
+                            if (primaryTag) await ax.post(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(primaryTag)}`, {});
+                            if (nameTag && nameTag !== primaryTag) await ax.post(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(nameTag)}`, {});
+                            break;
+                        } catch (eTag) {}
                     }
-                } catch (acsErr) {
-                    console.warn('[map-customer] Gagal push tag ke GenieACS:', acsErr.message);
+                }
+            } catch (acsErr) {
+                console.warn('[map-customer] Gagal push tag ke GenieACS:', acsErr.message);
+            }
+
+            // 2. Sinkronisasi nama/deskripsi ke OLT jika OLT terdata
+            if (cust.olt_id) {
+                try {
+                    const oltSvc = require('../services/oltService');
+                    let oltName = `${custCode}_${cleanName}`;
+                    if (oltName.length > 30) oltName = oltName.substring(0, 30);
+                    const index = cust.pon_port || cust.odp_port;
+                    let renamed = false;
+                    if (index) {
+                        try {
+                            await oltSvc.renameOnu(cust.olt_id, index, oltName);
+                            renamed = true;
+                        } catch (_) {}
+                    }
+                    if (!renamed && cleanSn) {
+                        await oltSvc.renameOnuBySn(cust.olt_id, cleanSn, oltName);
+                    }
+                } catch (oltErr) {
+                    console.warn('[map-customer] Catatan OLT sync:', oltErr.message);
                 }
             }
         }
-        return res.json({ success: true, message: 'Perangkat berhasil ditautkan dan tag GenieACS berhasil disinkronkan' });
+        return res.json({ success: true, message: 'Perangkat berhasil ditautkan, tag GenieACS dan nama OLT berhasil disinkronkan' });
     } catch (e) {
         return res.status(500).json({ success: false, message: e.message });
     }

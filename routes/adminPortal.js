@@ -2493,8 +2493,12 @@ async function syncGenieacsNocTags(ontSn, customerData) {
     }
 
     const tagsToApply = [];
-    const code = String(customerData.customer_code || customerData.pppoe_username || '').trim().toUpperCase();
-    if (code) tagsToApply.push(`ID:${code}`);
+    const code = String(customerData.customer_code || '').trim().toUpperCase();
+    if (code) tagsToApply.push(code);
+
+    const rawName = String(customerData.name || '').trim();
+    const cleanName = rawName.replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_');
+    if (cleanName && cleanName !== code) tagsToApply.push(cleanName);
 
     const port = customerData.odp_port ? String(customerData.odp_port).padStart(2, '0') : '';
     if (odpName) {
@@ -2510,20 +2514,43 @@ async function syncGenieacsNocTags(ontSn, customerData) {
       }
     }
 
-    if (tagsToApply.length === 0) return;
+    if (tagsToApply.length > 0) {
+      const servers = genieacsApi.getAllACSServers();
+      for (const srv of servers) {
+        try {
+          const ax = genieacsApi.createAxiosInstance(srv);
+          for (const t of tagsToApply) {
+            try {
+              await ax.post(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(t)}`, {});
+            } catch (_) {}
+          }
+          logger.info(`[GenieACS Sync] Sukses menempelkan tag [${tagsToApply.join(', ')}] ke ONT ${cleanSn} (${dev._id})`);
+          break;
+        } catch (_) {}
+      }
+    }
 
-    const servers = genieacsApi.getAllACSServers();
-    for (const srv of servers) {
+    // Sinkronisasi nama ONU ke OLT jika terdata
+    if (customerData.olt_id) {
       try {
-        const ax = genieacsApi.createAxiosInstance(srv);
-        for (const t of tagsToApply) {
+        const oltSvc = require('../services/oltService');
+        let oltName = code && cleanName ? `${code}_${cleanName}` : (code || cleanName);
+        if (oltName.length > 30) oltName = oltName.substring(0, 30);
+        const index = customerData.pon_port || customerData.odp_port;
+        let renamed = false;
+        if (index) {
           try {
-            await ax.post(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(t)}`, {});
+            await oltSvc.renameOnu(customerData.olt_id, index, oltName);
+            renamed = true;
+            logger.info(`[OLT Sync] Sukses rename ONU OLT #${customerData.olt_id} port ${index} -> "${oltName}"`);
           } catch (_) {}
         }
-        logger.info(`[GenieACS Sync] Sukses menempelkan multi-tag [${tagsToApply.join(', ')}] ke ONT ${cleanSn} (${dev._id})`);
-        break;
-      } catch (_) {}
+        if (!renamed && cleanSn) {
+          await oltSvc.renameOnuBySn(customerData.olt_id, cleanSn, oltName);
+        }
+      } catch (oltErr) {
+        logger.warn(`[OLT Sync] Catatan OLT sync: ${oltErr.message}`);
+      }
     }
   } catch (err) {
     logger.warn(`[GenieACS Sync] Info tagging ONT ${cleanSn}: ${err.message}`);

@@ -2735,12 +2735,18 @@ router.post('/app/tech/mikrotik/secret/kick', requireTechApiAuth, async (req, re
 router.get('/app/tech/tr069/devices', requireTechApiAuth, async (req, res) => {
   try {
     const { search, status, acs } = req.query;
-    const customers = db.prepare('SELECT id, name, phone, pppoe_username, genieacs_tag FROM customers').all();
+    const customers = db.prepare('SELECT id, name, phone, customer_code, ont_sn, pppoe_username, genieacs_tag FROM customers').all();
+    const bySn = new Map();
+    const byCode = new Map();
     const byPppoe = new Map();
     const byTag = new Map();
     for (const c of customers) {
+      const sn = String(c.ont_sn || '').trim().toLowerCase();
+      const code = String(c.customer_code || '').trim().toLowerCase();
       const pu = String(c.pppoe_username || '').trim().toLowerCase();
-      const tg = String(c.genieacs_tag || '').trim();
+      const tg = String(c.genieacs_tag || '').trim().toLowerCase();
+      if (sn) bySn.set(sn, c);
+      if (code) byCode.set(code, c);
       if (pu) byPppoe.set(pu, c);
       if (tg) byTag.set(tg, c);
     }
@@ -2755,12 +2761,18 @@ router.get('/app/tech/tr069/devices', requireTechApiAuth, async (req, res) => {
       const mapped = customerDevice.mapDeviceData(d, d._tags?.[0] || d._id, isPppoeActive);
       const pu = String(mapped.pppoeUsername || '').trim();
       const puKey = pu && pu !== 'N/A' ? pu.toLowerCase() : '';
-      let customer = puKey ? byPppoe.get(puKey) : null;
+      
+      const snKey = String(mapped.serialNumber || '').trim().toLowerCase();
+      let customer = (snKey && snKey !== '-') ? bySn.get(snKey) : null;
       if (!customer && Array.isArray(d._tags)) {
         for (const t of d._tags) {
-          const hit = byTag.get(String(t || '').trim());
+          const tClean = String(t || '').trim().toLowerCase();
+          const hit = byCode.get(tClean) || byTag.get(tClean);
           if (hit) { customer = hit; break; }
         }
+      }
+      if (!customer && puKey) {
+        customer = byPppoe.get(puKey);
       }
       return {
         id: d._id,

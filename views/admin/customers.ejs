@@ -1980,7 +1980,7 @@
           <div class="form-row">
             <div class="fg">
               <label class="fl">Nama Lengkap Pelanggan *</label>
-              <input class="fc" name="name" required placeholder="Nama lengkap pelanggan">
+              <input class="fc" name="name" id="add_name" required placeholder="Nama lengkap pelanggan" oninput="updateGenieacsTagsPreview('add')">
             </div>
             <div class="fg">
               <label class="fl"><i class="bi bi-whatsapp text-success me-1"></i> No. Telepon / WhatsApp *</label>
@@ -2278,7 +2278,10 @@
                 <div style="background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 10px;">
                   <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;" id="add_genieacs_tags_preview">
                     <span class="badge" id="add_tag_preview_id" style="background:rgba(99,102,241,0.18); color:var(--primary); font-size:10.5px; font-family:monospace;">
-                      ID: <span id="add_tag_text_id">-</span>
+                      Kode: <span id="add_tag_text_id">-</span>
+                    </span>
+                    <span class="badge" id="add_tag_preview_name" style="background:rgba(56,189,248,0.18); color:#38bdf8; font-size:10.5px; font-family:monospace;">
+                      Nama: <span id="add_tag_text_name">-</span>
                     </span>
                     <span class="badge" id="add_tag_preview_odp" style="background:rgba(245,158,11,0.18); color:#f59e0b; font-size:10.5px; font-family:monospace;">
                       ODP: <span id="add_tag_text_odp">-</span>
@@ -2529,7 +2532,7 @@
           <div class="form-row">
             <div class="fg">
               <label class="fl">Nama Lengkap Pelanggan *</label>
-              <input class="fc" name="name" id="e_name" required placeholder="Nama lengkap pelanggan">
+              <input class="fc" name="name" id="e_name" required placeholder="Nama lengkap pelanggan" oninput="updateGenieacsTagsPreview('edit')">
             </div>
             <div class="fg">
               <label class="fl"><i class="bi bi-whatsapp text-success me-1"></i> No. Telepon / WhatsApp *</label>
@@ -2831,7 +2834,10 @@
                 <div style="background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 10px;">
                   <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;" id="e_genieacs_tags_preview">
                     <span class="badge" id="e_tag_preview_id" style="background:rgba(99,102,241,0.18); color:var(--primary); font-size:10.5px; font-family:monospace;">
-                      ID: <span id="e_tag_text_id">-</span>
+                      Kode: <span id="e_tag_text_id">-</span>
+                    </span>
+                    <span class="badge" id="e_tag_preview_name" style="background:rgba(56,189,248,0.18); color:#38bdf8; font-size:10.5px; font-family:monospace;">
+                      Nama: <span id="e_tag_text_name">-</span>
                     </span>
                     <span class="badge" id="e_tag_preview_odp" style="background:rgba(245,158,11,0.18); color:#f59e0b; font-size:10.5px; font-family:monospace;">
                       ODP: <span id="e_tag_text_odp">-</span>
@@ -4165,17 +4171,21 @@ function syncCustomerCodeToPppoe(target = 'add', codeVal = '') {
 function updateGenieacsTagsPreview(target = 'add') {
   const prefix = target === 'add' ? 'add_' : 'e_';
   const codeEl = document.getElementById(prefix + 'customer_code');
-  const userEl = document.getElementById(target === 'add' ? 'add_pppoe_username' : 'e_pppoe');
+  const nameEl = document.getElementById(prefix + 'name');
   const odpEl = document.getElementById(prefix + 'odp_id');
   const portEl = document.getElementById(prefix + 'odp_port');
   const pkgEl = document.getElementById(target === 'add' ? 'add_package_id' : 'e_package');
   const hiddenTag = document.getElementById(prefix === 'add_' ? 'add_genieacs_tag' : 'e_tag');
 
   const textId = document.getElementById(prefix + 'tag_text_id');
+  const textName = document.getElementById(prefix + 'tag_text_name');
   const textOdp = document.getElementById(prefix + 'tag_text_odp');
   const textPkg = document.getElementById(prefix + 'tag_text_pkg');
 
-  const cleanCode = (codeEl && codeEl.value ? codeEl.value.trim() : (userEl && userEl.value ? userEl.value.trim() : '')).toUpperCase();
+  const cleanCode = (codeEl && codeEl.value ? codeEl.value.trim() : '').toUpperCase();
+  const rawName = (nameEl && nameEl.value ? nameEl.value.trim() : '');
+  const cleanName = rawName.replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_');
+
   let odpText = '';
   if (odpEl && odpEl.selectedIndex > 0) {
     odpText = odpEl.options[odpEl.selectedIndex].text.replace(/\s*\(.*\)$/, '').trim();
@@ -4187,15 +4197,17 @@ function updateGenieacsTagsPreview(target = 'add') {
   }
 
   const idTag = cleanCode ? cleanCode : '-';
+  const nameTag = cleanName ? cleanName : '-';
   const odpTag = odpText ? (odpText + (portVal ? `-P${String(portVal).padStart(2, '0')}` : '')) : '-';
   const pkgTag = pkgText ? pkgText.replace(/[^a-zA-Z0-9_\-]/g, '') : '-';
 
   if (textId) textId.textContent = idTag;
+  if (textName) textName.textContent = nameTag;
   if (textOdp) textOdp.textContent = odpTag;
   if (textPkg) textPkg.textContent = pkgTag;
 
   if (hiddenTag) {
-    hiddenTag.value = cleanCode;
+    hiddenTag.value = cleanCode && cleanName ? `${cleanCode}_${cleanName}` : (cleanCode || cleanName);
   }
 }
 

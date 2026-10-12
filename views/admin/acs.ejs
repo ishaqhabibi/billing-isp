@@ -1211,28 +1211,27 @@
                 <!-- Search & Filters Toolbar -->
                 <div class="filter-toolbar">
                     <div class="filter-left">
-                        <!-- Server Search Form -->
-                        <form action="/admin/acs/search" method="GET" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; flex:1;">
-                            <div class="search-box-unified">
-                                <i class="bi bi-search"></i>
-                                <input class="fc" id="serverSearchInput" name="q" value="<%= searchQuery || '' %>" placeholder="Cari SN, Pelanggan, PPPoE User, IP..." autocomplete="off">
-                                <% if (typeof searchQuery !== 'undefined' && searchQuery) { %>
-                                    <a href="/admin/acs<%= selectedAcsId ? '?acs=' + encodeURIComponent(selectedAcsId) : '' %>" class="search-clear-btn" style="display:block;" title="Reset Pencarian"><i class="bi bi-x-circle-fill"></i></a>
-                                <% } %>
-                            </div>
-                            
-                            <select class="fc" id="acsFilter" name="acs" style="width:190px; height:38px;" onchange="showNocLoadingOnSwitch(this)">
+                        <!-- Real-time Live Search Input -->
+                        <div class="search-box-unified">
+                            <i class="bi bi-search"></i>
+                            <input class="fc" id="serverSearchInput" name="q" value="<%= searchQuery || '' %>" placeholder="Cari SN, Pelanggan, PPPoE User, IP, SSID, Vendor..." autocomplete="off" oninput="instantFilterTable(this.value)">
+                            <button type="button" id="searchClearBtn" class="search-clear-btn" onclick="clearUnifiedSearch()" title="Reset Pencarian" style="<%= searchQuery ? 'display:block;' : 'display:none;' %>">
+                                <i class="bi bi-x-circle-fill"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- ACS Server Selector -->
+                        <form id="acsServerSwitchForm" action="/admin/acs" method="GET" style="display:inline-flex; align-items:center; margin:0;">
+                            <select class="fc" id="acsFilter" name="acs" style="min-width:180px; height:38px;" onchange="showNocLoadingOnSwitch(this)">
                                 <option value="all">Semua ACS Server</option>
                                 <% acsServers.forEach(s => { %>
                                     <option value="<%= s.id %>" <%= String(selectedAcsId) === String(s.id) ? 'selected' : '' %>><%= s.name %></option>
                                 <% }); %>
                             </select>
-
-                            <button class="btn btn-g btn-sm" type="submit" style="height:38px; padding:0 14px;">
-                                <i class="bi bi-search"></i> Cari
-                            </button>
                         </form>
+                    </div>
 
+                    <div class="filter-right">
                         <!-- Instant Status Filter Pills -->
                         <div class="status-pills">
                             <button type="button" class="status-pill-btn active" data-filter="all" onclick="filterDevicesByStatus('all', this)">
@@ -1247,14 +1246,6 @@
                             <button type="button" class="status-pill-btn" data-filter="critical" onclick="filterDevicesByStatus('critical', this)">
                                 <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size:10px;"></i> Kritis (<span id="pillCountCritical"><%= criticalDev %></span>)
                             </button>
-                        </div>
-                    </div>
-
-                    <div class="filter-right">
-                        <!-- Quick Instant Live Client Filter -->
-                        <div style="position:relative; width:180px;">
-                            <input type="text" id="instantFilterInput" class="fc" style="height:34px; font-size:12px; padding-left:28px;" placeholder="Filter instan..." onkeyup="instantFilterTable(this.value)">
-                            <i class="bi bi-funnel" style="position:absolute; left:9px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:11px;"></i>
                         </div>
                     </div>
                 </div>
@@ -1346,7 +1337,8 @@
                                     data-customer="<%= (d.customer_name || '').toLowerCase() %>"
                                     data-pppoe="<%= (d.pppoe_user || '').toLowerCase() %>"
                                     data-ip="<%= (d.ip || '').toLowerCase() %>"
-                                    data-ssid="<%= (d.ssid || '').toLowerCase() %>">
+                                    data-ssid="<%= (d.ssid || '').toLowerCase() %>"
+                                    data-vendor="<%= (((d.manufacturer || '') + ' ' + (d.model || '')).toLowerCase()) %>">
                                     <td style="text-align:center;">
                                         <input type="checkbox" class="device-checkbox" data-id="<%= d.id %>" data-acs="<%= d.acs_server_id || selectedAcsId %>" onchange="updateBulkPanel()" style="cursor:pointer; width:16px; height:16px;">
                                     </td>
@@ -2349,7 +2341,15 @@ function instantFilterTable(query) {
 }
 
 function applyCombinedFilters(queryOverride) {
-    const q = (typeof queryOverride === 'string' ? queryOverride : (document.getElementById('instantFilterInput')?.value || '')).trim().toLowerCase();
+    const inputEl = document.getElementById('serverSearchInput');
+    const q = (typeof queryOverride === 'string' ? queryOverride : (inputEl?.value || '')).trim().toLowerCase();
+    
+    // Toggle dynamic clear button
+    const clearBtn = document.getElementById('searchClearBtn');
+    if (clearBtn) {
+        clearBtn.style.display = q ? 'block' : 'none';
+    }
+
     const rows = document.querySelectorAll('#devicesTableBody tr.device-row');
     let visibleCount = 0;
 
@@ -2371,7 +2371,8 @@ function applyCombinedFilters(queryOverride) {
             const pppoe = row.dataset.pppoe || '';
             const ip = row.dataset.ip || '';
             const ssid = row.dataset.ssid || '';
-            matchText = sn.includes(q) || customer.includes(q) || pppoe.includes(q) || ip.includes(q) || ssid.includes(q);
+            const vendor = row.dataset.vendor || '';
+            matchText = sn.includes(q) || customer.includes(q) || pppoe.includes(q) || ip.includes(q) || ssid.includes(q) || vendor.includes(q);
         }
 
         if (matchStatus && matchText) {
@@ -2393,22 +2394,31 @@ function applyCombinedFilters(queryOverride) {
                     <div class="empty-state" style="padding:28px 16px;">
                         <div class="empty-icon"><i class="bi bi-funnel"></i></div>
                         <div class="empty-title">Tidak Ada Hasil Cocok</div>
-                        <div class="empty-desc">Tidak ada perangkat yang sesuai dengan filter atau kata kunci saat ini.</div>
-                        <button class="btn btn-g btn-sm" onclick="resetClientFilters()"><i class="bi bi-arrow-counterclockwise"></i> Reset Filter</button>
+                        <div class="empty-desc">Tidak ada perangkat yang sesuai dengan kata kunci "${escapeHtml(q)}" atau status "${escapeHtml(currentActiveFilter)}".</div>
+                        <button class="btn btn-g btn-sm" onclick="clearUnifiedSearch()"><i class="bi bi-arrow-counterclockwise"></i> Reset Pencarian & Filter</button>
                     </div>
                 </td>
             `;
             document.getElementById('devicesTableBody').appendChild(noRow);
+        } else {
+            const desc = noRow.querySelector('.empty-desc');
+            if (desc) desc.textContent = `Tidak ada perangkat yang sesuai dengan kata kunci "${q}" atau status "${currentActiveFilter}".`;
         }
     } else if (noRow) {
         noRow.remove();
     }
 }
 
-function resetClientFilters() {
-    const input = document.getElementById('instantFilterInput');
+function clearUnifiedSearch() {
+    const input = document.getElementById('serverSearchInput');
     if (input) input.value = '';
+    const clearBtn = document.getElementById('searchClearBtn');
+    if (clearBtn) clearBtn.style.display = 'none';
     filterDevicesByStatus('all', document.querySelector('.status-pill-btn[data-filter="all"]'));
+}
+
+function resetClientFilters() {
+    clearUnifiedSearch();
 }
 
 // ── WI-FI MODAL ACTIONS (DUAL BAND 2.4G & 5G) ──
@@ -3918,7 +3928,8 @@ function renderDevicesTableRows(devices, selectedAcsId) {
                 data-customer="${escapeHtml((d.customer_name || '').toLowerCase())}"
                 data-pppoe="${escapeHtml((d.pppoe_user || '').toLowerCase())}"
                 data-ip="${escapeHtml((d.ip || d.pppoe_ip || '').toLowerCase())}"
-                data-ssid="${escapeHtml((d.ssid || '').toLowerCase())}">
+                data-ssid="${escapeHtml((d.ssid || '').toLowerCase())}"
+                data-vendor="${escapeHtml(((d.manufacturer || '') + ' ' + (d.model || '')).toLowerCase())}">
                 <td style="text-align:center;">
                     <input type="checkbox" class="device-checkbox" data-id="${escapeHtml(devId)}" data-acs="${escapeHtml(acsServerId)}" onchange="updateBulkPanel()" style="cursor:pointer; width:16px; height:16px;">
                 </td>
@@ -4075,6 +4086,7 @@ async function loadAcsDevicesData() {
             // Render table & console
             renderDevicesTableRows(data.devices, data.selectedAcsId);
             updateConsoleDeviceOptions(data.devices);
+            applyCombinedFilters();
         }
     } catch (err) {
         console.error('Failed to load ACS devices telemetry:', err);

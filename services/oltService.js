@@ -2945,6 +2945,31 @@ async function renameOnu(oltId, index, newName) {
 }
 
 /**
+ * Otomatis mencari index ONU berdasarkan Serial Number dan me-rename nama ONU di OLT
+ */
+async function renameOnuBySn(oltId, sn, newName) {
+  if (!oltId || !sn || !newName) return false;
+  try {
+    const stats = await getOltStats(oltId, true);
+    if (!stats || !Array.isArray(stats.onus) || stats.onus.length === 0) return false;
+    const cleanTargetSn = String(sn).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const matched = stats.onus.find(o => {
+      const cleanSn = String(o.sn || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      return cleanSn && cleanSn === cleanTargetSn;
+    });
+    if (matched && (matched.index || matched.name)) {
+      const targetIndex = matched.index || matched.name;
+      await renameOnu(oltId, targetIndex, newName);
+      logger.info(`[OLT Auto-Rename by SN] Sukses rename ONU ${sn} (index: ${targetIndex}) -> "${newName}"`);
+      return true;
+    }
+  } catch (err) {
+    logger.warn(`[OLT Auto-Rename by SN] Catatan auto-rename ONU ${sn}: ${err.message}`);
+  }
+  return false;
+}
+
+/**
  * Otorisasi ONU (Provisioning) via Telnet CLI.
  */
 async function authorizeOnu(oltId, data) {
@@ -3405,6 +3430,6 @@ async function configureWanViaAcs(sn, data) {
  }
 
 module.exports = {
-  getAllOlts, getActiveOlts, getOltById, createOlt, updateOlt, updateOltCoordinates, deleteOlt, getOltStats, getAllOltsStats, rebootOnu, renameOnu, authorizeOnu,
+  getAllOlts, getActiveOlts, getOltById, createOlt, updateOlt, updateOltCoordinates, deleteOlt, getOltStats, getAllOltsStats, rebootOnu, renameOnu, renameOnuBySn, authorizeOnu,
   configureOnuWan, configureZteWanViaGoApi, configureWanViaAcs, testOltSnmp
 };
