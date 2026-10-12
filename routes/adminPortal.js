@@ -2708,7 +2708,8 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
       }
 
       if (pppoeSource === 'mikrotik') {
-        // Mode Ambil dari MikroTik: secret eksisting sudah running, perbarui profile jika ada
+        // Mode Ambil dari MikroTik: secret eksisting sudah running, perbarui profile jika ada & update komentar
+        const secretComment = formatStandardMikrotikComment(req.body);
         if (targetProfile) {
           try {
             await mikrotikService.setPppoeProfile(req.body.pppoe_username, targetProfile, req.body.router_id);
@@ -2716,6 +2717,16 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
           } catch (mErr) {
             logger.warn(`[Add Customer] Info mapping secret MikroTik: ${mErr.message}`);
           }
+        }
+        try {
+          const secrets = await mikrotikService.getPppoeSecrets(req.body.router_id);
+          const existingSecret = secrets.find(s => String(s.name || '').trim() === req.body.pppoe_username);
+          if (existingSecret && (existingSecret['.id'] || existingSecret.id)) {
+            await mikrotikService.updatePppoeSecret(existingSecret['.id'] || existingSecret.id, { comment: secretComment }, req.body.router_id);
+            logger.info(`[Add Customer] Tagged comment on MikroTik secret "${req.body.pppoe_username}": ${secretComment}`);
+          }
+        } catch (cErr) {
+          logger.warn(`[Add Customer] Info updating comment on MikroTik: ${cErr.message}`);
         }
       } else if (shouldSyncToMikrotik) {
         // Mode Buat Baru di MikroTik

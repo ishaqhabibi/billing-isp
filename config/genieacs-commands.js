@@ -102,6 +102,7 @@ function getParameterValue(device, path) {
 const parameterPaths = {
     rxPower: [
         'VirtualParameters.RXPower',                    // ✅ CONFIRMED: -19.74
+        'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.RXPower',
         'InternetGatewayDevice.WANDevice.1.WANPONInterfaceConfig.RXPower',
         'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.X_ALU-COM_RxPower',
         'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.RxPower',

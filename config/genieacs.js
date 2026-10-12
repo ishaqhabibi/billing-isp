@@ -222,6 +222,31 @@ function createBuiltinAxiosProxy() {
         }
       }
       
+      // POST /devices/:id/tags/:tag — Add tag to device
+      const tagMatch = cleanUrl.match(/^\/devices\/([^/]+)\/tags\/([^/]+)$/);
+      if (tagMatch) {
+        const deviceId = decodeURIComponent(tagMatch[1]);
+        const newTag = decodeURIComponent(tagMatch[2]);
+        const now = new Date().toISOString();
+        try {
+          const row = db.prepare('SELECT tags FROM acs_devices WHERE id = ?').get(deviceId);
+          if (row) {
+            let tags = [];
+            try { tags = JSON.parse(row.tags || '[]'); } catch (_) {}
+            if (!tags.includes(newTag)) {
+              tags.push(newTag);
+              db.prepare('UPDATE acs_devices SET tags = ?, updated_at = ? WHERE id = ?')
+                .run(JSON.stringify(tags), now, deviceId);
+              logger.info(`[BuiltinACS] Tag '${newTag}' added to device ${deviceId}`);
+            }
+          }
+          return { data: {}, status: 200 };
+        } catch (e) {
+          logger.error(`[BuiltinACS] Error adding tag ${newTag}: ${e.message}`);
+          return { data: {}, status: 500 };
+        }
+      }
+
       return { data: {}, status: 200 };
     },
     
@@ -246,6 +271,30 @@ function createBuiltinAxiosProxy() {
     },
     
     delete: async (url, config = {}) => {
+      // DELETE /devices/:id/tags/:tag — Remove tag from device
+      const cleanUrl = String(url || '').split('?')[0];
+      const delTagMatch = cleanUrl.match(/^\/devices\/([^/]+)\/tags\/([^/]+)$/);
+      if (delTagMatch) {
+        const deviceId = decodeURIComponent(delTagMatch[1]);
+        const removeTag = decodeURIComponent(delTagMatch[2]);
+        const now = new Date().toISOString();
+        try {
+          const row = db.prepare('SELECT tags FROM acs_devices WHERE id = ?').get(deviceId);
+          if (row) {
+            let tags = [];
+            try { tags = JSON.parse(row.tags || '[]'); } catch (_) {}
+            tags = tags.filter(t => t !== removeTag);
+            db.prepare('UPDATE acs_devices SET tags = ?, updated_at = ? WHERE id = ?')
+              .run(JSON.stringify(tags), now, deviceId);
+            logger.info(`[BuiltinACS] Tag '${removeTag}' removed from device ${deviceId}`);
+          }
+          return { data: {}, status: 200 };
+        } catch (e) {
+          logger.error(`[BuiltinACS] Error removing tag ${removeTag}: ${e.message}`);
+          return { data: {}, status: 500 };
+        }
+      }
+
       const deviceMatch = url.match(/^\/devices\/(.+)$/);
       if (deviceMatch) {
         const deviceId = decodeURIComponent(deviceMatch[1]);
@@ -843,6 +892,7 @@ async function monitorRXPower(threshold = -27) {
                 const rxPowerPaths = [
                     'VirtualParameters.RXPower',
                     'VirtualParameters.redaman',
+                    'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.RXPower',
                     'InternetGatewayDevice.WANDevice.1.WANPONInterfaceConfig.RXPower',
                     'Device.XPON.Interface.1.Stats.RXPower'
                 ];
