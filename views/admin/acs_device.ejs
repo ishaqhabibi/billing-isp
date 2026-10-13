@@ -33,6 +33,14 @@
             <button class="hb-menu" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
             <i class="bi bi-hdd-network"></i>
             NOC Telemetri: <%= device.serialNumber || device.sn || device.phone || '-' %>
+            <% if (device.customerName && device.customerName !== '-') { %>
+                <span style="font-size:12px; font-weight:600; opacity:0.85; margin-left:8px; display:inline-flex; align-items:center; gap:4px;">
+                    <% if (device.customer_code && device.customer_code !== '-') { %>
+                        <span class="badge" style="background:rgba(99,102,241,0.2); color:#818cf8; font-family:monospace; font-size:10.5px; padding:1px 5px; border-radius:3px;"><%= device.customer_code %></span>
+                    <% } %>
+                    <span><%= device.customerName %></span>
+                </span>
+            <% } %>
         </div>
         <div class="tb-right">
             <span class="adm-badge" style="font-size:12px;opacity:0.7;"><%= company %></span>
@@ -131,7 +139,19 @@
                         <span class="badge bs">PPPoE Route</span>
                     <% } %>
                 </div>
-                <div class="info-row"><span>Pelanggan Tertaut</span><span><strong><%= device.customerName && device.customerName !== '-' ? device.customerName : 'Belum Ditautkan' %></strong></span></div>
+                <div class="info-row">
+                    <span>Pelanggan Tertaut</span>
+                    <span>
+                        <% if (device.customerName && device.customerName !== '-') { %>
+                            <% if (device.customer_code && device.customer_code !== '-') { %>
+                                <span class="badge" style="background:rgba(99,102,241,0.15); color:var(--primary); font-family:monospace; font-size:11px; font-weight:700; padding:2px 7px; border-radius:4px; margin-right:4px;" title="Kode Pelanggan"><%= device.customer_code %></span>
+                            <% } %>
+                            <strong><%= device.customerName %></strong>
+                        <% } else { %>
+                            <span class="text-muted">Belum Ditautkan</span>
+                        <% } %>
+                    </span>
+                </div>
                 <div class="info-row"><span>Username PPPoE Aktif</span><span style="color:#60a5fa; font-weight:700;"><i class="bi bi-key-fill me-1"></i><%= device.pppoeUsername || '-' %></span></div>
                 <div class="info-row"><span>IP Address WAN (CGNAT)</span><code style="color:#34d399; font-weight:700;"><%= device.pppoeIP || '-' %></code></div>
                 <div class="info-row">

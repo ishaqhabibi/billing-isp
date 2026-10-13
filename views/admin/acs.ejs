@@ -1335,6 +1335,7 @@
                                     data-critical="<%= isCriticalRx ? '1' : '0' %>"
                                     data-sn="<%= (d.sn || '').toLowerCase() %>"
                                     data-customer="<%= (d.customer_name || '').toLowerCase() %>"
+                                    data-code="<%= (d.customer_code || '').toLowerCase() %>"
                                     data-pppoe="<%= (d.pppoe_user || '').toLowerCase() %>"
                                     data-ip="<%= (d.ip || '').toLowerCase() %>"
                                     data-ssid="<%= (d.ssid || '').toLowerCase() %>"
@@ -1361,9 +1362,11 @@
                                         <div class="cust-cell">
                                             <div class="cust-name">
                                                 <% if (d.customer_name && d.customer_name !== '-') { %>
-                                                    <div style="display:flex; align-items:center; gap:6px;">
-                                                        <i class="bi bi-person-circle text-primary" style="font-size:12px;"></i>
-                                                        <span style="font-weight:600;"><%= d.customer_name %></span>
+                                                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                                        <% if (d.customer_code) { %>
+                                                            <span class="badge" style="background:rgba(99,102,241,0.15); color:var(--primary); font-family:monospace; font-size:10.5px; font-weight:700; padding:2px 6px; border-radius:4px;" title="Kode Pelanggan"><%= d.customer_code %></span>
+                                                        <% } %>
+                                                        <span style="font-weight:700; color:var(--text);"><%= d.customer_name %></span>
                                                         <button type="button" class="btn-act" onclick="unmapCustomer('<%= d.sn %>', '<%= d.customer_name %>')" style="border:none; background:transparent; padding:0; font-size:11px; color:var(--muted); cursor:pointer; opacity:0.6;" title="Lepas tautan pelanggan">
                                                             <i class="bi bi-x-circle"></i>
                                                         </button>
@@ -1379,12 +1382,15 @@
                                                     </div>
                                                 <% } %>
                                             </div>
-                                            <div class="cust-sub">
+                                            <div class="cust-sub" style="display:flex; align-items:center; gap:8px; margin-top:2px; font-size:11px;">
                                                 <% if (d.pppoe_user && d.pppoe_user !== '-') { %>
-                                                    <span title="PPPoE Username" style="color:#60a5fa;"><i class="bi bi-key-fill"></i> <%= d.pppoe_user %></span>
+                                                    <span title="PPPoE Username" style="color:#60a5fa; font-family:monospace;"><i class="bi bi-key-fill"></i> <%= d.pppoe_user %></span>
                                                 <% } %>
                                                 <% if (d.ip && d.ip !== '-') { %>
-                                                    <span title="IP Address" style="opacity:0.8;"><%= d.ip %></span>
+                                                    <span title="IP Address" style="opacity:0.8; font-family:monospace;"><%= d.ip %></span>
+                                                <% } %>
+                                                <% if (d.ssid && d.ssid !== '-') { %>
+                                                    <span title="SSID Wi-Fi" style="opacity:0.75;"><i class="bi bi-wifi"></i> <%= d.ssid %></span>
                                                 <% } %>
                                             </div>
                                         </div>
@@ -2367,12 +2373,13 @@ function applyCombinedFilters(queryOverride) {
         let matchText = true;
         if (q) {
             const sn = row.dataset.sn || '';
+            const code = row.dataset.code || '';
             const customer = row.dataset.customer || '';
             const pppoe = row.dataset.pppoe || '';
             const ip = row.dataset.ip || '';
             const ssid = row.dataset.ssid || '';
             const vendor = row.dataset.vendor || '';
-            matchText = sn.includes(q) || customer.includes(q) || pppoe.includes(q) || ip.includes(q) || ssid.includes(q) || vendor.includes(q);
+            matchText = sn.includes(q) || code.includes(q) || customer.includes(q) || pppoe.includes(q) || ip.includes(q) || ssid.includes(q) || vendor.includes(q);
         }
 
         if (matchStatus && matchText) {
@@ -3925,6 +3932,7 @@ function renderDevicesTableRows(devices, selectedAcsId) {
                 data-online="${d.isOnline ? '1' : '0'}" 
                 data-critical="${isCriticalRx ? '1' : '0'}"
                 data-sn="${escapeHtml((devSn || '').toLowerCase())}"
+                data-code="${escapeHtml((d.customer_code || '').toLowerCase())}"
                 data-customer="${escapeHtml((d.customer_name || '').toLowerCase())}"
                 data-pppoe="${escapeHtml((d.pppoe_user || '').toLowerCase())}"
                 data-ip="${escapeHtml((d.ip || d.pppoe_ip || '').toLowerCase())}"
@@ -3950,9 +3958,9 @@ function renderDevicesTableRows(devices, selectedAcsId) {
                     <div class="cust-cell">
                         <div class="cust-name">
                             ${d.customer_name && d.customer_name !== '-' ? `
-                                <div style="display:flex; align-items:center; gap:6px;">
-                                    <i class="bi bi-person-circle text-primary" style="font-size:12px;"></i>
-                                    <span style="font-weight:600;">${escapeHtml(d.customer_name)}</span>
+                                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                    ${d.customer_code ? `<span class="badge" style="background:rgba(99,102,241,0.15); color:var(--primary); font-family:monospace; font-size:10.5px; font-weight:700; padding:2px 6px; border-radius:4px;" title="Kode Pelanggan">${escapeHtml(d.customer_code)}</span>` : ''}
+                                    <span style="font-weight:700; color:var(--text);">${escapeHtml(d.customer_name)}</span>
                                     <button type="button" class="btn-act" onclick="unmapCustomer('${escapeJs(devSn)}', '${escapeJs(d.customer_name)}')" style="border:none; background:transparent; padding:0; font-size:11px; color:var(--muted); cursor:pointer; opacity:0.6;" title="Lepas tautan pelanggan">
                                         <i class="bi bi-x-circle"></i>
                                     </button>
@@ -3968,9 +3976,10 @@ function renderDevicesTableRows(devices, selectedAcsId) {
                                 </div>
                             `}
                         </div>
-                        <div class="cust-sub">
-                            ${d.pppoe_user && d.pppoe_user !== '-' ? `<span title="PPPoE Username" style="color:#60a5fa;"><i class="bi bi-key-fill"></i> ${escapeHtml(d.pppoe_user)}</span>` : ''}
-                            ${d.ip && d.ip !== '-' ? `<span title="IP Address" style="opacity:0.8;">${escapeHtml(d.ip)}</span>` : ''}
+                        <div class="cust-sub" style="display:flex; align-items:center; gap:8px; margin-top:2px; font-size:11px;">
+                            ${d.pppoe_user && d.pppoe_user !== '-' ? `<span title="PPPoE Username" style="color:#60a5fa; font-family:monospace;"><i class="bi bi-key-fill"></i> ${escapeHtml(d.pppoe_user)}</span>` : ''}
+                            ${d.ip && d.ip !== '-' ? `<span title="IP Address" style="opacity:0.8; font-family:monospace;">${escapeHtml(d.ip)}</span>` : ''}
+                            ${d.ssid && d.ssid !== '-' ? `<span title="SSID Wi-Fi" style="opacity:0.75;"><i class="bi bi-wifi"></i> ${escapeHtml(d.ssid)}</span>` : ''}
                         </div>
                     </div>
                 </td>

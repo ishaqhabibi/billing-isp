@@ -1537,6 +1537,7 @@ function enrichDevicesWithCustomerNames(devices) {
     }
 
     const byTag = new Map();
+    const byCode = new Map();
     const byPppoe = new Map();
     const byHotspot = new Map();
     const byIp = new Map();
@@ -1544,6 +1545,9 @@ function enrichDevicesWithCustomerNames(devices) {
 
     for (const c of customers) {
         if (!c.name) continue;
+        if (c.customer_code) {
+            byCode.set(String(c.customer_code).trim().toLowerCase(), c);
+        }
         if (c.ont_sn) {
             const cleanSn = String(c.ont_sn).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
             if (cleanSn) bySn.set(cleanSn, c);
@@ -1582,7 +1586,7 @@ function enrichDevicesWithCustomerNames(devices) {
             }
         }
 
-        // 3. Device ID or Tags Match
+        // 3. Device ID or Tags Match (including CODE_NAME format like BRG1202_KHOLIQ)
         if (!matchedCust) {
             const devId = String(d.id || d.phone || '').trim().toLowerCase();
             if (sn && byTag.has(sn)) matchedCust = byTag.get(sn);
@@ -1593,6 +1597,17 @@ function enrichDevicesWithCustomerNames(devices) {
                     if (byTag.has(tagKey)) {
                         matchedCust = byTag.get(tagKey);
                         break;
+                    }
+                    if (byCode.has(tagKey)) {
+                        matchedCust = byCode.get(tagKey);
+                        break;
+                    }
+                    if (tagKey.includes('_')) {
+                        const tagCode = tagKey.split('_')[0];
+                        if (byCode.has(tagCode)) {
+                            matchedCust = byCode.get(tagCode);
+                            break;
+                        }
                     }
                     if (byPppoe.has(tagKey)) {
                         matchedCust = byPppoe.get(tagKey);
@@ -1620,6 +1635,9 @@ function enrichDevicesWithCustomerNames(devices) {
 
         const finalName = matchedCust ? matchedCust.name : (d.customer_name && d.customer_name !== '-' ? d.customer_name : (d.customerName && d.customerName !== '-' ? d.customerName : '-'));
         const finalCode = matchedCust ? matchedCust.customer_code : (d.customer_code || null);
+        const finalPppoe = (d.pppoe_user && d.pppoe_user !== '-' && d.pppoe_user !== 'n/a') 
+            ? d.pppoe_user 
+            : (matchedCust && matchedCust.pppoe_username ? matchedCust.pppoe_username : (d.pppoe_user || '-'));
 
         let finalRxPower = d.rx_power;
         if ((!finalRxPower || finalRxPower === '-') && matchedCust) {
@@ -1633,6 +1651,7 @@ function enrichDevicesWithCustomerNames(devices) {
         return {
             ...d,
             rx_power: finalRxPower,
+            pppoe_user: finalPppoe,
             customer_name: finalName,
             customerName: finalName,
             customer_code: finalCode,
@@ -1745,8 +1764,10 @@ async function fetchAllAcsDevicesPayload({ selectedAcsId, searchQuery, refresh }
             String(d.sn || '').toLowerCase().includes(qLower) ||
             String(d.id || '').toLowerCase().includes(qLower) ||
             String(d.customer_name || '').toLowerCase().includes(qLower) ||
+            String(d.customer_code || '').toLowerCase().includes(qLower) ||
             String(d.pppoe_user || '').toLowerCase().includes(qLower) ||
-            String(d.ip || d.pppoe_ip || '').toLowerCase().includes(qLower)
+            String(d.ip || d.pppoe_ip || '').toLowerCase().includes(qLower) ||
+            String(d.ssid || '').toLowerCase().includes(qLower)
         );
     }
 
@@ -2022,6 +2043,8 @@ router.get('/device/:deviceId', async (req, res) => {
                         pppoeIP: legacyData.pppoeIP || '-',
                         pppoeUsername: legacyData.pppoeUsername || '-',
                         customerName: legacyData.lokasi || '-',
+                        customerCode: legacyData.customer_code || legacyData.kode_pelanggan || '-',
+                        customer_code: legacyData.customer_code || legacyData.kode_pelanggan || '-',
                         uptime: legacyData.uptime || '-',
                         uptime_seconds: parseUptimeToSeconds(legacyData.uptime),
                         pppoeUptime: legacyData.pppoeUptime || '-',
@@ -2138,16 +2161,20 @@ router.get('/device/:deviceId', async (req, res) => {
         let customerName = getNestedValue(deviceData, 'VirtualParameters.CustomerName') || 
                            getNestedValue(deviceData, 'VirtualParameters.customer_name') || 
                            '-';
-        if (customerName === '-' || !customerName) {
-            const enriched = enrichDevicesWithCustomerNames([{
-                id: deviceData._id,
-                sn: deviceData._deviceId?._SerialNumber,
-                pppoe_user: pppoeUser,
-                ip: ip,
-                tags: deviceData._tags
-            }]);
-            if (enriched && enriched[0] && enriched[0].customer_name && enriched[0].customer_name !== '-') {
+        let customerCode = '-';
+        const enriched = enrichDevicesWithCustomerNames([{
+            id: deviceData._id,
+            sn: deviceData._deviceId?._SerialNumber,
+            pppoe_user: pppoeUser,
+            ip: ip,
+            tags: deviceData._tags
+        }]);
+        if (enriched && enriched[0]) {
+            if ((!customerName || customerName === '-') && enriched[0].customer_name && enriched[0].customer_name !== '-') {
                 customerName = enriched[0].customer_name;
+            }
+            if (enriched[0].customer_code && enriched[0].customer_code !== '-') {
+                customerCode = enriched[0].customer_code;
             }
         }
 
@@ -2379,6 +2406,8 @@ router.get('/device/:deviceId', async (req, res) => {
                 pppoeIP: ip,
                 pppoeUsername: pppoeUser,
                 customerName: customerName,
+                customerCode: customerCode,
+                customer_code: customerCode,
                 uptime: uptimeInfo.formatted,
                 uptime_seconds: uptimeInfo.seconds,
                 pppoeUptime: pppoeUptimeInfo.formatted,
