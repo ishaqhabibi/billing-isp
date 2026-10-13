@@ -1538,6 +1538,7 @@ function enrichDevicesWithCustomerNames(devices) {
 
     const byTag = new Map();
     const byCode = new Map();
+    const byName = new Map();
     const byPppoe = new Map();
     const byHotspot = new Map();
     const byIp = new Map();
@@ -1545,6 +1546,7 @@ function enrichDevicesWithCustomerNames(devices) {
 
     for (const c of customers) {
         if (!c.name) continue;
+        byName.set(String(c.name).trim().toLowerCase(), c);
         if (c.customer_code) {
             byCode.set(String(c.customer_code).trim().toLowerCase(), c);
         }
@@ -1586,7 +1588,7 @@ function enrichDevicesWithCustomerNames(devices) {
             }
         }
 
-        // 3. Device ID or Tags Match (including CODE_NAME format like BRG1202_KHOLIQ)
+        // 3. Device ID or Tags Match (termasuk multi-tag: NAMA, KODE, ODC, ODP atau format KODE/NAMA)
         if (!matchedCust) {
             const devId = String(d.id || d.phone || '').trim().toLowerCase();
             if (sn && byTag.has(sn)) matchedCust = byTag.get(sn);
@@ -1601,6 +1603,17 @@ function enrichDevicesWithCustomerNames(devices) {
                     if (byCode.has(tagKey)) {
                         matchedCust = byCode.get(tagKey);
                         break;
+                    }
+                    if (byName.has(tagKey)) {
+                        matchedCust = byName.get(tagKey);
+                        break;
+                    }
+                    if (tagKey.includes('/')) {
+                        const tagCode = tagKey.split('/')[0];
+                        if (byCode.has(tagCode)) {
+                            matchedCust = byCode.get(tagCode);
+                            break;
+                        }
                     }
                     if (tagKey.includes('_')) {
                         const tagCode = tagKey.split('_')[0];

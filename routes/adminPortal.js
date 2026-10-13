@@ -2472,7 +2472,7 @@ function formatStandardMikrotikComment(data) {
   return (code ? `[${code}] ` : '') + parts.join(' | ');
 }
 
-// ── HELPER MULTI-TAGGING GENIEACS ONT STANDAR NOC ISP ──
+// ── HELPER MULTI-TAGGING GENIEACS ONT & OLT STANDAR NOC ISP ──
 async function syncGenieacsNocTags(ontSn, customerData) {
   const cleanSn = String(ontSn || customerData.ont_sn || customerData.genieacs_tag || '').trim();
   if (!cleanSn && !customerData.pppoe_username) return;
@@ -2481,19 +2481,59 @@ async function syncGenieacsNocTags(ontSn, customerData) {
   let custRow = null;
   try {
     if (customerData?.id) {
-      custRow = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerData.id);
+      custRow = customerSvc.getCustomerById(customerData.id);
     } else if (cleanSn) {
       custRow = db.prepare('SELECT * FROM customers WHERE ont_sn = ? OR genieacs_tag = ? LIMIT 1').get(cleanSn, cleanSn);
     }
   } catch (_) {}
   const merged = { ...(custRow || {}), ...(customerData || {}) };
 
+  // 1. Ekstrak data: Nama, Kode Pelanggan, ODC, ODP
   const code = String(merged.customer_code || '').trim().toUpperCase();
   const rawName = String(merged.name || '').trim();
-  const cleanName = rawName.replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_');
-  const mainTag = code && cleanName ? `${code}_${cleanName}` : (code || cleanName);
+  const cleanName = rawName.replace(/[^a-zA-Z0-9_\-\s]/g, '').trim().toUpperCase();
 
-  // 1. PUSH TAGS KE GENIEACS (FORMAT TUNGGAL: KODE_NAMA & BERSIHKAN TAG LAMA)
+  // Dapatkan Nama ODC & ODP
+  let odcName = merged.odc_name ? String(merged.odc_name).trim() : '';
+  let odpName = merged.odp_name ? String(merged.odp_name).trim() : '';
+  if (!odcName && merged.odc_id) {
+    try {
+      const row = db.prepare('SELECT name FROM odcs WHERE id = ?').get(merged.odc_id);
+      if (row && row.name) odcName = String(row.name).trim();
+    } catch (_) {}
+  }
+  if (!odpName && merged.odp_id) {
+    try {
+      const row = db.prepare('SELECT name FROM odps WHERE id = ?').get(merged.odp_id);
+      if (row && row.name) odpName = String(row.name).trim();
+    } catch (_) {}
+  }
+
+  // Bersihkan label splitter dari nama ODC/ODP jika ada, misal 'ODP-BRG-01/01 (1:8)' -> 'ODP-BRG-01/01'
+  if (odcName) odcName = odcName.replace(/\s*\(.*?\)/g, '').trim().toUpperCase();
+  if (odpName) odpName = odpName.replace(/\s*\(.*?\)/g, '').trim().toUpperCase();
+
+  // Susun Array Multi-Tag GenieACS sesuai urutan yang diminta user:
+  // [1] Nama Pelanggan (misal: KHOLIQ)
+  // [2] Kode Pelanggan (misal: BRG1202)
+  // [3] ODC (misal: ODC-BRG-01)
+  // [4] ODP (misal: ODP-BRG-01/01)
+  // [5] Tag Kustom (misal: VIP)
+  const orderedTags = [];
+  if (cleanName && !orderedTags.includes(cleanName)) orderedTags.push(cleanName);
+  if (code && !orderedTags.includes(code)) orderedTags.push(code);
+  if (odcName && !orderedTags.includes(odcName)) orderedTags.push(odcName);
+  if (odpName && !orderedTags.includes(odpName)) orderedTags.push(odpName);
+
+  if (merged.genieacs_custom_tag) {
+    const customTags = String(merged.genieacs_custom_tag).split(/[\s,]+/);
+    for (const ct of customTags) {
+      const ctClean = ct ? ct.trim().toUpperCase() : '';
+      if (ctClean && !orderedTags.includes(ctClean)) orderedTags.push(ctClean);
+    }
+  }
+
+  // 1. PUSH MULTI-TAG KE GENIEACS & BERSIHKAN TAG LAMA
   try {
     let dev = null;
     if (cleanSn) {
@@ -2506,20 +2546,11 @@ async function syncGenieacsNocTags(ontSn, customerData) {
     }
 
     if (dev && dev._id) {
-      const tagsToKeep = new Set();
-      if (mainTag) tagsToKeep.add(mainTag);
-
-      if (merged.genieacs_custom_tag) {
-        const customTags = String(merged.genieacs_custom_tag).split(/[\s,]+/);
-        for (const ct of customTags) {
-          if (ct && ct.trim()) tagsToKeep.add(ct.trim().toUpperCase());
-        }
-      }
-
+      const tagsToKeep = new Set(orderedTags);
       const servers = genieacsApi.getAllACSServers();
       const existingTags = Array.isArray(dev._tags) ? dev._tags : [];
 
-      // Hapus semua tag lama yang tidak termasuk dalam tagsToKeep agar tidak menumpuk/ganda
+      // Hapus semua tag lama yang tidak termasuk dalam tagsToKeep agar bersih & tidak menumpuk
       for (const oldTag of existingTags) {
         if (!tagsToKeep.has(oldTag)) {
           for (const srv of servers) {
@@ -2531,8 +2562,8 @@ async function syncGenieacsNocTags(ontSn, customerData) {
         }
       }
 
-      // Tempelkan tag baru ke GenieACS
-      for (const t of tagsToKeep) {
+      // Tempelkan multi-tag baru ke GenieACS sesuai urutan
+      for (const t of orderedTags) {
         for (const srv of servers) {
           try {
             const ax = genieacsApi.createAxiosInstance(srv);
@@ -2544,12 +2575,12 @@ async function syncGenieacsNocTags(ontSn, customerData) {
 
       // Sinkronkan kolom genieacs_tag di database customers
       try {
-        if (merged.id && mainTag) {
-          db.prepare('UPDATE customers SET genieacs_tag = ? WHERE id = ?').run(mainTag, merged.id);
+        if (merged.id && orderedTags.length > 0) {
+          db.prepare('UPDATE customers SET genieacs_tag = ? WHERE id = ?').run(orderedTags.join(','), merged.id);
         }
       } catch (_) {}
 
-      logger.info(`[GenieACS Sync] Sukses sinkronisasi tag [${Array.from(tagsToKeep).join(', ')}] ke ONT ${cleanSn || dev._id} (${dev._id})`);
+      logger.info(`[GenieACS Sync] Sukses sinkronisasi multi-tag [${orderedTags.join(', ')}] ke ONT ${cleanSn || dev._id}`);
     } else {
       logger.info(`[GenieACS Sync] Device SN "${cleanSn}" belum online / belum terdaftar di ACS.`);
     }
@@ -2557,12 +2588,19 @@ async function syncGenieacsNocTags(ontSn, customerData) {
     logger.warn(`[GenieACS Sync] Info tagging ONT ${cleanSn}: ${acsErr.message}`);
   }
 
-  // 2. SINKRONISASI NAMA ONU KE OLT (INDEPENDEN, TIDAK TERHALANG ACS)
+  // 2. SINKRONISASI NAMA ONU KE OLT: FORMAT KODE/NAMA (misal: BRG1202/KHOLIQ)
   const oltId = merged.olt_id ? Number(merged.olt_id) : null;
   if (oltId) {
     try {
       const oltSvc = require('../services/oltService');
-      let oltName = mainTag;
+      let oltName = '';
+      if (code && cleanName) {
+        oltName = `${code}/${cleanName}`;
+      } else if (code) {
+        oltName = code;
+      } else if (cleanName) {
+        oltName = cleanName;
+      }
       if (oltName.length > 30) oltName = oltName.substring(0, 30);
 
       let renamed = false;
@@ -2739,7 +2777,8 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
     const isRadius = wantsRadius ? 1 : 0;
     req.body.is_radius = isRadius;
 
-    customerSvc.createCustomer(req.body);
+    const createRes = customerSvc.createCustomer(req.body);
+    const newCustId = createRes && createRes.lastInsertRowid ? createRes.lastInsertRowid : null;
     
     // ========================================================================
     // SYNC KE MIKROTIK - PENTING: SECRET TIDAK PERNAH DIHAPUS!
@@ -2825,7 +2864,7 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
 
     // TAUTKAN MULTI-TAG TERSTRUKTUR KE GENIEACS JIKA SN TERSEDIA
     if (req.body.ont_sn) {
-      await syncGenieacsNocTags(req.body.ont_sn, req.body);
+      await syncGenieacsNocTags(req.body.ont_sn, { ...req.body, id: newCustId });
     }
     if (connectionType === 'hotspot' && req.body.hotspot_username) {
       const disabled = String(req.body.status || 'active').toLowerCase() !== 'active';

@@ -2290,17 +2290,17 @@
                 <input type="hidden" name="genieacs_tag" id="add_genieacs_tag" value="">
                 <div style="background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 10px;">
                   <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;" id="add_genieacs_tags_preview">
-                    <span class="badge" id="add_tag_preview_id" style="background:rgba(99,102,241,0.18); color:var(--primary); font-size:10.5px; font-family:monospace;">
-                      Kode: <span id="add_tag_text_id">-</span>
-                    </span>
                     <span class="badge" id="add_tag_preview_name" style="background:rgba(56,189,248,0.18); color:#38bdf8; font-size:10.5px; font-family:monospace;">
                       Nama: <span id="add_tag_text_name">-</span>
                     </span>
+                    <span class="badge" id="add_tag_preview_id" style="background:rgba(99,102,241,0.18); color:var(--primary); font-size:10.5px; font-family:monospace;">
+                      Kode: <span id="add_tag_text_id">-</span>
+                    </span>
+                    <span class="badge" id="add_tag_preview_odc" style="background:rgba(168,85,247,0.18); color:#c084fc; font-size:10.5px; font-family:monospace;">
+                      ODC: <span id="add_tag_text_odc">-</span>
+                    </span>
                     <span class="badge" id="add_tag_preview_odp" style="background:rgba(245,158,11,0.18); color:#f59e0b; font-size:10.5px; font-family:monospace;">
                       ODP: <span id="add_tag_text_odp">-</span>
-                    </span>
-                    <span class="badge" id="add_tag_preview_pkg" style="background:rgba(16,185,129,0.18); color:#10b981; font-size:10.5px; font-family:monospace;">
-                      PKG: <span id="add_tag_text_pkg">-</span>
                     </span>
                   </div>
                   <div style="margin-top:6px;">
@@ -2846,17 +2846,17 @@
                 <input type="hidden" name="genieacs_tag" id="e_tag" value="">
                 <div style="background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 10px;">
                   <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;" id="e_genieacs_tags_preview">
-                    <span class="badge" id="e_tag_preview_id" style="background:rgba(99,102,241,0.18); color:var(--primary); font-size:10.5px; font-family:monospace;">
-                      Kode: <span id="e_tag_text_id">-</span>
-                    </span>
                     <span class="badge" id="e_tag_preview_name" style="background:rgba(56,189,248,0.18); color:#38bdf8; font-size:10.5px; font-family:monospace;">
                       Nama: <span id="e_tag_text_name">-</span>
                     </span>
+                    <span class="badge" id="e_tag_preview_id" style="background:rgba(99,102,241,0.18); color:var(--primary); font-size:10.5px; font-family:monospace;">
+                      Kode: <span id="e_tag_text_id">-</span>
+                    </span>
+                    <span class="badge" id="e_tag_preview_odc" style="background:rgba(168,85,247,0.18); color:#c084fc; font-size:10.5px; font-family:monospace;">
+                      ODC: <span id="e_tag_text_odc">-</span>
+                    </span>
                     <span class="badge" id="e_tag_preview_odp" style="background:rgba(245,158,11,0.18); color:#f59e0b; font-size:10.5px; font-family:monospace;">
                       ODP: <span id="e_tag_text_odp">-</span>
-                    </span>
-                    <span class="badge" id="e_tag_preview_pkg" style="background:rgba(16,185,129,0.18); color:#10b981; font-size:10.5px; font-family:monospace;">
-                      PKG: <span id="e_tag_text_pkg">-</span>
                     </span>
                   </div>
                   <div style="margin-top:6px;">
@@ -4185,42 +4185,47 @@ function updateGenieacsTagsPreview(target = 'add') {
   const prefix = target === 'add' ? 'add_' : 'e_';
   const codeEl = document.getElementById(prefix + 'customer_code');
   const nameEl = document.getElementById(prefix + 'name');
+  const odcEl = document.getElementById(prefix + 'odc_id');
   const odpEl = document.getElementById(prefix + 'odp_id');
   const portEl = document.getElementById(prefix + 'odp_port');
-  const pkgEl = document.getElementById(target === 'add' ? 'add_package_id' : 'e_package');
   const hiddenTag = document.getElementById(prefix === 'add_' ? 'add_genieacs_tag' : 'e_tag');
 
-  const textId = document.getElementById(prefix + 'tag_text_id');
   const textName = document.getElementById(prefix + 'tag_text_name');
+  const textId = document.getElementById(prefix + 'tag_text_id');
+  const textOdc = document.getElementById(prefix + 'tag_text_odc');
   const textOdp = document.getElementById(prefix + 'tag_text_odp');
-  const textPkg = document.getElementById(prefix + 'tag_text_pkg');
 
   const cleanCode = (codeEl && codeEl.value ? codeEl.value.trim() : '').toUpperCase();
   const rawName = (nameEl && nameEl.value ? nameEl.value.trim() : '');
-  const cleanName = rawName.replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_');
+  const cleanName = rawName.replace(/[^a-zA-Z0-9_\-\s]/g, '').trim().toUpperCase();
 
+  let odcText = '';
+  if (odcEl && odcEl.selectedIndex > 0) {
+    odcText = odcEl.options[odcEl.selectedIndex].text.replace(/\s*\(.*\)$/, '').trim().toUpperCase();
+  }
   let odpText = '';
   if (odpEl && odpEl.selectedIndex > 0) {
-    odpText = odpEl.options[odpEl.selectedIndex].text.replace(/\s*\(.*\)$/, '').trim();
+    odpText = odpEl.options[odpEl.selectedIndex].text.replace(/\s*\(.*\)$/, '').trim().toUpperCase();
   }
   const portVal = portEl && portEl.value ? portEl.value.trim() : '';
-  let pkgText = '';
-  if (pkgEl && pkgEl.selectedIndex > 0) {
-    pkgText = pkgEl.options[pkgEl.selectedIndex].text.split('—')[0].trim();
-  }
 
-  const idTag = cleanCode ? cleanCode : '-';
   const nameTag = cleanName ? cleanName : '-';
+  const idTag = cleanCode ? cleanCode : '-';
+  const odcTag = odcText ? odcText : '-';
   const odpTag = odpText ? (odpText + (portVal ? `-P${String(portVal).padStart(2, '0')}` : '')) : '-';
-  const pkgTag = pkgText ? pkgText.replace(/[^a-zA-Z0-9_\-]/g, '') : '-';
 
-  if (textId) textId.textContent = idTag;
   if (textName) textName.textContent = nameTag;
+  if (textId) textId.textContent = idTag;
+  if (textOdc) textOdc.textContent = odcTag;
   if (textOdp) textOdp.textContent = odpTag;
-  if (textPkg) textPkg.textContent = pkgTag;
 
   if (hiddenTag) {
-    hiddenTag.value = cleanCode && cleanName ? `${cleanCode}_${cleanName}` : (cleanCode || cleanName);
+    const previewArray = [];
+    if (cleanName) previewArray.push(cleanName);
+    if (cleanCode) previewArray.push(cleanCode);
+    if (odcText) previewArray.push(odcText);
+    if (odpText) previewArray.push(odpText);
+    hiddenTag.value = previewArray.join(',');
   }
 }
 
@@ -4418,6 +4423,7 @@ function handleOdcChange(type = 'add') {
       odpSelect.value = '';
     }
   }
+  if (typeof updateGenieacsTagsPreview === 'function') updateGenieacsTagsPreview(type);
 }
 
 function switchCustDetailTab(tabKey, btn) {
