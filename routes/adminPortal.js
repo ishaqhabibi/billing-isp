@@ -8,6 +8,7 @@ const { logger } = require('../config/logger');
 const db = require('../config/database');
 const customerDevice = require('../services/customerDeviceService');
 const customerSvc = require('../services/customerService');
+const genieacsApi = require('../config/genieacs');
 const billingSvc = require('../services/billingService');
 const pdfSvc = require('../services/pdfInvoiceService');
 const mikrotikService = require('../services/mikrotikService');
@@ -2423,11 +2424,17 @@ router.get('/customers', requireAdminSession, requireSidebarMenuAccess('customer
   const areas = customerSvc.getAllCustomerAreas();
   const masterAreas = areaSvc.getAllAreas();
 
-  // Gunakan cache sesi aktif agar render halaman pelanggan berlangsung instan (0ms delay).
-  // Live sessions terkini otomatis di-update di background via AJAX (/admin/api/customers/live-sessions).
-  const activeSessionsMap = mikrotikService.getCachedActiveSessionsMap();
+  // Gunakan cache sesi aktif. Jika cache kosong atau dingin, tunggu singkat (maks 1000ms) agar render awal langsung sinkron
+  let activeSessionsMap = mikrotikService.getCachedActiveSessionsMap();
   if (mikrotikService.isSessionsCacheStale(15000)) {
-    mikrotikService.getAllActiveSessionsMap().catch(() => {});
+    try {
+      const waitPromise = mikrotikService.getAllActiveSessionsMap();
+      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 1000));
+      const fetched = await Promise.race([waitPromise, timeoutPromise]);
+      if (fetched && fetched.size > 0) {
+        activeSessionsMap = fetched;
+      }
+    } catch (_) {}
   }
 
   res.render('admin/customers', {
@@ -2467,8 +2474,8 @@ function formatStandardMikrotikComment(data) {
 
 // ── HELPER MULTI-TAGGING GENIEACS ONT STANDAR NOC ISP ──
 async function syncGenieacsNocTags(ontSn, customerData) {
-  const cleanSn = String(ontSn || '').trim();
-  if (!cleanSn) return;
+  const cleanSn = String(ontSn || customerData.ont_sn || customerData.genieacs_tag || '').trim();
+  if (!cleanSn && !customerData.pppoe_username) return;
 
   // Pastikan data pelanggan lengkap (jika hanya data parsial dikirim saat edit)
   let custRow = null;
@@ -2476,7 +2483,7 @@ async function syncGenieacsNocTags(ontSn, customerData) {
     if (customerData?.id) {
       custRow = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerData.id);
     } else if (cleanSn) {
-      custRow = db.prepare('SELECT * FROM customers WHERE ont_sn = ? LIMIT 1').get(cleanSn);
+      custRow = db.prepare('SELECT * FROM customers WHERE ont_sn = ? OR genieacs_tag = ? LIMIT 1').get(cleanSn, cleanSn);
     }
   } catch (_) {}
   const merged = { ...(custRow || {}), ...(customerData || {}) };
@@ -2487,7 +2494,16 @@ async function syncGenieacsNocTags(ontSn, customerData) {
 
   // 1. PUSH TAGS KE GENIEACS
   try {
-    const dev = await customerDevice.findDeviceByTag(cleanSn);
+    let dev = null;
+    if (cleanSn) {
+      dev = await customerDevice.findDeviceByTag(cleanSn);
+      if (!dev) dev = await customerDevice.findDeviceByTag(cleanSn.toUpperCase());
+      if (!dev) dev = await customerDevice.findDeviceByTag(cleanSn.toLowerCase());
+    }
+    if (!dev && merged.pppoe_username) {
+      dev = await customerDevice.findDeviceByPppoe(merged.pppoe_username);
+    }
+
     if (dev && dev._id) {
       let odpName = '';
       if (merged.odp_id) {
@@ -2523,8 +2539,32 @@ async function syncGenieacsNocTags(ontSn, customerData) {
         }
       }
 
+      const servers = genieacsApi.getAllACSServers();
+
+      // Hapus tag lama jika kode pelanggan atau nama pelanggan berubah
+      if (custRow) {
+        const oldCode = String(custRow.customer_code || '').trim().toUpperCase();
+        const oldRawName = String(custRow.name || '').trim();
+        const oldCleanName = oldRawName.replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_');
+        const tagsToRemove = [];
+        if (oldCode && oldCode !== code) tagsToRemove.push(oldCode);
+        if (oldCleanName && oldCleanName !== cleanName && oldCleanName !== code) tagsToRemove.push(oldCleanName);
+
+        if (tagsToRemove.length > 0) {
+          for (const srv of servers) {
+            try {
+              const ax = genieacsApi.createAxiosInstance(srv);
+              for (const ot of tagsToRemove) {
+                try {
+                  await ax.delete(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(ot)}`);
+                } catch (_) {}
+              }
+            } catch (_) {}
+          }
+        }
+      }
+
       if (tagsToApply.length > 0) {
-        const servers = genieacsApi.getAllACSServers();
         for (const srv of servers) {
           try {
             const ax = genieacsApi.createAxiosInstance(srv);
@@ -2533,7 +2573,7 @@ async function syncGenieacsNocTags(ontSn, customerData) {
                 await ax.post(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(t)}`, {});
               } catch (_) {}
             }
-            logger.info(`[GenieACS Sync] Sukses menempelkan tag [${tagsToApply.join(', ')}] ke ONT ${cleanSn} (${dev._id})`);
+            logger.info(`[GenieACS Sync] Sukses menempelkan tag [${tagsToApply.join(', ')}] ke ONT ${cleanSn || dev._id} (${dev._id})`);
             break;
           } catch (_) {}
         }

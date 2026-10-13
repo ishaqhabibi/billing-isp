@@ -5,7 +5,7 @@
   <title><%= t('admin.customers.title', 'Pelanggan') %> | <%= company %></title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
   <link rel="stylesheet" href="/css/admin.css?v=2.7">
   <style>
     .usage-bar { height: 4px; background: var(--bg3); border-radius: 2px; margin: 4px 0; overflow: hidden; width: 100px; }
@@ -1387,6 +1387,17 @@
       }
     </style>
 
+    <% 
+      let initialOnlineCount = 0;
+      if (typeof customers !== 'undefined' && Array.isArray(customers)) {
+        customers.forEach(c => {
+          const u = String(c.pppoe_username || c.hotspot_username || '').trim().toLowerCase();
+          if (u && typeof activeSessionsMap !== 'undefined' && activeSessionsMap && (activeSessionsMap.get(u) || (u.includes('@') && activeSessionsMap.get(u.replace(/@.*$/, ''))))) {
+            initialOnlineCount++;
+          }
+        });
+      }
+    %>
     <!-- KPI Statistics Grid -->
     <div class="stat-grid" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr))">
       <div class="sc p sc-clickable <%= (!filterStatus) ? 'stat-card-active' : '' %>" onclick="filterByStatus('')" title="Tampilkan semua pelanggan">
@@ -1413,7 +1424,7 @@
           <i class="bi bi-wifi sc-icon" style="position:static;font-size:20px;opacity:0.8;"></i>
         </div>
         <div class="sc-label" style="color:#10b981;margin-top:4px;">Online Realtime</div>
-        <div class="sc-val" id="count_live_online_kpi" style="color:#10b981">0</div>
+        <div class="sc-val" id="count_live_online_kpi" style="color:#10b981"><%= initialOnlineCount %></div>
         <div class="sc-mini-badge" style="background:rgba(16,185,129,0.12);color:#10b981;">
           Sesi Aktif
         </div>
@@ -1459,10 +1470,10 @@
       <span class="cust-filter-divider"></span>
 
       <button type="button" class="cust-filter-chip" id="chip_filter_online" onclick="toggleConnFilter('online')">
-        <span class="online-pulse-dot"></span> Online (<span id="count_live_online">0</span>)
+        <span class="online-pulse-dot"></span> Online (<span id="count_live_online"><%= initialOnlineCount %></span>)
       </button>
       <button type="button" class="cust-filter-chip" id="chip_filter_offline" onclick="toggleConnFilter('offline')">
-        <i class="bi bi-circle-fill text-muted" style="font-size:7px;"></i> Offline (<span id="count_live_offline">0</span>)
+        <i class="bi bi-circle-fill text-muted" style="font-size:7px;"></i> Offline (<span id="count_live_offline"><%= Math.max(0, customers.length - initialOnlineCount) %></span>)
       </button>
 
       <span class="cust-filter-divider"></span>
@@ -1687,7 +1698,9 @@
           <% } %>
           <% customers.forEach((c, i) => { 
             const username = String(c.pppoe_username || c.hotspot_username || '').trim().toLowerCase();
-            const session = username && typeof activeSessionsMap !== 'undefined' && activeSessionsMap && activeSessionsMap.get ? activeSessionsMap.get(username) : null;
+            const session = username && typeof activeSessionsMap !== 'undefined' && activeSessionsMap && activeSessionsMap.get
+              ? (activeSessionsMap.get(username) || (username.includes('@') ? activeSessionsMap.get(username.replace(/@.*$/, '')) : null))
+              : null;
             const isOnline = !!session;
             
             const rxBytes = session && session.bytesIn ? session.bytesIn : (c.bytes_in || 0);
@@ -4829,23 +4842,40 @@ async function fetchLiveSessions() {
     }
 
     document.querySelectorAll('.cust-conn-cell').forEach(cell => {
-      const username = cell.dataset.username;
-      if (!username) return;
-      const s = data.sessions[username];
+      const rawUser = String(cell.dataset.username || '').trim().toLowerCase();
+      if (!rawUser) return;
+      const strippedUser = rawUser.replace(/@.*$/, '');
+      const s = data.sessions[rawUser] || data.sessions[strippedUser] || Object.values(data.sessions).find(sess => {
+        const u = String(sess.username || '').trim().toLowerCase();
+        return u === rawUser || u === strippedUser || u.replace(/@.*$/, '') === strippedUser;
+      });
+
       const row = cell.closest('.cust-row');
       const rxEl = cell.querySelector('.conn-rx');
       const txEl = cell.querySelector('.conn-tx');
-      const uptimeEl = cell.querySelector('.conn-uptime');
-      const ipEl = cell.querySelector('.conn-ip');
 
       if (s) {
         if (row) row.setAttribute('data-conn', 'online');
+        const badgeWrap = cell.children[0];
+        if (badgeWrap) {
+          badgeWrap.innerHTML = `<span class="badge badge-online"><span class="online-pulse-dot" style="margin-right:4px;"></span>ONLINE</span>`;
+        }
+        const subWrap = cell.children[1];
+        if (subWrap) {
+          subWrap.innerHTML = `<span><i class="bi bi-clock-history me-1"></i><span class="conn-uptime">${s.uptime || '-'}</span></span>`;
+        }
         if (rxEl) rxEl.textContent = formatBytesVal(s.bytesIn);
         if (txEl) txEl.textContent = formatBytesVal(s.bytesOut);
-        if (uptimeEl) uptimeEl.textContent = s.uptime || '-';
-        if (ipEl) ipEl.textContent = s.ip || '-';
       } else {
         if (row) row.setAttribute('data-conn', 'offline');
+        const badgeWrap = cell.children[0];
+        if (badgeWrap) {
+          badgeWrap.innerHTML = `<span class="badge badge-offline"><span class="offline-dot"></span>OFFLINE</span>`;
+        }
+        const subWrap = cell.children[1];
+        if (subWrap) {
+          subWrap.innerHTML = `<span class="text-muted">Tidak ada sesi</span>`;
+        }
       }
     });
 
@@ -5113,12 +5143,15 @@ function updateLiveConnCounts() {
   });
   const elOnline = document.getElementById('count_live_online');
   const elOffline = document.getElementById('count_live_offline');
+  const elKpi = document.getElementById('count_live_online_kpi');
   if (elOnline) elOnline.textContent = onlineCount;
   if (elOffline) elOffline.textContent = offlineCount;
+  if (elKpi) elKpi.textContent = onlineCount;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   updateLiveConnCounts();
+  fetchLiveSessions();
 });
 
 window.filterByStatus = filterByStatus;

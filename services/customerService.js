@@ -276,6 +276,10 @@ function updateCustomer(id, data) {
     ? (data.ont_sn ? String(data.ont_sn).trim() : '')
     : (prev ? (prev.ont_sn || '') : '');
 
+  const genieacsTag = data.genieacs_tag !== undefined
+    ? (data.genieacs_tag ? String(data.genieacs_tag).trim() : '')
+    : (prev ? (prev.genieacs_tag || '') : '');
+
   const billingDay = data.billing_day !== undefined
     ? (data.billing_day !== '' && data.billing_day !== null ? Math.min(31, Math.max(1, parseInt(data.billing_day, 10))) : null)
     : (data.isolate_day !== undefined
@@ -303,7 +307,7 @@ function updateCustomer(id, data) {
     initialRx,
     data.lat || '',
     data.lng || '',
-    data.genieacs_tag || '', pppoeUsername,
+    genieacsTag, pppoeUsername,
     pppoePassword,
     data.pppoe_remote_address || '',
     data.isolir_profile || 'isolir',

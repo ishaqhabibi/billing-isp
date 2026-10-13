@@ -831,50 +831,53 @@ async function getActivePppoeSessionsMap() {
   return sessionsMap;
 }
 
-let activeSessionsMapCache = { ts: 0, data: new Map(), isFetching: false };
+let activeSessionsMapCache = { ts: 0, data: new Map(), promise: null };
 
 function getCachedActiveSessionsMap() {
   return activeSessionsMapCache.data || new Map();
 }
 
 function isSessionsCacheStale(maxAgeMs = 15000) {
-  return !activeSessionsMapCache.data || (Date.now() - activeSessionsMapCache.ts) > maxAgeMs;
+  return !activeSessionsMapCache.data || activeSessionsMapCache.data.size === 0 || (Date.now() - activeSessionsMapCache.ts) > maxAgeMs;
 }
 
 async function getAllActiveSessionsMap(forceRefresh = false) {
   const now = Date.now();
-  if (!forceRefresh && activeSessionsMapCache.data && (now - activeSessionsMapCache.ts) < 15000) {
+  if (!forceRefresh && activeSessionsMapCache.data && activeSessionsMapCache.data.size > 0 && (now - activeSessionsMapCache.ts) < 15000) {
     return activeSessionsMapCache.data;
   }
 
-  // Prevent multiple concurrent fetches to MikroTik
-  if (activeSessionsMapCache.isFetching) {
-    return activeSessionsMapCache.data || new Map();
+  // Prevent multiple concurrent fetches to MikroTik by sharing the active in-flight promise
+  if (activeSessionsMapCache.promise) {
+    return activeSessionsMapCache.promise;
   }
 
-  activeSessionsMapCache.isFetching = true;
+  activeSessionsMapCache.promise = (async () => {
+    try {
+      const routers = getAllRouters().filter(r => r.is_active === 1 || r.is_active === '1' || r.is_active === true);
+      const sessionsMap = new Map();
 
-  try {
-    const routers = getAllRouters().filter(r => r.is_active === 1 || r.is_active === '1' || r.is_active === true);
-    const sessionsMap = new Map();
+      const withTimeout = (promise, ms = 3000) => {
+        return Promise.race([
+          promise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
+        ]).catch(() => []);
+      };
 
-    const withTimeout = (promise, ms = 3000) => {
-      return Promise.race([
-        promise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
-      ]).catch(() => []);
-    };
+      await Promise.all(routers.map(async (r) => {
+        // Parallelize PPPoE and Hotspot active queries for 2x faster response
+        const [pppoeActives, hsActives] = await Promise.all([
+          withTimeout(getPppoeActive(r.id), 3000),
+          withTimeout(getHotspotActive(r.id), 3000)
+        ]);
 
-    await Promise.all(routers.map(async (r) => {
-      try {
-        const pppoeActives = await withTimeout(getPppoeActive(r.id), 3000);
         if (Array.isArray(pppoeActives)) {
           for (const s of pppoeActives) {
             if (s && (s.name || s.user)) {
               const username = String(s.name || s.user).trim().toLowerCase();
               const bIn = Number(s['bytes-in'] || s['bytesIn'] || s['bytes_in'] || s['rx-byte'] || s['rx_byte'] || s['bytes-in-count'] || 0);
               const bOut = Number(s['bytes-out'] || s['bytesOut'] || s['bytes_out'] || s['tx-byte'] || s['tx_byte'] || s['bytes-out-count'] || 0);
-              sessionsMap.set(username, {
+              const sessionObj = {
                 username: s.name || s.user,
                 ip: s.address || s['address'] || '-',
                 uptime: s.uptime || s['uptime'] || '-',
@@ -884,21 +887,26 @@ async function getAllActiveSessionsMap(forceRefresh = false) {
                 type: 'pppoe',
                 routerId: r.id,
                 routerName: r.name
-              });
+              };
+              sessionsMap.set(username, sessionObj);
+              // Also map username without realm/domain (e.g., brg1202 for brg1202@bionfiber.com)
+              if (username.includes('@')) {
+                const stripped = username.replace(/@.*$/, '');
+                if (!sessionsMap.has(stripped)) {
+                  sessionsMap.set(stripped, sessionObj);
+                }
+              }
             }
           }
         }
-      } catch (err) {}
 
-      try {
-        const hsActives = await withTimeout(getHotspotActive(r.id), 3000);
         if (Array.isArray(hsActives)) {
           for (const s of hsActives) {
             if (s && (s.user || s.name)) {
               const username = String(s.user || s.name).trim().toLowerCase();
               const bIn = Number(s['bytes-in'] || s['bytesIn'] || s['bytes_in'] || s['rx-byte'] || s['rx_byte'] || s['bytes-in-count'] || 0);
               const bOut = Number(s['bytes-out'] || s['bytesOut'] || s['bytes_out'] || s['tx-byte'] || s['tx_byte'] || s['bytes-out-count'] || 0);
-              sessionsMap.set(username, {
+              const sessionObj = {
                 username: s.user || s.name,
                 ip: s.address || s['address'] || '-',
                 uptime: s.uptime || s['uptime'] || '-',
@@ -908,19 +916,28 @@ async function getAllActiveSessionsMap(forceRefresh = false) {
                 type: 'hotspot',
                 routerId: r.id,
                 routerName: r.name
-              });
+              };
+              sessionsMap.set(username, sessionObj);
+              if (username.includes('@')) {
+                const stripped = username.replace(/@.*$/, '');
+                if (!sessionsMap.has(stripped)) {
+                  sessionsMap.set(stripped, sessionObj);
+                }
+              }
             }
           }
         }
-      } catch (err) {}
-    }));
+      }));
 
-    activeSessionsMapCache.ts = Date.now();
-    activeSessionsMapCache.data = sessionsMap;
-    return sessionsMap;
-  } finally {
-    activeSessionsMapCache.isFetching = false;
-  }
+      activeSessionsMapCache.ts = Date.now();
+      activeSessionsMapCache.data = sessionsMap;
+      return sessionsMap;
+    } finally {
+      activeSessionsMapCache.promise = null;
+    }
+  })();
+
+  return activeSessionsMapCache.promise;
 }
 
 
