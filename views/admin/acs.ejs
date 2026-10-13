@@ -1275,7 +1275,7 @@
                                     <input type="checkbox" id="selectAllDevices" onchange="toggleSelectAll(this)" style="cursor:pointer; width:16px; height:16px;">
                                 </th>
                                 <th>Perangkat & SN</th>
-                                <th>Pelanggan & PPPoE</th>
+                                <th>Pelanggan (Kode & Nama)</th>
                                 <th>Total Perangkat Terhubung</th>
                                 <th>Kualitas Optik</th>
                                 <th>Status & Uptime</th>
@@ -2200,7 +2200,7 @@
             <option value="">-- Pilih Pelanggan --</option>
             <% const mapCustList = (typeof customers !== 'undefined' && Array.isArray(customers)) ? customers : ((typeof customersList !== 'undefined' && Array.isArray(customersList)) ? customersList : []); %>
             <% mapCustList.forEach(c => { %>
-              <option value="<%= c.id %>"><%= c.name %> (<%= c.pppoe_username ? c.pppoe_username : (c.customer_code || 'ID: ' + c.id) %>)</option>
+              <option value="<%= c.id %>"><%= c.customer_code ? '[' + c.customer_code + '] ' : '' %><%= c.name %><%= c.pppoe_username ? ' (' + c.pppoe_username + ')' : '' %></option>
             <% }) %>
           </select>
           <small style="color:var(--muted); font-size:11px; margin-top:4px; display:block;">
