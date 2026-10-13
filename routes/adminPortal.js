@@ -2491,8 +2491,9 @@ async function syncGenieacsNocTags(ontSn, customerData) {
   const code = String(merged.customer_code || '').trim().toUpperCase();
   const rawName = String(merged.name || '').trim();
   const cleanName = rawName.replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_');
+  const mainTag = code && cleanName ? `${code}_${cleanName}` : (code || cleanName);
 
-  // 1. PUSH TAGS KE GENIEACS
+  // 1. PUSH TAGS KE GENIEACS (FORMAT TUNGGAL: KODE_NAMA & BERSIHKAN TAG LAMA)
   try {
     let dev = null;
     if (cleanSn) {
@@ -2505,79 +2506,50 @@ async function syncGenieacsNocTags(ontSn, customerData) {
     }
 
     if (dev && dev._id) {
-      let odpName = '';
-      if (merged.odp_id) {
-        try {
-          const odp = db.prepare('SELECT name FROM odps WHERE id = ?').get(merged.odp_id);
-          if (odp && odp.name) odpName = odp.name.replace(/\s+/g, '-').toUpperCase();
-        } catch (_) {}
-      }
+      const tagsToKeep = new Set();
+      if (mainTag) tagsToKeep.add(mainTag);
 
-      let pkgName = '';
-      if (merged.package_id) {
-        try {
-          const pkg = db.prepare('SELECT name FROM packages WHERE id = ?').get(merged.package_id);
-          if (pkg && pkg.name) pkgName = pkg.name.replace(/\s+/g, '').toUpperCase();
-        } catch (_) {}
-      }
-
-      const tagsToApply = [];
-      if (code) tagsToApply.push(code);
-      if (cleanName && cleanName !== code) tagsToApply.push(cleanName);
-
-      const port = merged.odp_port ? String(merged.odp_port).padStart(2, '0') : '';
-      if (odpName) {
-        tagsToApply.push(`ODP:${odpName}${port ? '-P' + port : ''}`);
-      }
-      if (pkgName) {
-        tagsToApply.push(`PKG:${pkgName}`);
-      }
       if (merged.genieacs_custom_tag) {
         const customTags = String(merged.genieacs_custom_tag).split(/[\s,]+/);
         for (const ct of customTags) {
-          if (ct && ct.trim()) tagsToApply.push(ct.trim().toUpperCase());
+          if (ct && ct.trim()) tagsToKeep.add(ct.trim().toUpperCase());
         }
       }
 
       const servers = genieacsApi.getAllACSServers();
+      const existingTags = Array.isArray(dev._tags) ? dev._tags : [];
 
-      // Hapus tag lama jika kode pelanggan atau nama pelanggan berubah
-      if (custRow) {
-        const oldCode = String(custRow.customer_code || '').trim().toUpperCase();
-        const oldRawName = String(custRow.name || '').trim();
-        const oldCleanName = oldRawName.replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_');
-        const tagsToRemove = [];
-        if (oldCode && oldCode !== code) tagsToRemove.push(oldCode);
-        if (oldCleanName && oldCleanName !== cleanName && oldCleanName !== code) tagsToRemove.push(oldCleanName);
-
-        if (tagsToRemove.length > 0) {
+      // Hapus semua tag lama yang tidak termasuk dalam tagsToKeep agar tidak menumpuk/ganda
+      for (const oldTag of existingTags) {
+        if (!tagsToKeep.has(oldTag)) {
           for (const srv of servers) {
             try {
               const ax = genieacsApi.createAxiosInstance(srv);
-              for (const ot of tagsToRemove) {
-                try {
-                  await ax.delete(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(ot)}`);
-                } catch (_) {}
-              }
+              await ax.delete(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(oldTag)}`);
             } catch (_) {}
           }
         }
       }
 
-      if (tagsToApply.length > 0) {
+      // Tempelkan tag baru ke GenieACS
+      for (const t of tagsToKeep) {
         for (const srv of servers) {
           try {
             const ax = genieacsApi.createAxiosInstance(srv);
-            for (const t of tagsToApply) {
-              try {
-                await ax.post(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(t)}`, {});
-              } catch (_) {}
-            }
-            logger.info(`[GenieACS Sync] Sukses menempelkan tag [${tagsToApply.join(', ')}] ke ONT ${cleanSn || dev._id} (${dev._id})`);
+            await ax.post(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(t)}`, {});
             break;
           } catch (_) {}
         }
       }
+
+      // Sinkronkan kolom genieacs_tag di database customers
+      try {
+        if (merged.id && mainTag) {
+          db.prepare('UPDATE customers SET genieacs_tag = ? WHERE id = ?').run(mainTag, merged.id);
+        }
+      } catch (_) {}
+
+      logger.info(`[GenieACS Sync] Sukses sinkronisasi tag [${Array.from(tagsToKeep).join(', ')}] ke ONT ${cleanSn || dev._id} (${dev._id})`);
     } else {
       logger.info(`[GenieACS Sync] Device SN "${cleanSn}" belum online / belum terdaftar di ACS.`);
     }
@@ -2590,7 +2562,7 @@ async function syncGenieacsNocTags(ontSn, customerData) {
   if (oltId) {
     try {
       const oltSvc = require('../services/oltService');
-      let oltName = code && cleanName ? `${code}_${cleanName}` : (code || cleanName);
+      let oltName = mainTag;
       if (oltName.length > 30) oltName = oltName.substring(0, 30);
 
       let renamed = false;
