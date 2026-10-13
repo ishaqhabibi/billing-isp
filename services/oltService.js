@@ -706,8 +706,8 @@ const hiosoOnuIdFromIndex = (index, brand) => {
 };
 
 const telnetOptsFromOlt = (olt) => ({
-  port: Number(olt.telnet_port) > 0 ? Number(olt.telnet_port) : 23,
-  enablePassword: olt.enable_password != null && String(olt.enable_password).length > 0 ? String(olt.enable_password) : null
+  port: Number(olt?.telnet_port) > 0 ? Number(olt.telnet_port) : 23,
+  enablePassword: olt?.enable_password != null && String(olt.enable_password).length > 0 ? String(olt.enable_password) : (olt?.web_password || null)
 });
 
 const telnetReadUntil = (socket, matcher, timeoutMs, sendFn) => {
@@ -2900,31 +2900,40 @@ async function renameOnu(oltId, index, newName) {
   // Handle HSGQ GPON / EPON via Telnet
   if (brand.includes('hsqg') || brand.includes('hsgq')) {
     let port = 1;
-    let onuId = 0;
-    if (String(index).includes('/')) {
-      const parts = String(index).split('/');
+    let onuId = 1;
+    const strIdx = String(index || '').trim();
+    if (strIdx.includes('/')) {
+      const parts = strIdx.split('/');
+      port = parseInt(parts[0], 10);
+      onuId = parseInt(parts[1], 10);
+    } else if (strIdx.includes(':')) {
+      const parts = strIdx.split(':');
       port = parseInt(parts[0], 10);
       onuId = parseInt(parts[1], 10);
     } else {
-      onuId = parseInt(index, 10);
+      const parsed = decodeOltSnmpIndex(brand, strIdx);
+      port = parseInt(parsed.port, 10) || 1;
+      onuId = parseInt(parsed.onuId, 10) || 1;
     }
 
     const cleanName = String(newName).replace(/[\r\n\t"']/g, '').trim();
+    const intf = brand.includes('epon') ? 'epon' : 'gpon';
     const cmds = [
       'enable',
       'configure',
-      `interface gpon ${port}`,
-      `ont modify ${onuId} ont-name "${cleanName}"`,
-      `ont name ${onuId} "${cleanName}"`,
-      `ont description ${onuId} "${cleanName}"`,
+      `interface ${intf} ${port}`,
+      `ont setting ${onuId} name "${cleanName}"`,
+      `ont setting ${onuId} desc "${cleanName}"`,
       `exit`,
-      `write`,
       `exit`
     ];
 
     try {
       const out = await telnetLoginAndRun(olt.host, olt.web_user, olt.web_password, cmds, telnetOptsFromOlt(olt));
       logger.info(`[HSGQ Rename Output] ${out}`);
+      // Invalidate cache agar nama baru segera muncul di daftar
+      statsCache.delete(`${oltId}:true`);
+      statsCache.delete(`${oltId}:false`);
       return { success: true, message: 'Nama ONU berhasil diubah di HSGQ OLT.' };
     } catch(err) {
       logger.error(`[HSGQ Rename Error] ${err.message}`);
@@ -2939,7 +2948,11 @@ async function renameOnu(oltId, index, newName) {
     session.set([{ oid, type: snmp.ASN1.OctetString, value: newName }], (error) => {
       session.close();
       if (error) reject(error);
-      else resolve(true);
+      else {
+        statsCache.delete(`${oltId}:true`);
+        statsCache.delete(`${oltId}:false`);
+        resolve(true);
+      }
     });
   });
 }
@@ -2957,8 +2970,8 @@ async function renameOnuBySn(oltId, sn, newName) {
       const cleanSn = String(o.sn || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
       return cleanSn && cleanSn === cleanTargetSn;
     });
-    if (matched && (matched.index || matched.name)) {
-      const targetIndex = matched.index || matched.name;
+    if (matched && (matched.id || matched.index || matched.name)) {
+      const targetIndex = matched.id || matched.index || matched.name;
       await renameOnu(oltId, targetIndex, newName);
       logger.info(`[OLT Auto-Rename by SN] Sukses rename ONU ${sn} (index: ${targetIndex}) -> "${newName}"`);
       return true;

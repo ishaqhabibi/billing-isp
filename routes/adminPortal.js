@@ -2469,91 +2469,106 @@ function formatStandardMikrotikComment(data) {
 async function syncGenieacsNocTags(ontSn, customerData) {
   const cleanSn = String(ontSn || '').trim();
   if (!cleanSn) return;
+
+  // Pastikan data pelanggan lengkap (jika hanya data parsial dikirim saat edit)
+  let custRow = null;
+  try {
+    if (customerData?.id) {
+      custRow = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerData.id);
+    } else if (cleanSn) {
+      custRow = db.prepare('SELECT * FROM customers WHERE ont_sn = ? LIMIT 1').get(cleanSn);
+    }
+  } catch (_) {}
+  const merged = { ...(custRow || {}), ...(customerData || {}) };
+
+  const code = String(merged.customer_code || '').trim().toUpperCase();
+  const rawName = String(merged.name || '').trim();
+  const cleanName = rawName.replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_');
+
+  // 1. PUSH TAGS KE GENIEACS
   try {
     const dev = await customerDevice.findDeviceByTag(cleanSn);
-    if (!dev || !dev._id) {
-      logger.info(`[GenieACS Sync] Device SN "${cleanSn}" belum online / belum terdaftar di ACS.`);
-      return;
-    }
-
-    let odpName = '';
-    if (customerData.odp_id) {
-      try {
-        const odp = db.prepare('SELECT name FROM odps WHERE id = ?').get(customerData.odp_id);
-        if (odp && odp.name) odpName = odp.name.replace(/\s+/g, '-').toUpperCase();
-      } catch (_) {}
-    }
-
-    let pkgName = '';
-    if (customerData.package_id) {
-      try {
-        const pkg = db.prepare('SELECT name FROM packages WHERE id = ?').get(customerData.package_id);
-        if (pkg && pkg.name) pkgName = pkg.name.replace(/\s+/g, '').toUpperCase();
-      } catch (_) {}
-    }
-
-    const tagsToApply = [];
-    const code = String(customerData.customer_code || '').trim().toUpperCase();
-    if (code) tagsToApply.push(code);
-
-    const rawName = String(customerData.name || '').trim();
-    const cleanName = rawName.replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_');
-    if (cleanName && cleanName !== code) tagsToApply.push(cleanName);
-
-    const port = customerData.odp_port ? String(customerData.odp_port).padStart(2, '0') : '';
-    if (odpName) {
-      tagsToApply.push(`ODP:${odpName}${port ? '-P' + port : ''}`);
-    }
-    if (pkgName) {
-      tagsToApply.push(`PKG:${pkgName}`);
-    }
-    if (customerData.genieacs_custom_tag) {
-      const customTags = String(customerData.genieacs_custom_tag).split(/[\s,]+/);
-      for (const ct of customTags) {
-        if (ct && ct.trim()) tagsToApply.push(ct.trim().toUpperCase());
-      }
-    }
-
-    if (tagsToApply.length > 0) {
-      const servers = genieacsApi.getAllACSServers();
-      for (const srv of servers) {
+    if (dev && dev._id) {
+      let odpName = '';
+      if (merged.odp_id) {
         try {
-          const ax = genieacsApi.createAxiosInstance(srv);
-          for (const t of tagsToApply) {
-            try {
-              await ax.post(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(t)}`, {});
-            } catch (_) {}
-          }
-          logger.info(`[GenieACS Sync] Sukses menempelkan tag [${tagsToApply.join(', ')}] ke ONT ${cleanSn} (${dev._id})`);
-          break;
+          const odp = db.prepare('SELECT name FROM odps WHERE id = ?').get(merged.odp_id);
+          if (odp && odp.name) odpName = odp.name.replace(/\s+/g, '-').toUpperCase();
         } catch (_) {}
       }
-    }
 
-    // Sinkronisasi nama ONU ke OLT jika terdata
-    if (customerData.olt_id) {
-      try {
-        const oltSvc = require('../services/oltService');
-        let oltName = code && cleanName ? `${code}_${cleanName}` : (code || cleanName);
-        if (oltName.length > 30) oltName = oltName.substring(0, 30);
-        const index = customerData.pon_port || customerData.odp_port;
-        let renamed = false;
-        if (index) {
+      let pkgName = '';
+      if (merged.package_id) {
+        try {
+          const pkg = db.prepare('SELECT name FROM packages WHERE id = ?').get(merged.package_id);
+          if (pkg && pkg.name) pkgName = pkg.name.replace(/\s+/g, '').toUpperCase();
+        } catch (_) {}
+      }
+
+      const tagsToApply = [];
+      if (code) tagsToApply.push(code);
+      if (cleanName && cleanName !== code) tagsToApply.push(cleanName);
+
+      const port = merged.odp_port ? String(merged.odp_port).padStart(2, '0') : '';
+      if (odpName) {
+        tagsToApply.push(`ODP:${odpName}${port ? '-P' + port : ''}`);
+      }
+      if (pkgName) {
+        tagsToApply.push(`PKG:${pkgName}`);
+      }
+      if (merged.genieacs_custom_tag) {
+        const customTags = String(merged.genieacs_custom_tag).split(/[\s,]+/);
+        for (const ct of customTags) {
+          if (ct && ct.trim()) tagsToApply.push(ct.trim().toUpperCase());
+        }
+      }
+
+      if (tagsToApply.length > 0) {
+        const servers = genieacsApi.getAllACSServers();
+        for (const srv of servers) {
           try {
-            await oltSvc.renameOnu(customerData.olt_id, index, oltName);
-            renamed = true;
-            logger.info(`[OLT Sync] Sukses rename ONU OLT #${customerData.olt_id} port ${index} -> "${oltName}"`);
+            const ax = genieacsApi.createAxiosInstance(srv);
+            for (const t of tagsToApply) {
+              try {
+                await ax.post(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(t)}`, {});
+              } catch (_) {}
+            }
+            logger.info(`[GenieACS Sync] Sukses menempelkan tag [${tagsToApply.join(', ')}] ke ONT ${cleanSn} (${dev._id})`);
+            break;
           } catch (_) {}
         }
-        if (!renamed && cleanSn) {
-          await oltSvc.renameOnuBySn(customerData.olt_id, cleanSn, oltName);
-        }
-      } catch (oltErr) {
-        logger.warn(`[OLT Sync] Catatan OLT sync: ${oltErr.message}`);
       }
+    } else {
+      logger.info(`[GenieACS Sync] Device SN "${cleanSn}" belum online / belum terdaftar di ACS.`);
     }
-  } catch (err) {
-    logger.warn(`[GenieACS Sync] Info tagging ONT ${cleanSn}: ${err.message}`);
+  } catch (acsErr) {
+    logger.warn(`[GenieACS Sync] Info tagging ONT ${cleanSn}: ${acsErr.message}`);
+  }
+
+  // 2. SINKRONISASI NAMA ONU KE OLT (INDEPENDEN, TIDAK TERHALANG ACS)
+  const oltId = merged.olt_id ? Number(merged.olt_id) : null;
+  if (oltId) {
+    try {
+      const oltSvc = require('../services/oltService');
+      let oltName = code && cleanName ? `${code}_${cleanName}` : (code || cleanName);
+      if (oltName.length > 30) oltName = oltName.substring(0, 30);
+
+      let renamed = false;
+      if (cleanSn) {
+        renamed = await oltSvc.renameOnuBySn(oltId, cleanSn, oltName);
+        if (renamed) {
+          logger.info(`[OLT Sync] Sukses rename ONU OLT #${oltId} SN ${cleanSn} -> "${oltName}"`);
+        }
+      }
+      if (!renamed && merged.pon_port && String(merged.pon_port).includes('/')) {
+        try {
+          await oltSvc.renameOnu(oltId, merged.pon_port, oltName);
+          logger.info(`[OLT Sync] Sukses rename ONU OLT #${oltId} port ${merged.pon_port} -> "${oltName}"`);
+        } catch (_) {}
+      }
+    } catch (oltErr) {
+      logger.warn(`[OLT Sync] Catatan OLT sync: ${oltErr.message}`);
+    }
   }
 }
 
@@ -3082,9 +3097,10 @@ router.post('/customers/:id/update', requireAdminSession, (req, res, next) => {
       }
     }
 
-    // TAUTKAN MULTI-TAG TERSTRUKTUR KE GENIEACS JIKA SN TERSEDIA
-    if (req.body.ont_sn) {
-      await syncGenieacsNocTags(req.body.ont_sn, req.body);
+    // TAUTKAN MULTI-TAG TERSTRUKTUR KE GENIEACS & OLT JIKA SN TERSEDIA
+    const effectiveSn = String(req.body.ont_sn || oldCustomer?.ont_sn || '').trim();
+    if (effectiveSn) {
+      await syncGenieacsNocTags(effectiveSn, { ...req.body, id: customerId, ont_sn: effectiveSn });
     }
 
     req.session._msg = { type: 'success', text: 'Data pelanggan berhasil diperbarui.' };

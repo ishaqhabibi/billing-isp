@@ -3302,16 +3302,14 @@ router.post('/api/add-wan/:deviceId', requireAdmin, async (req, res) => {
                         const oltSvc = require('../services/oltService');
                         let oltName = combinedTag;
                         if (oltName.length > 30) oltName = oltName.substring(0, 30);
-                        const index = matchedCust.pon_port || matchedCust.odp_port;
                         let renamed = false;
-                        if (index) {
-                            try {
-                                await oltSvc.renameOnu(matchedCust.olt_id, index, oltName);
-                                renamed = true;
-                            } catch (_) {}
+                        if (deviceSn) {
+                            renamed = await oltSvc.renameOnuBySn(matchedCust.olt_id, deviceSn, oltName);
                         }
-                        if (!renamed && deviceSn) {
-                            await oltSvc.renameOnuBySn(matchedCust.olt_id, deviceSn, oltName);
+                        if (!renamed && matchedCust.pon_port && String(matchedCust.pon_port).includes('/')) {
+                            try {
+                                await oltSvc.renameOnu(matchedCust.olt_id, matchedCust.pon_port, oltName);
+                            } catch (_) {}
                         }
                     } catch (_) {}
                 }
@@ -3534,16 +3532,14 @@ router.post('/map-customer', requireAdminSession, async (req, res) => {
                     const oltSvc = require('../services/oltService');
                     let oltName = `${custCode}_${cleanName}`;
                     if (oltName.length > 30) oltName = oltName.substring(0, 30);
-                    const index = cust.pon_port || cust.odp_port;
                     let renamed = false;
-                    if (index) {
-                        try {
-                            await oltSvc.renameOnu(cust.olt_id, index, oltName);
-                            renamed = true;
-                        } catch (_) {}
+                    if (cleanSn) {
+                        renamed = await oltSvc.renameOnuBySn(cust.olt_id, cleanSn, oltName);
                     }
-                    if (!renamed && cleanSn) {
-                        await oltSvc.renameOnuBySn(cust.olt_id, cleanSn, oltName);
+                    if (!renamed && cust.pon_port && String(cust.pon_port).includes('/')) {
+                        try {
+                            await oltSvc.renameOnu(cust.olt_id, cust.pon_port, oltName);
+                        } catch (_) {}
                     }
                 } catch (oltErr) {
                     console.warn('[map-customer] Catatan OLT sync:', oltErr.message);
