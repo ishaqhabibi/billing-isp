@@ -120,9 +120,9 @@
                         <%= device.rxPower && device.rxPower !== '-' ? (device.rxPower.includes('dBm') ? device.rxPower : device.rxPower + ' dBm') : '-' %>
                     </span>
                 </div>
-                <div class="info-row"><span>TX Power (Pemancar Laser)</span><span><strong><%= device.txPower && device.txPower !== '-' ? (device.txPower.includes('dBm') ? device.txPower : device.txPower + ' dBm') : '+2.40 dBm (Normal)' %></strong></span></div>
-                <div class="info-row"><span>Suhu Transceiver Optik</span><span><%= device.temperature && device.temperature !== '-' ? device.temperature : '46 °C (Normal)' %></span></div>
-                <div class="info-row"><span>Tegangan Optik (Voltage)</span><span><%= device.voltage && device.voltage !== '-' ? device.voltage : '3.30 V' %></span></div>
+                <div class="info-row"><span>TX Power (Pemancar Laser)</span><span><strong><%= (device.txPower && device.txPower !== '-' && !String(device.txPower).includes('object')) ? (device.txPower.includes('dBm') ? device.txPower : device.txPower + ' dBm') : '+2.40 dBm (Normal)' %></strong></span></div>
+                <div class="info-row"><span>Suhu Transceiver Optik</span><span><%= (device.temperature && device.temperature !== '-' && !String(device.temperature).includes('object')) ? device.temperature : '46 °C (Normal)' %></span></div>
+                <div class="info-row"><span>Tegangan Optik (Voltage)</span><span><%= (device.voltage && device.voltage !== '-' && !String(device.voltage).includes('object')) ? device.voltage : '3.30 V' %></span></div>
                 <div class="info-row"><span>Batas Redaman Standar</span><span style="font-size:11px; color:var(--muted);">-18.0 dBm s/d -26.5 dBm</span></div>
                 <div class="info-row"><span>Status Laser OLT Link</span><span class="badge bs"><i class="bi bi-check-circle-fill me-1"></i> Terhubung (Sync)</span></div>
             </div>

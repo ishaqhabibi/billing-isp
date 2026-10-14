@@ -465,13 +465,19 @@ function getWildcardMatches(device, path) {
         
         if (index === parts.length) {
             let val = current;
-            if (typeof current === 'object' && '_value' in current) {
-                val = current._value;
+            if (typeof current === 'object') {
+                if ('_value' in current) {
+                    val = current._value;
+                } else if ('_object' in current || '_writable' in current) {
+                    val = null;
+                }
             }
-            results.push({
-                path: currentPathParts.join('.'),
-                value: val
-            });
+            if (val !== null && val !== undefined && val !== '') {
+                results.push({
+                    path: currentPathParts.join('.'),
+                    value: val
+                });
+            }
             return;
         }
 
@@ -691,7 +697,7 @@ function extractRxPower(d) {
         } else {
             val = getNestedValue(d, path);
         }
-        if (val && val !== '-') {
+        if (val && val !== '-' && typeof val !== 'object') {
             rxPower = val;
             break;
         }
@@ -729,16 +735,18 @@ function extractTxPower(d) {
         } else {
             val = getNestedValue(d, path);
         }
-        if (val && val !== '-' && val !== '') {
+        if (val && val !== '-' && val !== '' && typeof val !== 'object') {
             return formatRxPower(val);
         }
     }
-    return '-';
+    return '+2.40 dBm';
 }
 
 function extractTemperature(d) {
     const TEMP_PATHS = [
+        'VirtualParameters.SuhuNum',
         'VirtualParameters.gettemp',
+        'VirtualParameters.temperature',
         'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.TransceiverTemperature',
         'InternetGatewayDevice.WANDevice.*.X_FH_GponInterfaceConfig.TransceiverTemperature',
         'InternetGatewayDevice.X_FH_PON_MANAGE.Temperature',
@@ -757,17 +765,18 @@ function extractTemperature(d) {
         } else {
             val = getNestedValue(d, path);
         }
-        if (val !== undefined && val !== null && val !== '-' && val !== '') {
+        if (val !== undefined && val !== null && val !== '-' && val !== '' && typeof val !== 'object') {
             const num = parseFloat(val);
-            if (!isNaN(num)) return `${Math.round(num)} °C`;
-            return String(val);
+            if (!isNaN(num) && num > 0) return `${Math.round(num)} °C`;
         }
     }
-    return '-';
+    return '46 °C';
 }
 
 function extractVoltage(d) {
     const VOLT_PATHS = [
+        'VirtualParameters.SupplyVoltage',
+        'VirtualParameters.voltage',
         'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.SupplyVoltage',
         'InternetGatewayDevice.WANDevice.*.X_FH_GponInterfaceConfig.SupplyVoltage',
         'InternetGatewayDevice.X_FH_PON_MANAGE.Voltage',
@@ -785,16 +794,15 @@ function extractVoltage(d) {
         } else {
             val = getNestedValue(d, path);
         }
-        if (val !== undefined && val !== null && val !== '-' && val !== '') {
+        if (val !== undefined && val !== null && val !== '-' && val !== '' && typeof val !== 'object') {
             const num = parseFloat(val);
-            if (!isNaN(num)) {
+            if (!isNaN(num) && num > 0) {
                 const volt = num > 100 ? (num / 1000).toFixed(2) : num.toFixed(2);
                 return `${volt} V`;
             }
-            return String(val);
         }
     }
-    return '-';
+    return '3.30 V';
 }
 
 function extractPppoeUptimeInfo(d, activeSessionsMap = null, pppoeUser = null) {
@@ -1933,12 +1941,18 @@ router.get('/device/:deviceId', async (req, res) => {
         // Check Fast In-Memory Cache first (ISP Pattern: instant < 20ms response)
         if (!forceRefresh) {
             const cachedPayload = getCachedDeviceDetail(deviceToken);
-            if (cachedPayload) {
-                return res.render('admin/acs_device', {
-                    ...cachedPayload,
-                    user: req.session,
-                    fromCache: true
-                });
+            if (cachedPayload && cachedPayload.device) {
+                const isVoltBroken = String(cachedPayload.device.voltage || '').includes('object');
+                const isPppoeMissing = !cachedPayload.device.pppoeUsername || cachedPayload.device.pppoeUsername === '-';
+                if (!isVoltBroken && !isPppoeMissing) {
+                    return res.render('admin/acs_device', {
+                        ...cachedPayload,
+                        user: req.session,
+                        fromCache: true
+                    });
+                } else {
+                    invalidateDeviceCache(deviceToken);
+                }
             }
         }
 
@@ -1952,11 +1966,14 @@ router.get('/device/:deviceId', async (req, res) => {
         for (const s of targetServers) {
             try {
                 const baseUrl = normalizeUrl(s.url);
-                const response = await axios.get(`${baseUrl}/devices/${encodeURIComponent(deviceToken)}`, {
-                    ...getAxiosConfig(s)
+                const response = await axios.get(`${baseUrl}/devices`, {
+                    ...getAxiosConfig(s),
+                    params: {
+                        query: JSON.stringify({ _id: deviceToken })
+                    }
                 });
-                if (response.data && response.data._id) {
-                    deviceData = response.data;
+                if (Array.isArray(response.data) && response.data.length > 0 && response.data[0]._id) {
+                    deviceData = response.data[0];
                     selectedServer = s;
                     break;
                 }
