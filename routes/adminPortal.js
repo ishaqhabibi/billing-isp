@@ -2473,7 +2473,7 @@ function formatStandardMikrotikComment(data) {
 }
 
 // ── HELPER MULTI-TAGGING GENIEACS ONT & OLT STANDAR NOC ISP ──
-async function syncGenieacsNocTags(ontSn, customerData) {
+async function syncGenieacsNocTags(ontSn, customerData, oldCustomer = null) {
   const cleanSn = String(ontSn || customerData.ont_sn || customerData.genieacs_tag || '').trim();
   if (!cleanSn && !customerData.pppoe_username) return;
 
@@ -2533,8 +2533,32 @@ async function syncGenieacsNocTags(ontSn, customerData) {
     }
   }
 
-  // 1. PUSH MULTI-TAG KE GENIEACS & BERSIHKAN TAG LAMA
+  // 1. PUSH MULTI-TAG KE GENIEACS & BERSIHKAN TAG LAMA (PASTIKAN MEMPERBARUI, BUKAN MENAMBAH)
   try {
+    const servers = genieacsApi.getAllACSServers();
+
+    // JIKA SN BERUBAH SAAT EDIT: Bersihkan tag dari modem lama
+    const oldSn = oldCustomer && oldCustomer.ont_sn ? String(oldCustomer.ont_sn).trim() : '';
+    if (oldSn && cleanSn && oldSn.toUpperCase() !== cleanSn.toUpperCase()) {
+      try {
+        const oldDev = await customerDevice.findDeviceByTag(oldSn);
+        if (oldDev && oldDev._id) {
+          const oldDevTags = Array.isArray(oldDev._tags) ? oldDev._tags : [];
+          for (const ot of oldDevTags) {
+            for (const srv of servers) {
+              try {
+                const ax = genieacsApi.createAxiosInstance(srv);
+                await ax.delete(`/devices/${encodeURIComponent(oldDev._id)}/tags/${encodeURIComponent(ot)}`);
+              } catch (_) {}
+            }
+          }
+          logger.info(`[GenieACS Sync] Membersihkan tag dari modem lama ${oldSn} (${oldDev._id}) karena SN pelanggan diganti ke ${cleanSn}`);
+        }
+      } catch (cleanOldErr) {
+        logger.warn(`[GenieACS Sync] Gagal membersihkan modem lama ${oldSn}: ${cleanOldErr.message}`);
+      }
+    }
+
     let dev = null;
     if (cleanSn) {
       dev = await customerDevice.findDeviceByTag(cleanSn);
@@ -2547,16 +2571,52 @@ async function syncGenieacsNocTags(ontSn, customerData) {
 
     if (dev && dev._id) {
       const tagsToKeep = new Set(orderedTags);
-      const servers = genieacsApi.getAllACSServers();
-      const existingTags = Array.isArray(dev._tags) ? dev._tags : [];
 
-      // Hapus semua tag lama yang tidak termasuk dalam tagsToKeep agar bersih & tidak menumpuk
-      for (const oldTag of existingTags) {
+      // Ambil tag fresh langsung dari GenieACS untuk memastikan tidak ada tag basi/usang yang tertinggal
+      let existingTags = [];
+      for (const srv of servers) {
+        try {
+          const ax = genieacsApi.createAxiosInstance(srv);
+          const fresh = await ax.get('/devices', {
+            params: {
+              query: JSON.stringify({ _id: dev._id }),
+              projection: '_id,_tags'
+            }
+          });
+          if (fresh.data && fresh.data[0] && Array.isArray(fresh.data[0]._tags)) {
+            existingTags = fresh.data[0]._tags;
+            break;
+          }
+        } catch (_) {}
+      }
+      if (existingTags.length === 0 && Array.isArray(dev._tags)) {
+        existingTags = dev._tags;
+      }
+
+      // Kumpulkan semua kandidat tag lama (termasuk tag usang dari data sebelumnya)
+      const staleCandidates = new Set(existingTags);
+      if (custRow?.genieacs_tag) {
+        String(custRow.genieacs_tag).split(',').map(s => s.trim()).filter(Boolean).forEach(t => staleCandidates.add(t));
+      }
+      if (oldCustomer?.genieacs_tag) {
+        String(oldCustomer.genieacs_tag).split(',').map(s => s.trim()).filter(Boolean).forEach(t => staleCandidates.add(t));
+      }
+      if (oldCustomer?.name) {
+        const oldCleanName = String(oldCustomer.name).trim().replace(/[^a-zA-Z0-9_\-\s]/g, '').trim().toUpperCase();
+        if (oldCleanName) staleCandidates.add(oldCleanName);
+      }
+      if (oldCustomer?.customer_code) {
+        staleCandidates.add(String(oldCustomer.customer_code).trim().toUpperCase());
+      }
+
+      // HAPUS SEMUA TAG LAMA yang tidak termasuk dalam tagsToKeep agar bersih & memperbarui
+      for (const oldTag of staleCandidates) {
         if (!tagsToKeep.has(oldTag)) {
           for (const srv of servers) {
             try {
               const ax = genieacsApi.createAxiosInstance(srv);
               await ax.delete(`/devices/${encodeURIComponent(dev._id)}/tags/${encodeURIComponent(oldTag)}`);
+              logger.info(`[GenieACS Sync] Berhasil menghapus tag lama "${oldTag}" pada perangkat ${dev._id}`);
             } catch (_) {}
           }
         }
@@ -2580,7 +2640,7 @@ async function syncGenieacsNocTags(ontSn, customerData) {
         }
       } catch (_) {}
 
-      logger.info(`[GenieACS Sync] Sukses sinkronisasi multi-tag [${orderedTags.join(', ')}] ke ONT ${cleanSn || dev._id}`);
+      logger.info(`[GenieACS Sync] Sukses memperbarui multi-tag [${orderedTags.join(', ')}] ke ONT ${cleanSn || dev._id}`);
     } else {
       logger.info(`[GenieACS Sync] Device SN "${cleanSn}" belum online / belum terdaftar di ACS.`);
     }
@@ -2589,6 +2649,7 @@ async function syncGenieacsNocTags(ontSn, customerData) {
   }
 
   // 2. SINKRONISASI NAMA ONU KE OLT: FORMAT KODE/NAMA (misal: BRG1202/KHOLIQ)
+  // Memperbarui nama ONU di OLT (mengganti/overwrite nama lama dengan nama baru)
   const oltId = merged.olt_id ? Number(merged.olt_id) : null;
   if (oltId) {
     try {
@@ -2607,13 +2668,22 @@ async function syncGenieacsNocTags(ontSn, customerData) {
       if (cleanSn) {
         renamed = await oltSvc.renameOnuBySn(oltId, cleanSn, oltName);
         if (renamed) {
-          logger.info(`[OLT Sync] Sukses rename ONU OLT #${oltId} SN ${cleanSn} -> "${oltName}"`);
+          logger.info(`[OLT Sync] Sukses memperbarui nama ONU OLT #${oltId} SN ${cleanSn} -> "${oltName}"`);
         }
       }
       if (!renamed && merged.pon_port && String(merged.pon_port).includes('/')) {
         try {
           await oltSvc.renameOnu(oltId, merged.pon_port, oltName);
-          logger.info(`[OLT Sync] Sukses rename ONU OLT #${oltId} port ${merged.pon_port} -> "${oltName}"`);
+          logger.info(`[OLT Sync] Sukses memperbarui nama ONU OLT #${oltId} port ${merged.pon_port} -> "${oltName}"`);
+        } catch (_) {}
+      }
+
+      // Jika pelanggan dipindah dari OLT lain, kembalikan nama di OLT lama ke default
+      if (oldCustomer && oldCustomer.olt_id && Number(oldCustomer.olt_id) !== oltId) {
+        try {
+          if (cleanSn) {
+            await oltSvc.renameOnuBySn(Number(oldCustomer.olt_id), cleanSn, 'ONT');
+          }
         } catch (_) {}
       }
     } catch (oltErr) {
@@ -3151,7 +3221,7 @@ router.post('/customers/:id/update', requireAdminSession, (req, res, next) => {
     // TAUTKAN MULTI-TAG TERSTRUKTUR KE GENIEACS & OLT JIKA SN TERSEDIA
     const effectiveSn = String(req.body.ont_sn || oldCustomer?.ont_sn || '').trim();
     if (effectiveSn) {
-      await syncGenieacsNocTags(effectiveSn, { ...req.body, id: customerId, ont_sn: effectiveSn });
+      await syncGenieacsNocTags(effectiveSn, { ...req.body, id: customerId, ont_sn: effectiveSn }, oldCustomer);
     }
 
     req.session._msg = { type: 'success', text: 'Data pelanggan berhasil diperbarui.' };
