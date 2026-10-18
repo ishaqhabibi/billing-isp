@@ -460,13 +460,20 @@ async function getPppoeUsers(routerId = null) {
   let conn = null;
   try {
     conn = await getConnection(routerId);
-    // Only get secrets for pppoe service
-    const results = await conn.client.menu('/ppp/secret').where('service', 'pppoe').get();
+    const rawResults = await conn.client.menu('/ppp/secret').get();
+    const results = Array.isArray(rawResults) ? rawResults.filter(r => {
+      const svc = String(r?.service || '').toLowerCase();
+      return svc === 'pppoe' || svc === 'any' || !svc;
+    }) : [];
     return results.map(r => ({
       id: r['.id'],
       name: r.name,
       profile: r.profile,
-      disabled: r.disabled === 'true'
+      password: r.password || '',
+      caller_id: r['caller-id'] || r.callerId || '',
+      remote_address: r['remote-address'] || r.remoteAddress || '',
+      disabled: r.disabled === 'true' || r.disabled === true,
+      router_id: routerId
     }));
   } catch (e) {
     logger.error('Error getting PPPoE users:', e);

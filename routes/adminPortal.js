@@ -1045,7 +1045,8 @@ router.get('/api/customers/unregistered-secrets', requireAdminSession, async (re
         comment: s.comment || '',
         parsedComment: parsed,
         remoteAddress: s['remote-address'] || '',
-        disabled: s.disabled === 'true' || s.disabled === true
+        disabled: s.disabled === 'true' || s.disabled === true,
+        router_id: targetRouter.id
       };
     });
 
@@ -2766,11 +2767,30 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
           const results = await conn.client.menu('/ppp/secret')
             .where('name', username)
             .get();
-          const match = Array.isArray(results) && results.find(r => {
+          let match = Array.isArray(results) && results.find(r => {
             const svc = String(r?.service || '').toLowerCase();
             return svc === 'pppoe' || svc === 'any' || !svc;
           });
+
+          // Fallback case-insensitive jika query exact match RouterOS API tidak menemukan secret
+          if (!match) {
+            const allSecrets = await conn.client.menu('/ppp/secret').get();
+            match = Array.isArray(allSecrets) && allSecrets.find(r => {
+              const svc = String(r?.service || '').toLowerCase();
+              const isPppoe = svc === 'pppoe' || svc === 'any' || !svc;
+              return isPppoe && String(r?.name || '').trim().toLowerCase() === username.toLowerCase();
+            });
+          }
+
           if (!match) throw new Error('PPPoE Username tidak ditemukan di MikroTik');
+
+          // Sinkronkan username sesuai casing asli di MikroTik & simpan password asli ke billing/RADIUS
+          if (match.name) {
+            req.body.pppoe_username = match.name;
+          }
+          if (match.password) {
+            req.body.pppoe_password = String(match.password).trim();
+          }
         } finally {
           if (conn && conn.api) conn.api.close();
         }
@@ -3027,19 +3047,39 @@ router.post('/customers/:id/update', requireAdminSession, (req, res, next) => {
       const existing = db.prepare('SELECT id, name FROM customers WHERE router_id IS ? AND pppoe_username = ? AND id != ? LIMIT 1').get(effectiveRouterId, username, customerId);
       if (existing) throw new Error(`PPPoE Username sudah dipakai pelanggan lain: ${existing.name}`);
 
-      // Hanya cek secret MikroTik jika password tidak diisi dan mode MikroTik aktif (artinya memilih username yang sudah ada di MikroTik)
-      if (!password && shouldSyncToMikrotik) {
+      // Hanya cek secret MikroTik jika password tidak diisi (artinya memilih username yang sudah ada di MikroTik)
+      if (!password) {
         let conn = null;
         try {
           conn = await mikrotikService.getConnection(effectiveRouterId);
           const results = await conn.client.menu('/ppp/secret')
             .where('name', username)
             .get();
-          const match = Array.isArray(results) && results.find(r => {
+          let match = Array.isArray(results) && results.find(r => {
             const svc = String(r?.service || '').toLowerCase();
             return svc === 'pppoe' || svc === 'any' || !svc;
           });
-          if (!match) throw new Error('PPPoE Username tidak ditemukan di MikroTik');
+
+          // Fallback case-insensitive jika query exact match RouterOS API tidak menemukan secret
+          if (!match) {
+            const allSecrets = await conn.client.menu('/ppp/secret').get();
+            match = Array.isArray(allSecrets) && allSecrets.find(r => {
+              const svc = String(r?.service || '').toLowerCase();
+              const isPppoe = svc === 'pppoe' || svc === 'any' || !svc;
+              return isPppoe && String(r?.name || '').trim().toLowerCase() === username.toLowerCase();
+            });
+          }
+
+          if (match) {
+            if (match.name) {
+              req.body.pppoe_username = match.name;
+            }
+            if (match.password) {
+              req.body.pppoe_password = String(match.password).trim();
+            }
+          } else if (shouldSyncToMikrotik) {
+            throw new Error('PPPoE Username tidak ditemukan di MikroTik');
+          }
         } finally {
           if (conn && conn.api) conn.api.close();
         }

@@ -6427,9 +6427,10 @@ function renderPppoeDropdown(type, query = '') {
     const upass = String(u.password || '').replace(/"/g, '&quot;');
     const uprof = String(u.profile || '').replace(/"/g, '&quot;');
     const uip = String(u.remote_address || u.address || '').replace(/"/g, '&quot;');
+    const urouter = String(u.router_id || '').replace(/"/g, '&quot;');
     
     html += `
-      <div class="autocomplete-item" onclick="selectPppoeItem('${type}', '${uname.replace(/'/g, "\\'")}', '${upass.replace(/'/g, "\\'")}', '${uprof.replace(/'/g, "\\'")}')">
+      <div class="autocomplete-item" onclick="selectPppoeItem('${type}', '${uname.replace(/'/g, "\\'")}', '${upass.replace(/'/g, "\\'")}', '${uprof.replace(/'/g, "\\'")}', '${urouter}')">
         <div>
           <div class="autocomplete-item-name"><i class="bi bi-person-fill text-primary me-1"></i>${uname}</div>
           ${uip ? `<div style="font-size:10px; color:var(--muted); font-family:monospace;">IP: ${uip}</div>` : ''}
@@ -6449,7 +6450,7 @@ function renderPppoeDropdown(type, query = '') {
   dropdownEl.innerHTML = html;
 }
 
-function selectPppoeItem(type, username, password = '', profile = '') {
+function selectPppoeItem(type, username, password = '', profile = '', routerId = '') {
   const inputEl = document.getElementById(type === 'add' ? 'add_pppoe_username' : 'e_pppoe');
   if (inputEl) inputEl.value = username;
 
@@ -6461,6 +6462,13 @@ function selectPppoeItem(type, username, password = '', profile = '') {
   }
   if (passEl) {
     passEl.removeAttribute('required');
+  }
+
+  if (routerId) {
+    const routerSelect = document.getElementById(type === 'add' ? 'add_router_select' : 'e_router_id');
+    if (routerSelect && (!routerSelect.value || routerSelect.value === '')) {
+      routerSelect.value = routerId;
+    }
   }
 
   // Aktifkan mode MikroTik (karena memilih secret yang sudah ada)

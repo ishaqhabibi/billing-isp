@@ -401,10 +401,30 @@ router.post('/customers', requireTechSession, express.urlencoded({ extended: tru
       try {
         conn = await mikrotikService.getConnection(customerData.router_id || null);
         const results = await conn.client.menu('/ppp/secret')
-          .where('service', 'pppoe')
           .where('name', customerData.pppoe_username)
           .get();
-        if (!Array.isArray(results) || results.length === 0) throw new Error('PPPoE Username tidak ditemukan di MikroTik');
+        let match = Array.isArray(results) && results.find(r => {
+          const svc = String(r?.service || '').toLowerCase();
+          return svc === 'pppoe' || svc === 'any' || !svc;
+        });
+
+        if (!match) {
+          const allSecrets = await conn.client.menu('/ppp/secret').get();
+          match = Array.isArray(allSecrets) && allSecrets.find(r => {
+            const svc = String(r?.service || '').toLowerCase();
+            const isPppoe = svc === 'pppoe' || svc === 'any' || !svc;
+            return isPppoe && String(r?.name || '').trim().toLowerCase() === customerData.pppoe_username.toLowerCase();
+          });
+        }
+
+        if (!match) throw new Error('PPPoE Username tidak ditemukan di MikroTik');
+
+        if (match.name) {
+          customerData.pppoe_username = match.name;
+        }
+        if (match.password) {
+          customerData.pppoe_password = String(match.password).trim();
+        }
       } finally {
         if (conn && conn.api) conn.api.close();
       }
