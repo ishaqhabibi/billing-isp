@@ -2896,25 +2896,13 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
       }
 
       if (pppoeSource === 'mikrotik') {
-        // Mode Ambil dari MikroTik: secret eksisting sudah running, perbarui profile jika ada & update komentar
+        // Mode Ambil dari MikroTik: secret eksisting sudah running, perbarui profile jika ada & update komentar dalam 1 query cepat
         const secretComment = formatStandardMikrotikComment(req.body);
-        if (targetProfile) {
-          try {
-            await mikrotikService.setPppoeProfile(req.body.pppoe_username, targetProfile, req.body.router_id);
-            logger.info(`[Add Customer] Mapped existing PPPoE secret "${req.body.pppoe_username}" in MikroTik to profile "${targetProfile}" (RADIUS sync: ${isRadius ? 'YES' : 'NO'})`);
-          } catch (mErr) {
-            logger.warn(`[Add Customer] Info mapping secret MikroTik: ${mErr.message}`);
-          }
-        }
         try {
-          const secrets = await mikrotikService.getPppoeSecrets(req.body.router_id);
-          const existingSecret = secrets.find(s => String(s.name || '').trim() === req.body.pppoe_username);
-          if (existingSecret && (existingSecret['.id'] || existingSecret.id)) {
-            await mikrotikService.updatePppoeSecret(existingSecret['.id'] || existingSecret.id, { comment: secretComment }, req.body.router_id);
-            logger.info(`[Add Customer] Tagged comment on MikroTik secret "${req.body.pppoe_username}": ${secretComment}`);
-          }
-        } catch (cErr) {
-          logger.warn(`[Add Customer] Info updating comment on MikroTik: ${cErr.message}`);
+          await mikrotikService.setPppoeProfile(req.body.pppoe_username, targetProfile, req.body.router_id, secretComment);
+          logger.info(`[Add Customer] Mapped existing PPPoE secret "${req.body.pppoe_username}" in MikroTik to profile "${targetProfile}" with comment "${secretComment}" (RADIUS sync: ${isRadius ? 'YES' : 'NO'})`);
+        } catch (mErr) {
+          logger.warn(`[Add Customer] Info mapping secret MikroTik: ${mErr.message}`);
         }
       } else if (shouldSyncToMikrotik) {
         // Mode Buat Baru di MikroTik
@@ -2933,7 +2921,7 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
           } catch (mErr) {
             if (mErr.message && mErr.message.toLowerCase().includes('already')) {
               logger.info(`[Add Customer] Secret "${req.body.pppoe_username}" sudah ada di MikroTik, dialihkan ke mapping profil.`);
-              await mikrotikService.setPppoeProfile(req.body.pppoe_username, targetProfile, req.body.router_id).catch(() => {});
+              await mikrotikService.setPppoeProfile(req.body.pppoe_username, targetProfile, req.body.router_id, secretComment).catch(() => {});
             } else {
               logger.error('Mikrotik create PPPoE secret error:', mErr);
             }
@@ -2952,9 +2940,11 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
       }
     }
 
-    // TAUTKAN MULTI-TAG TERSTRUKTUR KE GENIEACS JIKA SN TERSEDIA
+    // TAUTKAN MULTI-TAG TERSTRUKTUR KE GENIEACS JIKA SN TERSEDIA (Background Async agar respons form instan)
     if (req.body.ont_sn) {
-      await syncGenieacsNocTags(req.body.ont_sn, { ...req.body, id: newCustId });
+      syncGenieacsNocTags(req.body.ont_sn, { ...req.body, id: newCustId }).catch(err => {
+        logger.error(`[GenieACS Sync] Background sync error for new customer ${newCustId}:`, err);
+      });
     }
     if (connectionType === 'hotspot' && req.body.hotspot_username) {
       const disabled = String(req.body.status || 'active').toLowerCase() !== 'active';
@@ -3186,33 +3176,26 @@ router.post('/customers/:id/update', requireAdminSession, (req, res, next) => {
         
         if (targetProfile) {
           try {
-            // Cek apakah secret sudah ada di MikroTik
-            const secrets = await mikrotikService.getPppoeSecrets(req.body.router_id);
-            const existingSecret = secrets.find(s => String(s.name || '').trim() === newUsername);
-            
             const secretComment = formatStandardMikrotikComment(req.body);
-            if (existingSecret) {
-              // Secret sudah ada, update profile & comment
-              await mikrotikService.setPppoeProfile(newUsername, targetProfile, req.body.router_id);
-              if (existingSecret['.id'] || existingSecret.id) {
-                try {
-                  await mikrotikService.updatePppoeSecret(existingSecret['.id'] || existingSecret.id, { comment: secretComment }, req.body.router_id);
-                } catch (cErr) {}
-              }
+            try {
+              // Coba update secret eksisting (profile & comment sekaligus dalam 1 query cepat)
+              await mikrotikService.setPppoeProfile(newUsername, targetProfile, req.body.router_id, secretComment);
               logger.info(`[Edit Customer] Updated PPPoE profile & comment for "${newUsername}"`);
-            } else if (newPassword) {
-              // Secret belum ada DAN ada password, create secret baru ke MikroTik
-              await mikrotikService.createPppoeSecret({
-                username: newUsername,
-                password: newPassword,
-                profile: targetProfile,
-                remoteAddress: remoteAddress,
-                routerId: req.body.router_id,
-                comment: secretComment
-              });
-              logger.info(`[Edit Customer] Created NEW PPPoE secret for "${newUsername}" in MikroTik`);
-            } else {
-              logger.warn(`[Edit Customer] Cannot create PPPoE secret for "${newUsername}" - password not provided`);
+            } catch (pErr) {
+              // Jika secret belum ada di MikroTik DAN ada password, buat secret baru
+              if (newPassword && String(pErr.message || '').includes('not found')) {
+                await mikrotikService.createPppoeSecret({
+                  username: newUsername,
+                  password: newPassword,
+                  profile: targetProfile,
+                  remoteAddress: remoteAddress,
+                  routerId: req.body.router_id,
+                  comment: secretComment
+                });
+                logger.info(`[Edit Customer] Created NEW PPPoE secret for "${newUsername}" in MikroTik`);
+              } else {
+                logger.warn(`[Edit Customer] PPPoE sync info for "${newUsername}": ${pErr.message}`);
+              }
             }
           } catch (mErr) {
             logger.error('Mikrotik sync error (update PPPoE):', mErr.message);
@@ -3258,10 +3241,12 @@ router.post('/customers/:id/update', requireAdminSession, (req, res, next) => {
       }
     }
 
-    // TAUTKAN MULTI-TAG TERSTRUKTUR KE GENIEACS & OLT JIKA SN TERSEDIA
+    // TAUTKAN MULTI-TAG TERSTRUKTUR KE GENIEACS & OLT JIKA SN TERSEDIA (Background Async agar respons cepat)
     const effectiveSn = String(req.body.ont_sn || oldCustomer?.ont_sn || '').trim();
     if (effectiveSn) {
-      await syncGenieacsNocTags(effectiveSn, { ...req.body, id: customerId, ont_sn: effectiveSn }, oldCustomer);
+      syncGenieacsNocTags(effectiveSn, { ...req.body, id: customerId, ont_sn: effectiveSn }, oldCustomer).catch(err => {
+        logger.error(`[GenieACS Sync] Background sync error for customer ${customerId}:`, err);
+      });
     }
 
     req.session._msg = { type: 'success', text: 'Data pelanggan berhasil diperbarui.' };

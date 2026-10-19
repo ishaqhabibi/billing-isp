@@ -2187,7 +2187,7 @@
                 <div id="add_pppoe_mikrotik_input">
                   <div class="custom-autocomplete-wrap" id="add_pppoe_autocomplete_wrap">
                     <div class="custom-autocomplete-input-wrap">
-                      <input class="fc" name="pppoe_username" id="add_pppoe_username" placeholder="Username login PPPoE" autocomplete="off" onfocus="openPppoeDropdown('add')" oninput="filterPppoeDropdown('add', this.value)" style="font-family:monospace; font-weight:600;">
+                      <input class="fc" name="pppoe_username" id="add_pppoe_username" placeholder="Username login PPPoE" autocomplete="off" onfocus="openPppoeDropdown('add')" oninput="this.dataset.userEdited='true'; filterPppoeDropdown('add', this.value)" style="font-family:monospace; font-weight:600;">
                       <button type="button" class="autocomplete-toggle-btn" onclick="togglePppoeDropdown('add')" title="Daftar username PPPoE">
                         <i class="bi bi-chevron-down" id="add_pppoe_toggle_icon"></i>
                       </button>
@@ -2197,7 +2197,7 @@
                   <div class="hint" id="add_pppoe_hint" style="font-size:11px; margin-top:4px; color:var(--muted);"></div>
                 </div>
                 <div id="add_pppoe_manual_input" style="display:none">
-                  <input class="fc" id="add_pppoe_username_manual" placeholder="Username login PPPoE" style="font-family:monospace; font-weight:600;">
+                  <input class="fc" id="add_pppoe_username_manual" placeholder="Username login PPPoE" oninput="this.dataset.userEdited='true';" style="font-family:monospace; font-weight:600;">
                 </div>
               </div>
               <div class="fg" id="add_pppoe_password_group">
@@ -4001,6 +4001,16 @@ function openModal(id){
   if (el) {
     el.classList.add('show');
     if (id === 'addModal') {
+      const pppoeInput = document.getElementById('add_pppoe_username');
+      const pppoeManual = document.getElementById('add_pppoe_username_manual');
+      if (pppoeInput) {
+        pppoeInput.dataset.userEdited = 'false';
+        delete pppoeInput.dataset.autoFilled;
+      }
+      if (pppoeManual) {
+        pppoeManual.dataset.userEdited = 'false';
+        delete pppoeManual.dataset.autoFilled;
+      }
       if (typeof switchCustModalTab === 'function') switchCustModalTab('add', 1);
       if (typeof selectAuthModeCard === 'function') selectAuthModeCard('add', 0);
       if (typeof setPppoeSourceMode === 'function') setPppoeSourceMode('add', 'new');
@@ -4162,12 +4172,26 @@ function syncCustomerCodeToPppoe(target = 'add', codeVal = '') {
     const pppoeUserField = document.getElementById('add_pppoe_username');
     const pppoeManual = document.getElementById('add_pppoe_username_manual');
     const tagField = document.getElementById('add_genieacs_tag');
+    const srcInput = document.getElementById('add_pppoe_source');
+    const isMikrotikMode = srcInput && srcInput.value === 'mikrotik';
 
-    if (pppoeUserField && (!pppoeUserField.dataset.userEdited || pppoeUserField.dataset.userEdited === 'false')) {
-      pppoeUserField.value = cleanCode.toLowerCase();
-    }
-    if (pppoeManual && (!pppoeManual.dataset.userEdited || pppoeManual.dataset.userEdited === 'false')) {
-      pppoeManual.value = cleanCode.toLowerCase();
+    // JANGAN PERNAH menimpa PPPoE Username jika:
+    // 1. Sedang dalam mode 'mikrotik' (user memetakan secret eksisting dari router)
+    // 2. User sudah memilih / mengetik PPPoE Username (userEdited === 'true')
+    // 3. Field PPPoE Username sudah terisi nilai selain yang di-autofill otomatis
+    const isUserEdited = (pppoeUserField && pppoeUserField.dataset.userEdited === 'true') ||
+                         (pppoeManual && pppoeManual.dataset.userEdited === 'true');
+    const hasManualValue = pppoeUserField && pppoeUserField.value && pppoeUserField.dataset.autoFilled !== 'true';
+
+    if (!isMikrotikMode && !isUserEdited && !hasManualValue) {
+      if (pppoeUserField) {
+        pppoeUserField.value = cleanCode.toLowerCase();
+        pppoeUserField.dataset.autoFilled = 'true';
+      }
+      if (pppoeManual) {
+        pppoeManual.value = cleanCode.toLowerCase();
+        pppoeManual.dataset.autoFilled = 'true';
+      }
     }
     if (tagField) {
       tagField.value = cleanCode.toUpperCase();
@@ -5987,8 +6011,16 @@ function applySecretToFormByIndex(idx) {
     // Kode Pelanggan & Username PPPoE (Secret = Kode Pelanggan)
     const effectiveCode = parsed.customer_code || name;
     if (codeField) codeField.value = effectiveCode;
-    if (userField) userField.value = name;
-    if (userManual) userManual.value = name;
+    if (userField) {
+      userField.value = name;
+      userField.dataset.userEdited = 'true';
+      delete userField.dataset.autoFilled;
+    }
+    if (userManual) {
+      userManual.value = name;
+      userManual.dataset.userEdited = 'true';
+      delete userManual.dataset.autoFilled;
+    }
     if (passField) {
       passField.value = pass || '';
       passField.removeAttribute('required');
@@ -6452,7 +6484,18 @@ function renderPppoeDropdown(type, query = '') {
 
 function selectPppoeItem(type, username, password = '', profile = '', routerId = '') {
   const inputEl = document.getElementById(type === 'add' ? 'add_pppoe_username' : 'e_pppoe');
-  if (inputEl) inputEl.value = username;
+  if (inputEl) {
+    inputEl.value = username;
+    inputEl.dataset.userEdited = 'true';
+    delete inputEl.dataset.autoFilled;
+  }
+
+  const manualEl = document.getElementById('add_pppoe_username_manual');
+  if (manualEl && type === 'add') {
+    manualEl.value = username;
+    manualEl.dataset.userEdited = 'true';
+    delete manualEl.dataset.autoFilled;
+  }
 
   const passEl = document.getElementById(type === 'add' ? 'add_pppoe_password' : 'e_pppoe_password');
   if (password && passEl) {

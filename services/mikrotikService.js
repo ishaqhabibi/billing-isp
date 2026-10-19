@@ -483,14 +483,20 @@ async function getPppoeUsers(routerId = null) {
   }
 }
 
-// Function to isolate a user
-async function setPppoeProfile(username, profileName, routerId = null) {
+// Function to isolate a user or update profile and comment
+async function setPppoeProfile(username, profileName, routerId = null, comment = null) {
   let conn = null;
   try {
     conn = await getConnection(routerId);
     const secretMenu = conn.client.menu('/ppp/secret');
-    const secrets = await secretMenu.where('name', username).get();
+    let secrets = await secretMenu.where('name', username).get();
     
+    // Fallback case-insensitive jika exact match RouterOS API gagal
+    if (!secrets || secrets.length === 0) {
+      const allSecrets = await secretMenu.get();
+      secrets = Array.isArray(allSecrets) ? allSecrets.filter(r => String(r.name || '').toLowerCase() === String(username).toLowerCase()) : [];
+    }
+
     if (!secrets || secrets.length === 0) {
       throw new Error(`PPPoE User ${username} not found in MikroTik`);
     }
@@ -501,21 +507,46 @@ async function setPppoeProfile(username, profileName, routerId = null) {
       throw new Error(`PPPoE secret ID not found for user ${username}`);
     }
     const currentProfile = secret.profile;
+    const currentComment = secret.comment || '';
 
-    // Hanya update dan kick jika profil berubah
-    if (currentProfile !== profileName) {
-      logger.info(`[MikroTik] Changing profile for ${username}: ${currentProfile} -> ${profileName}`);
-      await secretMenu.set({ profile: profileName }, secretId);
-      
-      // Disconnect active connection so they reconnect with new profile
-      await kickPppoeUser(username, routerId);
+    const updatePayload = {};
+    const profileChanged = profileName && currentProfile !== profileName;
+    if (profileChanged) {
+      updatePayload.profile = profileName;
+    }
+    if (comment !== null && comment !== undefined && currentComment !== comment) {
+      updatePayload.comment = comment;
+    }
+
+    if (Object.keys(updatePayload).length > 0) {
+      logger.info(`[MikroTik] Updating secret for ${username}: ${JSON.stringify(updatePayload)}`);
+      await secretMenu.set(updatePayload, secretId);
+      listCache.delete(cacheKey(routerId, 'pppoeSecrets'));
+      listCache.delete(cacheKey(routerId, 'pppoeActive'));
     } else {
-      logger.info(`[MikroTik] Profile for ${username} is already ${profileName}. Skipping update and kick.`);
+      logger.info(`[MikroTik] Profile and comment for ${username} already up to date.`);
+    }
+
+    // Hanya kick jika profil berubah (agar reconnect dengan profil baru)
+    if (profileChanged) {
+      try {
+        const activeMenu = conn.client.menu('/ppp/active');
+        const activeSessions = await activeMenu.where('name', secret.name || username).get();
+        if (Array.isArray(activeSessions) && activeSessions.length > 0) {
+          for (const s of activeSessions) {
+            const sid = s['.id'] || s.id;
+            if (sid) await activeMenu.remove(sid);
+          }
+          activeSessionsMapCache = { ts: 0, data: new Map() };
+        }
+      } catch (kErr) {
+        logger.warn(`[MikroTik] Info kicking session for ${username}: ${kErr.message}`);
+      }
     }
 
     return true;
   } catch (e) {
-    logger.error(`Error setting PPPoE profile for ${username}:`, e);
+    logger.error(`Error setting PPPoE profile/comment for ${username}:`, e);
     throw e;
   } finally {
     if (conn && conn.api) conn.api.close();
