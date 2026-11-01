@@ -1702,15 +1702,15 @@
     <!-- MODERN SEGMENTED VIEW SWITCHER -->
     <div class="cust-view-switcher-bar">
       <div class="cust-view-nav">
-        <button type="button" class="cust-view-tab-btn active" id="tabBtnDirectory" onclick="switchCustView('directory')">
-          <i class="bi bi-person-lines-fill"></i>
-          <span>Direktori Pelanggan</span>
-          <span class="cust-view-badge" id="viewCountBadge"><%= totalCustCount %></span>
-        </button>
-        <button type="button" class="cust-view-tab-btn" id="tabBtnDashboard" onclick="switchCustView('dashboard')">
+        <button type="button" class="cust-view-tab-btn active" id="tabBtnDashboard" onclick="switchCustView('dashboard')">
           <i class="bi bi-grid-1x2-fill"></i>
           <span>Dashboard & Metrik NOC</span>
           <span class="cust-view-pulse-badge"><span class="online-pulse-dot"></span> Live NOC</span>
+        </button>
+        <button type="button" class="cust-view-tab-btn" id="tabBtnDirectory" onclick="switchCustView('directory')">
+          <i class="bi bi-person-lines-fill"></i>
+          <span>Data Pelanggan</span>
+          <span class="cust-view-badge" id="viewCountBadge"><%= totalCustCount %></span>
         </button>
       </div>
 
@@ -1722,10 +1722,295 @@
       </div>
     </div>
 
+  <!-- ========================================================================= -->
+  <!-- TAB 1: DASHBOARD & METRIK NOC (DEDICATED ANALYTICS HUB)                   -->
+  <!-- ========================================================================= -->
+  <div id="custViewDashboard" class="cust-dash-view" style="display:flex;">
+    <!-- ROW 1: 3 NOC INFRASTRUCTURE KPI CARDS -->
+    <div class="cust-dash-grid-3">
+      <!-- Card 1: Sesi Layanan & Rasio Online -->
+      <div class="cust-dash-card">
+        <div class="cust-dash-card-hd">
+          <div class="cust-dash-card-title">
+            <i class="bi bi-broadcast text-primary"></i> Sesi Realtime
+          </div>
+          <span class="cust-view-pulse-badge"><span class="online-pulse-dot"></span> Live</span>
+        </div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;">
+          <div>
+            <span class="cust-dash-val" id="dashLiveOnline" style="color:#10b981;"><%= initialOnlineCount %></span>
+            <span class="cust-dash-subval">/ <%= totalCustCount %> Sesi Online</span>
+          </div>
+          <div style="font-size:16px;font-weight:700;color:var(--text);font-family:monospace;">
+            <%= onlinePct %>%
+          </div>
+        </div>
+        <!-- Split Progress Bar -->
+        <div class="cust-split-meter" title="Hijau: Online, Abu: Offline">
+          <div class="cust-split-fill-left" id="dashMeterOnline" style="width: <%= onlinePct %>%;"></div>
+          <div class="cust-split-fill-right" style="width: <%= 100 - onlinePct %>%;"></div>
+        </div>
+        <div class="cust-dash-legend">
+          <span style="color:#10b981;"><i class="bi bi-circle-fill" style="font-size:8px;"></i> Online: <strong id="dashLegendOnline"><%= initialOnlineCount %></strong></span>
+          <span style="color:var(--muted);"><i class="bi bi-circle-fill" style="font-size:8px;"></i> Offline: <strong id="dashLegendOffline"><%= Math.max(0, totalCustCount - initialOnlineCount) %></strong></span>
+        </div>
+        <div style="display:flex;gap:8px;padding-top:4px;border-top:1px solid var(--border);">
+          <button type="button" class="btn btn-g btn-sm" style="flex:1;justify-content:center;font-size:11.5px;" onclick="quickFilterFromDashboard('conn', 'online')">
+            <i class="bi bi-filter"></i> Saring Online
+          </button>
+          <button type="button" class="btn btn-g btn-sm" style="flex:1;justify-content:center;font-size:11.5px;" onclick="quickFilterFromDashboard('conn', 'offline')">
+            <i class="bi bi-filter"></i> Saring Offline
+          </button>
+        </div>
+      </div>
+
+      <!-- Card 2: Kolektibilitas Tagihan & Aging -->
+      <div class="cust-dash-card">
+        <div class="cust-dash-card-hd">
+          <div class="cust-dash-card-title">
+            <i class="bi bi-receipt-cutoff text-warning"></i> Kolektibilitas Tagihan
+          </div>
+          <span class="badge <%= collectRate >= 80 ? 'bs' : 'bw' %>" style="font-size:11px;">
+            <%= collectRate %>% Lunas
+          </span>
+        </div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;">
+          <div>
+            <span class="cust-dash-val" style="color:#f43f5e;"><%= stats.unpaid || 0 %></span>
+            <span class="cust-dash-subval">Pelanggan Belum Bayar</span>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:var(--warning);">
+            <%= stats.suspended %> Terisolir
+          </div>
+        </div>
+        <!-- Progress Bar -->
+        <div class="cust-split-meter" title="Hijau: Lunas, Merah: Belum Bayar">
+          <div class="cust-split-fill-left" style="width: <%= collectRate %>%; background: #10b981;"></div>
+          <div class="cust-split-fill-right" style="width: <%= 100 - collectRate %>%; background: #f43f5e;"></div>
+        </div>
+        <div class="cust-dash-legend">
+          <span style="color:#10b981;"><i class="bi bi-check-circle-fill" style="font-size:9px;"></i> Terbayar: <strong><%= paidCount %></strong></span>
+          <span style="color:#f43f5e;"><i class="bi bi-exclamation-octagon-fill" style="font-size:9px;"></i> Unpaid: <strong><%= stats.unpaid || 0 %></strong></span>
+        </div>
+        <div style="padding-top:4px;border-top:1px solid var(--border);">
+          <button type="button" class="btn btn-d btn-sm" style="width:100%;justify-content:center;font-size:11.5px;" onclick="quickFilterFromDashboard('status', 'unpaid')">
+            <i class="bi bi-exclamation-circle me-1"></i> Buka Daftar Belum Bayar
+          </button>
+        </div>
+      </div>
+
+      <!-- Card 3: MRR & ARPU -->
+      <div class="cust-dash-card">
+        <div class="cust-dash-card-hd">
+          <div class="cust-dash-card-title">
+            <i class="bi bi-wallet2 text-success"></i> Finansial & ARPU
+          </div>
+          <span class="badge bp" style="font-size:11px;">Proyeksi</span>
+        </div>
+        <div>
+          <div style="font-size:11.5px;color:var(--muted);margin-bottom:2px;">Monthly Recurring Revenue (MRR):</div>
+          <div class="cust-dash-val" style="font-size:22px;color:var(--primary);">
+            Rp <%= Number(totalMrr).toLocaleString('id-ID') %>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);font-size:12px;">
+          <span style="color:var(--muted);">ARPU Rata-rata:</span>
+          <strong style="color:var(--text);font-family:monospace;">Rp <%= Number(arpu).toLocaleString('id-ID') %>/user</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);">
+          <span>Total Saldo Deposit:</span>
+          <strong style="color:#10b981;font-family:monospace;">Rp <%= Number(totalBalance).toLocaleString('id-ID') %></strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 2: BANDWIDTH TIERING & ODP UTILIZATION (2 COLUMNS) -->
+    <div class="cust-dash-grid-2">
+      <!-- Komponen 4: Distribusi Paket Bandwidth -->
+      <div class="cust-dash-card">
+        <div class="cust-dash-card-hd">
+          <div class="cust-dash-card-title">
+            <i class="bi bi-speedometer2 text-info"></i> Distribusi Paket Layanan
+          </div>
+          <span class="badge bg" style="font-size:11px;"><%= Object.keys(packageUsageMap).length %> Profil Paket</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <% 
+            const pkgList = Object.entries(packageUsageMap).sort((a,b) => b[1].count - a[1].count);
+            pkgList.forEach(([pName, pData]) => {
+              const pPct = totalCustCount > 0 ? Math.round((pData.count / totalCustCount) * 100) : 0;
+          %>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px;">
+                <span style="font-weight:600;color:var(--text);cursor:pointer;" onclick="quickFilterFromDashboard('search', '<%= pName %>')" title="Klik untuk filter paket ini">
+                  <%= pName %> <span class="badge" style="background:var(--pdim);color:var(--primary);font-size:9.5px;margin-left:4px;"><%= pData.speed %></span>
+                </span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-family:monospace;font-weight:700;color:var(--text);"><%= pData.count %> Pelanggan</span>
+                  <span style="font-size:11px;color:var(--muted);width:34px;text-align:right;"><%= pPct %>%</span>
+                </div>
+              </div>
+              <div class="usage-bar" style="width:100%;height:5px;">
+                <div class="usage-fill" style="--p: <%= pPct %>%; --b: var(--primary);"></div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+
+      <!-- Komponen 5: Utilisasi Topologi ODP & Kapasitas -->
+      <div class="cust-dash-card">
+        <div class="cust-dash-card-hd">
+          <div class="cust-dash-card-title">
+            <i class="bi bi-diagram-3 text-warning"></i> Utilisasi Kapasitas ODP
+          </div>
+          <span class="badge <%= totalOdpUsedPorts >= totalOdpPorts * 0.8 ? 'bw' : 'bs' %>" style="font-size:11px;">
+            <%= totalOdpPorts > 0 ? Math.round((totalOdpUsedPorts / totalOdpPorts) * 100) : 0 %>% Terpakai
+          </span>
+        </div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;background:var(--bg3);padding:10px 14px;border-radius:8px;border:1px solid var(--border);">
+          <div>
+            <span style="font-size:12px;color:var(--muted);">Total Port ODP Terpasang:</span>
+            <div style="font-size:18px;font-weight:800;color:var(--text);font-family:monospace;">
+              <%= totalOdpUsedPorts %> <span style="font-size:13px;color:var(--muted);font-weight:400;">/ <%= totalOdpPorts %> Port</span>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:12px;color:var(--muted);">Total Titik ODP:</span>
+            <div style="font-size:18px;font-weight:800;color:var(--primary);font-family:monospace;">
+              <%= typeof odps !== 'undefined' ? odps.length : 0 %> Titik
+            </div>
+          </div>
+        </div>
+
+        <!-- ODP High Utilization Alert List -->
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:12px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;">
+            <i class="bi bi-exclamation-triangle-fill text-warning"></i> ODP dengan Utilisasi Tinggi (>75%):
+          </div>
+          <% if (highUtilOdps.length === 0) { %>
+            <div style="font-size:12px;color:var(--muted);padding:8px;text-align:center;background:var(--bg3);border-radius:6px;">
+              Semua ODP masih dalam batas kapasitas aman (&lt; 75%).
+            </div>
+          <% } else { %>
+            <div style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;padding-right:4px;">
+              <% highUtilOdps.slice(0, 5).forEach(odp => { %>
+                <div class="cust-dash-item-row" style="font-size:12px;">
+                  <div>
+                    <strong style="color:var(--text);"><%= odp.name %></strong>
+                    <span style="font-size:11px;color:var(--muted);margin-left:4px;">(<%= odp.odc || 'ODC' %>)</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-family:monospace;font-weight:700;color:<%= odp.pct >= 90 ? '#f43f5e' : '#f59e0b' %>;">
+                      <%= odp.used %>/<%= odp.ports %> (<%= odp.pct %>%)
+                    </span>
+                    <button type="button" class="btn btn-g btn-sm" style="padding:2px 6px;font-size:10px;" onclick="quickFilterFromDashboard('search', '<%= odp.name %>')">
+                      Lihat
+                    </button>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 3: OPERATIONAL WATCHLIST (TINDAKAN LAPANGAN) -->
+    <div class="cust-dash-grid-2">
+      <!-- Watchlist 1: Pelanggan Offline Sesi Putus -->
+      <div class="cust-dash-card">
+        <div class="cust-dash-card-hd">
+          <div class="cust-dash-card-title">
+            <i class="bi bi-wifi-off text-danger"></i> Perhatian NOC: Pelanggan Offline
+          </div>
+          <span class="badge bd" style="font-size:11px;"><%= offlineActiveCustomers.length %> Pelanggan</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:-6px;">
+          Pelanggan berstatus aktif tetapi tidak ada sesi online di MikroTik (potensi kendala modem/dropcore):
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;padding-right:4px;">
+          <% if (offlineActiveCustomers.length === 0) { %>
+            <div style="font-size:12px;color:#10b981;padding:12px;text-align:center;background:var(--bg3);border-radius:8px;">
+              <i class="bi bi-check-circle-fill me-1"></i> Semua pelanggan aktif saat ini sedang online!
+            </div>
+          <% } else { %>
+            <% offlineActiveCustomers.slice(0, 6).forEach(c => { 
+              const cleanPhone = String(c.phone || '').replace(/\D/g, '').replace(/^0/, '62');
+            %>
+              <div class="cust-dash-item-row" style="font-size:12px;">
+                <div>
+                  <strong style="color:var(--text);"><%= c.name %></strong>
+                  <div style="font-size:11px;color:var(--muted);">
+                    <%= c.customer_code %> &bull; <%= c.odp_name || 'Tanpa ODP' %>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <% if (cleanPhone) { %>
+                    <a href="https://wa.me/<%= cleanPhone %>" target="_blank" class="btn btn-g btn-sm" style="padding:2px 8px;font-size:11px;color:#10b981;" title="Hubungi Pelanggan via WhatsApp">
+                      <i class="bi bi-whatsapp"></i>
+                    </a>
+                  <% } %>
+                  <button type="button" class="btn btn-g btn-sm" style="padding:2px 8px;font-size:11px;" onclick="quickFilterFromDashboard('search', '<%= c.name %>')">
+                    Periksa
+                  </button>
+                </div>
+              </div>
+            <% }) %>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Watchlist 2: Pelanggan Terisolir -->
+      <div class="cust-dash-card">
+        <div class="cust-dash-card-hd">
+          <div class="cust-dash-card-title">
+            <i class="bi bi-pause-circle text-warning"></i> Daftar Terisolir / Suspend
+          </div>
+          <span class="badge bw" style="font-size:11px;"><%= suspendedCustomers.length %> Terisolir</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:-6px;">
+          Pelanggan yang saat ini layanannya diblokir / dipindahkan ke profil EXPIRED:
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;padding-right:4px;">
+          <% if (suspendedCustomers.length === 0) { %>
+            <div style="font-size:12px;color:#10b981;padding:12px;text-align:center;background:var(--bg3);border-radius:8px;">
+              <i class="bi bi-check-circle-fill me-1"></i> Tidak ada pelanggan yang sedang terisolir.
+            </div>
+          <% } else { %>
+            <% suspendedCustomers.slice(0, 6).forEach(c => { 
+              const cleanPhone = String(c.phone || '').replace(/\D/g, '').replace(/^0/, '62');
+            %>
+              <div class="cust-dash-item-row" style="font-size:12px;">
+                <div>
+                  <strong style="color:var(--text);"><%= c.name %></strong>
+                  <div style="font-size:11px;color:var(--muted);">
+                    <%= c.customer_code %> &bull; <%= c.package_name || 'Reguler' %>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <% if (cleanPhone) { %>
+                    <a href="https://wa.me/<%= cleanPhone %>" target="_blank" class="btn btn-g btn-sm" style="padding:2px 8px;font-size:11px;color:#10b981;" title="Hubungi Pelanggan via WhatsApp">
+                      <i class="bi bi-whatsapp"></i>
+                    </a>
+                  <% } %>
+                  <button type="button" class="btn btn-w btn-sm" style="padding:2px 8px;font-size:11px;" onclick="quickFilterFromDashboard('search', '<%= c.name %>')">
+                    Buka Detail
+                  </button>
+                </div>
+              </div>
+            <% }) %>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /#custViewDashboard -->
+
     <!-- ========================================================================= -->
-    <!-- TAB 1: DIREKTORI PELANGGAN (OPERATIONAL WORKSPACE)                       -->
+    <!-- TAB 2: DATA PELANGGAN (OPERATIONAL WORKSPACE)                       -->
     <!-- ========================================================================= -->
-    <div id="custViewDirectory">
+    <div id="custViewDirectory" style="display:none;">
       <!-- NOC Compact Status Strip -->
       <div class="cust-noc-strip">
         <button type="button" class="cust-noc-chip active" data-filter-type="status" data-filter-val="" onclick="setRealtimeStatusFilter('')">
@@ -1738,7 +2023,7 @@
           <i class="bi bi-check-circle-fill text-success"></i> Aktif <span class="chip-count"><%= stats.active %></span>
         </button>
         <button type="button" class="cust-noc-chip" data-filter-type="status" data-filter-val="unpaid" onclick="setRealtimeStatusFilter('unpaid')">
-          <i class="bi bi-exclamation-circle-fill text-danger"></i> Menunggak <span class="chip-count" style="color:#f43f5e;"><%= stats.unpaid || 0 %></span>
+          <i class="bi bi-exclamation-circle-fill text-danger"></i> Belum Bayar <span class="chip-count" style="color:#f43f5e;"><%= stats.unpaid || 0 %></span>
         </button>
         <button type="button" class="cust-noc-chip" data-filter-type="status" data-filter-val="suspended" onclick="setRealtimeStatusFilter('suspended')">
           <i class="bi bi-pause-circle-fill text-warning"></i> Isolir <span class="chip-count" style="color:var(--warning);"><%= stats.suspended %></span>
@@ -1874,7 +2159,7 @@
                 <select id="filterStatusSelect" class="fs cust-filter-select" onchange="onStatusSelectChange(this.value)">
                   <option value="">Semua Status</option>
                   <option value="active">Aktif</option>
-                  <option value="unpaid">Menunggak (Unpaid)</option>
+                  <option value="unpaid">Belum Bayar (Unpaid)</option>
                   <option value="suspended">Suspend / Isolir</option>
                   <option value="inactive">Nonaktif</option>
                 </select>
@@ -2177,7 +2462,7 @@
 
                   <% if (c.unpaid_count > 0) { %>
                     <span class="badge bd" style="font-size:10px;font-weight:700;" title="<%= c.unpaid_count %> Tagihan Belum Lunas">
-                      <%= c.unpaid_count %> Menunggak
+                      <%= c.unpaid_count %> Belum Bayar
                     </span>
                   <% } else { %>
                     <span class="badge-lunas" title="Semua Tagihan Lunas">
@@ -2268,291 +2553,6 @@
     </div>
   </div>
   <!-- /#custViewDirectory -->
-
-  <!-- ========================================================================= -->
-  <!-- TAB 2: DASHBOARD & METRIK NOC (DEDICATED ANALYTICS HUB)                   -->
-  <!-- ========================================================================= -->
-  <div id="custViewDashboard" class="cust-dash-view" style="display:none;">
-    <!-- ROW 1: 3 NOC INFRASTRUCTURE KPI CARDS -->
-    <div class="cust-dash-grid-3">
-      <!-- Card 1: Sesi Layanan & Rasio Online -->
-      <div class="cust-dash-card">
-        <div class="cust-dash-card-hd">
-          <div class="cust-dash-card-title">
-            <i class="bi bi-broadcast text-primary"></i> Sesi Realtime
-          </div>
-          <span class="cust-view-pulse-badge"><span class="online-pulse-dot"></span> Live</span>
-        </div>
-        <div style="display:flex;align-items:baseline;justify-content:space-between;">
-          <div>
-            <span class="cust-dash-val" id="dashLiveOnline" style="color:#10b981;"><%= initialOnlineCount %></span>
-            <span class="cust-dash-subval">/ <%= totalCustCount %> Sesi Online</span>
-          </div>
-          <div style="font-size:16px;font-weight:700;color:var(--text);font-family:monospace;">
-            <%= onlinePct %>%
-          </div>
-        </div>
-        <!-- Split Progress Bar -->
-        <div class="cust-split-meter" title="Hijau: Online, Abu: Offline">
-          <div class="cust-split-fill-left" id="dashMeterOnline" style="width: <%= onlinePct %>%;"></div>
-          <div class="cust-split-fill-right" style="width: <%= 100 - onlinePct %>%;"></div>
-        </div>
-        <div class="cust-dash-legend">
-          <span style="color:#10b981;"><i class="bi bi-circle-fill" style="font-size:8px;"></i> Online: <strong id="dashLegendOnline"><%= initialOnlineCount %></strong></span>
-          <span style="color:var(--muted);"><i class="bi bi-circle-fill" style="font-size:8px;"></i> Offline: <strong id="dashLegendOffline"><%= Math.max(0, totalCustCount - initialOnlineCount) %></strong></span>
-        </div>
-        <div style="display:flex;gap:8px;padding-top:4px;border-top:1px solid var(--border);">
-          <button type="button" class="btn btn-g btn-sm" style="flex:1;justify-content:center;font-size:11.5px;" onclick="quickFilterFromDashboard('conn', 'online')">
-            <i class="bi bi-filter"></i> Saring Online
-          </button>
-          <button type="button" class="btn btn-g btn-sm" style="flex:1;justify-content:center;font-size:11.5px;" onclick="quickFilterFromDashboard('conn', 'offline')">
-            <i class="bi bi-filter"></i> Saring Offline
-          </button>
-        </div>
-      </div>
-
-      <!-- Card 2: Kolektibilitas Tagihan & Aging -->
-      <div class="cust-dash-card">
-        <div class="cust-dash-card-hd">
-          <div class="cust-dash-card-title">
-            <i class="bi bi-receipt-cutoff text-warning"></i> Kolektibilitas Tagihan
-          </div>
-          <span class="badge <%= collectRate >= 80 ? 'bs' : 'bw' %>" style="font-size:11px;">
-            <%= collectRate %>% Lunas
-          </span>
-        </div>
-        <div style="display:flex;align-items:baseline;justify-content:space-between;">
-          <div>
-            <span class="cust-dash-val" style="color:#f43f5e;"><%= stats.unpaid || 0 %></span>
-            <span class="cust-dash-subval">Pelanggan Menunggak</span>
-          </div>
-          <div style="font-size:13px;font-weight:700;color:var(--warning);">
-            <%= stats.suspended %> Terisolir
-          </div>
-        </div>
-        <!-- Progress Bar -->
-        <div class="cust-split-meter" title="Hijau: Lunas, Merah: Menunggak">
-          <div class="cust-split-fill-left" style="width: <%= collectRate %>%; background: #10b981;"></div>
-          <div class="cust-split-fill-right" style="width: <%= 100 - collectRate %>%; background: #f43f5e;"></div>
-        </div>
-        <div class="cust-dash-legend">
-          <span style="color:#10b981;"><i class="bi bi-check-circle-fill" style="font-size:9px;"></i> Terbayar: <strong><%= paidCount %></strong></span>
-          <span style="color:#f43f5e;"><i class="bi bi-exclamation-octagon-fill" style="font-size:9px;"></i> Unpaid: <strong><%= stats.unpaid || 0 %></strong></span>
-        </div>
-        <div style="padding-top:4px;border-top:1px solid var(--border);">
-          <button type="button" class="btn btn-d btn-sm" style="width:100%;justify-content:center;font-size:11.5px;" onclick="quickFilterFromDashboard('status', 'unpaid')">
-            <i class="bi bi-exclamation-circle me-1"></i> Buka Daftar Menunggak
-          </button>
-        </div>
-      </div>
-
-      <!-- Card 3: MRR & ARPU -->
-      <div class="cust-dash-card">
-        <div class="cust-dash-card-hd">
-          <div class="cust-dash-card-title">
-            <i class="bi bi-wallet2 text-success"></i> Finansial & ARPU
-          </div>
-          <span class="badge bp" style="font-size:11px;">Proyeksi</span>
-        </div>
-        <div>
-          <div style="font-size:11.5px;color:var(--muted);margin-bottom:2px;">Monthly Recurring Revenue (MRR):</div>
-          <div class="cust-dash-val" style="font-size:22px;color:var(--primary);">
-            Rp <%= Number(totalMrr).toLocaleString('id-ID') %>
-          </div>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);font-size:12px;">
-          <span style="color:var(--muted);">ARPU Rata-rata:</span>
-          <strong style="color:var(--text);font-family:monospace;">Rp <%= Number(arpu).toLocaleString('id-ID') %>/user</strong>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);">
-          <span>Total Saldo Deposit:</span>
-          <strong style="color:#10b981;font-family:monospace;">Rp <%= Number(totalBalance).toLocaleString('id-ID') %></strong>
-        </div>
-      </div>
-    </div>
-
-    <!-- ROW 2: BANDWIDTH TIERING & ODP UTILIZATION (2 COLUMNS) -->
-    <div class="cust-dash-grid-2">
-      <!-- Komponen 4: Distribusi Paket Bandwidth -->
-      <div class="cust-dash-card">
-        <div class="cust-dash-card-hd">
-          <div class="cust-dash-card-title">
-            <i class="bi bi-speedometer2 text-info"></i> Distribusi Paket Layanan
-          </div>
-          <span class="badge bg" style="font-size:11px;"><%= Object.keys(packageUsageMap).length %> Profil Paket</span>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <% 
-            const pkgList = Object.entries(packageUsageMap).sort((a,b) => b[1].count - a[1].count);
-            pkgList.forEach(([pName, pData]) => {
-              const pPct = totalCustCount > 0 ? Math.round((pData.count / totalCustCount) * 100) : 0;
-          %>
-            <div style="display:flex;flex-direction:column;gap:4px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px;">
-                <span style="font-weight:600;color:var(--text);cursor:pointer;" onclick="quickFilterFromDashboard('search', '<%= pName %>')" title="Klik untuk filter paket ini">
-                  <%= pName %> <span class="badge" style="background:var(--pdim);color:var(--primary);font-size:9.5px;margin-left:4px;"><%= pData.speed %></span>
-                </span>
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <span style="font-family:monospace;font-weight:700;color:var(--text);"><%= pData.count %> Pelanggan</span>
-                  <span style="font-size:11px;color:var(--muted);width:34px;text-align:right;"><%= pPct %>%</span>
-                </div>
-              </div>
-              <div class="usage-bar" style="width:100%;height:5px;">
-                <div class="usage-fill" style="--p: <%= pPct %>%; --b: var(--primary);"></div>
-              </div>
-            </div>
-          <% }) %>
-        </div>
-      </div>
-
-      <!-- Komponen 5: Utilisasi Topologi ODP & Kapasitas -->
-      <div class="cust-dash-card">
-        <div class="cust-dash-card-hd">
-          <div class="cust-dash-card-title">
-            <i class="bi bi-diagram-3 text-warning"></i> Utilisasi Kapasitas ODP
-          </div>
-          <span class="badge <%= totalOdpUsedPorts >= totalOdpPorts * 0.8 ? 'bw' : 'bs' %>" style="font-size:11px;">
-            <%= totalOdpPorts > 0 ? Math.round((totalOdpUsedPorts / totalOdpPorts) * 100) : 0 %>% Terpakai
-          </span>
-        </div>
-        <div style="display:flex;align-items:baseline;justify-content:space-between;background:var(--bg3);padding:10px 14px;border-radius:8px;border:1px solid var(--border);">
-          <div>
-            <span style="font-size:12px;color:var(--muted);">Total Port ODP Terpasang:</span>
-            <div style="font-size:18px;font-weight:800;color:var(--text);font-family:monospace;">
-              <%= totalOdpUsedPorts %> <span style="font-size:13px;color:var(--muted);font-weight:400;">/ <%= totalOdpPorts %> Port</span>
-            </div>
-          </div>
-          <div style="text-align:right;">
-            <span style="font-size:12px;color:var(--muted);">Total Titik ODP:</span>
-            <div style="font-size:18px;font-weight:800;color:var(--primary);font-family:monospace;">
-              <%= typeof odps !== 'undefined' ? odps.length : 0 %> Titik
-            </div>
-          </div>
-        </div>
-
-        <!-- ODP High Utilization Alert List -->
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <div style="font-size:12px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;">
-            <i class="bi bi-exclamation-triangle-fill text-warning"></i> ODP dengan Utilisasi Tinggi (>75%):
-          </div>
-          <% if (highUtilOdps.length === 0) { %>
-            <div style="font-size:12px;color:var(--muted);padding:8px;text-align:center;background:var(--bg3);border-radius:6px;">
-              Semua ODP masih dalam batas kapasitas aman (&lt; 75%).
-            </div>
-          <% } else { %>
-            <div style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;padding-right:4px;">
-              <% highUtilOdps.slice(0, 5).forEach(odp => { %>
-                <div class="cust-dash-item-row" style="font-size:12px;">
-                  <div>
-                    <strong style="color:var(--text);"><%= odp.name %></strong>
-                    <span style="font-size:11px;color:var(--muted);margin-left:4px;">(<%= odp.odc || 'ODC' %>)</span>
-                  </div>
-                  <div style="display:flex;align-items:center;gap:8px;">
-                    <span style="font-family:monospace;font-weight:700;color:<%= odp.pct >= 90 ? '#f43f5e' : '#f59e0b' %>;">
-                      <%= odp.used %>/<%= odp.ports %> (<%= odp.pct %>%)
-                    </span>
-                    <button type="button" class="btn btn-g btn-sm" style="padding:2px 6px;font-size:10px;" onclick="quickFilterFromDashboard('search', '<%= odp.name %>')">
-                      Lihat
-                    </button>
-                  </div>
-                </div>
-              <% }) %>
-            </div>
-          <% } %>
-        </div>
-      </div>
-    </div>
-
-    <!-- ROW 3: OPERATIONAL WATCHLIST (TINDAKAN LAPANGAN) -->
-    <div class="cust-dash-grid-2">
-      <!-- Watchlist 1: Pelanggan Offline Sesi Putus -->
-      <div class="cust-dash-card">
-        <div class="cust-dash-card-hd">
-          <div class="cust-dash-card-title">
-            <i class="bi bi-wifi-off text-danger"></i> Perhatian NOC: Pelanggan Offline
-          </div>
-          <span class="badge bd" style="font-size:11px;"><%= offlineActiveCustomers.length %> Pelanggan</span>
-        </div>
-        <div style="font-size:12px;color:var(--muted);margin-top:-6px;">
-          Pelanggan berstatus aktif tetapi tidak ada sesi online di MikroTik (potensi kendala modem/dropcore):
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;padding-right:4px;">
-          <% if (offlineActiveCustomers.length === 0) { %>
-            <div style="font-size:12px;color:#10b981;padding:12px;text-align:center;background:var(--bg3);border-radius:8px;">
-              <i class="bi bi-check-circle-fill me-1"></i> Semua pelanggan aktif saat ini sedang online!
-            </div>
-          <% } else { %>
-            <% offlineActiveCustomers.slice(0, 6).forEach(c => { 
-              const cleanPhone = String(c.phone || '').replace(/\D/g, '').replace(/^0/, '62');
-            %>
-              <div class="cust-dash-item-row" style="font-size:12px;">
-                <div>
-                  <strong style="color:var(--text);"><%= c.name %></strong>
-                  <div style="font-size:11px;color:var(--muted);">
-                    <%= c.customer_code %> &bull; <%= c.odp_name || 'Tanpa ODP' %>
-                  </div>
-                </div>
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <% if (cleanPhone) { %>
-                    <a href="https://wa.me/<%= cleanPhone %>" target="_blank" class="btn btn-g btn-sm" style="padding:2px 8px;font-size:11px;color:#10b981;" title="Hubungi Pelanggan via WhatsApp">
-                      <i class="bi bi-whatsapp"></i>
-                    </a>
-                  <% } %>
-                  <button type="button" class="btn btn-g btn-sm" style="padding:2px 8px;font-size:11px;" onclick="quickFilterFromDashboard('search', '<%= c.name %>')">
-                    Periksa
-                  </button>
-                </div>
-              </div>
-            <% }) %>
-          <% } %>
-        </div>
-      </div>
-
-      <!-- Watchlist 2: Pelanggan Terisolir -->
-      <div class="cust-dash-card">
-        <div class="cust-dash-card-hd">
-          <div class="cust-dash-card-title">
-            <i class="bi bi-pause-circle text-warning"></i> Daftar Terisolir / Suspend
-          </div>
-          <span class="badge bw" style="font-size:11px;"><%= suspendedCustomers.length %> Terisolir</span>
-        </div>
-        <div style="font-size:12px;color:var(--muted);margin-top:-6px;">
-          Pelanggan yang saat ini layanannya diblokir / dipindahkan ke profil EXPIRED:
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;padding-right:4px;">
-          <% if (suspendedCustomers.length === 0) { %>
-            <div style="font-size:12px;color:#10b981;padding:12px;text-align:center;background:var(--bg3);border-radius:8px;">
-              <i class="bi bi-check-circle-fill me-1"></i> Tidak ada pelanggan yang sedang terisolir.
-            </div>
-          <% } else { %>
-            <% suspendedCustomers.slice(0, 6).forEach(c => { 
-              const cleanPhone = String(c.phone || '').replace(/\D/g, '').replace(/^0/, '62');
-            %>
-              <div class="cust-dash-item-row" style="font-size:12px;">
-                <div>
-                  <strong style="color:var(--text);"><%= c.name %></strong>
-                  <div style="font-size:11px;color:var(--muted);">
-                    <%= c.customer_code %> &bull; <%= c.package_name || 'Reguler' %>
-                  </div>
-                </div>
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <% if (cleanPhone) { %>
-                    <a href="https://wa.me/<%= cleanPhone %>" target="_blank" class="btn btn-g btn-sm" style="padding:2px 8px;font-size:11px;color:#10b981;" title="Hubungi Pelanggan via WhatsApp">
-                      <i class="bi bi-whatsapp"></i>
-                    </a>
-                  <% } %>
-                  <button type="button" class="btn btn-w btn-sm" style="padding:2px 8px;font-size:11px;" onclick="quickFilterFromDashboard('search', '<%= c.name %>')">
-                    Buka Detail
-                  </button>
-                </div>
-              </div>
-            <% }) %>
-          <% } %>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- /#custViewDashboard -->
   </div>
   <%- include('partials/footer') %>
 </div>
@@ -2687,7 +2687,7 @@
               <div class="fg" style="margin-bottom:0;">
                 <label class="fl"><i class="bi bi-shield-check me-1"></i> Isolir Otomatis</label>
                 <select class="fs" name="auto_isolate">
-                  <option value="1" selected>Aktif (Auto-Isolir jika menunggak)</option>
+                  <option value="1" selected>Aktif (Auto-Isolir jika belum bayar)</option>
                   <option value="0">Bebas Isolir (VIP / Instansi / Fasum)</option>
                 </select>
               </div>
@@ -3240,7 +3240,7 @@
               <div class="fg" style="margin-bottom:0;">
                 <label class="fl"><i class="bi bi-shield-check me-1"></i> Isolir Otomatis</label>
                 <select class="fs" name="auto_isolate" id="e_auto_isolate">
-                  <option value="1">Aktif (Auto-Isolir jika menunggak)</option>
+                  <option value="1">Aktif (Auto-Isolir jika belum bayar)</option>
                   <option value="0">Bebas Isolir (VIP / Instansi / Fasum)</option>
                 </select>
               </div>
@@ -5298,7 +5298,7 @@ async function loadCustomerInvoices(customerId) {
         const badgeText = isPaid ? 'Lunas' : 'Belum Bayar';
         const extraInfo = isPaid 
           ? ('Dibayar: ' + (inv.paid_at ? String(inv.paid_at).slice(0, 10) : '-') + (inv.paid_by ? (' (' + inv.paid_by + ')') : ''))
-          : '<span style="color:#ef4444;font-weight:600;"><i class="bi bi-clock-history"></i> Menunggak</span>';
+          : '<span style="color:#ef4444;font-weight:600;"><i class="bi bi-clock-history"></i> Belum Bayar</span>';
         return `
           <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
             <td style="padding:9px 10px;font-weight:700;">${mStr}</td>
@@ -5582,17 +5582,17 @@ function switchCustView(mode) {
   const viewDir = document.getElementById('custViewDirectory');
   const viewDash = document.getElementById('custViewDashboard');
 
-  if (mode === 'dashboard') {
-    if (tabDir) tabDir.classList.remove('active');
-    if (tabDash) tabDash.classList.add('active');
-    if (viewDir) viewDir.style.display = 'none';
-    if (viewDash) viewDash.style.display = 'flex';
-    history.replaceState(null, null, '#dashboard');
-  } else {
+  if (mode === 'directory') {
     if (tabDash) tabDash.classList.remove('active');
     if (tabDir) tabDir.classList.add('active');
     if (viewDash) viewDash.style.display = 'none';
     if (viewDir) viewDir.style.display = 'block';
+    history.replaceState(null, null, '#data-pelanggan');
+  } else {
+    if (tabDir) tabDir.classList.remove('active');
+    if (tabDash) tabDash.classList.add('active');
+    if (viewDir) viewDir.style.display = 'none';
+    if (viewDash) viewDash.style.display = 'flex';
     history.replaceState(null, null, window.location.pathname);
   }
 }
@@ -6056,8 +6056,10 @@ function updateLiveConnCounts() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Check hash for direct dashboard deep-link
-  if (window.location.hash === '#dashboard') {
+  // Default is Dashboard; if hash is #data-pelanggan or #directory, switch to Directory
+  if (window.location.hash === '#data-pelanggan' || window.location.hash === '#directory') {
+    switchCustView('directory');
+  } else {
     switchCustView('dashboard');
   }
 
