@@ -1385,288 +1385,588 @@
         .cust-header-actions { justify-content: stretch; }
         .cust-header-actions .btn, .cust-header-actions .action-dropdown { flex: 1 1 auto; }
       }
+
+      /* ==========================================================================
+         MODERN VIEW SWITCHER & NOC DASHBOARD STYLES (ANTI-AI SLOP / NOC STANDARD)
+         ========================================================================== */
+      .cust-view-switcher-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 14px;
+        padding: 8px 12px;
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+      .cust-view-nav {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--bg3);
+        padding: 4px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+      }
+      .cust-view-tab-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 16px;
+        border-radius: 8px;
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        text-decoration: none;
+      }
+      .cust-view-tab-btn:hover {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .cust-view-tab-btn.active {
+        background: var(--bg2);
+        color: var(--primary);
+        font-weight: 700;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      }
+      .cust-view-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 12px;
+        background: var(--pdim);
+        color: var(--primary);
+      }
+      .cust-view-pulse-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 12px;
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+      }
+      .cust-view-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .cust-clock-badge {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 12px;
+        color: var(--muted);
+        padding: 4px 10px;
+        background: var(--bg3);
+        border-radius: 6px;
+        border: 1px solid var(--border);
+      }
+
+      /* NOC Compact Status Strip */
+      .cust-noc-strip {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 12px;
+        overflow-x: auto;
+        padding: 2px 0 4px 0;
+        scrollbar-width: thin;
+      }
+      .cust-noc-chip {
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        color: var(--muted);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        transition: all 0.18s ease;
+        user-select: none;
+      }
+      .cust-noc-chip:hover {
+        background: var(--bg3);
+        color: var(--text);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+      .cust-noc-chip.active {
+        background: var(--pdim);
+        border-color: var(--primary);
+        color: var(--primary);
+        font-weight: 700;
+      }
+      .cust-noc-chip .chip-count {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: 6px;
+        background: rgba(0,0,0,0.2);
+        font-size: 11px;
+      }
+      .cust-noc-divider {
+        width: 1px;
+        height: 20px;
+        background: var(--border);
+        margin: 0 4px;
+        flex-shrink: 0;
+      }
+
+      /* Keyboard Hint */
+      .cust-kbd-hint {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+      }
+      .cust-kbd-hint kbd {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-size: 10.5px;
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+
+      /* Dashboard View Grid & Components */
+      .cust-dash-view {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        animation: fadeInCustView 0.2s ease-in-out;
+      }
+      @keyframes fadeInCustView {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .cust-dash-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+      .cust-dash-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+      .cust-dash-card {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      }
+      .cust-dash-card-hd {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .cust-dash-card-title {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .cust-dash-val {
+        font-size: 26px;
+        font-weight: 800;
+        color: var(--text);
+        line-height: 1;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+      .cust-dash-subval {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .cust-split-meter {
+        height: 7px;
+        border-radius: 4px;
+        background: var(--bg3);
+        overflow: hidden;
+        display: flex;
+        width: 100%;
+      }
+      .cust-split-fill-left {
+        height: 100%;
+        background: #10b981;
+        transition: width 0.3s;
+      }
+      .cust-split-fill-right {
+        height: 100%;
+        background: #64748b;
+        transition: width 0.3s;
+      }
+      .cust-dash-legend {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 12px;
+      }
+      .cust-dash-item-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .cust-dash-item-row:last-child {
+        border-bottom: none;
+      }
+      @media (max-width: 992px) {
+        .cust-dash-grid-3, .cust-dash-grid-2 {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
 
     <% 
       let initialOnlineCount = 0;
+      let totalMrr = 0;
+      let totalBalance = 0;
+      let packageUsageMap = {};
+      let offlineActiveCustomers = [];
+      let suspendedCustomers = [];
+
       if (typeof customers !== 'undefined' && Array.isArray(customers)) {
         customers.forEach(c => {
           const u = String(c.pppoe_username || c.hotspot_username || '').trim().toLowerCase();
-          if (u && typeof activeSessionsMap !== 'undefined' && activeSessionsMap && (activeSessionsMap.get(u) || (u.includes('@') && activeSessionsMap.get(u.replace(/@.*$/, ''))))) {
+          const hasSession = u && typeof activeSessionsMap !== 'undefined' && activeSessionsMap && (activeSessionsMap.get(u) || (u.includes('@') && activeSessionsMap.get(u.replace(/@.*$/, ''))));
+          if (hasSession) {
             initialOnlineCount++;
+          }
+
+          const price = Number(c.package_price) || 0;
+          totalMrr += price;
+          totalBalance += Number(c.balance) || 0;
+
+          const pkgName = c.package_name || 'Tanpa Paket';
+          if (!packageUsageMap[pkgName]) {
+            packageUsageMap[pkgName] = { 
+              count: 0, 
+              speed: c.speed_down ? (c.speed_down/1000).toFixed(0) + ' Mbps' : '-', 
+              price: price 
+            };
+          }
+          packageUsageMap[pkgName].count++;
+
+          if (c.status === 'active' && !hasSession) {
+            offlineActiveCustomers.push(c);
+          }
+          if (c.status === 'suspended') {
+            suspendedCustomers.push(c);
+          }
+        });
+      }
+
+      const totalCustCount = (typeof customers !== 'undefined' && Array.isArray(customers)) ? customers.length : 0;
+      const arpu = totalCustCount > 0 ? Math.round(totalMrr / totalCustCount) : 0;
+      const onlinePct = totalCustCount > 0 ? Math.round((initialOnlineCount / totalCustCount) * 100) : 0;
+      const paidCount = Math.max(0, totalCustCount - (stats.unpaid || 0));
+      const collectRate = totalCustCount > 0 ? Math.round((paidCount / totalCustCount) * 100) : 100;
+
+      // ODP Capacity Analytics
+      let totalOdpPorts = 0;
+      let totalOdpUsedPorts = 0;
+      let highUtilOdps = [];
+      if (typeof odps !== 'undefined' && Array.isArray(odps)) {
+        odps.forEach(o => {
+          const ports = Number(o.total_ports || o.port_capacity) || 8;
+          const used = Number(o.connected_customer_count) || 0;
+          totalOdpPorts += ports;
+          totalOdpUsedPorts += used;
+          const pct = Math.round((used / ports) * 100);
+          if (pct >= 75 || used >= ports) {
+            highUtilOdps.push({ name: o.name, odc: o.odc_name, used, ports, pct });
           }
         });
       }
     %>
-    <!-- KPI Statistics Grid -->
-    <div class="stat-grid" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr))">
-      <div class="sc p sc-clickable <%= (!filterStatus) ? 'stat-card-active' : '' %>" onclick="filterByStatus('')" title="Tampilkan semua pelanggan">
-        <i class="bi bi-people sc-icon"></i>
-        <div class="sc-label"><%= t('admin.customers.stats.total', 'Total Pelanggan') %></div>
-        <div class="sc-val"><%= stats.total %></div>
-        <div class="sc-mini-badge" style="background:rgba(99,102,241,0.12);color:var(--primary);">
-          Semua Data
-        </div>
+
+    <!-- MODERN SEGMENTED VIEW SWITCHER -->
+    <div class="cust-view-switcher-bar">
+      <div class="cust-view-nav">
+        <button type="button" class="cust-view-tab-btn active" id="tabBtnDirectory" onclick="switchCustView('directory')">
+          <i class="bi bi-person-lines-fill"></i>
+          <span>Direktori Pelanggan</span>
+          <span class="cust-view-badge" id="viewCountBadge"><%= totalCustCount %></span>
+        </button>
+        <button type="button" class="cust-view-tab-btn" id="tabBtnDashboard" onclick="switchCustView('dashboard')">
+          <i class="bi bi-grid-1x2-fill"></i>
+          <span>Dashboard & Metrik NOC</span>
+          <span class="cust-view-pulse-badge"><span class="online-pulse-dot"></span> Live NOC</span>
+        </button>
       </div>
 
-      <div class="sc s sc-clickable <%= (filterStatus === 'active') ? 'stat-card-active' : '' %>" onclick="filterByStatus('active')" title="Filter pelanggan dengan layanan aktif">
-        <i class="bi bi-check-circle sc-icon"></i>
-        <div class="sc-label"><%= t('admin.customers.stats.active', 'Layanan Aktif') %></div>
-        <div class="sc-val"><%= stats.active %></div>
-        <div class="sc-mini-badge" style="background:rgba(16,185,129,0.12);color:var(--success);">
-          Berlangganan
-        </div>
-      </div>
-
-      <div class="sc s sc-clickable" onclick="toggleConnFilter('online')" title="Filter pelanggan yang sedang online realtime">
-        <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
-          <span class="online-pulse-dot"></span>
-          <i class="bi bi-wifi sc-icon" style="position:static;font-size:20px;opacity:0.8;"></i>
-        </div>
-        <div class="sc-label" style="color:#10b981;margin-top:4px;">Online Realtime</div>
-        <div class="sc-val" id="count_live_online_kpi" style="color:#10b981"><%= initialOnlineCount %></div>
-        <div class="sc-mini-badge" style="background:rgba(16,185,129,0.12);color:#10b981;">
-          Sesi Aktif
-        </div>
-      </div>
-
-      <div class="sc d sc-clickable <%= (filterStatus === 'unpaid') ? 'stat-card-active' : '' %>" onclick="filterByStatus('unpaid')" title="Filter pelanggan dengan tagihan belum dibayar">
-        <i class="bi bi-exclamation-octagon sc-icon" style="color:#f43f5e;"></i>
-        <div class="sc-label" style="color:#f43f5e;">Menunggak</div>
-        <div class="sc-val" style="color:#f43f5e;"><%= stats.unpaid || 0 %></div>
-        <div class="sc-mini-badge" style="background:rgba(244,63,94,0.12);color:#f43f5e;">
-          Perlu Penagihan
-        </div>
-      </div>
-
-      <div class="sc w sc-clickable <%= (filterStatus === 'suspended') ? 'stat-card-active' : '' %>" onclick="filterByStatus('suspended')" title="Filter pelanggan yang diisolir / disuspend">
-        <i class="bi bi-pause-circle sc-icon"></i>
-        <div class="sc-label"><%= t('admin.customers.stats.suspended', 'Disuspend / Isolir') %></div>
-        <div class="sc-val"><%= stats.suspended %></div>
-        <div class="sc-mini-badge" style="background:rgba(245,158,11,0.12);color:var(--warning);">
-          Terisolir
-        </div>
+      <div class="cust-view-meta">
+        <span class="cust-clock-badge" id="liveNocClock"><i class="bi bi-clock"></i> <%= getNowLocal() %></span>
+        <button type="button" class="btn btn-g btn-sm" onclick="window.location.reload()" title="Muat ulang live data">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
       </div>
     </div>
 
-    <!-- Quick Filter Chips -->
-    <div class="cust-quick-filter-bar">
-      <button type="button" class="cust-filter-chip <%= (!filterStatus) ? 'active' : '' %>" onclick="filterByStatus('')">
-        Semua (<%= stats.total %>)
-      </button>
-      <button type="button" class="cust-filter-chip <%= (filterStatus === 'active') ? 'active' : '' %>" onclick="filterByStatus('active')">
-        <i class="bi bi-check-circle-fill text-success"></i> Aktif (<%= stats.active %>)
-      </button>
-      <button type="button" class="cust-filter-chip <%= (filterStatus === 'unpaid') ? 'active' : '' %>" onclick="filterByStatus('unpaid')">
-        <i class="bi bi-exclamation-circle-fill text-danger"></i> Menunggak (<%= stats.unpaid || 0 %>)
-      </button>
-      <button type="button" class="cust-filter-chip <%= (filterStatus === 'suspended') ? 'active' : '' %>" onclick="filterByStatus('suspended')">
-        <i class="bi bi-pause-circle-fill text-warning"></i> Terisolir (<%= stats.suspended %>)
-      </button>
-      <button type="button" class="cust-filter-chip <%= (filterStatus === 'inactive') ? 'active' : '' %>" onclick="filterByStatus('inactive')">
-        <i class="bi bi-person-x-fill text-muted"></i> Nonaktif (<%= stats.inactive %>)
-      </button>
+    <!-- ========================================================================= -->
+    <!-- TAB 1: DIREKTORI PELANGGAN (OPERATIONAL WORKSPACE)                       -->
+    <!-- ========================================================================= -->
+    <div id="custViewDirectory">
+      <!-- NOC Compact Status Strip -->
+      <div class="cust-noc-strip">
+        <button type="button" class="cust-noc-chip active" data-filter-type="status" data-filter-val="" onclick="setRealtimeStatusFilter('')">
+          Semua <span class="chip-count"><%= stats.total %></span>
+        </button>
+        <button type="button" class="cust-noc-chip" data-filter-type="conn" data-filter-val="online" onclick="setRealtimeConnFilter('online')">
+          <span class="online-pulse-dot"></span> Online <span class="chip-count" id="barOnlineCount"><%= initialOnlineCount %></span>
+        </button>
+        <button type="button" class="cust-noc-chip" data-filter-type="status" data-filter-val="active" onclick="setRealtimeStatusFilter('active')">
+          <i class="bi bi-check-circle-fill text-success"></i> Aktif <span class="chip-count"><%= stats.active %></span>
+        </button>
+        <button type="button" class="cust-noc-chip" data-filter-type="status" data-filter-val="unpaid" onclick="setRealtimeStatusFilter('unpaid')">
+          <i class="bi bi-exclamation-circle-fill text-danger"></i> Menunggak <span class="chip-count" style="color:#f43f5e;"><%= stats.unpaid || 0 %></span>
+        </button>
+        <button type="button" class="cust-noc-chip" data-filter-type="status" data-filter-val="suspended" onclick="setRealtimeStatusFilter('suspended')">
+          <i class="bi bi-pause-circle-fill text-warning"></i> Isolir <span class="chip-count" style="color:var(--warning);"><%= stats.suspended %></span>
+        </button>
+        <button type="button" class="cust-noc-chip" data-filter-type="status" data-filter-val="inactive" onclick="setRealtimeStatusFilter('inactive')">
+          <i class="bi bi-person-x-fill text-muted"></i> Nonaktif <span class="chip-count"><%= stats.inactive %></span>
+        </button>
 
-      <span class="cust-filter-divider"></span>
+        <span class="cust-noc-divider"></span>
 
-      <button type="button" class="cust-filter-chip" id="chip_filter_online" onclick="toggleConnFilter('online')">
-        <span class="online-pulse-dot"></span> Online (<span id="count_live_online"><%= initialOnlineCount %></span>)
-      </button>
-      <button type="button" class="cust-filter-chip" id="chip_filter_offline" onclick="toggleConnFilter('offline')">
-        <i class="bi bi-circle-fill text-muted" style="font-size:7px;"></i> Offline (<span id="count_live_offline"><%= Math.max(0, customers.length - initialOnlineCount) %></span>)
-      </button>
-
-      <span class="cust-filter-divider"></span>
-
-      <button type="button" class="cust-filter-chip" id="chip_filter_radius" onclick="toggleAuthFilter('radius')">
-        <i class="bi bi-broadcast text-primary"></i> RADIUS (<%= stats.radius || 0 %>)
-      </button>
-      <button type="button" class="cust-filter-chip" id="chip_filter_mikrotik" onclick="toggleAuthFilter('mikrotik')">
-        <i class="bi bi-router text-warning"></i> MikroTik (<%= stats.mikrotik || 0 %>)
-      </button>
-    </div>
-
-    <!-- Print Header (Only visible on paper print) -->
-    <div class="print-only" style="margin-bottom:14px;border-bottom:2px solid #0f172a;padding-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
-          <h2 style="font-size:16pt;font-weight:800;text-transform:uppercase;margin:0"><%= company %></h2>
-          <div style="font-size:10pt;color:#334155"><%= t('admin.customers.manage_title', 'Daftar Data Pelanggan') %> &bull; Status: <%= filterStatus ? filterStatus.toUpperCase() : 'SEMUA' %></div>
-        </div>
-        <div style="text-align:right;font-size:8.5pt;color:#475569">
-          <div>Dicetak: <%= getNowLocal() %></div>
-          <div>Total Pelanggan: <strong><%= customers.length %> Orang</strong></div>
-        </div>
+        <button type="button" class="cust-noc-chip" data-filter-type="auth" data-filter-val="radius" onclick="setRealtimeAuthFilter('radius')">
+          <i class="bi bi-broadcast text-primary"></i> RADIUS <span class="chip-count"><%= stats.radius || 0 %></span>
+        </button>
+        <button type="button" class="cust-noc-chip" data-filter-type="auth" data-filter-val="mikrotik" onclick="setRealtimeAuthFilter('mikrotik')">
+          <i class="bi bi-router text-warning"></i> MikroTik <span class="chip-count"><%= stats.mikrotik || 0 %></span>
+        </button>
       </div>
-    </div>
 
-    <!-- Bulk Actions Floating Bar -->
-    <div id="bulkActionBar" class="bulk-action-bar" style="display:none;">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <span class="badge bp" style="font-size:12px;padding:6px 12px;font-weight:700;">
-          <i class="bi bi-check2-square me-1"></i> <span id="selectedCountText">0</span> Pelanggan Dipilih
-        </span>
-        <button type="button" class="btn btn-w btn-sm" onclick="triggerBulkAction('isolate', 'Apakah Anda yakin ingin MENGISOLIR semua pelanggan terpilih?')">
-          <i class="bi bi-pause-circle me-1"></i> Isolir Terpilih
-        </button>
-        <button type="button" class="btn btn-s btn-sm" onclick="triggerBulkAction('unisolate', 'Apakah Anda yakin ingin MENGAKTIFKAN kembali semua pelanggan terpilih?')">
-          <i class="bi bi-play-circle me-1"></i> Buka Isolir
-        </button>
-        <button type="button" class="btn btn-g btn-sm" onclick="openBulkWaModal()">
-          <i class="bi bi-whatsapp text-success me-1"></i> Kirim WhatsApp
-        </button>
-        <% if (typeof session !== 'undefined' && session && !session.isCashier) { %>
-        <button type="button" class="btn btn-d btn-sm" onclick="triggerBulkAction('delete', 'PERINGATAN: Hapus semua data pelanggan terpilih?')">
-          <i class="bi bi-trash me-1"></i> Hapus Terpilih
-        </button>
-        <% } %>
-      </div>
-      <button type="button" class="btn btn-g btn-sm" onclick="clearSelectedCust()"><i class="bi bi-x-lg"></i> Batal Pilih</button>
-    </div>
-
-    <form id="bulkActionForm" method="POST" action="/admin/customers/bulk-action" style="display:none;">
-      <input type="hidden" name="action" id="bulkActionInput">
-      <input type="hidden" name="customer_ids" id="bulkCustomerIdsInput">
-    </form>
-
-    <!-- Main Data Card -->
-    <div class="card cust-main-card">
-      <div class="card-hd cust-card-header">
-        <div class="cust-card-title-group">
-          <div class="cust-card-icon-halo">
-            <i class="bi bi-people-fill"></i>
-          </div>
+      <!-- Print Header (Only visible on paper print) -->
+      <div class="print-only" style="margin-bottom:14px;border-bottom:2px solid #0f172a;padding-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
           <div>
-            <h6 class="cust-card-title"><%= t('admin.customers.list', 'Daftar Pelanggan') %></h6>
-            <div class="cust-card-subtitle">
-              Total <strong><%= customers.length %></strong> pelanggan terdaftar
-              <% if (filterStatus) { %> &bull; Status: <span class="badge" style="background:var(--pdim);color:var(--primary);font-size:10px;"><%= filterStatus.toUpperCase() %></span><% } %>
+            <h2 style="font-size:16pt;font-weight:800;text-transform:uppercase;margin:0"><%= company %></h2>
+            <div style="font-size:10pt;color:#334155"><%= t('admin.customers.manage_title', 'Daftar Data Pelanggan') %> &bull; Status: <%= filterStatus ? filterStatus.toUpperCase() : 'SEMUA' %></div>
+          </div>
+          <div style="text-align:right;font-size:8.5pt;color:#475569">
+            <div>Dicetak: <%= getNowLocal() %></div>
+            <div>Total Pelanggan: <strong><%= customers.length %> Orang</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bulk Actions Floating Bar -->
+      <div id="bulkActionBar" class="bulk-action-bar" style="display:none;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span class="badge bp" style="font-size:12px;padding:6px 12px;font-weight:700;">
+            <i class="bi bi-check2-square me-1"></i> <span id="selectedCountText">0</span> Pelanggan Dipilih
+          </span>
+          <button type="button" class="btn btn-w btn-sm" onclick="triggerBulkAction('isolate', 'Apakah Anda yakin ingin MENGISOLIR semua pelanggan terpilih?')">
+            <i class="bi bi-pause-circle me-1"></i> Isolir Terpilih
+          </button>
+          <button type="button" class="btn btn-s btn-sm" onclick="triggerBulkAction('unisolate', 'Apakah Anda yakin ingin MENGAKTIFKAN kembali semua pelanggan terpilih?')">
+            <i class="bi bi-play-circle me-1"></i> Buka Isolir
+          </button>
+          <button type="button" class="btn btn-g btn-sm" onclick="openBulkWaModal()">
+            <i class="bi bi-whatsapp text-success me-1"></i> Kirim WhatsApp
+          </button>
+          <% if (typeof session !== 'undefined' && session && !session.isCashier) { %>
+          <button type="button" class="btn btn-d btn-sm" onclick="triggerBulkAction('delete', 'PERINGATAN: Hapus semua data pelanggan terpilih?')">
+            <i class="bi bi-trash me-1"></i> Hapus Terpilih
+          </button>
+          <% } %>
+        </div>
+        <button type="button" class="btn btn-g btn-sm" onclick="clearSelectedCust()"><i class="bi bi-x-lg"></i> Batal Pilih</button>
+      </div>
+
+      <form id="bulkActionForm" method="POST" action="/admin/customers/bulk-action" style="display:none;">
+        <input type="hidden" name="action" id="bulkActionInput">
+        <input type="hidden" name="customer_ids" id="bulkCustomerIdsInput">
+      </form>
+
+      <!-- Main Data Card -->
+      <div class="card cust-main-card">
+        <div class="card-hd cust-card-header">
+          <div class="cust-card-title-group">
+            <div class="cust-card-icon-halo">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <div>
+              <h6 class="cust-card-title"><%= t('admin.customers.list', 'Daftar Pelanggan') %></h6>
+              <div class="cust-card-subtitle" id="filteredCountText">
+                Total <strong><%= customers.length %></strong> pelanggan terdaftar
+              </div>
+            </div>
+          </div>
+
+          <div class="cust-header-actions">
+            <button type="button" class="btn btn-w btn-sm cust-action-btn" onclick="openQuickImportModal()" title="Tarik data secret PPPoE MikroTik yang belum ada di billing">
+              <i class="bi bi-lightning-charge-fill"></i>
+              <span>Impor MikroTik</span>
+              <span class="badge" id="unregisteredSecretsBadge" style="background:rgba(0,0,0,0.25);margin-left:4px;display:none;font-size:10px;">0</span>
+            </button>
+
+            <div class="action-dropdown">
+              <button type="button" class="btn btn-g btn-sm cust-action-btn" onclick="toggleActionDropdown(this, event)">
+                <i class="bi bi-sliders2"></i>
+                <span>Alat & Data</span>
+                <i class="bi bi-chevron-down" style="font-size:10px;opacity:0.7;"></i>
+              </button>
+              <div class="action-dropdown-menu">
+                <a href="/admin/customers/export" class="action-dropdown-item">
+                  <i class="bi bi-file-earmark-excel text-success"></i> Export Excel (.xlsx)
+                </a>
+                <button type="button" class="action-dropdown-item" onclick="openModal('importModal')">
+                  <i class="bi bi-file-earmark-arrow-up text-primary"></i> Import Excel (.xlsx)
+                </button>
+                <div class="action-dropdown-divider"></div>
+                <a href="/admin/onu-stickers" class="action-dropdown-item">
+                  <i class="bi bi-qr-code-scan text-info"></i> Cetak Stiker Modem ONU
+                </a>
+                <a href="/admin/radius-settings#migration" class="action-dropdown-item">
+                  <i class="bi bi-arrow-repeat text-warning"></i> Wizard Migrasi RADIUS
+                </a>
+                <div class="action-dropdown-divider"></div>
+                <button type="button" class="action-dropdown-item" onclick="window.print()">
+                  <i class="bi bi-printer text-muted"></i> Cetak Dokumen / Laporan
+                </button>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-p btn-sm cust-action-btn-primary" onclick="openModal('addModal')">
+              <i class="bi bi-person-plus-fill"></i>
+              <span>Tambah Pelanggan</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Integrated Realtime Filter Toolbar -->
+        <div class="cust-filter-toolbar">
+          <div class="cust-search-form">
+            <div class="cust-search-input-wrap">
+              <i class="bi bi-search cust-search-icon"></i>
+              <input id="custRealtimeSearch" class="fc cust-search-input" placeholder="Cari nama, user PPPoE, HP, IP, ODP, SN ONU... (Tekan '/' untuk cari)" autocomplete="off">
+              <button type="button" id="custSearchClearBtn" class="cust-search-clear" onclick="clearRealtimeSearch()" title="Hapus pencarian" style="display:none;background:none;border:none;cursor:pointer;">
+                <i class="bi bi-x-circle-fill"></i>
+              </button>
+              <div class="cust-kbd-hint"><kbd>/</kbd></div>
+            </div>
+
+            <div class="cust-select-group">
+              <div class="cust-select-wrap">
+                <i class="bi bi-funnel cust-select-icon"></i>
+                <select id="filterStatusSelect" class="fs cust-filter-select" onchange="onStatusSelectChange(this.value)">
+                  <option value="">Semua Status</option>
+                  <option value="active">Aktif</option>
+                  <option value="unpaid">Menunggak (Unpaid)</option>
+                  <option value="suspended">Suspend / Isolir</option>
+                  <option value="inactive">Nonaktif</option>
+                </select>
+              </div>
+
+              <div class="cust-select-wrap">
+                <i class="bi bi-wifi cust-select-icon"></i>
+                <select id="filterConnSelect" class="fs cust-filter-select" onchange="onConnSelectChange(this.value)">
+                  <option value="">Semua Koneksi</option>
+                  <option value="online">Online Saja</option>
+                  <option value="offline">Offline Saja</option>
+                </select>
+              </div>
+
+              <div class="cust-select-wrap">
+                <i class="bi bi-geo-alt cust-select-icon"></i>
+                <select id="filterAreaSelect" class="fs cust-filter-select" onchange="onAreaSelectChange(this.value)">
+                  <option value="">Semua Wilayah</option>
+                  <% if (typeof masterAreas !== 'undefined' && masterAreas && masterAreas.length > 0) { %>
+                    <% masterAreas.forEach(a => { %>
+                      <option value="<%= a.name %>"><%= a.name %></option>
+                    <% }) %>
+                  <% } else if (typeof areas !== 'undefined' && areas && areas.length > 0) { %>
+                    <% areas.forEach(a => { %>
+                      <option value="<%= a %>"><%= a %></option>
+                    <% }) %>
+                  <% } %>
+                </select>
+              </div>
+
+              <% if (typeof routers !== 'undefined' && routers && routers.length > 0) { %>
+              <div class="cust-select-wrap">
+                <i class="bi bi-router cust-select-icon"></i>
+                <select id="filterRouterSelect" class="fs cust-filter-select" onchange="onRouterSelectChange(this.value)">
+                  <option value="all">Semua Router</option>
+                  <% routers.forEach(r => { %>
+                    <option value="<%= r.id %>" <%= (selectedRouterId === r.id) ? 'selected' : '' %>><%= r.name %></option>
+                  <% }) %>
+                </select>
+              </div>
+              <% } %>
+
+              <div class="cust-select-wrap">
+                <i class="bi bi-shield-check cust-select-icon"></i>
+                <select id="filterAuthSelect" class="fs cust-filter-select" onchange="onAuthSelectChange(this.value)">
+                  <option value="">Semua Autentikasi</option>
+                  <option value="radius">RADIUS</option>
+                  <option value="mikrotik">MikroTik</option>
+                </select>
+              </div>
+
+              <button type="button" id="custResetFiltersBtn" class="btn btn-g btn-sm cust-reset-btn" onclick="resetAllRealtimeFilters()" style="display:none;" title="Reset semua pencarian & filter">
+                <i class="bi bi-x-lg"></i> Reset Filter
+              </button>
             </div>
           </div>
         </div>
 
-        <div class="cust-header-actions">
-          <button type="button" class="btn btn-w btn-sm cust-action-btn" onclick="openQuickImportModal()" title="Tarik data secret PPPoE MikroTik yang belum ada di billing">
-            <i class="bi bi-lightning-charge-fill"></i>
-            <span>Impor MikroTik</span>
-            <span class="badge" id="unregisteredSecretsBadge" style="background:rgba(0,0,0,0.25);margin-left:4px;display:none;font-size:10px;">0</span>
-          </button>
-
-          <div class="action-dropdown">
-            <button type="button" class="btn btn-g btn-sm cust-action-btn" onclick="toggleActionDropdown(this, event)">
-              <i class="bi bi-sliders2"></i>
-              <span>Alat & Data</span>
-              <i class="bi bi-chevron-down" style="font-size:10px;opacity:0.7;"></i>
-            </button>
-            <div class="action-dropdown-menu">
-              <a href="/admin/customers/export" class="action-dropdown-item">
-                <i class="bi bi-file-earmark-excel text-success"></i> Export Excel (.xlsx)
-              </a>
-              <button type="button" class="action-dropdown-item" onclick="openModal('importModal')">
-                <i class="bi bi-file-earmark-arrow-up text-primary"></i> Import Excel (.xlsx)
-              </button>
-              <div class="action-dropdown-divider"></div>
-              <a href="/admin/onu-stickers" class="action-dropdown-item">
-                <i class="bi bi-qr-code-scan text-info"></i> Cetak Stiker Modem ONU
-              </a>
-              <a href="/admin/radius-settings#migration" class="action-dropdown-item">
-                <i class="bi bi-arrow-repeat text-warning"></i> Wizard Migrasi RADIUS
-              </a>
-              <div class="action-dropdown-divider"></div>
-              <button type="button" class="action-dropdown-item" onclick="window.print()">
-                <i class="bi bi-printer text-muted"></i> Cetak Dokumen / Laporan
-              </button>
-            </div>
-          </div>
-
-          <button type="button" class="btn btn-p btn-sm cust-action-btn-primary" onclick="openModal('addModal')">
-            <i class="bi bi-person-plus-fill"></i>
-            <span>Tambah Pelanggan</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Integrated Search & Filter Row -->
-      <div class="cust-filter-toolbar">
-        <form method="GET" action="/admin/customers" class="cust-search-form">
-          <div class="cust-search-input-wrap">
-            <i class="bi bi-search cust-search-icon"></i>
-            <input class="fc cust-search-input" name="search" placeholder="Cari nama, nomor HP, IP, tag ONU..." value="<%= search %>" autocomplete="off">
-            <% if (search) { %>
-              <a href="/admin/customers" class="cust-search-clear" title="Hapus pencarian"><i class="bi bi-x-circle-fill"></i></a>
-            <% } %>
-          </div>
-
-          <div class="cust-select-group">
-            <div class="cust-select-wrap">
-              <i class="bi bi-funnel cust-select-icon"></i>
-              <select class="fs cust-filter-select" name="status" onchange="this.form.submit()">
-                <option value=""><%= t('admin.customers.filter.all_status', 'Semua Status') %></option>
-                <option value="active" <%= filterStatus==='active' ? 'selected':'' %>>Aktif</option>
-                <option value="unpaid" <%= filterStatus==='unpaid' ? 'selected':'' %>>Menunggak (Unpaid)</option>
-                <option value="suspended" <%= filterStatus==='suspended' ? 'selected':'' %>>Suspend / Isolir</option>
-                <option value="inactive" <%= filterStatus==='inactive' ? 'selected':'' %>>Nonaktif</option>
-              </select>
-            </div>
-
-            <div class="cust-select-wrap">
-              <i class="bi bi-geo-alt cust-select-icon"></i>
-              <select class="fs cust-filter-select" name="area" onchange="this.form.submit()">
-                <option value="">Semua Wilayah</option>
-                <% if (typeof masterAreas !== 'undefined' && masterAreas && masterAreas.length > 0) { %>
-                  <% masterAreas.forEach(a => { %>
-                    <option value="<%= a.name %>" <%= (typeof filterArea !== 'undefined' && filterArea === a.name) ? 'selected' : '' %>><%= a.name %></option>
-                  <% }) %>
-                <% } else if (typeof areas !== 'undefined' && areas && areas.length > 0) { %>
-                  <% areas.forEach(a => { %>
-                    <option value="<%= a %>" <%= (typeof filterArea !== 'undefined' && filterArea === a) ? 'selected' : '' %>><%= a %></option>
-                  <% }) %>
-                <% } %>
-              </select>
-            </div>
-
-            <% if (typeof routers !== 'undefined' && routers && routers.length > 0) { %>
-            <div class="cust-select-wrap">
-              <i class="bi bi-router cust-select-icon"></i>
-              <select class="fs cust-filter-select" onchange="window.location.href='/admin/set-active-router?router_id=' + this.value">
-                <option value="all" <%= (!selectedRouterId) ? 'selected' : '' %>>Semua Router</option>
-                <% routers.forEach(r => { %>
-                  <option value="<%= r.id %>" <%= (selectedRouterId === r.id) ? 'selected' : '' %>><%= r.name %></option>
-                <% }) %>
-              </select>
-            </div>
-            <% } %>
-
-            <button class="btn btn-g btn-sm cust-search-btn" type="submit">
-              <i class="bi bi-search"></i> Cari
-            </button>
-            
-            <% if (search || filterStatus || selectedRouterId || (typeof filterArea !== 'undefined' && filterArea)) { %>
-              <a href="/admin/customers" class="btn btn-g btn-sm cust-reset-btn" title="Reset semua filter">
-                <i class="bi bi-x-lg"></i> Reset
-              </a>
-            <% } %>
-          </div>
-        </form>
-      </div>
-
-      <!-- 7-Column Composite Data Table -->
-      <div class="tbl-wrap">
-        <table class="dtbl cust-table">
-          <thead>
-            <tr>
-              <th style="width:44px;text-align:center;">
-                <input type="checkbox" id="selectAllCust" onchange="toggleSelectAllCust(this)" style="cursor:pointer;width:15px;height:15px;" title="Pilih Semua">
-              </th>
-              <th style="min-width:210px;">Pelanggan & Kontak</th>
-              <th style="min-width:175px;">Paket & Layanan</th>
-              <th style="min-width:185px;">Jaringan & Topologi</th>
-              <th style="min-width:160px;">Koneksi Realtime</th>
-              <th style="min-width:150px;">Status & Tagihan</th>
-              <th style="width:125px;text-align:right;">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
+        <!-- 7-Column Composite Data Table -->
+        <div class="tbl-wrap">
+          <table class="dtbl cust-table">
+            <thead>
+              <tr>
+                <th style="width:44px;text-align:center;">
+                  <input type="checkbox" id="selectAllCust" onchange="toggleSelectAllCust(this)" style="cursor:pointer;width:15px;height:15px;" title="Pilih Semua">
+                </th>
+                <th style="min-width:210px;">Pelanggan & Kontak</th>
+                <th style="min-width:175px;">Paket & Layanan</th>
+                <th style="min-width:185px;">Jaringan & Topologi</th>
+                <th style="min-width:160px;">Koneksi Realtime</th>
+                <th style="min-width:150px;">Status & Tagihan</th>
+                <th style="width:125px;text-align:right;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Dynamic Realtime Empty State Row -->
+              <tr id="custRealtimeEmptyRow" style="display:none;">
+                <td colspan="7" class="cust-empty-state-cell">
+                  <div class="cust-empty-state">
+                    <div class="cust-empty-icon">
+                      <i class="bi bi-search"></i>
+                    </div>
+                    <h6 class="cust-empty-title">Tidak Ada Pelanggan Ditemukan</h6>
+                    <p class="cust-empty-desc">Tidak ada data pelanggan yang cocok dengan kata kunci pencarian atau kombinasi filter aktif.</p>
+                    <div class="cust-empty-actions">
+                      <button type="button" class="btn btn-g btn-sm" onclick="resetAllRealtimeFilters()">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reset Pencarian & Filter
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
           <% if (customers.length === 0) { %>
             <tr>
               <td colspan="7" class="cust-empty-state-cell">
@@ -1674,24 +1974,16 @@
                   <div class="cust-empty-icon">
                     <i class="bi bi-people"></i>
                   </div>
-                  <% if (search || filterStatus || selectedRouterId || (typeof filterArea !== 'undefined' && filterArea)) { %>
-                    <h6 class="cust-empty-title">Tidak Ada Pelanggan Ditemukan</h6>
-                    <p class="cust-empty-desc">Tidak ada data pelanggan yang cocok dengan parameter pencarian atau filter aktif.</p>
-                    <div class="cust-empty-actions">
-                      <a href="/admin/customers" class="btn btn-g btn-sm"><i class="bi bi-arrow-counterclockwise"></i> Reset Filter</a>
-                    </div>
-                  <% } else { %>
-                    <h6 class="cust-empty-title">Belum Ada Data Pelanggan</h6>
-                    <p class="cust-empty-desc">Mulai kelola operasional pelanggan Anda dengan menambahkan pelanggan baru atau sinkronisasi langsung dari MikroTik.</p>
-                    <div class="cust-empty-actions">
-                      <button type="button" class="btn btn-p btn-sm" onclick="openModal('addModal')">
-                        <i class="bi bi-person-plus-fill"></i> Tambah Pelanggan
-                      </button>
-                      <button type="button" class="btn btn-w btn-sm" onclick="openQuickImportModal()">
-                        <i class="bi bi-lightning-charge-fill"></i> Impor dari MikroTik
-                      </button>
-                    </div>
-                  <% } %>
+                  <h6 class="cust-empty-title">Belum Ada Data Pelanggan</h6>
+                  <p class="cust-empty-desc">Mulai kelola operasional pelanggan Anda dengan menambahkan pelanggan baru atau sinkronisasi langsung dari MikroTik.</p>
+                  <div class="cust-empty-actions">
+                    <button type="button" class="btn btn-p btn-sm" onclick="openModal('addModal')">
+                      <i class="bi bi-person-plus-fill"></i> Tambah Pelanggan
+                    </button>
+                    <button type="button" class="btn btn-w btn-sm" onclick="openQuickImportModal()">
+                      <i class="bi bi-lightning-charge-fill"></i> Impor dari MikroTik
+                    </button>
+                  </div>
                 </div>
               </td>
             </tr>
@@ -1714,8 +2006,35 @@
               const idx = Math.floor(Math.log(num) / Math.log(k));
               return (num / Math.pow(k, idx)).toFixed(1) + ' ' + sizes[idx];
             }
+
+            const searchBlob = [
+              c.name || '',
+              c.customer_code || '',
+              c.pppoe_username || '',
+              c.hotspot_username || '',
+              c.phone || '',
+              c.email || '',
+              c.address || '',
+              c.area || '',
+              c.package_name || '',
+              c.onu_sn || '',
+              c.onu_mac || '',
+              c.odp_name || '',
+              c.odc_name || '',
+              c.current_ip || (session ? session.ip : ''),
+              c.status || ''
+            ].join(' ').toLowerCase();
           %>
-            <tr class="cust-row" data-conn="<%= isOnline ? 'online' : 'offline' %>" data-auth="<%= (c.is_radius === 1) ? 'radius' : 'mikrotik' %>">
+            <tr class="cust-row" 
+                data-search="<%= searchBlob %>"
+                data-conn="<%= isOnline ? 'online' : 'offline' %>" 
+                data-auth="<%= (c.is_radius === 1) ? 'radius' : 'mikrotik' %>"
+                data-status="<%= (c.status || 'active').toLowerCase() %>"
+                data-unpaid="<%= (c.unpaid_count && Number(c.unpaid_count) > 0) ? 'true' : 'false' %>"
+                data-area="<%= (c.area || '').toLowerCase() %>"
+                data-router="<%= (c.router_id || '').toString() %>"
+                data-idx="<%= i %>"
+                data-id="<%= c.id %>">
               
               <!-- 1. CHECKBOX & NO -->
               <td style="text-align:center;vertical-align:middle;">
@@ -1947,6 +2266,293 @@
         </table>
       </div>
     </div>
+  </div>
+  <!-- /#custViewDirectory -->
+
+  <!-- ========================================================================= -->
+  <!-- TAB 2: DASHBOARD & METRIK NOC (DEDICATED ANALYTICS HUB)                   -->
+  <!-- ========================================================================= -->
+  <div id="custViewDashboard" class="cust-dash-view" style="display:none;">
+    <!-- ROW 1: 3 NOC INFRASTRUCTURE KPI CARDS -->
+    <div class="cust-dash-grid-3">
+      <!-- Card 1: Sesi Layanan & Rasio Online -->
+      <div class="cust-dash-card">
+        <div class="cust-dash-card-hd">
+          <div class="cust-dash-card-title">
+            <i class="bi bi-broadcast text-primary"></i> Sesi Realtime
+          </div>
+          <span class="cust-view-pulse-badge"><span class="online-pulse-dot"></span> Live</span>
+        </div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;">
+          <div>
+            <span class="cust-dash-val" id="dashLiveOnline" style="color:#10b981;"><%= initialOnlineCount %></span>
+            <span class="cust-dash-subval">/ <%= totalCustCount %> Sesi Online</span>
+          </div>
+          <div style="font-size:16px;font-weight:700;color:var(--text);font-family:monospace;">
+            <%= onlinePct %>%
+          </div>
+        </div>
+        <!-- Split Progress Bar -->
+        <div class="cust-split-meter" title="Hijau: Online, Abu: Offline">
+          <div class="cust-split-fill-left" id="dashMeterOnline" style="width: <%= onlinePct %>%;"></div>
+          <div class="cust-split-fill-right" style="width: <%= 100 - onlinePct %>%;"></div>
+        </div>
+        <div class="cust-dash-legend">
+          <span style="color:#10b981;"><i class="bi bi-circle-fill" style="font-size:8px;"></i> Online: <strong id="dashLegendOnline"><%= initialOnlineCount %></strong></span>
+          <span style="color:var(--muted);"><i class="bi bi-circle-fill" style="font-size:8px;"></i> Offline: <strong id="dashLegendOffline"><%= Math.max(0, totalCustCount - initialOnlineCount) %></strong></span>
+        </div>
+        <div style="display:flex;gap:8px;padding-top:4px;border-top:1px solid var(--border);">
+          <button type="button" class="btn btn-g btn-sm" style="flex:1;justify-content:center;font-size:11.5px;" onclick="quickFilterFromDashboard('conn', 'online')">
+            <i class="bi bi-filter"></i> Saring Online
+          </button>
+          <button type="button" class="btn btn-g btn-sm" style="flex:1;justify-content:center;font-size:11.5px;" onclick="quickFilterFromDashboard('conn', 'offline')">
+            <i class="bi bi-filter"></i> Saring Offline
+          </button>
+        </div>
+      </div>
+
+      <!-- Card 2: Kolektibilitas Tagihan & Aging -->
+      <div class="cust-dash-card">
+        <div class="cust-dash-card-hd">
+          <div class="cust-dash-card-title">
+            <i class="bi bi-receipt-cutoff text-warning"></i> Kolektibilitas Tagihan
+          </div>
+          <span class="badge <%= collectRate >= 80 ? 'bs' : 'bw' %>" style="font-size:11px;">
+            <%= collectRate %>% Lunas
+          </span>
+        </div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;">
+          <div>
+            <span class="cust-dash-val" style="color:#f43f5e;"><%= stats.unpaid || 0 %></span>
+            <span class="cust-dash-subval">Pelanggan Menunggak</span>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:var(--warning);">
+            <%= stats.suspended %> Terisolir
+          </div>
+        </div>
+        <!-- Progress Bar -->
+        <div class="cust-split-meter" title="Hijau: Lunas, Merah: Menunggak">
+          <div class="cust-split-fill-left" style="width: <%= collectRate %>%; background: #10b981;"></div>
+          <div class="cust-split-fill-right" style="width: <%= 100 - collectRate %>%; background: #f43f5e;"></div>
+        </div>
+        <div class="cust-dash-legend">
+          <span style="color:#10b981;"><i class="bi bi-check-circle-fill" style="font-size:9px;"></i> Terbayar: <strong><%= paidCount %></strong></span>
+          <span style="color:#f43f5e;"><i class="bi bi-exclamation-octagon-fill" style="font-size:9px;"></i> Unpaid: <strong><%= stats.unpaid || 0 %></strong></span>
+        </div>
+        <div style="padding-top:4px;border-top:1px solid var(--border);">
+          <button type="button" class="btn btn-d btn-sm" style="width:100%;justify-content:center;font-size:11.5px;" onclick="quickFilterFromDashboard('status', 'unpaid')">
+            <i class="bi bi-exclamation-circle me-1"></i> Buka Daftar Menunggak
+          </button>
+        </div>
+      </div>
+
+      <!-- Card 3: MRR & ARPU -->
+      <div class="cust-dash-card">
+        <div class="cust-dash-card-hd">
+          <div class="cust-dash-card-title">
+            <i class="bi bi-wallet2 text-success"></i> Finansial & ARPU
+          </div>
+          <span class="badge bp" style="font-size:11px;">Proyeksi</span>
+        </div>
+        <div>
+          <div style="font-size:11.5px;color:var(--muted);margin-bottom:2px;">Monthly Recurring Revenue (MRR):</div>
+          <div class="cust-dash-val" style="font-size:22px;color:var(--primary);">
+            Rp <%= Number(totalMrr).toLocaleString('id-ID') %>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);font-size:12px;">
+          <span style="color:var(--muted);">ARPU Rata-rata:</span>
+          <strong style="color:var(--text);font-family:monospace;">Rp <%= Number(arpu).toLocaleString('id-ID') %>/user</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);">
+          <span>Total Saldo Deposit:</span>
+          <strong style="color:#10b981;font-family:monospace;">Rp <%= Number(totalBalance).toLocaleString('id-ID') %></strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 2: BANDWIDTH TIERING & ODP UTILIZATION (2 COLUMNS) -->
+    <div class="cust-dash-grid-2">
+      <!-- Komponen 4: Distribusi Paket Bandwidth -->
+      <div class="cust-dash-card">
+        <div class="cust-dash-card-hd">
+          <div class="cust-dash-card-title">
+            <i class="bi bi-speedometer2 text-info"></i> Distribusi Paket Layanan
+          </div>
+          <span class="badge bg" style="font-size:11px;"><%= Object.keys(packageUsageMap).length %> Profil Paket</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <% 
+            const pkgList = Object.entries(packageUsageMap).sort((a,b) => b[1].count - a[1].count);
+            pkgList.forEach(([pName, pData]) => {
+              const pPct = totalCustCount > 0 ? Math.round((pData.count / totalCustCount) * 100) : 0;
+          %>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px;">
+                <span style="font-weight:600;color:var(--text);cursor:pointer;" onclick="quickFilterFromDashboard('search', '<%= pName %>')" title="Klik untuk filter paket ini">
+                  <%= pName %> <span class="badge" style="background:var(--pdim);color:var(--primary);font-size:9.5px;margin-left:4px;"><%= pData.speed %></span>
+                </span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-family:monospace;font-weight:700;color:var(--text);"><%= pData.count %> Pelanggan</span>
+                  <span style="font-size:11px;color:var(--muted);width:34px;text-align:right;"><%= pPct %>%</span>
+                </div>
+              </div>
+              <div class="usage-bar" style="width:100%;height:5px;">
+                <div class="usage-fill" style="--p: <%= pPct %>%; --b: var(--primary);"></div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+
+      <!-- Komponen 5: Utilisasi Topologi ODP & Kapasitas -->
+      <div class="cust-dash-card">
+        <div class="cust-dash-card-hd">
+          <div class="cust-dash-card-title">
+            <i class="bi bi-diagram-3 text-warning"></i> Utilisasi Kapasitas ODP
+          </div>
+          <span class="badge <%= totalOdpUsedPorts >= totalOdpPorts * 0.8 ? 'bw' : 'bs' %>" style="font-size:11px;">
+            <%= totalOdpPorts > 0 ? Math.round((totalOdpUsedPorts / totalOdpPorts) * 100) : 0 %>% Terpakai
+          </span>
+        </div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;background:var(--bg3);padding:10px 14px;border-radius:8px;border:1px solid var(--border);">
+          <div>
+            <span style="font-size:12px;color:var(--muted);">Total Port ODP Terpasang:</span>
+            <div style="font-size:18px;font-weight:800;color:var(--text);font-family:monospace;">
+              <%= totalOdpUsedPorts %> <span style="font-size:13px;color:var(--muted);font-weight:400;">/ <%= totalOdpPorts %> Port</span>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:12px;color:var(--muted);">Total Titik ODP:</span>
+            <div style="font-size:18px;font-weight:800;color:var(--primary);font-family:monospace;">
+              <%= typeof odps !== 'undefined' ? odps.length : 0 %> Titik
+            </div>
+          </div>
+        </div>
+
+        <!-- ODP High Utilization Alert List -->
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:12px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;">
+            <i class="bi bi-exclamation-triangle-fill text-warning"></i> ODP dengan Utilisasi Tinggi (>75%):
+          </div>
+          <% if (highUtilOdps.length === 0) { %>
+            <div style="font-size:12px;color:var(--muted);padding:8px;text-align:center;background:var(--bg3);border-radius:6px;">
+              Semua ODP masih dalam batas kapasitas aman (&lt; 75%).
+            </div>
+          <% } else { %>
+            <div style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;padding-right:4px;">
+              <% highUtilOdps.slice(0, 5).forEach(odp => { %>
+                <div class="cust-dash-item-row" style="font-size:12px;">
+                  <div>
+                    <strong style="color:var(--text);"><%= odp.name %></strong>
+                    <span style="font-size:11px;color:var(--muted);margin-left:4px;">(<%= odp.odc || 'ODC' %>)</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-family:monospace;font-weight:700;color:<%= odp.pct >= 90 ? '#f43f5e' : '#f59e0b' %>;">
+                      <%= odp.used %>/<%= odp.ports %> (<%= odp.pct %>%)
+                    </span>
+                    <button type="button" class="btn btn-g btn-sm" style="padding:2px 6px;font-size:10px;" onclick="quickFilterFromDashboard('search', '<%= odp.name %>')">
+                      Lihat
+                    </button>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 3: OPERATIONAL WATCHLIST (TINDAKAN LAPANGAN) -->
+    <div class="cust-dash-grid-2">
+      <!-- Watchlist 1: Pelanggan Offline Sesi Putus -->
+      <div class="cust-dash-card">
+        <div class="cust-dash-card-hd">
+          <div class="cust-dash-card-title">
+            <i class="bi bi-wifi-off text-danger"></i> Perhatian NOC: Pelanggan Offline
+          </div>
+          <span class="badge bd" style="font-size:11px;"><%= offlineActiveCustomers.length %> Pelanggan</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:-6px;">
+          Pelanggan berstatus aktif tetapi tidak ada sesi online di MikroTik (potensi kendala modem/dropcore):
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;padding-right:4px;">
+          <% if (offlineActiveCustomers.length === 0) { %>
+            <div style="font-size:12px;color:#10b981;padding:12px;text-align:center;background:var(--bg3);border-radius:8px;">
+              <i class="bi bi-check-circle-fill me-1"></i> Semua pelanggan aktif saat ini sedang online!
+            </div>
+          <% } else { %>
+            <% offlineActiveCustomers.slice(0, 6).forEach(c => { 
+              const cleanPhone = String(c.phone || '').replace(/\D/g, '').replace(/^0/, '62');
+            %>
+              <div class="cust-dash-item-row" style="font-size:12px;">
+                <div>
+                  <strong style="color:var(--text);"><%= c.name %></strong>
+                  <div style="font-size:11px;color:var(--muted);">
+                    <%= c.customer_code %> &bull; <%= c.odp_name || 'Tanpa ODP' %>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <% if (cleanPhone) { %>
+                    <a href="https://wa.me/<%= cleanPhone %>" target="_blank" class="btn btn-g btn-sm" style="padding:2px 8px;font-size:11px;color:#10b981;" title="Hubungi Pelanggan via WhatsApp">
+                      <i class="bi bi-whatsapp"></i>
+                    </a>
+                  <% } %>
+                  <button type="button" class="btn btn-g btn-sm" style="padding:2px 8px;font-size:11px;" onclick="quickFilterFromDashboard('search', '<%= c.name %>')">
+                    Periksa
+                  </button>
+                </div>
+              </div>
+            <% }) %>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Watchlist 2: Pelanggan Terisolir -->
+      <div class="cust-dash-card">
+        <div class="cust-dash-card-hd">
+          <div class="cust-dash-card-title">
+            <i class="bi bi-pause-circle text-warning"></i> Daftar Terisolir / Suspend
+          </div>
+          <span class="badge bw" style="font-size:11px;"><%= suspendedCustomers.length %> Terisolir</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:-6px;">
+          Pelanggan yang saat ini layanannya diblokir / dipindahkan ke profil EXPIRED:
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;padding-right:4px;">
+          <% if (suspendedCustomers.length === 0) { %>
+            <div style="font-size:12px;color:#10b981;padding:12px;text-align:center;background:var(--bg3);border-radius:8px;">
+              <i class="bi bi-check-circle-fill me-1"></i> Tidak ada pelanggan yang sedang terisolir.
+            </div>
+          <% } else { %>
+            <% suspendedCustomers.slice(0, 6).forEach(c => { 
+              const cleanPhone = String(c.phone || '').replace(/\D/g, '').replace(/^0/, '62');
+            %>
+              <div class="cust-dash-item-row" style="font-size:12px;">
+                <div>
+                  <strong style="color:var(--text);"><%= c.name %></strong>
+                  <div style="font-size:11px;color:var(--muted);">
+                    <%= c.customer_code %> &bull; <%= c.package_name || 'Reguler' %>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <% if (cleanPhone) { %>
+                    <a href="https://wa.me/<%= cleanPhone %>" target="_blank" class="btn btn-g btn-sm" style="padding:2px 8px;font-size:11px;color:#10b981;" title="Hubungi Pelanggan via WhatsApp">
+                      <i class="bi bi-whatsapp"></i>
+                    </a>
+                  <% } %>
+                  <button type="button" class="btn btn-w btn-sm" style="padding:2px 8px;font-size:11px;" onclick="quickFilterFromDashboard('search', '<%= c.name %>')">
+                    Buka Detail
+                  </button>
+                </div>
+              </div>
+            <% }) %>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /#custViewDashboard -->
   </div>
   <%- include('partials/footer') %>
 </div>
@@ -4969,14 +5575,250 @@ function updateDetailModalLive(idx) {
 
 setInterval(fetchLiveSessions, 5000);
 
-function filterByStatus(statusVal) {
-  const url = new URL(window.location.href);
-  if (statusVal) {
-    url.searchParams.set('status', statusVal);
+// ── VIEW SWITCHER (Direktori Pelanggan vs Dashboard & Metrik NOC) ──
+function switchCustView(mode) {
+  const tabDir = document.getElementById('tabBtnDirectory');
+  const tabDash = document.getElementById('tabBtnDashboard');
+  const viewDir = document.getElementById('custViewDirectory');
+  const viewDash = document.getElementById('custViewDashboard');
+
+  if (mode === 'dashboard') {
+    if (tabDir) tabDir.classList.remove('active');
+    if (tabDash) tabDash.classList.add('active');
+    if (viewDir) viewDir.style.display = 'none';
+    if (viewDash) viewDash.style.display = 'flex';
+    history.replaceState(null, null, '#dashboard');
   } else {
-    url.searchParams.delete('status');
+    if (tabDash) tabDash.classList.remove('active');
+    if (tabDir) tabDir.classList.add('active');
+    if (viewDash) viewDash.style.display = 'none';
+    if (viewDir) viewDir.style.display = 'block';
+    history.replaceState(null, null, window.location.pathname);
   }
-  window.location.href = url.toString();
+}
+
+// ── REALTIME INSTANT FILTERING ENGINE ──
+let realtimeSearchQuery = '';
+let realtimeStatusFilter = '';
+let realtimeConnFilter = '';
+let realtimeAreaFilter = '';
+let realtimeRouterFilter = 'all';
+let realtimeAuthFilter = '';
+
+function applyRealtimeFilters() {
+  const queryWords = realtimeSearchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const rows = document.querySelectorAll('.cust-row');
+  let visibleCount = 0;
+
+  rows.forEach(row => {
+    const searchBlob = (row.getAttribute('data-search') || '').toLowerCase();
+    const status = (row.getAttribute('data-status') || '').toLowerCase();
+    const conn = (row.getAttribute('data-conn') || 'offline').toLowerCase();
+    const isUnpaid = (row.getAttribute('data-unpaid') === 'true');
+    const area = (row.getAttribute('data-area') || '').toLowerCase();
+    const router = (row.getAttribute('data-router') || '').toString();
+    const auth = (row.getAttribute('data-auth') || '').toLowerCase();
+
+    // Query text match
+    let matchQuery = true;
+    for (const w of queryWords) {
+      if (!searchBlob.includes(w)) {
+        matchQuery = false;
+        break;
+      }
+    }
+
+    // Status filter match
+    let matchStatus = true;
+    if (realtimeStatusFilter) {
+      if (realtimeStatusFilter === 'unpaid') {
+        matchStatus = isUnpaid;
+      } else {
+        matchStatus = (status === realtimeStatusFilter);
+      }
+    }
+
+    // Conn filter match
+    let matchConn = true;
+    if (realtimeConnFilter) {
+      matchConn = (conn === realtimeConnFilter);
+    }
+
+    // Area filter match
+    let matchArea = true;
+    if (realtimeAreaFilter) {
+      matchArea = (area === realtimeAreaFilter.toLowerCase());
+    }
+
+    // Router filter match
+    let matchRouter = true;
+    if (realtimeRouterFilter && realtimeRouterFilter !== 'all') {
+      matchRouter = (router === realtimeRouterFilter.toString());
+    }
+
+    // Auth filter match
+    let matchAuth = true;
+    if (realtimeAuthFilter) {
+      matchAuth = (auth === realtimeAuthFilter);
+    }
+
+    const showRow = matchQuery && matchStatus && matchConn && matchArea && matchRouter && matchAuth;
+    row.style.display = showRow ? '' : 'none';
+    if (showRow) visibleCount++;
+  });
+
+  // Update counter text
+  const totalRows = rows.length;
+  const countText = document.getElementById('filteredCountText');
+  if (countText) {
+    if (visibleCount === totalRows && !realtimeSearchQuery && !realtimeStatusFilter && !realtimeConnFilter && !realtimeAreaFilter && realtimeRouterFilter === 'all' && !realtimeAuthFilter) {
+      countText.innerHTML = `Total <strong>${totalRows}</strong> pelanggan terdaftar`;
+    } else {
+      countText.innerHTML = `Menampilkan <strong>${visibleCount}</strong> dari ${totalRows} pelanggan`;
+    }
+  }
+
+  // Clear search button toggle
+  const clearBtn = document.getElementById('custSearchClearBtn');
+  if (clearBtn) {
+    clearBtn.style.display = realtimeSearchQuery ? 'inline-flex' : 'none';
+  }
+
+  // Reset all button toggle
+  const hasActiveFilters = Boolean(realtimeSearchQuery || realtimeStatusFilter || realtimeConnFilter || realtimeAreaFilter || (realtimeRouterFilter && realtimeRouterFilter !== 'all') || realtimeAuthFilter);
+  const resetBtn = document.getElementById('custResetFiltersBtn');
+  if (resetBtn) {
+    resetBtn.style.display = hasActiveFilters ? 'inline-flex' : 'none';
+  }
+
+  // Dynamic Empty Row
+  const emptyRow = document.getElementById('custRealtimeEmptyRow');
+  if (emptyRow) {
+    emptyRow.style.display = (visibleCount === 0 && totalRows > 0) ? '' : 'none';
+  }
+
+  updateNocStripActiveStates();
+  updateBulkBar();
+}
+
+function updateNocStripActiveStates() {
+  document.querySelectorAll('.cust-noc-chip').forEach(chip => {
+    const fType = chip.getAttribute('data-filter-type');
+    const fVal = chip.getAttribute('data-filter-val');
+    if (!fType) return;
+    if (fType === 'status') {
+      chip.classList.toggle('active', realtimeStatusFilter === fVal);
+    } else if (fType === 'conn') {
+      chip.classList.toggle('active', realtimeConnFilter === fVal);
+    } else if (fType === 'auth') {
+      chip.classList.toggle('active', realtimeAuthFilter === fVal);
+    }
+  });
+}
+
+function setRealtimeStatusFilter(val) {
+  realtimeStatusFilter = (realtimeStatusFilter === val) ? '' : val;
+  const sel = document.getElementById('filterStatusSelect');
+  if (sel) sel.value = realtimeStatusFilter;
+  applyRealtimeFilters();
+}
+
+function setRealtimeConnFilter(val) {
+  realtimeConnFilter = (realtimeConnFilter === val) ? '' : val;
+  const sel = document.getElementById('filterConnSelect');
+  if (sel) sel.value = realtimeConnFilter;
+  applyRealtimeFilters();
+}
+
+function setRealtimeAuthFilter(val) {
+  realtimeAuthFilter = (realtimeAuthFilter === val) ? '' : val;
+  const sel = document.getElementById('filterAuthSelect');
+  if (sel) sel.value = realtimeAuthFilter;
+  applyRealtimeFilters();
+}
+
+function onStatusSelectChange(val) {
+  realtimeStatusFilter = val;
+  applyRealtimeFilters();
+}
+
+function onConnSelectChange(val) {
+  realtimeConnFilter = val;
+  applyRealtimeFilters();
+}
+
+function onAreaSelectChange(val) {
+  realtimeAreaFilter = val;
+  applyRealtimeFilters();
+}
+
+function onRouterSelectChange(val) {
+  realtimeRouterFilter = val;
+  applyRealtimeFilters();
+}
+
+function onAuthSelectChange(val) {
+  realtimeAuthFilter = val;
+  applyRealtimeFilters();
+}
+
+function clearRealtimeSearch() {
+  const input = document.getElementById('custRealtimeSearch');
+  if (input) {
+    input.value = '';
+    realtimeSearchQuery = '';
+    input.focus();
+  }
+  applyRealtimeFilters();
+}
+
+function resetAllRealtimeFilters() {
+  realtimeSearchQuery = '';
+  realtimeStatusFilter = '';
+  realtimeConnFilter = '';
+  realtimeAreaFilter = '';
+  realtimeRouterFilter = 'all';
+  realtimeAuthFilter = '';
+
+  const input = document.getElementById('custRealtimeSearch');
+  if (input) input.value = '';
+
+  const selStatus = document.getElementById('filterStatusSelect');
+  if (selStatus) selStatus.value = '';
+
+  const selConn = document.getElementById('filterConnSelect');
+  if (selConn) selConn.value = '';
+
+  const selArea = document.getElementById('filterAreaSelect');
+  if (selArea) selArea.value = '';
+
+  const selRouter = document.getElementById('filterRouterSelect');
+  if (selRouter) selRouter.value = 'all';
+
+  const selAuth = document.getElementById('filterAuthSelect');
+  if (selAuth) selAuth.value = '';
+
+  applyRealtimeFilters();
+}
+
+function quickFilterFromDashboard(type, val) {
+  switchCustView('directory');
+  if (type === 'conn') {
+    setRealtimeConnFilter(val);
+  } else if (type === 'status') {
+    setRealtimeStatusFilter(val);
+  } else if (type === 'search') {
+    const input = document.getElementById('custRealtimeSearch');
+    if (input) {
+      input.value = val;
+      realtimeSearchQuery = val;
+    }
+    applyRealtimeFilters();
+  }
+}
+
+function filterByStatus(statusVal) {
+  setRealtimeStatusFilter(statusVal);
 }
 
 // ─── ACTION DROPDOWN TOGGLER ─────────────────────────────────────────
@@ -5182,24 +6024,95 @@ function toggleConnFilter(type) {
 function updateLiveConnCounts() {
   let onlineCount = 0;
   let offlineCount = 0;
-  document.querySelectorAll('.cust-row').forEach(r => {
+  const rows = document.querySelectorAll('.cust-row');
+  rows.forEach(r => {
     const conn = r.getAttribute('data-conn') || 'offline';
     if (conn === 'online') onlineCount++;
     else offlineCount++;
   });
+  const total = rows.length;
+
   const elOnline = document.getElementById('count_live_online');
   const elOffline = document.getElementById('count_live_offline');
   const elKpi = document.getElementById('count_live_online_kpi');
+  const elBarOnline = document.getElementById('barOnlineCount');
+  const elDashOnline = document.getElementById('dashLiveOnline');
+  const elDashOffline = document.getElementById('dashLiveOffline');
+  const elLegendOnline = document.getElementById('dashLegendOnline');
+  const elLegendOffline = document.getElementById('dashLegendOffline');
+  const elMeterOnline = document.getElementById('dashMeterOnline');
+
   if (elOnline) elOnline.textContent = onlineCount;
   if (elOffline) elOffline.textContent = offlineCount;
   if (elKpi) elKpi.textContent = onlineCount;
+  if (elBarOnline) elBarOnline.textContent = onlineCount;
+  if (elDashOnline) elDashOnline.textContent = onlineCount;
+  if (elDashOffline) elDashOffline.textContent = offlineCount;
+  if (elLegendOnline) elLegendOnline.textContent = onlineCount;
+  if (elLegendOffline) elLegendOffline.textContent = offlineCount;
+  if (elMeterOnline && total > 0) {
+    elMeterOnline.style.width = Math.round((onlineCount / total) * 100) + '%';
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Check hash for direct dashboard deep-link
+  if (window.location.hash === '#dashboard') {
+    switchCustView('dashboard');
+  }
+
+  // Setup Realtime Search Listener
+  let searchDebounceTimeout = null;
+  const searchInputEl = document.getElementById('custRealtimeSearch');
+  if (searchInputEl) {
+    searchInputEl.addEventListener('input', (e) => {
+      clearTimeout(searchDebounceTimeout);
+      searchDebounceTimeout = setTimeout(() => {
+        realtimeSearchQuery = e.target.value;
+        applyRealtimeFilters();
+      }, 120);
+    });
+  }
+
+  // Keyboard shortcut: '/' to focus search, 'Escape' to clear
+  document.addEventListener('keydown', (e) => {
+    const targetTag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+    const isEditing = targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select' || e.target.isContentEditable;
+    
+    if (e.key === '/' && !isEditing) {
+      e.preventDefault();
+      if (document.getElementById('custViewDashboard')?.style.display === 'flex') {
+        switchCustView('directory');
+      }
+      if (searchInputEl) {
+        searchInputEl.focus();
+        searchInputEl.select();
+      }
+    } else if (e.key === 'Escape') {
+      if (document.activeElement === searchInputEl) {
+        clearRealtimeSearch();
+        searchInputEl.blur();
+      }
+    }
+  });
+
   updateLiveConnCounts();
   fetchLiveSessions();
 });
 
+window.switchCustView = switchCustView;
+window.applyRealtimeFilters = applyRealtimeFilters;
+window.setRealtimeStatusFilter = setRealtimeStatusFilter;
+window.setRealtimeConnFilter = setRealtimeConnFilter;
+window.setRealtimeAuthFilter = setRealtimeAuthFilter;
+window.onStatusSelectChange = onStatusSelectChange;
+window.onConnSelectChange = onConnSelectChange;
+window.onAreaSelectChange = onAreaSelectChange;
+window.onRouterSelectChange = onRouterSelectChange;
+window.onAuthSelectChange = onAuthSelectChange;
+window.clearRealtimeSearch = clearRealtimeSearch;
+window.resetAllRealtimeFilters = resetAllRealtimeFilters;
+window.quickFilterFromDashboard = quickFilterFromDashboard;
 window.filterByStatus = filterByStatus;
 window.toggleActionDropdown = toggleActionDropdown;
 window.toggleSelectAllCust = toggleSelectAllCust;
@@ -5208,7 +6121,8 @@ window.clearSelectedCust = clearSelectedCust;
 window.triggerBulkAction = triggerBulkAction;
 window.openBulkWaModal = openBulkWaModal;
 window.insertWaVar = insertWaVar;
-window.toggleConnFilter = toggleConnFilter;
+window.toggleConnFilter = setRealtimeConnFilter;
+window.toggleAuthFilter = setRealtimeAuthFilter;
 window.updateLiveConnCounts = updateLiveConnCounts;
 window.viewCustDetail = viewCustDetail;
 window.copyToClipboard = copyToClipboard;
