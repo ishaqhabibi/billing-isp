@@ -494,7 +494,12 @@ async function setPppoeProfile(username, profileName, routerId = null, comment =
     // Fallback case-insensitive jika exact match RouterOS API gagal
     if (!secrets || secrets.length === 0) {
       const allSecrets = await secretMenu.get();
-      secrets = Array.isArray(allSecrets) ? allSecrets.filter(r => String(r.name || '').toLowerCase() === String(username).toLowerCase()) : [];
+      const uLower = String(username || '').toLowerCase();
+      const uBase = uLower.split('@')[0];
+      secrets = Array.isArray(allSecrets) ? allSecrets.filter(r => {
+        const sName = String(r.name || '').toLowerCase();
+        return sName === uLower || sName === uBase || sName.startsWith(uBase + '@') || uLower.startsWith(sName + '@');
+      }) : [];
     }
 
     if (!secrets || secrets.length === 0) {
@@ -535,7 +540,7 @@ async function setPppoeProfile(username, profileName, routerId = null, comment =
         if (Array.isArray(activeSessions) && activeSessions.length > 0) {
           for (const s of activeSessions) {
             const sid = s['.id'] || s.id;
-            if (sid) await activeMenu.remove(sid);
+            if (sid) await conn.client.menu('/ppp/active').remove(sid);
           }
           activeSessionsMapCache = { ts: 0, data: new Map() };
         }
@@ -562,7 +567,18 @@ async function kickPppoeUser(username, routerId = null) {
   let conn = null;
   try {
     conn = await getConnection(routerId);
-    const sessions = await conn.client.menu('/ppp/active').where('name', normalizedUsername).get();
+    let sessions = await conn.client.menu('/ppp/active').where('name', normalizedUsername).get();
+    
+    // Fallback: pencarian case-insensitive & domain-tolerant jika .where() exact match tidak menemukan sesi
+    if (!sessions || sessions.length === 0) {
+      const allActive = await conn.client.menu('/ppp/active').get();
+      const uLower = normalizedUsername.toLowerCase();
+      const uBase = uLower.split('@')[0];
+      sessions = Array.isArray(allActive) ? allActive.filter(r => {
+        const aName = String(r.name || '').toLowerCase();
+        return aName === uLower || aName === uBase || aName.startsWith(uBase + '@') || uLower.startsWith(aName + '@');
+      }) : [];
+    }
     
     if (sessions.length > 0) {
       logger.info(`[MikroTik] Kicking ${sessions.length} active session(s) for user: ${normalizedUsername}`);

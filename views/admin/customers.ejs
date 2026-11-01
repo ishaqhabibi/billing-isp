@@ -2107,6 +2107,7 @@
             <div class="fg">
               <label class="fl"><i class="bi bi-shield-slash me-1"></i> Profile Isolir MikroTik</label>
               <select class="fs" name="isolir_profile" id="add_isolir_select">
+                <option value="EXPIRED" selected>EXPIRED</option>
                 <option value="isolir">isolir</option>
               </select>
             </div>
@@ -2660,6 +2661,7 @@
             <div class="fg">
               <label class="fl"><i class="bi bi-shield-slash me-1"></i> Profile Isolir MikroTik</label>
               <select class="fs" name="isolir_profile" id="e_isolir_profile">
+                <option value="EXPIRED" selected>EXPIRED</option>
                 <option value="isolir">isolir</option>
               </select>
             </div>
@@ -6214,7 +6216,7 @@ function editCust(idx) {
   setupEditPhotoPreview('e_preview_optical_box', c.photo_optical_power, 'bi-activity');
   document.getElementById('e_lat').value=c.lat||'';
   document.getElementById('e_lng').value=c.lng||'';
-  document.getElementById('e_isolir_profile').value=c.isolir_profile||'isolir';
+  document.getElementById('e_isolir_profile').value=c.isolir_profile||'EXPIRED';
   document.getElementById('e_status').value=c.status||'active';
   document.getElementById('e_install').value=c.install_date||'';
   if (document.getElementById('e_expired_at')) {
@@ -6677,16 +6679,20 @@ async function loadMikrotikProfiles(routerId = '') {
     const selAdd = document.getElementById('add_isolir_select');
     const selEdit = document.getElementById('e_isolir_profile');
     
-    const defaultOpt = '<option value="isolir">isolir</option>';
+    const currAdd = (selAdd && selAdd.value) ? selAdd.value : 'EXPIRED';
+    const currEdit = (selEdit && selEdit.value) ? selEdit.value : 'EXPIRED';
+    const defaultOpt = '<option value="EXPIRED">EXPIRED</option><option value="isolir">isolir</option>';
     selAdd.innerHTML = defaultOpt;
     selEdit.innerHTML = defaultOpt;
 
     profiles.forEach(p => {
-      if(p.name === 'isolir') return;
+      if(p.name === 'isolir' || p.name === 'EXPIRED') return;
       const opt = `<option value="${p.name}">${p.name}</option>`;
       selAdd.innerHTML += opt;
       selEdit.innerHTML += opt;
     });
+    if (selAdd && currAdd) selAdd.value = currAdd;
+    if (selEdit && currEdit) selEdit.value = currEdit;
   } catch (e) {
     console.error('Failed to load MikroTik profiles', e);
   }

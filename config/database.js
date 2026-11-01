@@ -132,7 +132,7 @@ db.exec(`
     package_id INTEGER REFERENCES packages(id) ON DELETE SET NULL,
     genieacs_tag TEXT DEFAULT '',
     pppoe_username TEXT DEFAULT '',
-    isolir_profile TEXT DEFAULT 'isolir',
+    isolir_profile TEXT DEFAULT 'EXPIRED',
     status TEXT DEFAULT 'active',
     install_date DATE,
     expired_at DATETIME DEFAULT NULL,
@@ -786,6 +786,7 @@ try { db.exec("ALTER TABLE packages ADD COLUMN uso_percentage REAL DEFAULT 1.75"
 try { db.exec("ALTER TABLE packages ADD COLUMN billing_type TEXT DEFAULT 'postpaid'"); } catch (e) {}
 try { db.exec("ALTER TABLE packages ADD COLUMN duration_days INTEGER DEFAULT 30"); } catch (e) {}
 try { db.exec("ALTER TABLE customers ADD COLUMN expired_at DATETIME DEFAULT NULL"); } catch (e) {}
+try { db.exec("UPDATE customers SET isolir_profile = 'EXPIRED' WHERE isolir_profile = 'isolir' OR isolir_profile IS NULL OR isolir_profile = ''"); } catch (e) {}
 
 try {
   db.exec("ALTER TABLE customers ADD COLUMN billing_day INTEGER DEFAULT NULL");

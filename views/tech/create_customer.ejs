@@ -269,14 +269,15 @@
       if (!res.ok) throw new Error(data.error || 'Gagal memuat profile PPPoE');
       const profiles = Array.isArray(data) ? data : [];
       const opts = [];
+      opts.push('<option value="EXPIRED" selected>EXPIRED</option>');
       opts.push('<option value="isolir">isolir</option>');
       for (const p of profiles) {
-        if (!p || !p.name || p.name === 'isolir') continue;
+        if (!p || !p.name || p.name === 'isolir' || p.name === 'EXPIRED') continue;
         opts.push(`<option value="${String(p.name).replace(/"/g, '&quot;')}">${p.name}</option>`);
       }
       if (sel) sel.innerHTML = opts.join('');
     } catch (e) {
-      if (sel) sel.innerHTML = '<option value="isolir">isolir</option>';
+      if (sel) sel.innerHTML = '<option value="EXPIRED" selected>EXPIRED</option><option value="isolir">isolir</option>';
     }
   }
 

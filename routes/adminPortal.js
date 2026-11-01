@@ -2889,7 +2889,7 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
       
       let targetProfile = '';
       if (req.body.status === 'suspended') {
-        targetProfile = req.body.isolir_profile || 'isolir';
+        targetProfile = req.body.isolir_profile || 'EXPIRED';
       } else if (req.body.package_id) {
         const pkg = customerSvc.getPackageById(req.body.package_id);
         if (pkg) targetProfile = pkg.name;
@@ -3168,7 +3168,7 @@ router.post('/customers/:id/update', requireAdminSession, (req, res, next) => {
         
         let targetProfile = '';
         if (req.body.status === 'suspended') {
-          targetProfile = req.body.isolir_profile || 'isolir';
+          targetProfile = req.body.isolir_profile || 'EXPIRED';
         } else if (req.body.package_id) {
           const pkg = customerSvc.getPackageById(req.body.package_id);
           if (pkg) targetProfile = pkg.name;
@@ -3423,7 +3423,7 @@ router.post('/customers/import', requireAdminSession, upload.single('file'), asy
         hotspot_username: connType === 'hotspot' ? (cleanRow['Hotspot Username'] || cleanRow['hotspot_username'] || '') : '',
         static_ip: connType === 'static' ? (cleanRow['Static IP'] || cleanRow['static_ip'] || '') : '',
         connection_type: connType,
-        isolir_profile: cleanRow['Isolir Profile'] || cleanRow['isolir_profile'] || 'isolir',
+        isolir_profile: cleanRow['Isolir Profile'] || cleanRow['isolir_profile'] || 'EXPIRED',
         status: (cleanRow['Status'] || cleanRow['status'] || 'active').toLowerCase(),
         install_date: cleanRow['Tanggal Pasang'] || cleanRow['install_date'],
         auto_isolate: (cleanRow['Auto Isolir'] === 'TIDAK' || cleanRow['auto_isolate'] === 0) ? 0 : 1,

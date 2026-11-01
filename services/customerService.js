@@ -221,7 +221,7 @@ function createCustomer(data) {
     data.genieacs_tag || '', pppoeUsername,
     data.pppoe_password || '',
     data.pppoe_remote_address || '',
-    data.isolir_profile || 'isolir',
+    data.isolir_profile || 'EXPIRED',
     data.status || 'active',
     data.install_date || null,
     expiredAt,
@@ -310,7 +310,7 @@ function updateCustomer(id, data) {
     genieacsTag, pppoeUsername,
     pppoePassword,
     data.pppoe_remote_address || '',
-    data.isolir_profile || 'isolir',
+    data.isolir_profile || 'EXPIRED',
     data.status || 'active',
     data.install_date || null,
     expiredAt,
@@ -661,8 +661,17 @@ async function suspendCustomer(id) {
         isolate: true
       }, effectiveRouterId);
     } else if (customer.pppoe_username) {
-      const isolirProfile = customer.isolir_profile || 'isolir';
-      await mikrotikSvc.setPppoeProfile(customer.pppoe_username, isolirProfile, effectiveRouterId);
+      const isolirProfile = customer.isolir_profile || 'EXPIRED';
+      try {
+        await mikrotikSvc.setPppoeProfile(customer.pppoe_username, isolirProfile, effectiveRouterId);
+      } catch (pErr) {
+        logger.error(`[suspendCustomer] Gagal ubah profil PPPoE di MikroTik untuk "${customer.pppoe_username}": ${pErr.message}`);
+      }
+      try {
+        await mikrotikSvc.kickPppoeUser(customer.pppoe_username, effectiveRouterId);
+      } catch (kErr) {
+        logger.warn(`[suspendCustomer] Info kick sesi PPPoE "${customer.pppoe_username}": ${kErr.message}`);
+      }
       if (effectiveRouterId) {
         try {
           await mikrotikSvc.ensurePppProfileIsolirAddressListHook(isolirProfile, effectiveRouterId);
@@ -794,6 +803,11 @@ async function activateCustomer(id, targetStatus = 'active') {
       }
       
       await mikrotikSvc.setPppoeProfile(customer.pppoe_username, targetProfile, effectiveRouterId);
+      try {
+        await mikrotikSvc.kickPppoeUser(customer.pppoe_username, effectiveRouterId);
+      } catch (kErr) {
+        logger.warn(`[activateCustomer] Info kick sesi PPPoE "${customer.pppoe_username}": ${kErr.message}`);
+      }
     } else if (customer.connection_type === 'hotspot' && customer.hotspot_username) {
       const pkg = getPackageById(customer.package_id);
       const targetProfile = String(customer.hotspot_profile || '').trim() || (pkg ? pkg.name : '');

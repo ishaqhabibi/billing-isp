@@ -379,7 +379,7 @@ router.post('/customers', requireTechSession, express.urlencoded({ extended: tru
       pon_port: String(req.body.pon_port || '').trim(),
       lat: String(req.body.lat || '').trim(),
       lng: String(req.body.lng || '').trim(),
-      isolir_profile: String(req.body.isolir_profile || 'isolir').trim() || 'isolir',
+      isolir_profile: String(req.body.isolir_profile || 'EXPIRED').trim() || 'EXPIRED',
       status: String(req.body.status || 'active').trim() || 'active',
       install_date: req.body.install_date ? String(req.body.install_date).trim() : null,
       notes: String(req.body.notes || '').trim(),
@@ -435,7 +435,7 @@ router.post('/customers', requireTechSession, express.urlencoded({ extended: tru
     if (customerData.pppoe_username) {
       let targetProfile = '';
       if (customerData.status === 'suspended') {
-        targetProfile = customerData.isolir_profile || 'isolir';
+        targetProfile = customerData.isolir_profile || 'EXPIRED';
       } else if (customerData.package_id) {
         const pkg = customerSvc.getPackageById(customerData.package_id);
         if (pkg) targetProfile = pkg.name;
