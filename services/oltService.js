@@ -2985,6 +2985,97 @@ async function renameOnuBySn(oltId, sn, newName) {
 /**
  * Otorisasi ONU (Provisioning) via Telnet CLI.
  */
+
+/**
+ * Sinkronisasi otomatis nama ONU di OLT berdasarkan data pelanggan.
+ * Format: KODE_PELANGGAN/NAMA_PELANGGAN (misal: BRG1202/KHOLIQ, max 30 karakter).
+ */
+async function syncCustomerOnuName(customerData) {
+  if (!customerData) return false;
+  
+  const sn = String(customerData.ont_sn || customerData.genieacs_tag || '').trim();
+  if (!sn) return false;
+
+  const code = String(customerData.customer_code || '').trim().toUpperCase();
+  const rawName = String(customerData.name || '').trim();
+  const cleanName = rawName.replace(/[^a-zA-Z0-9_\-\s]/g, '').trim().toUpperCase();
+
+  let targetName = '';
+  if (code && cleanName) {
+    targetName = `${code}/${cleanName}`;
+  } else if (code) {
+    targetName = code;
+  } else if (cleanName) {
+    targetName = cleanName;
+  }
+  if (!targetName) return false;
+  if (targetName.length > 30) targetName = targetName.substring(0, 30);
+
+  // Resolusi OLT ID jika belum ada
+  let oltId = customerData.olt_id ? Number(customerData.olt_id) : null;
+  if (!oltId && customerData.odp_id) {
+    try {
+      const odp = db.prepare('SELECT olt_id FROM odps WHERE id = ?').get(customerData.odp_id);
+      if (odp && odp.olt_id) oltId = Number(odp.olt_id);
+    } catch (_) {}
+  }
+  if (!oltId && customerData.odc_id) {
+    try {
+      const odc = db.prepare('SELECT olt_id FROM odcs WHERE id = ?').get(customerData.odc_id);
+      if (odc && odc.olt_id) oltId = Number(odc.olt_id);
+    } catch (_) {}
+  }
+  if (!oltId) {
+    try {
+      const defOlt = db.prepare('SELECT id FROM olts WHERE is_active = 1 LIMIT 1').get();
+      if (defOlt && defOlt.id) oltId = Number(defOlt.id);
+    } catch (_) {}
+  }
+  if (!oltId) {
+    logger.warn(`[OLT Sync] Tidak ada OLT yang terasosiasi untuk pelanggan "${rawName}" (SN: ${sn})`);
+    return false;
+  }
+
+  // Jika oltId berhasil disimpulkan tapi belum tersimpan di DB, perbarui customer
+  if (customerData.id && !customerData.olt_id) {
+    try {
+      db.prepare('UPDATE customers SET olt_id = ? WHERE id = ?').run(oltId, customerData.id);
+    } catch (_) {}
+  }
+
+  try {
+    const success = await renameOnuBySn(oltId, sn, targetName);
+    if (success) {
+      logger.info(`[OLT Sync] Sukses set nama ONU OLT #${oltId} SN ${sn} -> "${targetName}"`);
+      return true;
+    } else {
+      logger.warn(`[OLT Sync] SN ${sn} tidak ditemukan pada OLT #${oltId} untuk di-rename.`);
+      return false;
+    }
+  } catch (err) {
+    logger.error(`[OLT Sync] Error rename ONU OLT #${oltId} SN ${sn}: ${err.message}`);
+    return false;
+  }
+}
+
+/**
+ * Batch sinkronisasi nama semua pelanggan ke OLT
+ */
+async function syncAllCustomersOnuName(oltId = null) {
+  const query = oltId
+    ? db.prepare("SELECT id, name, customer_code, ont_sn, olt_id, odc_id, odp_id FROM customers WHERE ont_sn IS NOT NULL AND ont_sn != '' AND (olt_id = ? OR olt_id IS NULL)")
+    : db.prepare("SELECT id, name, customer_code, ont_sn, olt_id, odc_id, odp_id FROM customers WHERE ont_sn IS NOT NULL AND ont_sn != ''");
+  const customers = oltId ? query.all(oltId) : query.all();
+  let successCount = 0;
+  for (const c of customers) {
+    const ok = await syncCustomerOnuName(c);
+    if (ok) successCount++;
+    await new Promise(r => setTimeout(r, 150));
+  }
+  logger.info(`[OLT Sync All] Selesai sinkronisasi nama ONU OLT: ${successCount} dari ${customers.length} berhasil di-rename.`);
+  return { total: customers.length, success: successCount };
+}
+
 async function authorizeOnu(oltId, data) {
   const olt = getOltById(oltId);
   if (!olt) throw new Error('OLT tidak ditemukan');
@@ -3443,6 +3534,6 @@ async function configureWanViaAcs(sn, data) {
  }
 
 module.exports = {
-  getAllOlts, getActiveOlts, getOltById, createOlt, updateOlt, updateOltCoordinates, deleteOlt, getOltStats, getAllOltsStats, rebootOnu, renameOnu, renameOnuBySn, authorizeOnu,
+  getAllOlts, getActiveOlts, getOltById, createOlt, updateOlt, updateOltCoordinates, deleteOlt, getOltStats, getAllOltsStats, rebootOnu, renameOnu, renameOnuBySn, syncCustomerOnuName, syncAllCustomersOnuName, authorizeOnu,
   configureOnuWan, configureZteWanViaGoApi, configureWanViaAcs, testOltSnmp
 };

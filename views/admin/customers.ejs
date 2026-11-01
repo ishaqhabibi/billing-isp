@@ -2341,7 +2341,7 @@
                   <option value="">-- Tanpa ODC --</option>
                   <% if (typeof odcs !== 'undefined') { %>
                     <% odcs.forEach(o => { %>
-                      <option value="<%= o.id %>" data-name="<%= o.name %>"><%= o.name %><%= o.olt_name ? ' (' + o.olt_name + ')' : '' %></option>
+                      <option value="<%= o.id %>" data-name="<%= o.name %>" data-olt-id="<%= o.olt_id || '' %>"><%= o.name %><%= o.olt_name ? ' (' + o.olt_name + ')' : '' %></option>
                     <% }) %>
                   <% } %>
                 </select>
@@ -2355,7 +2355,7 @@
                   <option value="">-- Tanpa ODP --</option>
                   <% if (typeof odps !== 'undefined') { %>
                     <% odps.forEach(o => { %>
-                      <option value="<%= o.id %>" data-name="<%= o.name %>" data-odc-id="<%= o.odc_id || '' %>" data-capacity="<%= o.port_capacity || o.total_ports || 8 %>"><%= o.name %></option>
+                      <option value="<%= o.id %>" data-name="<%= o.name %>" data-odc-id="<%= o.odc_id || '' %>" data-olt-id="<%= o.olt_id || '' %>" data-capacity="<%= o.port_capacity || o.total_ports || 8 %>"><%= o.name %></option>
                     <% }) %>
                   <% } %>
                 </select>
@@ -2898,7 +2898,7 @@
                   <option value="">-- Tanpa ODC --</option>
                   <% if (typeof odcs !== 'undefined') { %>
                     <% odcs.forEach(o => { %>
-                      <option value="<%= o.id %>" data-name="<%= o.name %>"><%= o.name %><%= o.olt_name ? ' (' + o.olt_name + ')' : '' %></option>
+                      <option value="<%= o.id %>" data-name="<%= o.name %>" data-olt-id="<%= o.olt_id || '' %>"><%= o.name %><%= o.olt_name ? ' (' + o.olt_name + ')' : '' %></option>
                     <% }) %>
                   <% } %>
                 </select>
@@ -2912,7 +2912,7 @@
                   <option value="">-- Tanpa ODP --</option>
                   <% if (typeof odps !== 'undefined') { %>
                     <% odps.forEach(o => { %>
-                      <option value="<%= o.id %>" data-name="<%= o.name %>" data-odc-id="<%= o.odc_id || '' %>" data-capacity="<%= o.port_capacity || o.total_ports || 8 %>"><%= o.name %></option>
+                      <option value="<%= o.id %>" data-name="<%= o.name %>" data-odc-id="<%= o.odc_id || '' %>" data-olt-id="<%= o.olt_id || '' %>" data-capacity="<%= o.port_capacity || o.total_ports || 8 %>"><%= o.name %></option>
                     <% }) %>
                   <% } %>
                 </select>
@@ -4409,6 +4409,11 @@ function handleOdpChange(type = 'add') {
     if (dataOdcId && (!odcSelect.value || odcSelect.value === '')) {
       odcSelect.value = dataOdcId;
     }
+    const dataOltId = opt ? opt.getAttribute('data-olt-id') : null;
+    const oltSelect = document.getElementById(prefix + 'olt_id');
+    if (oltSelect && dataOltId && (!oltSelect.value || oltSelect.value === '')) {
+      oltSelect.value = dataOltId;
+    }
   }
 
   const selectedOdpId = odpSelect.value;
@@ -4428,6 +4433,15 @@ function handleOdcChange(type = 'add') {
   const odpSelect = document.getElementById(prefix + 'odp_id');
   if (!odcSelect || !odpSelect) return;
   const selectedOdcId = odcSelect.value;
+
+  if (odcSelect.selectedIndex > 0) {
+    const curOdcOpt = odcSelect.options[odcSelect.selectedIndex];
+    const dataOltId = curOdcOpt ? curOdcOpt.getAttribute('data-olt-id') : null;
+    const oltSelect = document.getElementById(prefix + 'olt_id');
+    if (oltSelect && dataOltId && (!oltSelect.value || oltSelect.value === '')) {
+      oltSelect.value = dataOltId;
+    }
+  }
 
   Array.from(odpSelect.options).forEach(opt => {
     if (!opt.value) return;

@@ -736,6 +736,15 @@ router.post(['/olts/:id/onu/rename', '/olts/:id/onu/:index/rename', '/olts/:id/o
   }
 });
 
+router.post('/olts/:id/sync-customer-names', requireAdminSession, restrictToAdmin, async (req, res) => {
+  try {
+    const result = await oltSvc.syncAllCustomersOnuName(Number(req.params.id));
+    res.json({ success: true, message: `Berhasil sinkronisasi nama: ${result.success} dari ${result.total} pelanggan berhasil di-rename di OLT.` });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 router.post('/olts/:id/onu/authorize', requireAdminSession, restrictToAdmin, express.urlencoded({ extended: true }), async (req, res) => {
   try {
     const output = await oltSvc.authorizeOnu(req.params.id, req.body);
@@ -2650,46 +2659,21 @@ async function syncGenieacsNocTags(ontSn, customerData, oldCustomer = null) {
   }
 
   // 2. SINKRONISASI NAMA ONU KE OLT: FORMAT KODE/NAMA (misal: BRG1202/KHOLIQ)
-  // Memperbarui nama ONU di OLT (mengganti/overwrite nama lama dengan nama baru)
-  const oltId = merged.olt_id ? Number(merged.olt_id) : null;
-  if (oltId) {
-    try {
-      const oltSvc = require('../services/oltService');
-      let oltName = '';
-      if (code && cleanName) {
-        oltName = `${code}/${cleanName}`;
-      } else if (code) {
-        oltName = code;
-      } else if (cleanName) {
-        oltName = cleanName;
-      }
-      if (oltName.length > 30) oltName = oltName.substring(0, 30);
+  try {
+    const oltSvc = require('../services/oltService');
+    await oltSvc.syncCustomerOnuName(merged);
 
-      let renamed = false;
-      if (cleanSn) {
-        renamed = await oltSvc.renameOnuBySn(oltId, cleanSn, oltName);
-        if (renamed) {
-          logger.info(`[OLT Sync] Sukses memperbarui nama ONU OLT #${oltId} SN ${cleanSn} -> "${oltName}"`);
+    // Jika pelanggan dipindah dari OLT lain, kembalikan nama di OLT lama ke default
+    const currentOltId = merged.olt_id ? Number(merged.olt_id) : null;
+    if (oldCustomer && oldCustomer.olt_id && currentOltId && Number(oldCustomer.olt_id) !== currentOltId) {
+      try {
+        if (cleanSn) {
+          await oltSvc.renameOnuBySn(Number(oldCustomer.olt_id), cleanSn, 'ONT');
         }
-      }
-      if (!renamed && merged.pon_port && String(merged.pon_port).includes('/')) {
-        try {
-          await oltSvc.renameOnu(oltId, merged.pon_port, oltName);
-          logger.info(`[OLT Sync] Sukses memperbarui nama ONU OLT #${oltId} port ${merged.pon_port} -> "${oltName}"`);
-        } catch (_) {}
-      }
-
-      // Jika pelanggan dipindah dari OLT lain, kembalikan nama di OLT lama ke default
-      if (oldCustomer && oldCustomer.olt_id && Number(oldCustomer.olt_id) !== oltId) {
-        try {
-          if (cleanSn) {
-            await oltSvc.renameOnuBySn(Number(oldCustomer.olt_id), cleanSn, 'ONT');
-          }
-        } catch (_) {}
-      }
-    } catch (oltErr) {
-      logger.warn(`[OLT Sync] Catatan OLT sync: ${oltErr.message}`);
+      } catch (_) {}
     }
+  } catch (oltErr) {
+    logger.warn(`[OLT Sync] Catatan OLT sync: ${oltErr.message}`);
   }
 }
 

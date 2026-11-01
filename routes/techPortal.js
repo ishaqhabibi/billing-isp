@@ -470,6 +470,16 @@ router.post('/customers', requireTechSession, express.urlencoded({ extended: tru
       }
     }
 
+    // Sinkronisasi otomatis nama ke OLT jika ont_sn tersedia
+    if (customerData.ont_sn) {
+      try {
+        const oltSvc = require('../services/oltService');
+        oltSvc.syncCustomerOnuName({ ...customerData, id: inserted && inserted.lastInsertRowid ? inserted.lastInsertRowid : null }).catch(err => {
+          logger.warn(`[Tech Create] OLT sync warning: ${err.message}`);
+        });
+      } catch (_) {}
+    }
+
     req.session._msg = { type: 'success', text: `Pelanggan "${name}" berhasil dibuat.` };
     res.redirect('/tech/customers/new');
   } catch (e) {
