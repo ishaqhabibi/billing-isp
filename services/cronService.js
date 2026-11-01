@@ -56,6 +56,9 @@ function addMessageVariation(message, index) {
 }
 
 function startCronJobs() {
+  const cronTz = getSetting('timezone', 'Asia/Jakarta') || 'Asia/Jakarta';
+  const cronOptions = { scheduled: true, timezone: cronTz };
+
   // 1. Generate Tagihan Otomatis setiap tanggal 1 jam 00:01
   cron.schedule('1 0 1 * *', () => {
     const now = new Date();
@@ -69,7 +72,7 @@ function startCronJobs() {
     } catch (error) {
       logger.error(`[CRON] Gagal generate tagihan otomatis: ${error.message}`);
     }
-  });
+  }, cronOptions);
 
   // 2. Isolir Otomatis setiap hari jam 02:00
   cron.schedule('0 2 * * *', async () => {
@@ -178,7 +181,7 @@ function startCronJobs() {
     }
 
     logger.info(`[CRON] Selesai pengecekan isolir. Total ${isolatedCount} pelanggan baru di-isolir.`);
-  });
+  }, cronOptions);
 
   cron.schedule('0 9 * * *', async () => {
     const enabled = getSetting('whatsapp_auto_billing_enabled', false);
@@ -461,7 +464,7 @@ function startCronJobs() {
     }
 
     logger.info(`[CRON] Pengingat tagihan otomatis selesai: target=${targetCount}, terkirim=${sent}, gagal=${failed}`);
-  });
+  }, cronOptions);
 
   // 4. Jam Kalong (Night Speed) Start - Jam 00:00
   cron.schedule('0 0 * * *', async () => {
