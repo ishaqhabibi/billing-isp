@@ -29,6 +29,11 @@
       <div class="alert alert-<%= msg.type==='error'?'d':'s' %>"><%= msg.text %></div>
     <% } %>
 
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <a href="/admin/collector-payments" class="btn btn-p btn-sm fw6"><i class="bi bi-receipt"></i> Tagihan Pelanggan</a>
+      <a href="/admin/collector-settlements" class="btn btn-g btn-sm fw6"><i class="bi bi-wallet2"></i> Setoran Kas Kolektor</a>
+    </div>
+
     <div class="card">
       <div class="card-hd">
         <h6><i class="bi bi-list-ul"></i> Daftar Request (<%= (rows || []).length %>)</h6>

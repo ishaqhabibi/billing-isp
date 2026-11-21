@@ -1662,25 +1662,46 @@ router.post('/areas/:id/delete', requireAdminSession, (req, res) => {
 
 router.get('/collector-payments', requireAdminSession, requireSidebarMenuAccess('collector_payments'), (req, res) => {
   const status = String(req.query.status || 'pending').trim() || 'pending';
-  const rows = db.prepare(`
-    SELECT r.*,
-           col.name as collector_name, col.username as collector_username,
-           i.period_month, i.period_year, i.amount as invoice_amount, i.status as invoice_status,
-           c.name as customer_name, c.phone as customer_phone, c.address as customer_address, c.lat, c.lng
-    FROM collector_payment_requests r
-    JOIN collectors col ON col.id = r.collector_id
-    JOIN invoices i ON i.id = r.invoice_id
-    JOIN customers c ON c.id = r.customer_id
-    WHERE r.status = ?
-    ORDER BY r.id DESC
-    LIMIT 500
-  `).all(status);
+  
+  let counts = { pending: 0, approved: 0, rejected: 0, all: 0 };
+  try {
+    const cRows = db.prepare(`SELECT status, COUNT(*) as c FROM collector_payment_requests GROUP BY status`).all();
+    cRows.forEach(r => {
+      const st = String(r.status || '').toLowerCase();
+      if (counts[st] !== undefined) counts[st] = Number(r.c || 0);
+      counts.all += Number(r.c || 0);
+    });
+  } catch (err) {}
+
+  let rows = [];
+  try {
+    let query = `
+      SELECT r.*,
+             col.name as collector_name, col.username as collector_username,
+             i.period_month, i.period_year, i.amount as invoice_amount, i.status as invoice_status,
+             c.name as customer_name, c.phone as customer_phone, c.address as customer_address, c.lat, c.lng
+      FROM collector_payment_requests r
+      JOIN collectors col ON col.id = r.collector_id
+      JOIN invoices i ON i.id = r.invoice_id
+      JOIN customers c ON c.id = r.customer_id
+    `;
+    let params = [];
+    if (status !== 'all') {
+      query += ` WHERE r.status = ?`;
+      params.push(status);
+    }
+    query += ` ORDER BY r.id DESC LIMIT 500`;
+    rows = db.prepare(query).all(...params);
+  } catch (err) {
+    logger.warn('Error querying collector_payments: ' + err.message);
+  }
 
   res.render('admin/collector_payments', {
     title: 'Approval Pembayaran Kolektor',
     company: company(),
     activePage: 'collector_payments',
     status,
+    counts,
     rows,
     msg: flashMsg(req)
   });
@@ -1782,6 +1803,95 @@ router.post('/collector-payments/:id/reject', requireAdminSession, express.urlen
     req.session._msg = { type: 'success', text: 'Request ditolak.' };
   } catch (e) {
     req.session._msg = { type: 'error', text: 'Gagal: ' + (e.message || String(e)) };
+  }
+  res.redirect('back');
+});
+
+// ─── COLLECTOR CASH SETTLEMENTS (SETORAN KAS KOLEKTOR) ──────────────────────
+router.get('/collector-settlements', requireAdminSession, requireSidebarMenuAccess('collector_settlements'), (req, res) => {
+  const status = String(req.query.status || 'pending').trim() || 'pending';
+  
+  let counts = { pending: 0, approved: 0, rejected: 0, all: 0 };
+  try {
+    const cRows = db.prepare(`SELECT status, COUNT(*) as c FROM collector_settlements GROUP BY status`).all();
+    cRows.forEach(r => {
+      const st = String(r.status || '').toLowerCase();
+      if (counts[st] !== undefined) counts[st] = Number(r.c || 0);
+      counts.all += Number(r.c || 0);
+    });
+  } catch (err) {}
+
+  let rows = [];
+  try {
+    let query = `
+      SELECT s.*, col.name as collector_name, col.username as collector_username, col.area as collector_area
+      FROM collector_settlements s
+      JOIN collectors col ON col.id = s.collector_id
+    `;
+    let params = [];
+    if (status !== 'all') {
+      query += ` WHERE s.status = ?`;
+      params.push(status);
+    }
+    query += ` ORDER BY s.id DESC LIMIT 200`;
+    rows = db.prepare(query).all(...params);
+  } catch (err) {
+    logger.warn('Error querying collector_settlements: ' + err.message);
+  }
+
+  res.render('admin/collector_settlements', {
+    title: 'Verifikasi Setoran Kas Kolektor',
+    company: company(),
+    activePage: 'collector_settlements',
+    status,
+    counts,
+    rows,
+    msg: flashMsg(req)
+  });
+});
+
+router.post('/collector-settlements/:id/approve', requireAdminSession, express.urlencoded({ extended: true }), (req, res) => {
+  try {
+    const id = Number(req.params.id || 0);
+    if (!Number.isFinite(id) || id <= 0) throw new Error('ID tidak valid');
+    const decidedNote = String(req.body.decided_note || '').trim();
+    const row = db.prepare(`SELECT * FROM collector_settlements WHERE id=?`).get(id);
+    if (!row) throw new Error('Pengajuan setoran tidak ditemukan');
+    if (String(row.status) !== 'pending') throw new Error('Pengajuan sudah diproses');
+
+    const approver = resolvePaidByName(req, 'Admin');
+    db.prepare(`
+      UPDATE collector_settlements
+      SET status='approved', decided_by_role=?, decided_by_name=?, decided_note=?, decided_at=(NOW_LOCAL())
+      WHERE id=?
+    `).run(req.session.isCashier ? 'cashier' : 'admin', approver, decidedNote, id);
+
+    req.session._msg = { type: 'success', text: `Setoran kas sebesar Rp ${Number(row.amount).toLocaleString('id-ID')} berhasil diterima kantor! Riwayat tersimpan di tab Approved.` };
+  } catch (e) {
+    req.session._msg = { type: 'error', text: 'Gagal memverifikasi setoran: ' + (e.message || String(e)) };
+  }
+  res.redirect('back');
+});
+
+router.post('/collector-settlements/:id/reject', requireAdminSession, express.urlencoded({ extended: true }), (req, res) => {
+  try {
+    const id = Number(req.params.id || 0);
+    if (!Number.isFinite(id) || id <= 0) throw new Error('ID tidak valid');
+    const decidedNote = String(req.body.decided_note || '').trim();
+    const row = db.prepare(`SELECT * FROM collector_settlements WHERE id=?`).get(id);
+    if (!row) throw new Error('Pengajuan setoran tidak ditemukan');
+    if (String(row.status) !== 'pending') throw new Error('Pengajuan sudah diproses');
+
+    const approver = resolvePaidByName(req, 'Admin');
+    db.prepare(`
+      UPDATE collector_settlements
+      SET status='rejected', decided_by_role=?, decided_by_name=?, decided_note=?, decided_at=(NOW_LOCAL())
+      WHERE id=?
+    `).run(req.session.isCashier ? 'cashier' : 'admin', approver, decidedNote, id);
+
+    req.session._msg = { type: 'success', text: 'Pengajuan setoran kas ditolak.' };
+  } catch (e) {
+    req.session._msg = { type: 'error', text: 'Gagal menolak setoran: ' + (e.message || String(e)) };
   }
   res.redirect('back');
 });

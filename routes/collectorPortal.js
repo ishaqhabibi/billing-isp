@@ -26,6 +26,28 @@ function flashMsg(req) {
   return m || null;
 }
 
+// Ensure collector_settlements table exists
+try {
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS collector_settlements (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      collector_id INTEGER NOT NULL,
+      amount INTEGER NOT NULL,
+      method TEXT NOT NULL DEFAULT 'cash',
+      note TEXT,
+      proof_file TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      decided_by_role TEXT,
+      decided_by_name TEXT,
+      decided_note TEXT,
+      created_at DATETIME DEFAULT (datetime('now', 'localtime')),
+      decided_at DATETIME
+    )
+  `).run();
+} catch (e) {
+  logger.error('Failed to create collector_settlements table: ' + e.message);
+}
+
 router.use((req, res, next) => {
   res.locals.session = req.session;
   res.locals.settings = getSettings();
@@ -181,11 +203,27 @@ router.get('/', requireCollectorSession, (req, res) => {
   const collectorArea = String(collectorObj?.area || req.session.collectorArea || '').trim();
   req.session.collectorArea = collectorArea;
 
+  let collectorAreaList = [];
+  if (collectorArea) {
+    try {
+      if (collectorArea.startsWith('[')) {
+        collectorAreaList = JSON.parse(collectorArea);
+      }
+    } catch (e) {}
+    if (!collectorAreaList.length) {
+      collectorAreaList = collectorArea.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
+    }
+  }
+
   let collectorWhere = '(c.collector_id = ? OR c.collector_id IS NULL OR c.collector_id = 0)';
   let collectorParams = [collectorId];
-  if (collectorArea) {
+  if (collectorAreaList.length === 1) {
     collectorWhere = '(c.collector_id = ? OR ((c.collector_id IS NULL OR c.collector_id = 0) AND LOWER(TRIM(c.area)) = LOWER(TRIM(?))))';
-    collectorParams = [collectorId, collectorArea];
+    collectorParams = [collectorId, collectorAreaList[0]];
+  } else if (collectorAreaList.length > 1) {
+    const placeholders = collectorAreaList.map(() => 'LOWER(TRIM(?))').join(',');
+    collectorWhere = `(c.collector_id = ? OR ((c.collector_id IS NULL OR c.collector_id = 0) AND LOWER(TRIM(c.area)) IN (${placeholders})))`;
+    collectorParams = [collectorId, ...collectorAreaList];
   }
   
   let q = `
@@ -329,6 +367,75 @@ router.get('/', requireCollectorSession, (req, res) => {
 
   const todayAttendance = attendanceSvc.getTodayAttendance('collector', collectorId);
 
+  // Load collector settlements (setoran kas ke kantor)
+  let mySettlements = [];
+  let kasDiTangan = Number(todayCollected.total || 0);
+  try {
+    mySettlements = db.prepare(`
+      SELECT * FROM collector_settlements
+      WHERE collector_id = ?
+      ORDER BY id DESC
+      LIMIT 30
+    `).all(collectorId);
+
+    const approvedSettlements = db.prepare(`
+      SELECT COALESCE(SUM(amount), 0) as total
+      FROM collector_settlements
+      WHERE collector_id = ? AND status = 'approved' AND DATE(created_at) = DATE('now', 'localtime')
+    `).get(collectorId)?.total || 0;
+
+    kasDiTangan = Math.max(0, kasDiTangan - Number(approvedSettlements));
+  } catch (errSet) {
+    logger.warn('Failed to load collector settlements: ' + errSet.message);
+  }
+
+  // Get all customers with valid coordinates for the interactive field routing map
+    // Load latest promise for each customer
+  let latestPromises = new Map();
+  try {
+    const pRows = db.prepare(`
+      SELECT customer_id, promised_day, note, created_at
+      FROM collector_promises
+      WHERE id IN (
+        SELECT MAX(id) FROM collector_promises GROUP BY customer_id
+      )
+    `).all();
+    pRows.forEach(p => {
+      latestPromises.set(p.customer_id, p);
+    });
+  } catch (eP) {}
+
+  let mapTargets = [];
+  try {
+    mapTargets = db.prepare(`
+      SELECT c.id as customer_id,
+             c.name as customer_name,
+             c.phone as customer_phone,
+             c.address as customer_address,
+             c.area as customer_area,
+             c.pppoe_username,
+             c.status as customer_status,
+             c.isolate_day,
+             c.billing_day,
+             c.lat, c.lng,
+             p.name as package_name,
+             p.price as package_price,
+             i.id as invoice_id,
+             i.status as invoice_status,
+             COALESCE(i.amount, p.price, 0) as invoice_amount,
+             i.period_month,
+             i.period_year
+      FROM customers c
+      LEFT JOIN packages p ON c.package_id = p.id
+      LEFT JOIN invoices i ON i.customer_id = c.id AND i.period_month = ? AND i.period_year = ?
+      WHERE ${collectorWhere}
+        AND c.lat IS NOT NULL AND c.lng IS NOT NULL AND length(trim(c.lat)) > 0 AND length(trim(c.lng)) > 0
+      ORDER BY c.name ASC
+    `).all(month, year, ...collectorParams);
+  } catch (errMap) {
+    logger.warn('Failed to load map targets: ' + errMap.message);
+  }
+
   res.render('collector/dashboard', {
     title: 'Dashboard Kolektor',
     company: company(),
@@ -340,12 +447,168 @@ router.get('/', requireCollectorSession, (req, res) => {
     todayDay,
     summary,
     todayCollected,
+    kasDiTangan,
+    mySettlements,
     todayAttendance,
     invoices: list,
+    latestPromises,
     pendingMap,
     myReqs,
+    mapTargets,
+    collectorAreaList,
     msg: flashMsg(req)
   });
+});
+
+// Submit Serah Terima / Setor Kas ke Kantor
+router.post('/settle-cash', requireCollectorSession, express.urlencoded({ extended: true }), (req, res) => {
+  try {
+    const collectorId = Number(req.session.collectorId || 0);
+    const amount = parseInt(String(req.body.amount || '').replace(/\D/g, ''), 10);
+    const method = String(req.body.method || 'cash').trim();
+    const note = String(req.body.note || '').trim();
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new Error('Nominal setoran kas harus lebih besar dari 0');
+    }
+
+    db.prepare(`
+      INSERT INTO collector_settlements (collector_id, amount, method, note, status, created_at)
+      VALUES (?, ?, ?, ?, 'pending', (NOW_LOCAL()))
+    `).run(collectorId, amount, method, note);
+
+    req.session._msg = {
+      type: 'success',
+      text: `Pengajuan setor kas sebesar Rp ${amount.toLocaleString('id-ID')} berhasil dikirim dan menunggu verifikasi admin/kasir kantor.`
+    };
+  } catch (e) {
+    req.session._msg = { type: 'error', text: 'Gagal mengajukan setor kas: ' + (e.message || String(e)) };
+  }
+  res.redirect('/collector#screenTabSetoran');
+});
+
+// Submit Janji Bayar / Reschedule Kunjungan Kolektor
+router.post('/promise', requireCollectorSession, express.urlencoded({ extended: true }), (req, res) => {
+  try {
+    const customerId = Number(req.body.customer_id || 0);
+    const promisedDay = Number(req.body.promised_day || 0);
+    const note = String(req.body.note || '').trim();
+    const collectorId = Number(req.session.collectorId || 0);
+
+    if (!customerId || customerId <= 0) throw new Error('ID Pelanggan tidak valid');
+    if (!promisedDay || promisedDay < 1 || promisedDay > 31) throw new Error('Tanggal janji bayar harus antara 1 s/d 31');
+
+    const cust = db.prepare('SELECT id, name, billing_day, isolate_day FROM customers WHERE id = ?').get(customerId);
+    if (!cust) throw new Error('Pelanggan tidak ditemukan');
+
+    const origDay = cust.billing_day || cust.isolate_day || null;
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS collector_promises (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id INTEGER NOT NULL,
+        collector_id INTEGER NOT NULL,
+        original_day INTEGER,
+        promised_day INTEGER NOT NULL,
+        note TEXT,
+        created_at DATETIME DEFAULT (DATETIME('now', 'localtime'))
+      )
+    `);
+
+    db.prepare(`
+      INSERT INTO collector_promises (customer_id, collector_id, original_day, promised_day, note)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(customerId, collectorId, origDay, promisedDay, note);
+
+    // Update billing_day pelanggan agar jadwal kunjungan berpindah ke tanggal baru
+    db.prepare(`
+      UPDATE customers
+      SET billing_day = ?
+      WHERE id = ?
+    `).run(promisedDay, customerId);
+
+    // Catat ke catatan pelanggan secara ringkas untuk riwayat admin
+    if (note) {
+      const nowStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+      const appendNote = `[Janji Bayar: Tgl ${promisedDay} (${nowStr}) - ${note}]`;
+      db.prepare(`
+        UPDATE customers
+        SET notes = CASE WHEN notes IS NULL OR notes = '' THEN ? ELSE notes || ' ' || ? END
+        WHERE id = ?
+      `).run(appendNote, appendNote, customerId);
+    }
+
+    req.session._msg = {
+      type: 'success',
+      text: `Jadwal penagihan ${cust.name} berhasil diatur ke tanggal ${promisedDay}.${note ? ' (' + note + ')' : ''}`
+    };
+  } catch (err) {
+    req.session._msg = { type: 'error', text: 'Gagal mengatur janji bayar: ' + err.message };
+  }
+  res.redirect('back');
+});
+
+// Change Password for Collector
+router.post('/change-password', requireCollectorSession, express.urlencoded({ extended: true }), express.json(), (req, res) => {
+  const isAjax = req.xhr || req.headers.accept?.indexOf('json') > -1 || req.headers['content-type']?.indexOf('json') > -1;
+  try {
+    const collectorId = Number(req.session.collectorId || 0);
+    const oldPass = String(req.body.old_password || '').trim();
+    const newPass = String(req.body.new_password || '').trim();
+    const confirmPass = String(req.body.confirm_password || '').trim();
+
+    if (!collectorId) throw new Error('Sesi kolektor tidak valid.');
+    if (!oldPass) throw new Error('Password saat ini wajib diisi.');
+    if (!newPass) throw new Error('Password baru wajib diisi.');
+    if (newPass.length < 4) throw new Error('Password baru minimal 4 karakter.');
+    if (newPass !== confirmPass) throw new Error('Konfirmasi password baru tidak cocok.');
+
+    const col = db.prepare('SELECT password FROM collectors WHERE id = ?').get(collectorId);
+    if (!col) throw new Error('Data kolektor tidak ditemukan.');
+    if (col.password !== oldPass) throw new Error('Password saat ini salah.');
+
+    db.prepare('UPDATE collectors SET password = ? WHERE id = ?').run(newPass, collectorId);
+
+    if (isAjax) {
+      return res.json({ success: true, message: 'Password Anda berhasil diperbarui.' });
+    }
+    req.session._msg = { type: 'success', text: 'Password berhasil diubah!' };
+    res.redirect('back');
+  } catch (err) {
+    if (isAjax) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+    req.session._msg = { type: 'error', text: 'Gagal mengubah password: ' + err.message };
+    res.redirect('back');
+  }
+});
+
+// Update Profile (Name) for Collector
+router.post('/update-profile', requireCollectorSession, express.urlencoded({ extended: true }), express.json(), (req, res) => {
+  const isAjax = req.xhr || req.headers.accept?.indexOf('json') > -1 || req.headers['content-type']?.indexOf('json') > -1;
+  try {
+    const collectorId = Number(req.session.collectorId || 0);
+    const newName = String(req.body.name || '').trim();
+
+    if (!collectorId) throw new Error('Sesi kolektor tidak valid.');
+    if (!newName) throw new Error('Nama lengkap tidak boleh kosong.');
+    if (newName.length < 2) throw new Error('Nama minimal 2 karakter.');
+
+    db.prepare('UPDATE collectors SET name = ? WHERE id = ?').run(newName, collectorId);
+    req.session.collectorName = newName;
+
+    if (isAjax) {
+      return res.json({ success: true, message: 'Nama profil berhasil disimpan.', name: newName });
+    }
+    req.session._msg = { type: 'success', text: 'Profil berhasil diperbarui!' };
+    res.redirect('back');
+  } catch (err) {
+    if (isAjax) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+    req.session._msg = { type: 'error', text: 'Gagal memperbarui profil: ' + err.message };
+    res.redirect('back');
+  }
 });
 
 router.post('/payment-request', requireCollectorSession, express.urlencoded({ extended: true }), async (req, res) => {

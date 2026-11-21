@@ -40,8 +40,8 @@ function toggleAppTheme() {
 function updateThemeToggleIcons(theme) {
   const isLight = (theme === 'light');
   document.querySelectorAll('.theme-toggle-icon').forEach(icon => {
-    icon.className = isLight ? 'bi bi-sun-fill theme-toggle-icon' : 'bi bi-moon-stars-fill theme-toggle-icon';
-    icon.style.color = isLight ? '#f59e0b' : '#38bdf8';
+    icon.className = isLight ? 'bi bi-moon-stars-fill theme-toggle-icon' : 'bi bi-sun-fill theme-toggle-icon';
+    icon.style.color = isLight ? '#ffffff' : '#fbbf24';
   });
   document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
     btn.setAttribute('title', isLight ? 'Ganti ke Mode Gelap (Dark)' : 'Ganti ke Mode Terang (Light)');

@@ -39,6 +39,7 @@ const MENU_DEFINITIONS = [
   { key: 'billing', section: 'billing', href: '/admin/billing', icon: 'bi bi-receipt', labelKey: 'admin.nav.invoices', labelDefault: 'Tagihan', roles: ['admin', 'cashier'], bottomNav: true, activePages: ['billing'] },
   { key: 'digiflazz', section: 'billing', href: '/admin/digiflazz', icon: 'bi bi-phone', labelKey: 'admin.nav.digiflazz', labelDefault: 'Digiflazz', roles: ['admin'], activePages: ['digiflazz'] },
   { key: 'collector_payments', section: 'billing', href: '/admin/collector-payments', icon: 'bi bi-check2-square', labelKey: 'admin.nav.collector_payments', labelDefault: 'Approval Kolektor', roles: ['admin', 'cashier'], activePages: ['collector_payments'] },
+  { key: 'collector_settlements', section: 'billing', href: '/admin/collector-settlements', icon: 'bi bi-wallet2', labelKey: 'admin.nav.collector_settlements', labelDefault: 'Setoran Kolektor', roles: ['admin', 'cashier'], activePages: ['collector_settlements'] },
 
   { key: 'reports', section: 'finance', href: '/admin/reports', icon: 'bi bi-bar-chart-line', labelKey: 'admin.nav.finance_report', labelDefault: 'Laporan Keuangan', roles: ['admin', 'cashier'], activePages: ['reports'] },
   { key: 'cashiers_reports', section: 'finance', href: '/admin/cashiers/reports', icon: 'bi bi-journal-text', labelKey: 'admin.nav.cashiers_reports', labelDefault: 'Laporan Kasir', roles: ['admin', 'cashier'], activePages: ['cashiers_reports'] },
@@ -90,6 +91,7 @@ const DEFAULT_MENU_STATES = {
   reports: STATE_VISIBLE,
   cashiers_reports: STATE_VISIBLE,
   collector_payments: STATE_VISIBLE,
+  collector_settlements: STATE_VISIBLE,
   tickets: STATE_VISIBLE,
   inventory: STATE_VISIBLE,
   attendance: STATE_VISIBLE,
