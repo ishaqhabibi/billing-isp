@@ -2122,22 +2122,50 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
+      gap: 10px;
     }
 
     .target-order-badge {
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 800;
       background: var(--m3-primary-container);
       color: var(--m3-primary);
-      padding: 2px 10px;
+      padding: 4px 10px;
       border-radius: 99px;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      box-shadow: 0 1px 4px rgba(2, 132, 199, 0.15);
+    }
+
+    .target-dist-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--m3-surface-container-high);
+      border: 1px solid var(--m3-outline-variant);
+      border-radius: 99px;
+      padding: 3px 10px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--m3-on-surface);
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .target-dist-pill.is-road {
+      background: rgba(2, 132, 199, 0.08);
+      border-color: rgba(2, 132, 199, 0.3);
+      color: var(--m3-primary);
     }
 
     .target-dist-val {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 800;
-      color: #059669;
+      color: inherit;
+      white-space: nowrap;
     }
 
     .btn-map-recenter {
@@ -3350,24 +3378,20 @@
                 <!-- 2. EXPANDED FULL BODY (Hidden when .is-minimized) -->
                 <div class="drawer-expanded-body">
                   <div class="target-drawer-header">
-                    <div class="d-flex align-items-center gap-2" style="flex: 1; min-width: 0;">
-                      <!-- Quick Stepper inline with order badge -->
-                      <div class="drawer-stepper-pill">
-                        <button type="button" class="btn-stepper-step" onclick="stepTargetDrawer(-1)" title="Sebelumnya">
-                          <i class="bi bi-chevron-left"></i>
-                        </button>
-                        <span class="target-order-badge" id="drawerTargetOrderBadge" style="background:transparent; padding:0 4px;">#1</span>
-                        <button type="button" class="btn-stepper-step" onclick="stepTargetDrawer(1)" title="Berikutnya">
-                          <i class="bi bi-chevron-right"></i>
-                        </button>
-                      </div>
-                      <span class="badge bg-primary-subtle text-primary border border-primary border-opacity-25"
-                        style="font-size:10px; font-weight:700; white-space:nowrap;" id="drawerRoutePill">
-                        <i class="bi bi-sign-turn-right-fill me-1"></i>Rute Jalan
+                    <!-- Left: Target Badge (Spacious, bold, single-line) -->
+                    <div class="d-flex align-items-center gap-2" style="min-width: 0;">
+                      <span class="target-order-badge" id="drawerTargetOrderBadge">
+                        <i class="bi bi-geo-alt-fill me-1"></i>Target #1 dari 2
                       </span>
                     </div>
+
+                    <!-- Right: Unified Road Route & Distance Telemetry + Minimize Toggle -->
                     <div class="d-flex align-items-center gap-2" style="flex-shrink: 0;">
-                      <span class="target-dist-val" id="drawerTargetDist" style="white-space:nowrap;">0 m</span>
+                      <div class="target-dist-pill is-road" id="drawerTargetDistWrap" title="Rute Navigasi Jalan">
+                        <i class="bi bi-sign-turn-right-fill text-primary" id="drawerRouteIcon"></i>
+                        <span class="target-dist-val" id="drawerTargetDist">0 m</span>
+                      </div>
+                      <span id="drawerRoutePill" style="display: none;"></span>
                       <button type="button" class="btn-drawer-toggle" onclick="toggleDrawerMinimize()"
                         title="Kecilkan Kartu">
                         <i class="bi bi-chevron-down"></i>
@@ -5145,9 +5169,11 @@
       lastRouteOrigin = [origin[0], origin[1]];
 
       const drawerDistEl = document.getElementById('drawerTargetDist');
+      const drawerDistWrap = document.getElementById('drawerTargetDistWrap');
+      const drawerRouteIcon = document.getElementById('drawerRouteIcon');
       const drawerRoutePill = document.getElementById('drawerRoutePill');
       if (drawerDistEl) {
-        drawerDistEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width:11px;height:11px;"></span> Rute jalan...';
+        drawerDistEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width:10px;height:10px;"></span> Hitung...';
       }
 
       const result = await fetchRoadRoute(origin[0], origin[1], target.lat, target.lng);
@@ -5162,21 +5188,26 @@
         `${Math.round(result.distanceMeters)} m`;
 
       if (drawerDistEl) {
-        drawerDistEl.innerHTML = `<i class="bi bi-compass me-1"></i>${distText}`;
+        drawerDistEl.textContent = distText;
+      }
+      if (drawerRouteIcon) {
+        drawerRouteIcon.className = result.isRoadRoute ?
+          'bi bi-sign-turn-right-fill text-primary' :
+          'bi bi-compass text-secondary';
+      }
+      if (drawerDistWrap) {
+        drawerDistWrap.className = result.isRoadRoute ?
+          'target-dist-pill is-road' :
+          'target-dist-pill';
+        drawerDistWrap.title = result.isRoadRoute ? 'Rute Navigasi Jalan' : 'Jarak Garis Lurus';
+      }
+      if (drawerRoutePill) {
+        drawerRoutePill.style.display = 'none';
       }
       const peekDist = document.getElementById('peekCustDist');
       if (peekDist) {
         peekDist.textContent = result.isRoadRoute ? `• ${km} km (${minutes} mnt)` : `• ${Math.round(result.distanceMeters)} m`;
       }
-      if (drawerRoutePill) {
-        drawerRoutePill.className = result.isRoadRoute ?
-          'badge bg-primary-subtle text-primary border border-primary border-opacity-25' :
-          'badge bg-secondary-subtle text-secondary';
-        drawerRoutePill.innerHTML = result.isRoadRoute ?
-          '<i class="bi bi-sign-turn-right-fill me-1"></i>Rute Jalan' :
-          '<i class="bi bi-dash me-1"></i>Garis Lurus';
-      }
-
       if (shouldFitBounds && result.latlngs.length > 0) {
         const bounds = L.latLngBounds([origin, [target.lat, target.lng], ...result.latlngs]);
         collectorMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
@@ -5298,7 +5329,7 @@
       const custAddress = target.customer_address || target.address || '-';
       const custAmount = target.invoice_amount || target.package_price || target.amount || 0;
 
-      document.getElementById('drawerTargetOrderBadge').textContent = `#${index + 1} dari ${filteredTargets.length}`;
+      document.getElementById('drawerTargetOrderBadge').innerHTML = `<i class="bi bi-geo-alt-fill me-1"></i>Target #${index + 1} dari ${filteredTargets.length}`;
       document.getElementById('drawerCustName').textContent = custName;
       document.getElementById('drawerCustAddress').textContent = custAddress;
       document.getElementById('drawerCustAmount').textContent = 'Rp ' + Number(custAmount).toLocaleString('id-ID');
