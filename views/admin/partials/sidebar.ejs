@@ -1,73 +1,98 @@
 <!-- views/admin/partials/sidebar.ejs -->
 <script src="/js/theme.js"></script>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
 <aside class="sidebar" id="sidebar">
-  <div class="sb-brand">
-    <div class="sb-icon"><i class="bi bi-wifi"></i></div>
-    <div style="flex:1">
-      <div class="sb-name">
-        <%= company %>
-      </div>
-      <div class="sb-sub"><%= t('admin.panel', 'Admin Panel') %></div>
-      <div style="margin-top:8px;display:flex;gap:6px;align-items:center">
-        <a href="/lang/id" class="btn btn-g btn-sm" style="padding:4px 8px">ID</a>
-        <a href="/lang/en" class="btn btn-g btn-sm" style="padding:4px 8px">EN</a>
-        <button type="button" class="btn btn-g btn-sm theme-toggle-btn" onclick="toggleAppTheme()" title="Ganti Tema Dark / Light" style="padding:4px 8px;margin-left:auto">
-          <i class="bi bi-moon-stars-fill theme-toggle-icon" style="color:#fbbf24"></i> Tema
-        </button>
-      </div>
-      <% if (typeof multiRouterMode !== 'undefined' && multiRouterMode && allActiveRouters && allActiveRouters.length > 0) { %>
-        <div style="margin-top:10px;padding:8px;background:rgba(255,255,255,0.06);border-radius:10px;border:1px solid rgba(255,255,255,0.1)">
-          <div style="font-size:11px;color:#94a3b8;margin-bottom:4px;font-weight:600;display:flex;align-items:center;gap:4px">
-            <i class="bi bi-router"></i> Router Filter
-          </div>
-          <select class="form-select form-select-sm" style="font-size:12px;cursor:pointer" onchange="window.location.href='/admin/set-active-router?router_id=' + this.value">
-            <option value="all" <%= (!selectedRouterId) ? 'selected' : '' %>>🌐 Semua Router (<%= allActiveRouters.length %>)</option>
-            <% allActiveRouters.forEach(r => { %>
-              <option value="<%= r.id %>" <%= (selectedRouterId === r.id) ? 'selected' : '' %>>
-                🔌 <%= r.name %> (<%= r.host %>)
-              </option>
-            <% }) %>
-          </select>
-        </div>
-      <% } %>
+  <!-- ── 1. FIGCRAFT BRAND HEADER ── -->
+  <div class="sb-brand-header">
+    <div class="sb-logo-circle">
+      <span>NOC</span>
     </div>
-    <button class="sb-close btn-g btn-sm" onclick="toggleSidebar()"><i class="bi bi-x-lg"></i></button>
+    <div class="sb-text-stack">
+      <div class="sb-brand-title">NOC System</div>
+      <div class="sb-brand-sub"><%= (typeof company !== 'undefined' && company) ? company : 'Bionfiber' %> Billing</div>
+      <div class="sb-version-pill">v4.8.1</div>
+    </div>
+    <button type="button" class="sb-close d-md-none" onclick="toggleSidebar()" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
   </div>
-  <nav class="sb-nav">
-    <% (sidebarSections || []).forEach((section) => { %>
-      <div class="sb-section"><%= section.labelKey ? t(section.labelKey, section.labelDefault) : section.labelDefault %></div>
-      <% section.items.forEach((item) => { %>
-        <a
-          href="<%= item.hrefResolved %>"
-          class="sb-item <%= (item.activePages || []).includes(activePage) ? 'active' : '' %>"
-          <% if (item.locked) { %>
-            onclick='return showLockedMenuNotice(<%- JSON.stringify(item.lockedMessage) %>)'
-          <% } %>
-        >
-          <i class="<%= item.icon %>"></i>
-          <span><%= item.labelKey ? t(item.labelKey, item.labelDefault) : item.labelDefault %></span>
-          <% if (item.locked) { %>
-            <span style="margin-left:auto;padding:2px 8px;border-radius:999px;background:rgba(245,158,11,.18);color:#fde68a;font-size:11px">Kunci</span>
-          <% } %>
-        </a>
-      <% }) %>
+
+  <!-- ── 2. FIGCRAFT STATUS ROW (SISTEM AKTIF) ── -->
+  <div class="sb-status-row">
+    <span class="sb-status-dot"></span>
+    <span class="sb-status-label">SISTEM AKTIF</span>
+  </div>
+
+  <!-- ── ROUTER FILTER (MULTI-ROUTER MODE) ── -->
+  <% if (typeof multiRouterMode !== 'undefined' && multiRouterMode && allActiveRouters && allActiveRouters.length > 0) { %>
+    <div class="sb-router-filter" style="margin: 0 15px 10px; padding: 6px 8px; border-radius: 8px; background: var(--sb-item-hover-bg); border: 1px solid var(--sb-border);">
+      <div style="font-size:10px; color:var(--sb-group-title); margin-bottom:4px; font-weight:700; display:flex; align-items:center; gap:4px; text-transform:uppercase;">
+        <i class="bi bi-router"></i> Router Filter
+      </div>
+      <select class="form-select form-select-sm" style="font-size:11px; padding:3px 6px; cursor:pointer; width:100%; border-radius:6px; background:transparent; color:var(--sb-item-text); border:1px solid var(--sb-border);" onchange="window.location.href='/admin/set-active-router?router_id=' + this.value">
+        <option value="all" <%= (!selectedRouterId) ? 'selected' : '' %>>🌐 Semua Router (<%= allActiveRouters.length %>)</option>
+        <% allActiveRouters.forEach(r => { %>
+          <option value="<%= r.id %>" <%= (selectedRouterId === r.id) ? 'selected' : '' %>>
+            🔌 <%= r.name %> (<%= r.host %>)
+          </option>
+        <% }) %>
+      </select>
+    </div>
+  <% } %>
+
+  <!-- ── 3. FIGCRAFT NAV CONTAINER (ACCORDION GROUPS) ── -->
+  <nav class="sb-nav" id="sidebarNav">
+    <% (sidebarSections || []).forEach((section, sIdx) => { %>
+      <div class="sb-group">
+        <div class="sb-group-header" onclick="toggleNavGroup('sbGroup_<%= sIdx %>')">
+          <span class="sb-group-title"><%= section.labelKey ? t(section.labelKey, section.labelDefault) : section.labelDefault %></span>
+          <i class="bi bi-chevron-down sb-group-chevron" id="chevron_<%= sIdx %>"></i>
+        </div>
+        <div class="sb-group-list" id="sbGroup_<%= sIdx %>">
+          <% section.items.forEach((item) => { %>
+            <a
+              href="<%= item.hrefResolved %>"
+              class="sb-item <%= (item.activePages || []).includes(activePage) ? 'active' : '' %>"
+              <% if (item.locked) { %>
+                onclick='return showLockedMenuNotice(<%- JSON.stringify(item.lockedMessage) %>)'
+              <% } %>
+            >
+              <i class="<%= item.icon %> sb-item-icon"></i>
+              <span class="sb-item-label"><%= item.labelKey ? t(item.labelKey, item.labelDefault) : item.labelDefault %></span>
+              <% if (item.locked) { %>
+                <span class="sb-lock-pill">Kunci</span>
+              <% } %>
+            </a>
+          <% }) %>
+        </div>
+      </div>
     <% }) %>
 
-    <div class="sb-section">KONTROL</div>
-    <a href="/admin/sidebar-settings" class="sb-item <%= activePage==='sidebar_settings' ? 'active' : '' %>">
-      <i class="bi bi-layout-sidebar-inset"></i><span>Pengaturan Sidebar</span>
-    </a>
-
-    <a href="/admin/logout" class="sb-item logout">
-      <i class="bi bi-box-arrow-left"></i><span><%= t('common.logout', 'Logout') %></span>
-    </a>
+    <div class="sb-group" style="margin-top:4px;">
+      <a href="/admin/sidebar-settings" class="sb-item <%= activePage==='sidebar_settings' ? 'active' : '' %>">
+        <i class="bi bi-layout-sidebar-inset sb-item-icon"></i>
+        <span class="sb-item-label">Pengaturan Sidebar</span>
+      </a>
+    </div>
   </nav>
+
+  <!-- ── 4. FIGCRAFT USER FOOTER CARD ── -->
+  <div class="sb-user-footer">
+    <div class="sb-user-avatar">
+      <span><%= (typeof session !== 'undefined' && session && session.adminUser ? session.adminUser.substring(0, 2).toUpperCase() : 'AD') %></span>
+    </div>
+    <div class="sb-user-meta">
+      <div class="sb-user-name"><%= (typeof session !== 'undefined' && session && session.adminUser) ? session.adminUser : 'Administrator' %></div>
+      <div class="sb-user-role"><%= (typeof session !== 'undefined' && session && session.isCashier) ? 'Kasir Billing' : 'Admin ISP' %></div>
+    </div>
+    <a href="/admin/logout" class="sb-logout-btn" title="Keluar">
+      <i class="bi bi-box-arrow-right"></i>
+    </a>
+  </div>
 </aside>
 
 <script>
 (function() {
-  const sb = document.getElementById('sidebar');
+  const sb = document.getElementById('sidebarNav');
   if (!sb) return;
 
   function restoreSidebarScroll() {
@@ -117,6 +142,18 @@
     }
   });
 })();
+
+function toggleNavGroup(id) {
+  const list = document.getElementById(id);
+  if (!list) return;
+  const isHidden = list.style.display === 'none';
+  list.style.display = isHidden ? 'flex' : 'none';
+  const chevronId = id.replace('sbGroup_', 'chevron_');
+  const chevron = document.getElementById(chevronId);
+  if (chevron) {
+    chevron.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+  }
+}
 </script>
 
 <div id="lockedMenuModal" style="display:none;position:fixed;inset:0;z-index:1200;background:rgba(2,6,23,.72);backdrop-filter:blur(4px);padding:16px;align-items:center;justify-content:center">
@@ -163,8 +200,8 @@
   function toggleSidebar() {
     const sb = document.getElementById('sidebar');
     const ov = document.getElementById('sidebarOverlay');
-    sb.classList.toggle('open');
-    ov.classList.toggle('show');
+    if (sb) sb.classList.toggle('open');
+    if (ov) ov.classList.toggle('show');
   }
 
   function showLockedMenuNotice(message) {
@@ -192,7 +229,6 @@
     if (event.key === 'Escape') hideLockedMenuNotice();
   });
 </script>
-
 
 <!-- Bottom Navigation (Mobile Only) -->
 <nav class="bottom-nav" id="bottomNav">

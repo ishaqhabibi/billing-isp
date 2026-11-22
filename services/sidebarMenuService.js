@@ -20,54 +20,56 @@ const STATE_LOCKED = 'locked';
 const VALID_STATES = new Set([STATE_VISIBLE, STATE_HIDDEN, STATE_LOCKED]);
 
 const MENU_DEFINITIONS = [
-  { key: 'dashboard', section: 'main', href: '/admin', icon: 'bi bi-speedometer2', labelKey: 'admin.nav.dashboard', labelDefault: 'Dashboard', roles: ['admin', 'cashier'], bottomNav: true, activePages: ['dashboard'] },
-  { key: 'mikrotik', section: 'main', href: '/admin/mikrotik', icon: 'bi bi-router', labelKey: 'admin.nav.mikrotik', labelDefault: 'MikroTik', roles: ['admin', 'cashier'], bottomNav: true, activePages: ['mikrotik', 'routers', 'vouchers'] },
-  { key: 'radius_server', section: 'main', href: '/admin/radius-settings', icon: 'bi bi-broadcast', labelKey: 'admin.nav.radius_server', labelDefault: 'RADIUS Server', roles: ['admin', 'cashier'], activePages: ['radius_settings'] },
-  { key: 'map', section: 'main', href: '/admin/map', icon: 'bi bi-diagram-3-fill', labelKey: 'admin.nav.network_map', labelDefault: 'Topologi Jaringan', roles: ['admin', 'cashier'], activePages: ['map'] },
-  { key: 'acs_pro', section: 'main', href: '/admin/acs', icon: 'bi bi-hdd-network', labelKey: 'admin.nav.acs_pro', labelDefault: 'GenieACS Pro', roles: ['admin'], activePages: ['acs_pro'] },
-  { key: 'onu_provision', section: 'main', href: '/admin/onu-provision', icon: 'bi bi-hdd-network-fill', labelKey: 'admin.nav.onu_provision', labelDefault: 'ONU Provision', roles: ['admin'], activePages: ['onu_provision'] },
-  { key: 'olts', section: 'main', href: '/admin/olts', icon: 'bi bi-hdd-fill', labelKey: 'admin.nav.olt_management', labelDefault: 'Manajemen OLT', roles: ['admin'], activePages: ['olts'] },
-  { key: 'whatsapp', section: 'main', href: '/admin/whatsapp', icon: 'bi bi-whatsapp', labelKey: 'admin.nav.whatsapp', labelDefault: 'WhatsApp', roles: ['admin', 'cashier'], activePages: ['whatsapp'] },
-  { key: 'broadcast', section: 'main', href: '/admin/whatsapp/broadcast', icon: 'bi bi-megaphone', labelKey: 'admin.broadcast.title', labelDefault: 'Broadcast WhatsApp', roles: ['admin', 'cashier'], activePages: ['broadcast'] },
-  { key: 'whatsapp_live_chat', section: 'main', href: '/admin/whatsapp/live-chat', icon: 'bi bi-chat-dots-fill', labelKey: 'admin.nav.whatsapp_live_chat', labelDefault: 'Live Chat WA', roles: ['admin', 'cashier'], activePages: ['whatsapp_live_chat'] },
-  { key: 'promo_slides', section: 'billing', href: '/admin/promo-slides', icon: 'bi bi-image', labelKey: 'admin.nav.promo_slides', labelDefault: 'Promo Slides', roles: ['admin'], activePages: ['promo_slides'] },
+  // ── 1. IKHTISAR (OVERVIEW) ──
+  { key: 'dashboard', section: 'overview', href: '/admin', icon: 'bi bi-grid-1x2', labelKey: 'admin.nav.dashboard', labelDefault: 'Beranda Utama', roles: ['admin', 'cashier'], bottomNav: true, activePages: ['dashboard'] },
 
-  { key: 'customers', section: 'billing', href: '/admin/customers', icon: 'bi bi-people', labelKey: 'admin.nav.customers', labelDefault: 'Pelanggan', roles: ['admin', 'cashier'], bottomNav: true, activePages: ['customers'] },
-  { key: 'onu_stickers', section: 'billing', href: '/admin/onu-stickers', icon: 'bi bi-qr-code', labelKey: 'admin.nav.onu_stickers', labelDefault: 'Stiker Modem ONU', roles: ['admin', 'cashier'], activePages: ['onu_stickers'] },
-  { key: 'packages', section: 'billing', href: '/admin/packages', icon: 'bi bi-box-seam', labelKey: 'admin.nav.internet_packages', labelDefault: 'Paket Internet', roles: ['admin', 'cashier'], activePages: ['packages'] },
-  { key: 'voucher_packages', section: 'billing', href: '/admin/vouchers/packages', icon: 'bi bi-ticket-detailed', labelKey: 'admin.nav.voucher_packages', labelDefault: 'Paket Voucher', roles: ['admin', 'cashier'], activePages: ['voucher_packages'] },
-  { key: 'billing', section: 'billing', href: '/admin/billing', icon: 'bi bi-receipt', labelKey: 'admin.nav.invoices', labelDefault: 'Tagihan', roles: ['admin', 'cashier'], bottomNav: true, activePages: ['billing'] },
-  { key: 'digiflazz', section: 'billing', href: '/admin/digiflazz', icon: 'bi bi-phone', labelKey: 'admin.nav.digiflazz', labelDefault: 'Digiflazz', roles: ['admin'], activePages: ['digiflazz'] },
+  // ── 2. PELANGGAN & LAYANAN ──
+  { key: 'customers', section: 'customers', href: '/admin/customers', icon: 'bi bi-people', labelKey: 'admin.nav.customers', labelDefault: 'Data Pelanggan', roles: ['admin', 'cashier'], bottomNav: true, activePages: ['customers'] },
+  { key: 'tickets', section: 'customers', href: '/admin/tickets', icon: 'bi bi-ticket-detailed', labelKey: 'admin.nav.customer_tickets', labelDefault: 'Tiket Gangguan', roles: ['admin', 'cashier'], activePages: ['tickets'] },
+  { key: 'packages', section: 'customers', href: '/admin/packages', icon: 'bi bi-box-seam', labelKey: 'admin.nav.internet_packages', labelDefault: 'Paket Internet', roles: ['admin', 'cashier'], activePages: ['packages'] },
+  { key: 'voucher_packages', section: 'customers', href: '/admin/vouchers/packages', icon: 'bi bi-ticket-perforated', labelKey: 'admin.nav.voucher_packages', labelDefault: 'Paket Voucher', roles: ['admin', 'cashier'], activePages: ['voucher_packages'] },
+  { key: 'onu_stickers', section: 'customers', href: '/admin/onu-stickers', icon: 'bi bi-qr-code', labelKey: 'admin.nav.onu_stickers', labelDefault: 'Stiker Modem ONU', roles: ['admin', 'cashier'], activePages: ['onu_stickers'] },
+  { key: 'promo_slides', section: 'customers', href: '/admin/promo-slides', icon: 'bi bi-image', labelKey: 'admin.nav.promo_slides', labelDefault: 'Promo Slides', roles: ['admin'], activePages: ['promo_slides'] },
+  { key: 'attendance', section: 'customers', href: '/admin/attendance', icon: 'bi bi-calendar-check', labelKey: 'admin.nav.attendance', labelDefault: 'Absensi Karyawan', roles: ['admin', 'cashier'], activePages: ['attendance'] },
+  { key: 'inventory', section: 'customers', href: '/admin/inventory', icon: 'bi bi-boxes', labelKey: 'admin.nav.inventory', labelDefault: 'Inventaris (Stok)', roles: ['admin', 'cashier'], activePages: ['inventory'] },
+  { key: 'cashier_attendance', section: 'customers', href: '/admin/cashiers/attendance', icon: 'bi bi-calendar-check', labelKey: 'admin.nav.cashier_attendance', labelDefault: 'Absensi Saya', roles: ['cashier'], activePages: ['cashier_attendance'] },
+
+  // ── 3. BILLING & KEUANGAN ──
+  { key: 'billing', section: 'billing', href: '/admin/billing', icon: 'bi bi-receipt', labelKey: 'admin.nav.invoices', labelDefault: 'Tagihan Pelanggan', roles: ['admin', 'cashier'], bottomNav: true, activePages: ['billing'] },
   { key: 'collector_payments', section: 'billing', href: '/admin/collector-payments', icon: 'bi bi-check2-square', labelKey: 'admin.nav.collector_payments', labelDefault: 'Approval Kolektor', roles: ['admin', 'cashier'], activePages: ['collector_payments'] },
-  { key: 'collector_settlements', section: 'billing', href: '/admin/collector-settlements', icon: 'bi bi-wallet2', labelKey: 'admin.nav.collector_settlements', labelDefault: 'Setoran Kolektor', roles: ['admin', 'cashier'], activePages: ['collector_settlements'] },
+  { key: 'collector_settlements', section: 'billing', href: '/admin/collector-settlements', icon: 'bi bi-cash-coin', labelKey: 'admin.nav.collector_settlements', labelDefault: 'Setoran Kolektor', roles: ['admin', 'cashier'], activePages: ['collector_settlements'] },
+  { key: 'cash_in', section: 'billing', href: '/admin/finance/cash-in', icon: 'bi bi-cash-stack', labelKey: 'admin.nav.cash_in', labelDefault: 'Kas Masuk', roles: ['admin', 'cashier'], activePages: ['cash_in'] },
+  { key: 'expenses', section: 'billing', href: '/admin/finance/expenses', icon: 'bi bi-wallet2', labelKey: 'admin.nav.expenses', labelDefault: 'Pengeluaran', roles: ['admin', 'cashier'], activePages: ['expenses'] },
+  { key: 'expense_categories', section: 'billing', href: '/admin/finance/expense-categories', icon: 'bi bi-tags', labelKey: 'admin.nav.expense_categories', labelDefault: 'Kategori Pengeluaran', roles: ['admin'], activePages: ['expense_categories'] },
+  { key: 'reports', section: 'billing', href: '/admin/reports', icon: 'bi bi-graph-up-arrow', labelKey: 'admin.nav.finance_report', labelDefault: 'Laporan Keuangan', roles: ['admin', 'cashier'], activePages: ['reports'] },
+  { key: 'cashiers_reports', section: 'billing', href: '/admin/cashiers/reports', icon: 'bi bi-journal-text', labelKey: 'admin.nav.cashiers_reports', labelDefault: 'Laporan Kasir', roles: ['admin', 'cashier'], activePages: ['cashiers_reports'] },
+  { key: 'payroll', section: 'billing', href: '/admin/payroll', icon: 'bi bi-credit-card-2-front', labelKey: 'admin.nav.payroll', labelDefault: 'Gaji & Payroll', roles: ['admin'], activePages: ['payroll'] },
+  { key: 'digiflazz', section: 'billing', href: '/admin/digiflazz', icon: 'bi bi-phone', labelKey: 'admin.nav.digiflazz', labelDefault: 'Digiflazz PPOB', roles: ['admin'], activePages: ['digiflazz'] },
 
-  { key: 'reports', section: 'finance', href: '/admin/reports', icon: 'bi bi-bar-chart-line', labelKey: 'admin.nav.finance_report', labelDefault: 'Laporan Keuangan', roles: ['admin', 'cashier'], activePages: ['reports'] },
-  { key: 'cashiers_reports', section: 'finance', href: '/admin/cashiers/reports', icon: 'bi bi-journal-text', labelKey: 'admin.nav.cashiers_reports', labelDefault: 'Laporan Kasir', roles: ['admin', 'cashier'], activePages: ['cashiers_reports'] },
-  { key: 'payroll', section: 'finance', href: '/admin/payroll', icon: 'bi bi-wallet2', labelKey: 'admin.nav.payroll', labelDefault: 'Gaji & Payroll', roles: ['admin'], activePages: ['payroll'] },
+  // ── 4. INFRASTRUKTUR & NOC ──
+  { key: 'mikrotik', section: 'infra', href: '/admin/mikrotik', icon: 'bi bi-router', labelKey: 'admin.nav.mikrotik', labelDefault: 'Router MikroTik', roles: ['admin', 'cashier'], bottomNav: true, activePages: ['mikrotik', 'routers', 'vouchers'] },
+  { key: 'radius_server', section: 'infra', href: '/admin/radius-settings', icon: 'bi bi-hdd-network', labelKey: 'admin.nav.radius_server', labelDefault: 'RADIUS Server (PPPoE)', roles: ['admin', 'cashier'], activePages: ['radius_settings'] },
+  { key: 'map', section: 'infra', href: '/admin/map', icon: 'bi bi-diagram-3-fill', labelKey: 'admin.nav.network_map', labelDefault: 'Topologi & Peta', roles: ['admin', 'cashier'], activePages: ['map'] },
+  { key: 'olts', section: 'infra', href: '/admin/olts', icon: 'bi bi-ethernet', labelKey: 'admin.nav.olt_management', labelDefault: 'Manajemen OLT', roles: ['admin'], activePages: ['olts'] },
+  { key: 'acs_pro', section: 'infra', href: '/admin/acs', icon: 'bi bi-modem', labelKey: 'admin.nav.acs_pro', labelDefault: 'GenieACS Pro (TR-069)', roles: ['admin'], activePages: ['acs_pro'] },
+  { key: 'onu_provision', section: 'infra', href: '/admin/onu-provision', icon: 'bi bi-hdd-rack', labelKey: 'admin.nav.onu_provision', labelDefault: 'ONU Provisioning', roles: ['admin'], activePages: ['onu_provision'] },
+  { key: 'areas', section: 'infra', href: '/admin/areas', icon: 'bi bi-geo-alt', labelKey: 'admin.nav.areas', labelDefault: 'Manajemen Area & ODP', roles: ['admin', 'cashier'], activePages: ['areas'] },
 
-  { key: 'tickets', section: 'service', href: '/admin/tickets', icon: 'bi bi-headset', labelKey: 'admin.nav.customer_tickets', labelDefault: 'Keluhan Pelanggan', roles: ['admin', 'cashier'], activePages: ['tickets'] },
-  { key: 'inventory', section: 'service', href: '/admin/inventory', icon: 'bi bi-boxes', labelKey: 'admin.nav.inventory', labelDefault: 'Inventaris (Stok)', roles: ['admin', 'cashier'], activePages: ['inventory'] },
-  { key: 'attendance', section: 'service', href: '/admin/attendance', icon: 'bi bi-calendar-check', labelKey: 'admin.nav.attendance', labelDefault: 'Absensi Karyawan', roles: ['admin', 'cashier'], activePages: ['attendance'] },
-
-  { key: 'cash_in', section: 'finance', href: '/admin/finance/cash-in', icon: 'bi bi-cash-stack', labelKey: 'admin.nav.cash_in', labelDefault: 'Kas Masuk', roles: ['admin', 'cashier'], activePages: ['cash_in'] },
-  { key: 'expenses', section: 'finance', href: '/admin/finance/expenses', icon: 'bi bi-wallet2', labelKey: 'admin.nav.expenses', labelDefault: 'Pengeluaran', roles: ['admin', 'cashier'], activePages: ['expenses'] },
-  { key: 'expense_categories', section: 'finance', href: '/admin/finance/expense-categories', icon: 'bi bi-tags', labelKey: 'admin.nav.expense_categories', labelDefault: 'Kategori Pengeluaran', roles: ['admin'], activePages: ['expense_categories'] },
-
-  { key: 'cashier_attendance', section: 'cashier', href: '/admin/cashiers/attendance', icon: 'bi bi-calendar-check', labelKey: 'admin.nav.cashier_attendance', labelDefault: 'Absensi Saya', roles: ['cashier'], activePages: ['cashier_attendance'] },
-
-  { key: 'technicians', section: 'user_management', href: '/admin/technicians', icon: 'bi bi-person-gear', labelKey: 'admin.nav.technicians', labelDefault: 'Teknisi', roles: ['admin'], activePages: ['technicians'] },
-  { key: 'cashiers', section: 'user_management', href: '/admin/cashiers', icon: 'bi bi-person-vcard', labelKey: 'admin.nav.cashiers', labelDefault: 'Kasir', roles: ['admin'], activePages: ['cashiers'] },
-  { key: 'collectors', section: 'user_management', href: '/admin/collectors', icon: 'bi bi-person-badge', labelKey: 'admin.nav.collectors', labelDefault: 'Kolektor', roles: ['admin'], activePages: ['collectors'] },
-  { key: 'areas', section: 'user_management', href: '/admin/areas', icon: 'bi bi-geo-alt', labelKey: 'admin.nav.areas', labelDefault: 'Manajemen Area', roles: ['admin', 'cashier'], activePages: ['areas'] },
-  { key: 'agents', section: 'user_management', href: '/admin/agents', icon: 'bi bi-person-badge', labelKey: 'admin.nav.agents', labelDefault: 'Agent', roles: ['admin', 'cashier'], activePages: ['agents'] },
-  { key: 'agents_reports', section: 'user_management', href: '/admin/agents/reports', icon: 'bi bi-journal-text', labelKey: 'admin.nav.agent_reports', labelDefault: 'Laporan Agent', roles: ['admin'], activePages: ['agents_reports'] },
-
-  { key: 'update', section: 'system', href: '/admin/update', icon: 'bi bi-cloud-arrow-down', labelKey: 'admin.nav.update', labelDefault: 'Update GitHub', roles: ['admin'], activePages: ['update'] },
-  { key: 'settings', section: 'system', href: '/admin/settings', icon: 'bi bi-gear', labelKey: 'admin.nav.settings', labelDefault: 'Pengaturan', roles: ['admin'], activePages: ['settings'] },
+  // ── 5. SISTEM & KEAMANAN ──
+  { key: 'whatsapp', section: 'system', href: '/admin/whatsapp', icon: 'bi bi-whatsapp', labelKey: 'admin.nav.whatsapp', labelDefault: 'WhatsApp Gateway', roles: ['admin', 'cashier'], activePages: ['whatsapp'] },
+  { key: 'broadcast', section: 'system', href: '/admin/whatsapp/broadcast', icon: 'bi bi-megaphone', labelKey: 'admin.broadcast.title', labelDefault: 'Broadcast WhatsApp', roles: ['admin', 'cashier'], activePages: ['broadcast'] },
+  { key: 'whatsapp_live_chat', section: 'system', href: '/admin/whatsapp/live-chat', icon: 'bi bi-chat-dots-fill', labelKey: 'admin.nav.whatsapp_live_chat', labelDefault: 'Live Chat WA', roles: ['admin', 'cashier'], activePages: ['whatsapp_live_chat'] },
+  { key: 'technicians', section: 'system', href: '/admin/technicians', icon: 'bi bi-person-gear', labelKey: 'admin.nav.technicians', labelDefault: 'Teknisi', roles: ['admin'], activePages: ['technicians'] },
+  { key: 'cashiers', section: 'system', href: '/admin/cashiers', icon: 'bi bi-person-vcard', labelKey: 'admin.nav.cashiers', labelDefault: 'Kasir', roles: ['admin'], activePages: ['cashiers'] },
+  { key: 'collectors', section: 'system', href: '/admin/collectors', icon: 'bi bi-person-badge', labelKey: 'admin.nav.collectors', labelDefault: 'Kolektor', roles: ['admin'], activePages: ['collectors'] },
+  { key: 'agents', section: 'system', href: '/admin/agents', icon: 'bi bi-person-check', labelKey: 'admin.nav.agents', labelDefault: 'Agent Mitra', roles: ['admin', 'cashier'], activePages: ['agents'] },
+  { key: 'agents_reports', section: 'system', href: '/admin/agents/reports', icon: 'bi bi-journal-text', labelKey: 'admin.nav.agent_reports', labelDefault: 'Laporan Agent', roles: ['admin'], activePages: ['agents_reports'] },
+  { key: 'settings', section: 'system', href: '/admin/settings', icon: 'bi bi-gear', labelKey: 'admin.nav.settings', labelDefault: 'Pengaturan Sistem', roles: ['admin'], activePages: ['settings'] },
+  { key: 'monitoring', section: 'system', href: '/admin/monitoring', icon: 'bi bi-activity', labelKey: 'admin.nav.monitoring', labelDefault: 'Monitoring Sistem', roles: ['admin'], activePages: ['monitoring'] },
+  { key: 'audit_logs', section: 'system', href: '/admin/audit-logs', icon: 'bi bi-clock-history', labelKey: 'admin.nav.audit_logs', labelDefault: 'Log & Audit Aktivitas', roles: ['admin'], activePages: ['audit_logs'] },
   { key: 'ewallet_logs', section: 'system', href: '/admin/ewallet-logs', icon: 'bi bi-wallet2', labelKey: 'admin.settings.ewallet_logs.title', labelDefault: 'Log Notifikasi E-Wallet', roles: ['admin'], activePages: ['ewallet_logs'] },
   { key: 'backup', section: 'system', href: '/admin/backup', icon: 'bi bi-hdd-stack', labelKey: 'admin.nav.backup', labelDefault: 'Backup & Recovery', roles: ['admin'], activePages: ['backup'] },
-  { key: 'monitoring', section: 'system', href: '/admin/monitoring', icon: 'bi bi-activity', labelKey: 'admin.nav.monitoring', labelDefault: 'Monitoring Sistem', roles: ['admin'], activePages: ['monitoring'] },
-  { key: 'audit_logs', section: 'system', href: '/admin/audit-logs', icon: 'bi bi-shield-lock', labelKey: 'admin.nav.audit_logs', labelDefault: 'Log Aktivitas', roles: ['admin'], activePages: ['audit_logs'] }
+  { key: 'update', section: 'system', href: '/admin/update', icon: 'bi bi-cloud-arrow-down', labelKey: 'admin.nav.update', labelDefault: 'Update GitHub', roles: ['admin'], activePages: ['update'] }
 ];
 
 const DEFAULT_MENU_STATES = {
@@ -115,13 +117,11 @@ const DEFAULT_MENU_STATES = {
 };
 
 const SECTION_DEFINITIONS = [
-  { key: 'main', labelKey: 'admin.section.main', labelDefault: 'UTAMA' },
-  { key: 'billing', labelKey: 'admin.section.billing', labelDefault: 'BILLING' },
-  { key: 'finance', labelKey: 'admin.section.finance', labelDefault: 'KEUANGAN' },
-  { key: 'service', labelKey: 'admin.section.service', labelDefault: 'LAYANAN' },
-  { key: 'cashier', labelKey: 'admin.section.cashier', labelDefault: 'KASIR' },
-  { key: 'user_management', labelKey: 'admin.section.user_management', labelDefault: 'MANAJEMEN USER' },
-  { key: 'system', labelKey: 'admin.section.system', labelDefault: 'SISTEM' }
+  { key: 'overview', labelKey: 'admin.section.overview', labelDefault: 'IKHTISAR' },
+  { key: 'customers', labelKey: 'admin.section.customers', labelDefault: 'PELANGGAN & LAYANAN' },
+  { key: 'billing', labelKey: 'admin.section.billing', labelDefault: 'BILLING & KEUANGAN' },
+  { key: 'infra', labelKey: 'admin.section.infra', labelDefault: 'INFRASTRUKTUR & NOC' },
+  { key: 'system', labelKey: 'admin.section.system', labelDefault: 'SISTEM & KEAMANAN' }
 ];
 
 function sha256(input) {

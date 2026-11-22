@@ -68,25 +68,34 @@
       width: 100%;
     }
 
-    /* Top Utility Breadcrumb Bar */
+    /* ─── FIGCRAFT A02 TOP UTILITY & FLOATING PILL ─── */
     .a02-top-utility {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      flex-wrap: wrap;
+      height: 40px;
     }
     .a02-breadcrumb {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       font-size: 13px;
       font-weight: 500;
+      color: var(--a02-text-muted);
+    }
+    .a02-breadcrumb i {
+      font-size: 13px;
       color: var(--a02-text-muted);
     }
     .a02-breadcrumb-root {
       color: var(--a02-text-muted);
       text-decoration: none;
+    }
+    .a02-breadcrumb-slash {
+      color: var(--a02-text-muted);
+      font-size: 12px;
+      opacity: 0.6;
     }
     .a02-breadcrumb-current {
       color: var(--a02-text-main);
@@ -96,37 +105,58 @@
     .a02-utility-dock {
       display: flex;
       align-items: center;
-      gap: 8px;
     }
-    .a02-dock-pill {
+    .a02-floating-pill {
       background: var(--a02-card);
       border: 1px solid var(--a02-card-border);
       border-radius: 999px;
-      padding: 4px 10px;
+      height: 38px;
+      padding: 3px 10px;
       display: inline-flex;
       align-items: center;
       gap: 8px;
       box-shadow: var(--a02-card-shadow);
     }
-    .a02-theme-btn {
+    .a02-pill-icon-btn {
+      width: 26px;
+      height: 26px;
+      border: none;
+      background: transparent;
+      color: var(--a02-text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 50%;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .a02-pill-icon-btn:hover {
       background: var(--a02-pill-bg);
-      border: 1px solid var(--a02-pill-border);
-      color: var(--a02-text-main);
-      padding: 4px 10px;
+      color: #2563EB;
+    }
+    .a02-theme-pill {
+      background: var(--a02-sub-bg);
+      border: 1px solid var(--a02-card-border);
+      color: var(--a02-text-sub);
+      padding: 2px 10px;
       border-radius: 999px;
-      font-size: 11.5px;
+      height: 26px;
+      font-size: 11px;
       font-weight: 700;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       transition: all 0.15s ease;
     }
-    .a02-theme-btn:hover {
-      transform: translateY(-1px);
+    .a02-theme-pill:hover {
+      background: var(--a02-pill-bg);
+      color: var(--a02-text-main);
     }
 
-    /* Main Toolbar Hero */
+    /* ─── FIGCRAFT A02 HERO TOOLBAR WRAP ─── */
     .a02-hero-toolbar {
       display: flex;
       align-items: flex-start;
@@ -134,8 +164,12 @@
       gap: 16px;
       flex-wrap: wrap;
     }
+    .a02-hero-text {
+      flex: 1;
+      min-width: 280px;
+    }
     .a02-hero-over {
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 800;
       letter-spacing: 0.8px;
       color: var(--a02-text-muted);
@@ -148,14 +182,12 @@
       letter-spacing: -0.02em;
       color: var(--a02-text-main);
       margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      line-height: 1.25;
     }
     .a02-hero-sub {
       font-size: 12.5px;
       color: var(--a02-text-muted);
-      margin-top: 4px;
+      margin-top: 5px;
       max-width: 720px;
       line-height: 1.45;
     }
@@ -164,84 +196,48 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      flex-wrap: wrap;
+      flex-shrink: 0;
     }
-    .a02-btn-sync {
-      background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
-      color: #FFFFFF !important;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 10px;
-      font-size: 12.5px;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
-      transition: all 0.15s ease;
-    }
-    .a02-btn-sync:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
-    }
-    .a02-btn-outline {
+    .a02-btn-range {
       background: var(--a02-card);
       border: 1px solid var(--a02-card-border);
-      color: var(--a02-text-main);
-      padding: 7px 14px;
-      border-radius: 10px;
+      color: var(--a02-text-sub);
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 8px;
       font-size: 12px;
       font-weight: 600;
       display: inline-flex;
       align-items: center;
       gap: 6px;
       cursor: pointer;
-      text-decoration: none;
+      box-shadow: var(--a02-card-shadow);
       transition: all 0.15s ease;
     }
-    .a02-btn-outline:hover {
+    .a02-btn-range:hover {
       background: var(--a02-pill-bg);
       color: var(--a02-text-main);
-      transform: translateY(-1px);
     }
-
-    /* Segmented View Switcher Tabs */
-    .a02-view-tabs {
-      display: inline-flex;
-      background: var(--a02-card);
-      border: 1px solid var(--a02-card-border);
-      border-radius: 12px;
-      padding: 4px;
-      gap: 4px;
-      box-shadow: var(--a02-card-shadow);
-      width: fit-content;
-    }
-    .a02-view-tab-btn {
-      background: transparent;
+    .a02-btn-sync {
+      background: #2563EB;
+      color: #FFFFFF !important;
       border: none;
-      color: var(--a02-text-muted);
-      padding: 7px 16px;
+      height: 36px;
+      padding: 0 16px;
       border-radius: 8px;
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: 700;
-      cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 7px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
       transition: all 0.15s ease;
     }
-    .a02-view-tab-btn:hover {
-      color: var(--a02-text-main);
-    }
-    .a02-view-tab-btn.active {
-      background: var(--a02-pill-bg);
-      color: #2563EB;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-    html[data-theme="dark"] .a02-view-tab-btn.active {
-      background: rgba(37, 99, 235, 0.18);
-      color: #60A5FA;
+    .a02-btn-sync:hover {
+      background: #1D4ED8;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
     }
 
     /* ─── ROW 1: 4 FIGCRAFT KPI METRIC CARDS ─── */
@@ -544,43 +540,34 @@
       <div class="a02-breadcrumb">
         <i class="bi bi-grid-1x2"></i>
         <span class="a02-breadcrumb-root">Workspace</span>
-        <span>/</span>
+        <span class="a02-breadcrumb-slash">/</span>
         <span class="a02-breadcrumb-current">Beranda Utama</span>
       </div>
 
       <div class="a02-utility-dock">
-        <!-- Live Dot Badge -->
-        <div class="a02-dock-pill" id="livePillIndicator">
-          <span class="dot dot-on" style="margin:0;"></span>
-          <span style="font-size:11px; font-weight:700; color:var(--a02-text-main);">Live Sync</span>
+        <div class="a02-floating-pill">
+          <button type="button" class="a02-pill-icon-btn" title="Pengaturan Sidebar" onclick="location.href='/admin/sidebar-settings'">
+            <i class="bi bi-grid-3x3-gap"></i>
+          </button>
+          <button type="button" class="a02-theme-pill" onclick="toggleAppTheme()" title="Ganti Mode Tema">
+            <i class="bi bi-moon-stars-fill theme-toggle-icon" style="color:#fbbf24"></i>
+            <span id="themeToggleText">Mode Gelap</span>
+          </button>
+          <button type="button" class="a02-pill-icon-btn" title="Notifikasi Tiket" onclick="location.href='/admin/tickets'">
+            <i class="bi bi-bell"></i>
+          </button>
+          <a href="/admin/settings" class="a02-pill-icon-btn" title="Pengaturan Akun">
+            <i class="bi bi-person-circle"></i>
+          </a>
         </div>
-
-        <!-- Role Badge -->
-        <span class="a02-badge a02-badge-blue" style="padding:4px 10px; font-size:11px;">
-          <i class="bi bi-shield-lock-fill"></i>
-          <%= (typeof session !== 'undefined' && session && session.isCashier) ? 'Kasir' : 'Admin / NOC' %>
-        </span>
-
-        <!-- Theme Toggle Button -->
-        <button type="button" class="a02-theme-btn" onclick="toggleAppTheme()" title="Ganti Mode Terang / Gelap">
-          <i class="bi bi-moon-stars-fill theme-toggle-icon" style="color:#fbbf24"></i>
-          <span id="themeToggleText">Tema</span>
-        </button>
-
-        <a href="/admin/logout" class="a02-btn-outline" style="padding:4px 10px; font-size:11.5px; border-radius:999px;" title="Keluar">
-          <i class="bi bi-box-arrow-right"></i>
-        </a>
       </div>
     </div>
 
     <!-- ── MAIN TOOLBAR HERO (FIGCRAFT A02) ── -->
     <div class="a02-hero-toolbar">
-      <div>
+      <div class="a02-hero-text">
         <div class="a02-hero-over">PUSAT PANTAU INFRASTRUKTUR NOC &bull; MIKROTIK &bull; RADIUS &bull; GENIEACS &bull; OLT</div>
-        <h1 class="a02-hero-title">
-          <i class="bi bi-speedometer2" style="color:#2563EB;"></i>
-          Beranda Infrastruktur &amp; Telemetri Jaringan
-        </h1>
+        <h1 class="a02-hero-title">Beranda Infrastruktur &amp; Telemetri Jaringan</h1>
         <p class="a02-hero-sub">
           Visualisasi kesehatan router MikroTik, autentikasi FreeRADIUS, redaman optik GenieACS (TR-069), dan utilisasi OLT dalam satu konsol.
         </p>
@@ -588,8 +575,8 @@
 
       <div class="a02-hero-actions">
         <!-- Date Range Filter -->
-        <button type="button" class="a02-btn-outline" id="btnDateRange" title="Rentang Waktu Laporan">
-          <i class="bi bi-calendar3"></i> Rentang: 7 Hari <i class="bi bi-chevron-down" style="font-size:10px;"></i>
+        <button type="button" class="a02-btn-range" id="btnDateRange" title="Rentang Waktu Laporan">
+          <span>Rentang: 7 Hari</span> <i class="bi bi-chevron-down" style="font-size:10px;"></i>
         </button>
 
         <!-- Cek Sinkronisasi Primary Button -->
@@ -597,28 +584,7 @@
           <i class="bi bi-arrow-clockwise" id="dash-refresh-icon"></i>
           <span>Cek Sinkronisasi</span>
         </button>
-
-        <!-- Secondary Quick Actions -->
-        <a href="/admin/customers" class="a02-btn-outline" title="Pendaftaran Pelanggan Baru">
-          <i class="bi bi-person-plus text-primary"></i> Pelanggan
-        </a>
-        <a href="/admin/billing" class="a02-btn-outline" title="Kelola Tagihan">
-          <i class="bi bi-receipt text-success"></i> Tagihan
-        </a>
       </div>
-    </div>
-
-    <!-- ── SEGMENTED VIEW SWITCHER TABS ── -->
-    <div class="a02-view-tabs" role="tablist">
-      <button type="button" class="a02-view-tab-btn active" id="tabBtnTelemetry" onclick="switchA02View('telemetry')">
-        <i class="bi bi-broadcast"></i> Telemetri Jaringan
-      </button>
-      <button type="button" class="a02-view-tab-btn" id="tabBtnFinance" onclick="switchA02View('finance')">
-        <i class="bi bi-wallet2"></i> Keuangan &amp; Arus Kas
-      </button>
-      <button type="button" class="a02-view-tab-btn" id="tabBtnMonitoring" onclick="switchA02View('monitoring')">
-        <i class="bi bi-router"></i> Monitoring ONU (<span id="monTabCount">-</span>)
-      </button>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
@@ -911,236 +877,6 @@
       </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- VIEW 2: KEUANGAN, ARUS KAS & BILLING OPERASIONAL          -->
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <div id="viewSectionFinance" style="display:none; flex-direction:column; gap:16px;">
-      <!-- Financial KPI Cards -->
-      <div class="a02-kpi-grid">
-        <a href="/admin/billing" class="a02-kpi-card" style="border-top:3px solid #10B981;">
-          <div class="a02-kpi-top">
-            <span class="a02-kpi-label">Pendapatan Bulan Ini</span>
-            <i class="bi bi-cash-stack a02-kpi-icon" style="color:#10B981;"></i>
-          </div>
-          <div class="a02-kpi-value" style="color:#10B981;">
-            Rp&nbsp;<%= Number((billing && billing.thisMonth) || 0).toLocaleString('id-ID') %>
-          </div>
-          <div class="a02-kpi-bottom">
-            <span>Hari ini: <strong>Rp <%= Number((typeof todayRev !== 'undefined' && todayRev && todayRev.total) || 0).toLocaleString('id-ID') %></strong></span>
-            <% 
-              const mThis = Number((billing && billing.thisMonth) || 0);
-              const mPend = Number((billing && billing.pendingAmount) || 0);
-              const mTotTarget = mThis + mPend;
-              const colPct = mTotTarget > 0 ? Math.round((mThis / mTotTarget) * 100) : 100;
-            %>
-            <span class="a02-badge a02-badge-green"><%= colPct %>% Terkumpul</span>
-          </div>
-        </a>
-
-        <a href="/admin/billing?status=unpaid" class="a02-kpi-card" style="border-top:3px solid #F59E0B;">
-          <div class="a02-kpi-top">
-            <span class="a02-kpi-label">Tagihan Tertunda / Piutang</span>
-            <i class="bi bi-hourglass-split a02-kpi-icon" style="color:#F59E0B;"></i>
-          </div>
-          <div class="a02-kpi-value" style="color:#F59E0B;">
-            Rp&nbsp;<%= Number((billing && billing.pendingAmount) || 0).toLocaleString('id-ID') %>
-          </div>
-          <div class="a02-kpi-bottom">
-            <span><strong><%= (billing && billing.unpaidCount) || 0 %></strong> invoice menunggu</span>
-            <span style="color:#F59E0B; font-weight:700;">Lihat Piutang &rarr;</span>
-          </div>
-        </a>
-
-        <a href="/admin/customers" class="a02-kpi-card" style="border-top:3px solid #2563EB;">
-          <div class="a02-kpi-top">
-            <span class="a02-kpi-label">Pelanggan Aktif</span>
-            <i class="bi bi-people-fill a02-kpi-icon" style="color:#2563EB;"></i>
-          </div>
-          <div class="a02-kpi-value">
-            <%= (custStats && custStats.active) || 0 %> <span style="font-size:13px; font-weight:normal; color:var(--a02-text-muted);">/ <%= (custStats && custStats.total) || 0 %> total</span>
-          </div>
-          <div class="a02-kpi-bottom">
-            <span><%= (custStats && custStats.suspended) || 0 %> Terisolir</span>
-            <span style="color:#2563EB; font-weight:700;">Kelola &rarr;</span>
-          </div>
-        </a>
-
-        <div class="a02-kpi-card" style="border-top:3px solid #8B5CF6;">
-          <div class="a02-kpi-top">
-            <span class="a02-kpi-label">ARPU Rata-rata</span>
-            <i class="bi bi-graph-up a02-kpi-icon" style="color:#8B5CF6;"></i>
-          </div>
-          <div class="a02-kpi-value" style="color:#8B5CF6;">
-            Rp <%= (custStats && custStats.active > 0) ? Math.round(mThis / custStats.active).toLocaleString('id-ID') : '0' %>
-          </div>
-          <div class="a02-kpi-bottom">
-            <span>Total Potensi: Rp <%= mTotTarget.toLocaleString('id-ID') %></span>
-            <a href="/admin/reports" style="color:#8B5CF6; font-weight:700; text-decoration:none;">Laporan &rarr;</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- Realtime Workstream: Transaksi Masuk Terkini & Tiket Gangguan -->
-      <div class="a02-chart-grid">
-        <!-- Feed 1: Transaksi Masuk Terkini -->
-        <div class="a02-chart-card">
-          <div class="a02-card-head">
-            <div>
-              <h3 class="a02-card-title"><i class="bi bi-wallet2 text-success me-1"></i> Transaksi Masuk Terkini</h3>
-              <p class="a02-card-sub">Daftar pembayaran real-time kasir dan payment gateway</p>
-            </div>
-            <a href="/admin/billing" class="a02-btn-outline" style="font-size:11px; padding:3px 8px;">Semua &rarr;</a>
-          </div>
-          <div class="a02-card-body" style="padding:0;">
-            <% if (typeof recentPayments !== 'undefined' && recentPayments && recentPayments.length > 0) { %>
-              <div class="stream-list">
-                <% recentPayments.forEach(p => { %>
-                  <div class="stream-item" style="padding:10px 18px; border-bottom:1px solid var(--a02-card-border); display:flex; justify-content:space-between; align-items:center;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                      <div style="width:34px; height:34px; border-radius:8px; background:rgba(16,185,129,0.12); color:#10B981; display:flex; align-items:center; justify-content:center; font-size:15px;">
-                        <i class="bi bi-check2-circle"></i>
-                      </div>
-                      <div>
-                        <div style="font-size:12.5px; font-weight:700; color:var(--a02-text-main);"><%= p.customer_name || 'Pelanggan #' + p.customer_id %></div>
-                        <div style="font-size:10.5px; color:var(--a02-text-muted);">
-                          Periode <%= p.period_month %>/<%= p.period_year %> &bull; 
-                          <span class="a02-badge a02-badge-blue"><%= p.payment_gateway ? p.payment_gateway.toUpperCase() : 'TUNAI / KASIR' %></span>
-                        </div>
-                      </div>
-                    </div>
-                    <div style="text-align:right;">
-                      <div style="font-size:12.5px; font-weight:800; color:#10B981; font-variant-numeric:tabular-nums;">+Rp <%= Number(p.amount || 0).toLocaleString('id-ID') %></div>
-                      <div style="font-size:10px; color:var(--a02-text-muted);"><%= p.paid_at ? p.paid_at.substring(11, 16) + ' WIB' : 'Hari Ini' %></div>
-                    </div>
-                  </div>
-                <% }); %>
-              </div>
-            <% } else { %>
-              <div style="padding:28px 16px; text-align:center; color:var(--a02-text-muted); font-size:12px;">
-                Belum ada transaksi pembayaran baru tercatat pada periode ini.
-              </div>
-            <% } %>
-          </div>
-        </div>
-
-        <!-- Feed 2: Pusat Perhatian & Tiket Gangguan -->
-        <div class="a02-chart-card">
-          <div class="a02-card-head">
-            <div>
-              <h3 class="a02-card-title"><i class="bi bi-exclamation-triangle text-warning me-1"></i> Pusat Perhatian &amp; Tiket</h3>
-              <p class="a02-card-sub">Aduan pelanggan yang membutuhkan penanganan teknisi</p>
-            </div>
-            <a href="/admin/tickets" class="a02-btn-outline" style="font-size:11px; padding:3px 8px;">Semua Tiket &rarr;</a>
-          </div>
-          <div class="a02-card-body" style="padding:0;">
-            <% if (typeof recentTickets !== 'undefined' && recentTickets && recentTickets.length > 0) { %>
-              <div class="stream-list">
-                <% recentTickets.forEach(t => { %>
-                  <div class="stream-item" style="padding:10px 18px; border-bottom:1px solid var(--a02-card-border); display:flex; justify-content:space-between; align-items:center;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                      <div style="width:34px; height:34px; border-radius:8px; background:rgba(245,158,11,0.12); color:#F59E0B; display:flex; align-items:center; justify-content:center; font-size:15px;">
-                        <i class="bi bi-ticket-detailed"></i>
-                      </div>
-                      <div>
-                        <div style="font-size:12.5px; font-weight:700; color:var(--a02-text-main);"><%= t.title || 'Laporan Gangguan' %></div>
-                        <div style="font-size:10.5px; color:var(--a02-text-muted);"><%= t.customer_name %> &bull; <%= t.customer_phone || '-' %></div>
-                      </div>
-                    </div>
-                    <div style="text-align:right;">
-                      <span class="a02-badge <%= t.status === 'open' ? 'a02-badge-amber' : 'a02-badge-blue' %>">
-                        <%= t.status === 'open' ? 'TERBUKA' : 'DIPROSES' %>
-                      </span>
-                    </div>
-                  </div>
-                <% }); %>
-              </div>
-            <% } else { %>
-              <div style="padding:28px 16px; text-align:center; color:#10B981; font-size:12px;">
-                <i class="bi bi-shield-check" style="font-size:24px; display:block; margin-bottom:6px;"></i>
-                Tidak ada tiket aduan terbuka saat ini. Layanan normal!
-              </div>
-            <% } %>
-          </div>
-        </div>
-      </div>
-    </div>
-
-<div id="monitoring-section" style="display:none">
-
-      <!-- Stats mini -->
-      <div class="stat-grid" style="margin-bottom:18px">
-        <div class="sc p"><i class="bi bi-router sc-icon"></i><div class="sc-label"><%= t('admin.dashboard.total_onu', 'Total ONU') %></div><div class="sc-val" id="m-total">-</div></div>
-        <div class="sc s"><i class="bi bi-wifi sc-icon"></i><div class="sc-label"><%= t('admin.dashboard.online', 'Online') %></div><div class="sc-val" id="m-online">-</div></div>
-        <div class="sc d"><i class="bi bi-wifi-off sc-icon"></i><div class="sc-label"><%= t('admin.dashboard.offline', 'Offline') %></div><div class="sc-val" id="m-offline">-</div></div>
-        <div class="sc i"><i class="bi bi-percent sc-icon"></i><div class="sc-label"><%= t('admin.dashboard.uptime', 'Uptime') %></div><div class="sc-val" id="m-pct">-%</div></div>
-      </div>
-
-      <!-- Search & Filter -->
-      <div class="srow" style="margin-bottom:16px">
-        <div class="sinput" style="max-width:320px">
-          <i class="bi bi-search"></i>
-          <input class="fc" id="search-device" placeholder="<%= t('admin.dashboard.search_placeholder', 'Cari tag, SN, atau username pppoe...') %>">
-        </div>
-        <select class="fs" id="filter-status" style="width:150px" onchange="loadDevices()">
-          <option value="all"><%= t('common.all_status', 'Semua Status') %></option>
-          <option value="online"><%= t('admin.dashboard.online', 'Online') %></option>
-          <option value="offline"><%= t('admin.dashboard.offline', 'Offline') %></option>
-        </select>
-        <button class="btn btn-g btn-sm" onclick="openGenieACSSettings()" title="Pengaturan GenieACS">
-          <i class="bi bi-gear"></i> GenieACS
-        </button>
-        <button class="btn btn-p btn-sm" id="btn-refresh" onclick="refreshAll()">
-          <i class="bi bi-arrow-clockwise"></i> <%= t('common.refresh', 'Refresh') %>
-        </button>
-        <div class="realtime-bar" style="margin-left:auto">
-          <span class="live-dot"></span> <%= t('admin.dashboard.realtime', 'Realtime Monitoring') %>
-        </div>
-        <div class="realtime-bar">
-          <i class="bi bi-arrow-repeat"></i> TR-069 terakhir: <strong id="monitor-sync-time">-</strong>
-        </div>
-      </div>
-
-      <!-- Bulk Actions Panel -->
-      <div id="monBulkActionsPanel" style="display: none; background: rgba(59,130,246,0.05); border: 1px solid rgba(59,130,246,0.15); padding: 12px 20px; border-radius: 12px; margin-bottom: 16px; align-items: center; justify-content: space-between;">
-          <div style="font-size: 13px; font-weight: 600; color: var(--text);">
-              <span id="monSelectedCount">0</span> perangkat terpilih
-          </div>
-          <div style="display: flex; gap: 8px;">
-              <button class="btn btn-p btn-sm" onclick="bulkMonSummon()" style="background: var(--primary);"><i class="bi bi-lightning-charge"></i> Summon Terpilih</button>
-              <button class="btn btn-d btn-sm" onclick="bulkMonDelete()" style="background: var(--danger);"><i class="bi bi-trash"></i> Hapus Terpilih</button>
-          </div>
-      </div>
-
-      <!-- Device Table -->
-      <div class="card">
-        <div class="card-hd">
-          <h6><i class="bi bi-list-ul"></i> <%= t('admin.dashboard.onu_device_list', 'Daftar Perangkat ONU') %></h6>
-          <span id="device-count" class="badge bm"><%= t('common.loading_short', 'memuat...') %></span>
-        </div>
-        <div id="loading-devices" style="text-align:center;padding:32px;display:none">
-          <div style="display:inline-block;width:30px;height:30px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite"></div>
-          <div class="text-muted" style="margin-top:10px;font-size:13px"><%= t('admin.dashboard.loading_onu', 'Memuat data ONU...') %></div>
-        </div>
-        <div class="tbl-wrap">
-          <table class="dtbl">
-            <thead>
-              <tr>
-                <th style="width: 40px; text-align: center;"><input type="checkbox" id="selectAllMonDevices" onchange="toggleSelectAllMon(this)"></th>
-                <th>#</th>
-                <th><%= t('admin.dashboard.table.tag_customer', 'Tag / Pelanggan') %></th>
-                <th><%= t('admin.dashboard.table.device', 'Perangkat') %></th>
-                <th><%= t('admin.dashboard.table.network', 'Jaringan') %></th>
-                <th><%= t('admin.dashboard.table.status_info', 'Status / Info') %></th>
-                <th><%= t('admin.dashboard.table.actions', 'Aksi') %></th>
-              </tr>
-            </thead>
-            <tbody id="devices-tbody">
-              <tr><td colspan="7" class="text-center text-muted" style="padding:32px"><%= t('admin.dashboard.loading_devices', 'Memuat perangkat...') %></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
   </div>
   <%- include('partials/footer') %>
 </div>
