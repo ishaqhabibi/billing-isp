@@ -1832,20 +1832,22 @@
 
     .nearest-target-drawer {
       position: fixed;
-      bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+      bottom: calc(84px + env(safe-area-inset-bottom, 0px));
       left: 12px;
       right: 12px;
-      max-width: 456px;
+      max-width: 440px;
       margin: 0 auto;
+      box-sizing: border-box;
       background: var(--m3-surface-container);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid var(--m3-outline-variant);
-      border-radius: 22px;
-      padding: 8px 16px 14px;
+      border-radius: 20px;
+      padding: 8px 14px 12px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
       z-index: 990;
       display: none;
+      overflow: hidden;
       animation: slideUpDrawer 0.25s cubic-bezier(0.16, 1, 0.3, 1);
       transition: padding 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.22s, box-shadow 0.22s, bottom 0.25s ease;
     }
@@ -1953,42 +1955,50 @@
       color: var(--m3-primary);
     }
 
-    /* Bottom Action Row with High Ergonomics */
-    .drawer-action-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    /* ─── 2-TIER ACTION HIERARCHY (NO OVERFLOW, HIGH ERGONOMICS) ─── */
+    .drawer-actions-container {
       border-top: 1px solid var(--m3-outline-variant);
+      display: flex;
+      flex-direction: column;
       gap: 8px;
+      width: 100%;
+    }
+
+    .drawer-subactions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      width: 100%;
     }
 
     .btn-target-nav {
       height: 38px;
-      padding: 0 12px;
+      padding: 0 6px;
       border-radius: 10px;
       border: 1px solid var(--m3-outline-variant);
       background: var(--m3-surface-container-high);
       color: var(--m3-on-surface);
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 700;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      justify-content: center;
+      gap: 4px;
       cursor: pointer;
+      white-space: nowrap;
       transition: all 0.15s ease;
     }
 
     .btn-target-nav:active {
-      transform: scale(0.94);
+      transform: scale(0.95);
       background: var(--m3-surface-container-highest);
     }
 
     .btn-target-nav-next {
       background: var(--m3-primary-container);
       color: var(--m3-primary);
-      border-color: rgba(2, 132, 199, 0.4);
+      border-color: rgba(2, 132, 199, 0.35);
       font-weight: 800;
-      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.22);
     }
 
     .btn-target-nav-next:active {
@@ -2008,64 +2018,67 @@
       filter: grayscale(0.85) !important;
     }
 
-    @media (max-width: 380px) {
-      .btn-target-nav {
-        padding: 0 9px;
-        font-size: 11px;
-      }
-      .btn-drawer-maps,
-      .btn-drawer-pay {
-        padding: 0 10px;
-        font-size: 11.5px;
-      }
-    }
-
-    @media (max-width: 335px) {
-      .btn-target-nav span {
-        display: none;
-      }
-    }
-
     .btn-drawer-maps {
       height: 38px;
-      padding: 0 12px;
+      padding: 0 6px;
       border-radius: 10px;
       background: var(--m3-surface-container-high);
       border: 1px solid var(--m3-outline-variant);
-      color: var(--m3-primary);
-      font-size: 12px;
+      color: var(--m3-on-surface);
+      font-size: 11.5px;
       font-weight: 700;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      justify-content: center;
+      gap: 4px;
       text-decoration: none;
+      white-space: nowrap;
       transition: all 0.15s ease;
     }
 
     .btn-drawer-maps:active {
-      transform: scale(0.94);
+      transform: scale(0.95);
+      color: var(--m3-primary);
     }
 
-    .btn-drawer-pay {
-      height: 38px;
-      padding: 0 16px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    /* Primary Full-Width Action: Terima Bayar */
+    .btn-drawer-pay-full {
+      width: 100%;
+      height: 44px;
+      border-radius: 12px;
       border: none;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       color: #ffffff;
-      font-size: 12.5px;
+      font-size: 13.5px;
       font-weight: 800;
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 5px;
-      box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35);
+      justify-content: center;
+      padding: 0 16px;
+      box-shadow: 0 3px 12px rgba(16, 185, 129, 0.32);
       cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+      letter-spacing: 0.2px;
     }
 
-    .btn-drawer-pay:active {
-      transform: scale(0.94);
-      box-shadow: 0 1px 4px rgba(16, 185, 129, 0.2);
+    .btn-drawer-pay-full:hover {
+      filter: brightness(1.04);
+      box-shadow: 0 5px 16px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-drawer-pay-full:active {
+      transform: scale(0.97);
+      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+    }
+
+    .pay-amount-pill {
+      margin-left: auto;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0;
     }
 
     .btn-peek-nav {
@@ -2153,17 +2166,17 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 6px;
-      gap: 10px;
+      gap: 6px;
     }
 
     .target-order-badge {
-      font-size: 11.5px;
+      font-size: 11px;
       font-weight: 800;
       background: var(--m3-primary-container);
       color: var(--m3-primary);
-      padding: 4px 10px;
+      padding: 3px 8px;
       border-radius: 99px;
-      letter-spacing: 0.2px;
+      letter-spacing: 0.1px;
       white-space: nowrap;
       display: inline-flex;
       align-items: center;
@@ -2173,12 +2186,12 @@
     .target-dist-pill {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
       background: var(--m3-surface-container-high);
       border: 1px solid var(--m3-outline-variant);
       border-radius: 99px;
-      padding: 3px 10px;
-      font-size: 11.5px;
+      padding: 3px 8px;
+      font-size: 11px;
       font-weight: 700;
       color: var(--m3-on-surface);
       white-space: nowrap;
@@ -2192,10 +2205,39 @@
     }
 
     .target-dist-val {
-      font-size: 11.5px;
+      font-size: 11px;
       font-weight: 800;
       color: inherit;
       white-space: nowrap;
+    }
+
+    /* Ultra-compact screen adaptation (<= 360px phones) */
+    @media (max-width: 360px) {
+      .nearest-target-drawer {
+        padding: 8px 10px 10px;
+        left: 8px;
+        right: 8px;
+      }
+      .target-order-badge,
+      .target-dist-pill {
+        font-size: 10px;
+        padding: 2.5px 6px;
+      }
+      .btn-target-nav,
+      .btn-drawer-maps {
+        font-size: 10.5px;
+        padding: 0 3px;
+        gap: 2px;
+      }
+      .btn-drawer-pay-full {
+        font-size: 12.5px;
+        height: 40px;
+        padding: 0 10px;
+      }
+      .pay-amount-pill {
+        font-size: 11px;
+        padding: 2px 6px;
+      }
     }
 
     .btn-map-recenter {
@@ -3442,10 +3484,10 @@
                       id="drawerCustAmount">Rp 0</div>
                   </div>
 
-                  <!-- High-Contrast Ergonomic Action Row -->
-                  <div class="drawer-action-row mt-3 pt-2">
-                    <!-- Navigasi Target: Sebelumnya & Berikutnya (Bahasa Indonesia) -->
-                    <div class="d-flex align-items-center gap-1">
+                  <!-- 2-Tier Ergonomic Action Section -->
+                  <div class="drawer-actions-container mt-3 pt-2">
+                    <!-- Tier 1: Target Navigation & Maps (Equal 3-column grid) -->
+                    <div class="drawer-subactions-grid">
                       <button type="button" class="btn-target-nav" id="btnTargetPrev" onclick="stepTargetDrawer(-1)" title="Target Sebelumnya">
                         <i class="bi bi-chevron-left"></i>
                         <span>Sebelumnya</span>
@@ -3454,19 +3496,18 @@
                         <span>Berikutnya</span>
                         <i class="bi bi-chevron-right"></i>
                       </button>
-                    </div>
-
-                    <!-- Maps & Payment Action Buttons -->
-                    <div class="d-flex align-items-center gap-2 ms-auto">
-                      <a href="#" target="_blank" class="btn-drawer-maps" id="drawerMapsRouteBtn" title="Buka Rute di Google Maps">
+                      <a href="#" target="_blank" class="btn-drawer-maps" id="drawerMapsRouteBtn" title="Buka Petunjuk Arah di Google Maps">
                         <i class="bi bi-google"></i>
                         <span>Maps</span>
                       </a>
-                      <button type="button" class="btn-drawer-pay" id="drawerPayBtn">
-                        <i class="bi bi-cash-coin me-1"></i>
-                        <span>Bayar</span>
-                      </button>
                     </div>
+
+                    <!-- Tier 2: Dominant Primary Action (Terima Bayar - 100% Full Width) -->
+                    <button type="button" class="btn-drawer-pay-full" id="drawerPayBtn">
+                      <i class="bi bi-cash-coin me-2"></i>
+                      <span>Terima Bayar</span>
+                      <span class="pay-amount-pill" id="drawerPayAmountBadge">Rp 0</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -5362,7 +5403,10 @@
       document.getElementById('drawerTargetOrderBadge').innerHTML = `<i class="bi bi-geo-alt-fill me-1"></i>Target #${index + 1} dari ${filteredTargets.length}`;
       document.getElementById('drawerCustName').textContent = custName;
       document.getElementById('drawerCustAddress').textContent = custAddress;
-      document.getElementById('drawerCustAmount').textContent = 'Rp ' + Number(custAmount).toLocaleString('id-ID');
+      const formattedAmount = 'Rp ' + Number(custAmount).toLocaleString('id-ID');
+      document.getElementById('drawerCustAmount').textContent = formattedAmount;
+      const payAmountBadge = document.getElementById('drawerPayAmountBadge');
+      if (payAmountBadge) payAmountBadge.textContent = formattedAmount;
 
       // Update Minimized Peek Bar
       const peekBadge = document.getElementById('peekTargetBadge');
