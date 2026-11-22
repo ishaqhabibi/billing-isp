@@ -3986,6 +3986,12 @@
       if (bSetoran) bSetoran.classList.remove('active');
       if (bRiwayat) bRiwayat.classList.remove('active');
 
+      if (tabName !== 'peta') {
+        if (typeof isMapFullscreen !== 'undefined' && isMapFullscreen && typeof toggleMapFullscreen === 'function') {
+          toggleMapFullscreen();
+        }
+      }
+
       if (tabName === 'peta') {
         if (sPenagihan) sPenagihan.style.display = 'block';
         if (listView) listView.style.display = 'none';
@@ -3993,11 +3999,7 @@
         if (bPeta) bPeta.classList.add('active');
         initCollectorMap();
         setTimeout(() => { if (collectorMap) collectorMap.invalidateSize(); }, 200);
-      } else {
-        if (isMapFullscreen) {
-          toggleMapFullscreen();
-        }
-        if (tabName === 'setoran') {
+      } else if (tabName === 'setoran') {
         if (sSetoran) sSetoran.style.display = 'block';
         if (bSetoran) bSetoran.classList.add('active');
       } else if (tabName === 'riwayat') {
