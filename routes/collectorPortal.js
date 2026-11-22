@@ -247,7 +247,9 @@ router.get('/', requireCollectorSession, (req, res) => {
            r.name as router_name,
            i.id as invoice_id,
            i.status as invoice_status,
+           i.status as status,
            i.amount as invoice_amount,
+           COALESCE(i.amount, p.price, 0) as amount,
            i.period_month,
            i.period_year
     FROM customers c

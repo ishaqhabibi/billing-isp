@@ -2581,8 +2581,12 @@
                     <% const
                       monthNames=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
                       %>
-                      <% invoices.forEach(function(inv) { const isPaid=(inv.status==='paid' ); const
-                        isPending=(inv.status==='pending' ); const amount=Number(inv.amount || inv.package_price || 0);
+                      <% invoices.forEach(function(inv) { 
+                        const pendingReq = (typeof pendingMap !== 'undefined' && pendingMap) ? 
+                          (inv.invoice_id ? pendingMap.get('inv_' + inv.invoice_id) : pendingMap.get('cust_' + inv.customer_id)) : null;
+                        const isPending = !!(pendingReq && pendingReq.status === 'pending');
+                        const isPaid = (inv.invoice_status === 'paid' || inv.status === 'paid'); 
+                        const amount = Number(inv.invoice_amount || inv.amount || inv.package_price || 0);
                         const noInvoice = !inv.invoice_id;
                         const cardModifier = isPaid ? 'card-paid' : (isPending ? 'card-pending' : '');
                         const monoClass = isPaid ? 'mono-paid' : (isPending ? 'mono-pending' : 'mono-unpaid');
@@ -2701,14 +2705,26 @@
                                 Terima Bayar
                               </button>
                             </div>
-                            <% } else if (isPaid && inv.invoice_id) { %>
+                            <% } else if (isPaid) { %>
                               <div class="card-action-grid">
-                                <a href="/collector/invoice/<%= inv.invoice_id %>/print-thermal" target="_blank"
-                                  class="btn-card-print">
-                                  <i class="bi bi-printer me-1"></i> Cetak Struk Pembayaran
-                                </a>
+                                <% if (inv.invoice_id) { %>
+                                  <a href="/collector/invoice/<%= inv.invoice_id %>/print-thermal" target="_blank"
+                                    class="btn-card-print">
+                                    <i class="bi bi-printer me-1"></i> Cetak Struk Pembayaran
+                                  </a>
+                                <% } else { %>
+                                  <div style="grid-column: 1 / -1; text-align: center; font-size: 12px; font-weight: 700; color: #10b981; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 10px 12px;">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Pembayaran Lunas
+                                  </div>
+                                <% } %>
                               </div>
-                              <% } %>
+                            <% } else if (isPending) { %>
+                              <div class="card-action-grid">
+                                <div style="grid-column: 1 / -1; text-align: center; font-size: 12px; font-weight: 700; color: #d97706; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 10px 12px;">
+                                  <i class="bi bi-clock-history me-1"></i> Menunggu Verifikasi Admin
+                                </div>
+                              </div>
+                            <% } %>
                         </div>
                         <% }) %>
                           <% } %>
@@ -2996,7 +3012,7 @@
                 Bluetooth kapan saja jika pelanggan meminta bukti pembayaran.
               </div>
 
-              <% const paidList=(invoices || []).filter(i=> i.status === 'paid'); %>
+              <% const paidList = (invoices || []).filter(i => (i.invoice_status === 'paid' || i.status === 'paid')); %>
                 <% if (paidList.length===0) { %>
                   <div class="text-center py-5 text-muted" style="font-size: 13px;">
                     Belum ada riwayat pembayaran yang lunas pada periode ini.
