@@ -1518,6 +1518,12 @@
       border: 1.5px solid rgba(245, 158, 11, 0.3);
     }
 
+    .mono-new-install {
+      background: rgba(14, 165, 233, 0.15);
+      color: #0284c7;
+      border: 1.5px solid rgba(14, 165, 233, 0.35);
+    }
+
     .tile-body {
       flex: 1;
       min-width: 0;
@@ -1569,6 +1575,12 @@
       border: 1px solid rgba(245, 158, 11, 0.3);
     }
 
+    .st-new-install {
+      background: rgba(14, 165, 233, 0.12);
+      color: #0284c7;
+      border: 1px solid rgba(14, 165, 233, 0.35);
+    }
+
     .cust-subtitle-meta {
       font-size: 11.5px;
       color: var(--m3-on-surface-variant);
@@ -1617,6 +1629,10 @@
 
     .card-paid .price-nominal {
       color: #10b981;
+    }
+
+    .card-new-install .price-nominal {
+      color: #0284c7;
     }
 
     /* Quick Contact Circle Buttons */
@@ -2557,6 +2573,13 @@
                   class="m3-filter-chip <%= curStatus==='paid' ? 'active' : '' %>">
                   Lunas (<%= summary?.paid_count || 0 %>)
                 </a>
+                <% if ((summary?.new_install_count || 0) > 0) { %>
+                  <a href="/collector?<%= new URLSearchParams({ ...baseQs, status: 'new_install', scope: '' }).toString() %>#daftar-tagihan"
+                    class="m3-filter-chip <%= curStatus==='new_install' ? 'active' : '' %>"
+                    style="<%= curStatus==='new_install' ? 'background: #0284c7; color: #fff;' : 'color: #0284c7;' %>">
+                    <i class="bi bi-stars me-1"></i>Pasang Baru (<%= summary?.new_install_count || 0 %>)
+                  </a>
+                <% } %>
               </div>
 
               <!-- Customer Cards List -->
@@ -2586,10 +2609,11 @@
                           (inv.invoice_id ? pendingMap.get('inv_' + inv.invoice_id) : pendingMap.get('cust_' + inv.customer_id)) : null;
                         const isPending = !!(pendingReq && pendingReq.status === 'pending');
                         const isPaid = (inv.invoice_status === 'paid' || inv.status === 'paid'); 
+                        const isNewInstall = !!(inv.is_new_install || (!inv.invoice_id && inv.install_date && String(inv.install_date).slice(0, 7) >= `${year}-${String(month).padStart(2, '0')}`));
                         const amount = Number(inv.invoice_amount || inv.amount || inv.package_price || 0);
                         const noInvoice = !inv.invoice_id;
-                        const cardModifier = isPaid ? 'card-paid' : (isPending ? 'card-pending' : '');
-                        const monoClass = isPaid ? 'mono-paid' : (isPending ? 'mono-pending' : 'mono-unpaid');
+                        const cardModifier = isPaid ? 'card-paid' : (isPending ? 'card-pending' : (isNewInstall ? 'card-new-install' : ''));
+                        const monoClass = isPaid ? 'mono-paid' : (isPending ? 'mono-pending' : (isNewInstall ? 'mono-new-install' : 'mono-unpaid'));
                         const names = String(inv.customer_name || 'U').trim().split(/\s+/);
                         let initials = names[0][0].toUpperCase();
                         if (names.length > 1) initials += names[names.length - 1][0].toUpperCase();
@@ -2624,6 +2648,8 @@
                                     <span class="cust-status-badge st-paid">Lunas</span>
                                     <% } else if (isPending) { %>
                                       <span class="cust-status-badge st-pending">Verifikasi</span>
+                                      <% } else if (isNewInstall) { %>
+                                        <span class="cust-status-badge st-new-install"><i class="bi bi-stars me-1"></i>Pasang Baru</span>
                                       <% } else if (inv.customer_status==='suspended' ) { %>
                                         <span class="cust-status-badge st-isolir">Isolir</span>
                                         <% } else { %>
@@ -2694,7 +2720,14 @@
                           </div>
 
                           <!-- Primary Action Buttons Row -->
-                          <% if (!isPaid && !isPending) { %>
+                          <% if (isNewInstall) { %>
+                            <div class="card-action-grid">
+                              <div style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 700; color: #0284c7; background: rgba(14, 165, 233, 0.08); border: 1px dashed rgba(14, 165, 233, 0.35); border-radius: 10px; padding: 10px 14px;">
+                                <i class="bi bi-calendar-check-fill" style="font-size: 14px;"></i>
+                                <span>Pasang Baru <%= inv.install_date ? ('Tgl ' + inv.install_date.split('-').reverse().join('/')) : '' %> &bull; Tagihan Mulai Bulan Depan</span>
+                              </div>
+                            </div>
+                          <% } else if (!isPaid && !isPending) { %>
                             <div class="card-action-grid">
                               <button type="button" class="btn-card-reschedule"
                                 onclick="openPromiseModal('<%= inv.customer_id %>', '<%= inv.customer_name ? inv.customer_name.replace(/'/g, '\\\'') : '' %>', <%= inv.billing_day || inv.isolate_day || 1 %>)">
@@ -4482,20 +4515,20 @@
         noGpsAlert.style.display = (list.length === 0) ? 'block' : 'none';
       }
 
-      document.getElementById('countMapUnpaid').textContent = list.filter(c => (c.invoice_status || c.status) !== 'paid').length;
-      document.getElementById('countMapToday').textContent = list.filter(c => (c.billing_day || c.isolate_day) === TODAY_DAY).length;
+      document.getElementById('countMapUnpaid').textContent = list.filter(c => !c.is_new_install && (c.invoice_status || c.status) !== 'paid').length;
+      document.getElementById('countMapToday').textContent = list.filter(c => !c.is_new_install && (c.billing_day || c.isolate_day) === TODAY_DAY).length;
       document.getElementById('countMapIsolir').textContent = list.filter(c => c.customer_status === 'suspended').length;
       const topBadge = document.getElementById('mapTargetCountBadge');
       if (topBadge) topBadge.textContent = list.length;
 
       if (currentActiveFilter === 'today') {
-        list = list.filter(c => (c.billing_day || c.isolate_day) === TODAY_DAY);
+        list = list.filter(c => !c.is_new_install && (c.billing_day || c.isolate_day) === TODAY_DAY);
       } else if (currentActiveFilter === 'isolir') {
         list = list.filter(c => c.customer_status === 'suspended');
       } else if (currentActiveFilter === 'near1k') {
-        list = list.filter(c => getDistanceMeters(origin[0], origin[1], c.lat, c.lng) <= 1000);
+        list = list.filter(c => !c.is_new_install && getDistanceMeters(origin[0], origin[1], c.lat, c.lng) <= 1000);
       } else {
-        list = list.filter(c => (c.invoice_status || c.status) !== 'paid');
+        list = list.filter(c => !c.is_new_install && (c.invoice_status || c.status) !== 'paid');
       }
 
       list.forEach(c => {

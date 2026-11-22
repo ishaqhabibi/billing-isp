@@ -226,6 +226,8 @@ router.get('/', requireCollectorSession, (req, res) => {
     collectorParams = [collectorId, ...collectorAreaList];
   }
   
+  const periodYm = `${year}-${String(month).padStart(2, '0')}`;
+
   let q = `
     SELECT c.id as customer_id,
            c.name as customer_name,
@@ -250,6 +252,7 @@ router.get('/', requireCollectorSession, (req, res) => {
            i.status as status,
            i.amount as invoice_amount,
            COALESCE(i.amount, p.price, 0) as amount,
+           (i.id IS NULL AND c.install_date IS NOT NULL AND length(trim(c.install_date)) >= 7 AND strftime('%Y-%m', c.install_date) >= ?) as is_new_install,
            i.period_month,
            i.period_year
     FROM customers c
@@ -258,7 +261,7 @@ router.get('/', requireCollectorSession, (req, res) => {
     LEFT JOIN invoices i ON i.customer_id = c.id AND i.period_month = ? AND i.period_year = ?
     WHERE ${collectorWhere}
   `;
-  const params = [month, year, ...collectorParams];
+  const params = [periodYm, month, year, ...collectorParams];
 
   if (scope === 'today') {
     q += ' AND COALESCE(c.billing_day, c.isolate_day) = ?';
@@ -266,9 +269,13 @@ router.get('/', requireCollectorSession, (req, res) => {
   } else if (scope === 'isolir') {
     q += " AND c.status = 'suspended'";
   } else if (scope === 'unpaid') {
-    q += " AND (i.status = 'unpaid' OR i.status IS NULL)";
+    q += " AND (i.status = 'unpaid' OR (i.status IS NULL AND NOT (c.install_date IS NOT NULL AND length(trim(c.install_date)) >= 7 AND strftime('%Y-%m', c.install_date) >= ?)))";
+    params.push(periodYm);
   } else if (scope === 'paid') {
     q += " AND i.status = 'paid'";
+  } else if (scope === 'new_install') {
+    q += " AND (i.id IS NULL AND c.install_date IS NOT NULL AND length(trim(c.install_date)) >= 7 AND strftime('%Y-%m', c.install_date) >= ?)";
+    params.push(periodYm);
   } else if (scope === 'multi') {
     q += `
       AND c.id IN (
@@ -281,9 +288,13 @@ router.get('/', requireCollectorSession, (req, res) => {
   }
 
   if (status === 'unpaid') {
-    q += " AND (i.status = 'unpaid' OR i.status IS NULL)";
+    q += " AND (i.status = 'unpaid' OR (i.status IS NULL AND NOT (c.install_date IS NOT NULL AND length(trim(c.install_date)) >= 7 AND strftime('%Y-%m', c.install_date) >= ?)))";
+    params.push(periodYm);
   } else if (status === 'paid') {
     q += " AND i.status = 'paid'";
+  } else if (status === 'new_install') {
+    q += " AND (i.id IS NULL AND c.install_date IS NOT NULL AND length(trim(c.install_date)) >= 7 AND strftime('%Y-%m', c.install_date) >= ?)";
+    params.push(periodYm);
   }
 
   if (search) {
@@ -297,19 +308,20 @@ router.get('/', requireCollectorSession, (req, res) => {
   const summaryPeriod = db.prepare(`
     SELECT
       COUNT(DISTINCT c.id) as total_customer_count,
-      SUM(CASE WHEN (i.status='unpaid' OR i.status IS NULL) THEN 1 ELSE 0 END) as unpaid_count,
-      SUM(CASE WHEN (i.status='unpaid' OR i.status IS NULL) THEN COALESCE(i.amount, p.price, 0) ELSE 0 END) as unpaid_total,
+      SUM(CASE WHEN (i.status='unpaid' OR (i.status IS NULL AND NOT (c.install_date IS NOT NULL AND length(trim(c.install_date)) >= 7 AND strftime('%Y-%m', c.install_date) >= ?))) THEN 1 ELSE 0 END) as unpaid_count,
+      SUM(CASE WHEN (i.status='unpaid' OR (i.status IS NULL AND NOT (c.install_date IS NOT NULL AND length(trim(c.install_date)) >= 7 AND strftime('%Y-%m', c.install_date) >= ?))) THEN COALESCE(i.amount, p.price, 0) ELSE 0 END) as unpaid_total,
       SUM(CASE WHEN i.status='paid' THEN 1 ELSE 0 END) as paid_count,
       SUM(CASE WHEN i.status='paid' THEN COALESCE(i.amount, p.price, 0) ELSE 0 END) as paid_total,
-      SUM(CASE WHEN (i.status='unpaid' OR i.status IS NULL) AND COALESCE(c.billing_day, c.isolate_day)=? THEN 1 ELSE 0 END) as today_count,
-      SUM(CASE WHEN (i.status='unpaid' OR i.status IS NULL) AND COALESCE(c.billing_day, c.isolate_day)=? THEN COALESCE(i.amount, p.price, 0) ELSE 0 END) as today_total,
+      SUM(CASE WHEN (i.id IS NULL AND c.install_date IS NOT NULL AND length(trim(c.install_date)) >= 7 AND strftime('%Y-%m', c.install_date) >= ?) THEN 1 ELSE 0 END) as new_install_count,
+      SUM(CASE WHEN (i.status='unpaid' OR (i.status IS NULL AND NOT (c.install_date IS NOT NULL AND length(trim(c.install_date)) >= 7 AND strftime('%Y-%m', c.install_date) >= ?))) AND COALESCE(c.billing_day, c.isolate_day)=? THEN 1 ELSE 0 END) as today_count,
+      SUM(CASE WHEN (i.status='unpaid' OR (i.status IS NULL AND NOT (c.install_date IS NOT NULL AND length(trim(c.install_date)) >= 7 AND strftime('%Y-%m', c.install_date) >= ?))) AND COALESCE(c.billing_day, c.isolate_day)=? THEN COALESCE(i.amount, p.price, 0) ELSE 0 END) as today_total,
       SUM(CASE WHEN c.status='suspended' THEN 1 ELSE 0 END) as isolir_count,
       SUM(CASE WHEN c.status='suspended' THEN COALESCE(i.amount, p.price, 0) ELSE 0 END) as isolir_total
     FROM customers c
     LEFT JOIN packages p ON c.package_id = p.id
     LEFT JOIN invoices i ON i.customer_id = c.id AND i.period_month=? AND i.period_year=?
     WHERE ${collectorWhere}
-  `).get(todayDay, todayDay, month, year, ...collectorParams) || {};
+  `).get(periodYm, periodYm, periodYm, periodYm, todayDay, periodYm, todayDay, month, year, ...collectorParams) || {};
 
   const summaryMulti = db.prepare(`
     SELECT
@@ -426,6 +438,7 @@ router.get('/', requireCollectorSession, (req, res) => {
              i.id as invoice_id,
              i.status as invoice_status,
              COALESCE(i.amount, p.price, 0) as invoice_amount,
+             (i.id IS NULL AND c.install_date IS NOT NULL AND length(trim(c.install_date)) >= 7 AND strftime('%Y-%m', c.install_date) >= ?) as is_new_install,
              i.period_month,
              i.period_year
       FROM customers c
@@ -438,7 +451,7 @@ router.get('/', requireCollectorSession, (req, res) => {
           OR (odp.lat IS NOT NULL AND length(trim(odp.lat)) > 0)
         )
       ORDER BY c.name ASC
-    `).all(month, year, ...collectorParams);
+    `).all(periodYm, month, year, ...collectorParams);
   } catch (errMap) {
     logger.warn('Failed to load map targets: ' + errMap.message);
   }
