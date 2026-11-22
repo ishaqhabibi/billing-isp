@@ -1994,27 +1994,358 @@
     }
 
     .btn-map-recenter {
+      display: none; /* Replaced by .map-floating-actions */
+    }
+
+    /* ─── OFFICER LIVE GPS MARKER & RADAR WAVE ─── */
+    .officer-leaflet-div-icon {
+      background: transparent !important;
+      border: none !important;
+    }
+
+    .officer-marker-wrap {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .officer-radar-wave {
       position: absolute;
-      top: 62px;
+      top: 50%;
+      left: 50%;
+      width: 44px;
+      height: 44px;
+      margin-top: -22px;
+      margin-left: -22px;
+      border-radius: 50%;
+      background: rgba(2, 132, 199, 0.45);
+      box-shadow: 0 0 12px rgba(2, 132, 199, 0.6);
+      pointer-events: none;
+      animation: officerPulse 2s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+    }
+
+    .officer-radar-wave.wave-delayed {
+      animation-delay: 0.9s;
+    }
+
+    @keyframes officerPulse {
+      0% {
+        transform: scale(0.4);
+        opacity: 0.95;
+      }
+      70% {
+        transform: scale(1.85);
+        opacity: 0.25;
+      }
+      100% {
+        transform: scale(2.4);
+        opacity: 0;
+      }
+    }
+
+    .officer-core-badge {
+      position: relative;
+      z-index: 2;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      border: 3px solid #ffffff;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      box-shadow: 0 3px 10px rgba(2, 132, 199, 0.5), 0 2px 5px rgba(0, 0, 0, 0.3);
+      cursor: grab;
+      transition: transform 0.15s ease;
+    }
+
+    .officer-marker-wrap:active .officer-core-badge {
+      cursor: grabbing;
+      transform: scale(1.15);
+    }
+
+    .officer-label-pill {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-6px);
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: #ffffff;
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 99px;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      pointer-events: none;
+      letter-spacing: 0.2px;
+    }
+
+    .officer-label-pill .officer-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+    }
+
+    .officer-marker-wrap.fixed-pos .officer-label-pill .officer-dot {
+      background: #38bdf8;
+      box-shadow: 0 0 6px #38bdf8;
+    }
+
+    /* ─── FLOATING ACTION STACK & GPS STATUS PILL ─── */
+    .map-floating-actions {
+      position: absolute;
+      top: 56px;
       right: 12px;
-      width: 40px;
-      height: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 500;
+    }
+
+    .btn-map-control {
+      width: 42px;
+      height: 42px;
       border-radius: 12px;
       background: var(--m3-surface-container);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--m3-outline);
       color: var(--m3-on-surface);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 17px;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      font-size: 18px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
       cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+
+    .btn-map-control:hover {
+      background: var(--m3-surface-container-high);
+      color: var(--m3-primary);
+    }
+
+    .btn-map-control:active {
+      transform: scale(0.92);
+    }
+
+    .btn-fullscreen-toggle.is-active {
+      background: var(--m3-primary-container);
+      color: var(--m3-primary);
+      border-color: var(--m3-primary);
+    }
+
+    .map-gps-pill {
+      position: absolute;
+      top: 56px;
+      left: 12px;
       z-index: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--m3-surface-container);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--m3-outline-variant);
+      border-radius: 99px;
+      padding: 5px 12px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--m3-on-surface);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      max-width: calc(100% - 100px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .map-gps-pill:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    }
+
+    .map-gps-pill .gps-indicator-pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #eab308;
+      box-shadow: 0 0 8px #eab308;
+      flex-shrink: 0;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    .map-gps-pill.state-active .gps-indicator-pulse {
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+      animation: pulseGpsDot 1.5s infinite;
+    }
+
+    .map-gps-pill.state-warning .gps-indicator-pulse {
+      background: #f59e0b;
+      box-shadow: 0 0 8px #f59e0b;
+    }
+
+    .map-gps-pill.state-error .gps-indicator-pulse {
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+    }
+
+    .map-gps-pill.state-manual .gps-indicator-pulse {
+      background: #0284c7;
+      box-shadow: 0 0 8px #0284c7;
+    }
+
+    @keyframes pulseGpsDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.85); }
+    }
+
+    /* ─── FULLSCREEN MAP VIEW ─── */
+    #collectorMapView.is-fullscreen {
+      position: fixed !important;
+      inset: 0 !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100dvh !important;
+      max-width: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border-radius: 0 !important;
+      z-index: 99999 !important;
+      background: var(--m3-surface);
+    }
+
+    #collectorMapView.is-fullscreen #collectorMap {
+      width: 100vw !important;
+      height: 100dvh !important;
+      min-height: 100dvh !important;
+      border-radius: 0 !important;
+      border: none !important;
+    }
+
+    #collectorMapView.is-fullscreen .flutter-chip-bar {
+      position: absolute;
+      top: 62px;
+      left: 12px;
+      right: 12px;
+      z-index: 500;
+      margin-bottom: 0;
+      padding: 6px 10px;
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 99px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    #collectorMapView.is-fullscreen .map-floating-actions {
+      top: 118px;
+    }
+
+    #collectorMapView.is-fullscreen .map-gps-pill {
+      top: 118px;
+    }
+
+    #collectorMapView.is-fullscreen .nearest-target-drawer {
+      bottom: 16px;
+    }
+
+    #collectorMapView.is-fullscreen .nearest-target-drawer.is-minimized {
+      bottom: 14px;
+    }
+
+    /* Fullscreen Top Header */
+    .map-fullscreen-header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 54px;
+      padding: 0 14px;
+      background: var(--m3-surface);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--m3-outline-variant);
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      z-index: 510;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    #collectorMapView.is-fullscreen .map-fullscreen-header {
+      display: flex !important;
+    }
+
+    .btn-map-header-action {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--m3-surface-container);
+      border: 1px solid var(--m3-outline-variant);
+      color: var(--m3-on-surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
       transition: transform 0.15s, background 0.15s;
     }
 
-    .btn-map-recenter:active {
+    .btn-map-header-action:active {
       transform: scale(0.92);
+    }
+
+    .map-header-info {
+      flex: 1;
+      min-width: 0;
+      text-align: center;
+    }
+
+    .map-header-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--m3-on-surface);
+      line-height: 1.2;
+    }
+
+    .map-header-sub {
+      font-size: 11px;
+      color: var(--m3-on-surface-variant);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      margin-top: 2px;
+    }
+
+    .live-gps-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+      display: inline-block;
     }
 
     /* ─── 8. SLIDE-UP BOTTOM SHEET MODALS (SMOOTH SPRING ANIMATION) ─── */
@@ -2801,13 +3132,41 @@
                 </div>
               </div>
 
+              <!-- Fullscreen Top Header (Visible in Fullscreen Mode) -->
+              <div class="map-fullscreen-header" id="mapFullscreenHeader">
+                <button type="button" class="btn-map-header-action" onclick="toggleMapFullscreen()" title="Kembali ke Layar Normal">
+                  <i class="bi bi-arrow-left"></i>
+                </button>
+                <div class="map-header-info">
+                  <div class="map-header-title">Peta Rute Navigasi</div>
+                  <div class="map-header-sub">
+                    <span class="live-gps-dot"></span> <span id="mapGpsStatusText">Mencari GPS...</span>
+                  </div>
+                </div>
+                <button type="button" class="btn-map-header-action" onclick="toggleMapFullscreen()" title="Kecilkan Layar Penuh">
+                  <i class="bi bi-fullscreen-exit"></i>
+                </button>
+              </div>
+
+              <!-- Floating GPS Status Pill (Interactive: Tap to Recenter) -->
+              <div class="map-gps-pill" id="mapGpsStatusPill" onclick="recenterCollectorLocation()" title="Status GPS - Klik untuk pusatkan">
+                <span class="gps-indicator-pulse"></span>
+                <span id="mapGpsPillLabel">Mencari GPS...</span>
+              </div>
+
               <div id="collectorMap"></div>
 
-              <!-- Floating Recenter Button -->
-              <button type="button" class="btn-map-recenter" onclick="recenterCollectorLocation()"
-                title="Pusatkan ke Posisi Saya">
-                <i class="bi bi-crosshair2"></i>
-              </button>
+              <!-- Floating Action Controls Stack (Fullscreen & Recenter) -->
+              <div class="map-floating-actions">
+                <button type="button" class="btn-map-control btn-fullscreen-toggle" id="btnMapFullscreen"
+                  onclick="toggleMapFullscreen()" title="Layar Penuh (Fullscreen)">
+                  <i class="bi bi-arrows-fullscreen" id="iconMapFullscreen"></i>
+                </button>
+                <button type="button" class="btn-map-control" id="btnMapRecenter" onclick="recenterCollectorLocation()"
+                  title="Pusatkan ke Posisi Petugas">
+                  <i class="bi bi-crosshair2"></i>
+                </button>
+              </div>
 
               <!-- Floating Nearest Customer Drawer with Road Routing & Minimized Peek -->
               <div class="nearest-target-drawer" id="nearestTargetDrawer">
@@ -3634,7 +3993,11 @@
         if (bPeta) bPeta.classList.add('active');
         initCollectorMap();
         setTimeout(() => { if (collectorMap) collectorMap.invalidateSize(); }, 200);
-      } else if (tabName === 'setoran') {
+      } else {
+        if (isMapFullscreen) {
+          toggleMapFullscreen();
+        }
+        if (tabName === 'setoran') {
         if (sSetoran) sSetoran.style.display = 'block';
         if (bSetoran) bSetoran.classList.add('active');
       } else if (tabName === 'riwayat') {
@@ -4214,6 +4577,9 @@
     let filteredTargets = [];
     let mapMarkerLayer = null;
     let userMarker = null;
+    let accuracyCircle = null;
+    let isMapFullscreen = false;
+    let gpsWatchId = null;
     let currentActiveTargetIndex = 0;
 
     // Road Routing & Auto-Reroute Engine State
@@ -4225,9 +4591,78 @@
     let lastRerouteTimestamp = 0;
     let isFetchingRoute = false;
 
+    // Fullscreen Map Toggle
+    function toggleMapFullscreen() {
+      const mapView = document.getElementById('collectorMapView');
+      const icon = document.getElementById('iconMapFullscreen');
+      const btn = document.getElementById('btnMapFullscreen');
+      if (!mapView) return;
+
+      isMapFullscreen = !isMapFullscreen;
+
+      if (isMapFullscreen) {
+        mapView.classList.add('is-fullscreen');
+        if (icon) icon.className = 'bi bi-fullscreen-exit';
+        if (btn) {
+          btn.classList.add('is-active');
+          btn.title = 'Kecilkan Layar Penuh (ESC)';
+        }
+        document.body.style.overflow = 'hidden';
+        try {
+          window.history.pushState({ mapFullscreen: true }, '');
+        } catch (e) {}
+      } else {
+        mapView.classList.remove('is-fullscreen');
+        if (icon) icon.className = 'bi bi-arrows-fullscreen';
+        if (btn) {
+          btn.classList.remove('is-active');
+          btn.title = 'Layar Penuh (Fullscreen)';
+        }
+        document.body.style.overflow = '';
+      }
+
+      setTimeout(() => {
+        if (collectorMap) {
+          collectorMap.invalidateSize();
+          const targetLoc = collectorUserLocation || DEFAULT_OFFICE_COORDS;
+          collectorMap.panTo(targetLoc, { animate: true });
+        }
+      }, 180);
+    }
+
+    // Handle ESC & Mobile Back button to exit fullscreen
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isMapFullscreen) {
+        toggleMapFullscreen();
+      }
+    });
+
+    window.addEventListener('popstate', (e) => {
+      if (isMapFullscreen) {
+        toggleMapFullscreen();
+      }
+    });
+
+    // Helper: Update GPS Status Pill & Header
+    function updateGpsPillState(state, text) {
+      const pill = document.getElementById('mapGpsStatusPill');
+      const label = document.getElementById('mapGpsPillLabel');
+      const headerSub = document.getElementById('mapGpsStatusText');
+      const popupStatus = document.getElementById('popupGpsStatus');
+
+      if (label) label.textContent = text;
+      if (headerSub) headerSub.textContent = text;
+      if (popupStatus) popupStatus.textContent = text;
+
+      if (pill) {
+        pill.className = `map-gps-pill state-${state}`;
+      }
+    }
+
     function initCollectorMap() {
       if (collectorMap) return;
-      collectorMap = L.map('collectorMap', { zoomControl: false }).setView(DEFAULT_OFFICE_COORDS, 15);
+      const initialCenter = collectorUserLocation || DEFAULT_OFFICE_COORDS;
+      collectorMap = L.map('collectorMap', { zoomControl: false }).setView(initialCenter, 15);
       L.control.zoom({ position: 'topright' }).addTo(collectorMap);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -4236,77 +4671,175 @@
       }).addTo(collectorMap);
 
       mapMarkerLayer = L.layerGroup().addTo(collectorMap);
+      
+      // Render officer marker immediately!
+      updateUserMarker();
+
+      // Start live GPS tracking & movement updates
       trackCollectorLocation();
+
       filterMapMarkers('unpaid');
     }
 
     function trackCollectorLocation() {
-      if (!navigator.geolocation) return;
-      navigator.geolocation.watchPosition(
-        (pos) => {
-          const newLoc = [pos.coords.latitude, pos.coords.longitude];
-          const hasMovedSignificantly = !collectorUserLocation ||
-            getDistanceMeters(collectorUserLocation[0], collectorUserLocation[1], newLoc[0], newLoc[1]) > 5;
+      if (!navigator.geolocation) {
+        updateGpsPillState('error', 'GPS Tidak Didukung Browser');
+        return;
+      }
 
-          collectorUserLocation = newLoc;
-          updateUserMarker();
+      updateGpsPillState('searching', 'Mencari Sinyal GPS...');
 
-          if (hasMovedSignificantly) {
-            checkAndAutoReroute();
-          }
-        },
-        (err) => {
-          console.warn('Geolocation info:', err.message);
-        },
-        { enableHighAccuracy: true, timeout: 12000, maximumAge: 4000 }
+      if (gpsWatchId !== null) {
+        try { navigator.geolocation.clearWatch(gpsWatchId); } catch (e) {}
+        gpsWatchId = null;
+      }
+
+      // 1. One-shot immediate coordinate check
+      navigator.geolocation.getCurrentPosition(
+        (pos) => handleGpsPosition(pos, true),
+        (err) => handleGpsError(err),
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      );
+
+      // 2. Continuous real-time movement tracking
+      gpsWatchId = navigator.geolocation.watchPosition(
+        (pos) => handleGpsPosition(pos, false),
+        (err) => handleGpsError(err),
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 3000 }
       );
     }
 
-    function updateUserMarker() {
-      if (!collectorMap || !collectorUserLocation) return;
-      if (userMarker) {
-        userMarker.setLatLng(collectorUserLocation);
+    function handleGpsPosition(pos, isInitial) {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      const accuracy = pos.coords.accuracy || 10;
+      const newLoc = [lat, lon];
+
+      const prevLoc = collectorUserLocation;
+      const hasMovedSignificantly = !prevLoc ||
+        getDistanceMeters(prevLoc[0], prevLoc[1], lat, lon) > 6;
+
+      collectorUserLocation = newLoc;
+      updateUserMarker();
+
+      // Accuracy halo circle
+      if (collectorMap) {
+        if (!accuracyCircle) {
+          accuracyCircle = L.circle(newLoc, {
+            radius: Math.max(accuracy, 12),
+            color: '#0284c7',
+            fillColor: '#38bdf8',
+            fillOpacity: 0.12,
+            weight: 1.5,
+            dashArray: '4, 4'
+          }).addTo(collectorMap);
+        } else {
+          accuracyCircle.setLatLng(newLoc);
+          accuracyCircle.setRadius(Math.max(accuracy, 12));
+        }
+      }
+
+      updateGpsPillState('active', `GPS Aktif (±${Math.round(accuracy)}m)`);
+
+      if (hasMovedSignificantly) {
+        checkAndAutoReroute();
+      }
+    }
+
+    function handleGpsError(err) {
+      console.warn('GPS Info:', err.message, 'code:', err.code);
+      const isHttp = window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      if (err.code === 1) { // PERMISSION_DENIED
+        if (isHttp) {
+          updateGpsPillState('warning', 'GPS Dibatasi HTTP (Titik Bisa Digeser)');
+        } else {
+          updateGpsPillState('error', 'Izin Lokasi GPS Ditolak');
+        }
+      } else if (err.code === 2) { // POSITION_UNAVAILABLE
+        updateGpsPillState('warning', 'Sinyal GPS Lemah');
+      } else if (err.code === 3) { // TIMEOUT
+        updateGpsPillState('warning', 'Mencari Ulang Sinyal GPS...');
       } else {
-        const userIcon = L.divIcon({
-          className: 'user-loc-pulsing-icon',
-          html: '<div style="width:18px;height:18px;border-radius:50%;background:#0284c7;border:3px solid #fff;box-shadow:0 0 14px rgba(2,132,199,0.95);"></div>',
-          iconSize: [18, 18],
-          iconAnchor: [9, 9]
+        updateGpsPillState('error', 'GPS Bermasalah');
+      }
+    }
+
+    function updateUserMarker() {
+      if (!collectorMap) return;
+      const pos = collectorUserLocation || DEFAULT_OFFICE_COORDS;
+      const officerName = '<%= (session && session.collectorName) ? session.collectorName : "Petugas" %>';
+      const isLiveGps = !!collectorUserLocation;
+
+      const officerHtml = `
+        <div class="officer-marker-wrap ${isLiveGps ? 'live-gps' : 'fixed-pos'}">
+          <div class="officer-radar-wave"></div>
+          <div class="officer-radar-wave wave-delayed"></div>
+          <div class="officer-core-badge" title="${officerName}">
+            <i class="bi bi-person-fill"></i>
+          </div>
+          <div class="officer-label-pill">
+            <span class="officer-dot"></span>
+            <span class="officer-text">${officerName}</span>
+          </div>
+        </div>
+      `;
+
+      if (userMarker) {
+        userMarker.setLatLng(pos);
+      } else {
+        const officerIcon = L.divIcon({
+          className: 'officer-leaflet-div-icon',
+          html: officerHtml,
+          iconSize: [44, 44],
+          iconAnchor: [22, 22]
         });
-        userMarker = L.marker(collectorUserLocation, { icon: userIcon, zIndexOffset: 1000 }).addTo(collectorMap);
+        userMarker = L.marker(pos, {
+          icon: officerIcon,
+          zIndexOffset: 2000,
+          draggable: true
+        }).addTo(collectorMap);
+
+        userMarker.bindPopup(`
+          <div style="font-family: inherit; font-size: 13px; min-width: 175px;">
+            <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; color: #0284c7; margin-bottom: 4px;">
+              <i class="bi bi-person-badge-fill"></i> ${officerName}
+            </div>
+            <div style="font-size: 11.5px; color: #64748b;">
+              <span id="popupGpsStatus">${isLiveGps ? '🟢 Posisi GPS Petugas Aktif' : '🔵 Titik Awal (Bisa Digeser Manual)'}</span>
+            </div>
+            <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">
+              ${pos[0].toFixed(6)}, ${pos[1].toFixed(6)}
+            </div>
+          </div>
+        `);
+
+        // Support manual dragging if GPS is not available or collector wants to preview start point
+        userMarker.on('dragend', function (e) {
+          const latlng = e.target.getLatLng();
+          collectorUserLocation = [latlng.lat, latlng.lng];
+          if (accuracyCircle) {
+            accuracyCircle.setLatLng(collectorUserLocation);
+          }
+          updateGpsPillState('manual', `Manual (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`);
+          checkAndAutoReroute();
+        });
       }
     }
 
     function recenterCollectorLocation() {
       if (!collectorMap) return;
-      if (collectorUserLocation) {
-        collectorMap.setView(collectorUserLocation, 17, { animate: true });
-        if (userMarker && userMarker.openPopup) userMarker.openPopup();
-      } else {
-        alert('Menunggu koordinat GPS perangkat Anda...');
+      const pos = collectorUserLocation || DEFAULT_OFFICE_COORDS;
+      collectorMap.setView(pos, 16, { animate: true });
+      if (userMarker) {
+        userMarker.openPopup();
+      }
+      if (!collectorUserLocation) {
         trackCollectorLocation();
       }
     }
 
     function switchCollectorView(viewMode) {
-      const listView = document.getElementById('collectorListView');
-      const mapView = document.getElementById('collectorMapView');
-      const btnList = document.getElementById('btnSwitchList');
-      const btnMap = document.getElementById('btnSwitchMap');
-
-      if (viewMode === 'map') {
-        if (listView) listView.style.display = 'none';
-        if (mapView) mapView.style.display = 'block';
-        if (btnList) btnList.classList.remove('active');
-        if (btnMap) btnMap.classList.add('active');
-        initCollectorMap();
-        setTimeout(() => { if (collectorMap) collectorMap.invalidateSize(); }, 200);
-      } else {
-        if (mapView) mapView.style.display = 'none';
-        if (listView) listView.style.display = 'block';
-        if (btnMap) btnMap.classList.remove('active');
-        if (btnList) btnList.classList.add('active');
-      }
+      switchMainScreenTab(viewMode === 'map' ? 'peta' : 'penagihan');
     }
 
     function filterMapMarkers(filterType) {
