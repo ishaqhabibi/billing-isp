@@ -1989,21 +1989,12 @@
       transition: all 0.15s ease;
     }
 
-    .btn-target-nav:active {
+    .btn-target-nav:active,
+    .btn-drawer-maps:active {
       transform: scale(0.95);
-      background: var(--m3-surface-container-highest);
-    }
-
-    .btn-target-nav-next {
       background: var(--m3-primary-container);
       color: var(--m3-primary);
-      border-color: rgba(2, 132, 199, 0.35);
-      font-weight: 800;
-    }
-
-    .btn-target-nav-next:active {
-      background: var(--m3-primary);
-      color: #ffffff;
+      border-color: rgba(2, 132, 199, 0.4);
     }
 
     /* Disabled state: visual cue when reaching start or end of targets */
@@ -2093,13 +2084,14 @@
       justify-content: center;
       font-size: 12px;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.15s, transform 0.1s;
     }
 
-    .btn-peek-next {
+    .btn-peek-nav:active {
+      transform: scale(0.9);
       background: var(--m3-primary-container);
       color: var(--m3-primary);
-      border-color: rgba(2, 132, 199, 0.35);
+      border-color: rgba(2, 132, 199, 0.4);
     }
 
     .nearest-target-drawer.is-minimized .drawer-expanded-body {
@@ -3438,7 +3430,7 @@
                     <button type="button" class="btn-peek-nav" id="btnPeekPrev" onclick="stepTargetDrawer(-1)" title="Target Sebelumnya">
                       <i class="bi bi-chevron-left"></i>
                     </button>
-                    <button type="button" class="btn-peek-nav btn-peek-next" id="btnPeekNext" onclick="stepTargetDrawer(1)" title="Target Berikutnya">
+                    <button type="button" class="btn-peek-nav" id="btnPeekNext" onclick="stepTargetDrawer(1)" title="Target Berikutnya">
                       <i class="bi bi-chevron-right"></i>
                     </button>
                     <button type="button" class="btn-drawer-mini-toggle ms-1" onclick="toggleDrawerMinimize()" title="Perluas Detail">
@@ -3492,7 +3484,7 @@
                         <i class="bi bi-chevron-left"></i>
                         <span>Sebelumnya</span>
                       </button>
-                      <button type="button" class="btn-target-nav btn-target-nav-next" id="btnTargetNext" onclick="stepTargetDrawer(1)" title="Target Berikutnya">
+                      <button type="button" class="btn-target-nav" id="btnTargetNext" onclick="stepTargetDrawer(1)" title="Target Berikutnya">
                         <span>Berikutnya</span>
                         <i class="bi bi-chevron-right"></i>
                       </button>
