@@ -417,7 +417,8 @@ router.get('/', requireCollectorSession, (req, res) => {
              c.status as customer_status,
              c.isolate_day,
              c.billing_day,
-             c.lat, c.lng,
+             COALESCE(NULLIF(TRIM(c.lat), ''), NULLIF(TRIM(odp.lat), '')) as lat,
+             COALESCE(NULLIF(TRIM(c.lng), ''), NULLIF(TRIM(odp.lng), '')) as lng,
              p.name as package_name,
              p.price as package_price,
              i.id as invoice_id,
@@ -427,9 +428,13 @@ router.get('/', requireCollectorSession, (req, res) => {
              i.period_year
       FROM customers c
       LEFT JOIN packages p ON c.package_id = p.id
+      LEFT JOIN odps odp ON c.odp_id = odp.id
       LEFT JOIN invoices i ON i.customer_id = c.id AND i.period_month = ? AND i.period_year = ?
       WHERE ${collectorWhere}
-        AND c.lat IS NOT NULL AND c.lng IS NOT NULL AND length(trim(c.lat)) > 0 AND length(trim(c.lng)) > 0
+        AND (
+          (c.lat IS NOT NULL AND length(trim(c.lat)) > 0)
+          OR (odp.lat IS NOT NULL AND length(trim(odp.lat)) > 0)
+        )
       ORDER BY c.name ASC
     `).all(month, year, ...collectorParams);
   } catch (errMap) {

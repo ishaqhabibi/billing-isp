@@ -1393,10 +1393,28 @@
       margin-bottom: 12px;
       scrollbar-width: none;
       -ms-overflow-style: none;
+      outline: none !important;
+      -webkit-tap-highlight-color: transparent !important;
     }
 
     .flutter-chip-bar::-webkit-scrollbar {
       display: none;
+    }
+
+    /* Prevent browser from drawing black outline rectangle on fragment jump / :target */
+    :target,
+    #daftar-tagihan,
+    #daftar-tagihan:target,
+    #daftar-tagihan:focus,
+    #daftar-tagihan:focus-visible,
+    .flutter-chip-bar:focus,
+    .flutter-chip-bar:focus-visible,
+    .flutter-chip-bar:target,
+    .flutter-chip-bar:active {
+      outline: none !important;
+      outline-width: 0 !important;
+      box-shadow: none !important;
+      -webkit-tap-highlight-color: transparent !important;
     }
 
     .m3-filter-chip {
@@ -1413,12 +1431,39 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
+      outline: none !important;
+      -webkit-tap-highlight-color: transparent !important;
+      user-select: none;
+    }
+
+    .m3-filter-chip:focus,
+    .m3-filter-chip:focus-visible,
+    .m3-filter-chip:active,
+    .m3-filter-chip:hover {
+      outline: none !important;
+      outline-width: 0 !important;
+      box-shadow: none;
+      text-decoration: none;
     }
 
     .m3-filter-chip.active {
       background: var(--m3-pill-active-bg);
       border-color: var(--m3-pill-active);
       color: var(--m3-pill-active);
+    }
+
+    .map-no-gps-banner {
+      background: var(--m3-surface-container);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: 16px;
+      padding: 13px 15px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+      animation: fadeInAlert 0.3s ease-out;
+    }
+    html[data-theme="light"] .map-no-gps-banner {
+      background: #fffbeb;
+      border-color: #fcd34d;
     }
 
     /* ─── 5. FLUTTER NATIVE CUSTOMER CARD ─── */
@@ -2483,8 +2528,11 @@
                 </div>
               <% } %>
 
+              <!-- Invisible Scroll Anchor (Clean, Zero-Height, No Outline) -->
+              <div id="daftar-tagihan" style="height:0; margin:0; padding:0; outline:none; border:none; visibility:hidden; pointer-events:none;" aria-hidden="true"></div>
+
               <!-- Filter Chips Bar -->
-              <div class="flutter-chip-bar" id="daftar-tagihan">
+              <div class="flutter-chip-bar">
                 <a href="/collector?<%= new URLSearchParams({ ...baseQs, status: 'all', scope: '' }).toString() %>#daftar-tagihan"
                   class="m3-filter-chip <%= (!curScope && curStatus==='all') ? 'active' : '' %>">
                   Semua (<%= summary?.total_customer_count || 0 %>)
@@ -2683,6 +2731,25 @@
                 <button type="button" class="m3-filter-chip" id="chipMapNear1k" onclick="filterMapMarkers('near1k')">
                   &lt; 1 KM
                 </button>
+              </div>
+
+              <!-- Notice when customers have no GPS coordinates in DB -->
+              <div id="mapNoGpsAlert" class="map-no-gps-banner" style="display: none;">
+                <div style="display: flex; align-items: flex-start; gap: 11px;">
+                  <i class="bi bi-geo-alt-fill" style="color: #f59e0b; font-size: 20px; flex-shrink: 0; margin-top: 1px;"></i>
+                  <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: 800; font-size: 13.5px; color: var(--m3-on-surface); line-height: 1.3;">
+                      Pelanggan Belum Memiliki Titik GPS
+                    </div>
+                    <div style="font-size: 11.5px; color: var(--m3-on-surface-variant); margin-top: 4px; line-height: 1.45;">
+                      Terdapat <strong style="color: var(--m3-on-surface);"><%= invoices ? invoices.length : 0 %> tagihan pelanggan</strong> di wilayah Anda, namun belum memiliki titik koordinat Latitude & Longitude lokasi rumah atau ODP di database server.
+                    </div>
+                    <div style="font-size: 11px; color: #0284c7; font-weight: 700; margin-top: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                      <i class="bi bi-info-circle-fill"></i>
+                      <span>Lengkapi koordinat pelanggan/ODP di menu Admin atau Teknisi agar titik peta rute otomatis muncul.</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div id="collectorMap"></div>
@@ -4374,10 +4441,31 @@
 
       const origin = collectorUserLocation || DEFAULT_OFFICE_COORDS;
 
-      let list = RAW_MAP_CUSTOMERS.filter(c => c.lat && c.lng);
+      // Robust coordinate parsing (handles comma in lat, string trims, etc.)
+      RAW_MAP_CUSTOMERS.forEach(c => {
+        if (c.lat && !c.lng && String(c.lat).includes(',')) {
+          const parts = String(c.lat).split(',');
+          c.lat = parts[0].trim();
+          c.lng = parts[1].trim();
+        }
+      });
+
+      let list = RAW_MAP_CUSTOMERS.filter(c => {
+        const latNum = parseFloat(c.lat);
+        const lngNum = parseFloat(c.lng);
+        return !isNaN(latNum) && !isNaN(lngNum) && latNum !== 0 && lngNum !== 0;
+      });
+
       if (window.currentActiveArea && window.currentActiveArea !== 'all') {
         list = list.filter(c => String(c.customer_area || '').trim().toLowerCase() === window.currentActiveArea);
       }
+
+      // Toggle friendly notice if customers in this territory have no GPS coordinates
+      const noGpsAlert = document.getElementById('mapNoGpsAlert');
+      if (noGpsAlert) {
+        noGpsAlert.style.display = (list.length === 0) ? 'block' : 'none';
+      }
+
       document.getElementById('countMapUnpaid').textContent = list.filter(c => (c.invoice_status || c.status) !== 'paid').length;
       document.getElementById('countMapToday').textContent = list.filter(c => (c.billing_day || c.isolate_day) === TODAY_DAY).length;
       document.getElementById('countMapIsolir').textContent = list.filter(c => c.customer_status === 'suspended').length;
