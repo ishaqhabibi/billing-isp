@@ -3686,6 +3686,8 @@ router.post('/customers/:id/billing/generate', requireAdminSession, express.urle
     const result = billingSvc.generateInvoiceForCustomer(req.params.id, parseInt(month), parseInt(year));
     if (result.created) {
       req.session._msg = { type: 'success', text: `Tagihan berhasil dibuat untuk "${result.customerName}" periode ${month}/${year}.` };
+    } else if (result.isFreePackage) {
+      req.session._msg = { type: 'info', text: `Pelanggan "${result.customerName}" menggunakan paket royalti / gratis (Rp 0), sehingga bebas tagihan.` };
     } else {
       req.session._msg = { type: 'success', text: `Tagihan sudah ada untuk "${result.customerName}" periode ${month}/${year}.` };
     }

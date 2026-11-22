@@ -109,6 +109,16 @@ function generateMonthlyInvoices(month, year) {
       const pkg = db.prepare('SELECT * FROM packages WHERE id=?').get(c.package_id);
       if (!pkg) continue;
       const { amount, bumpPromo: bump, notesAuto } = computeInvoiceAmountAndMeta(c, pkg, month, year);
+
+      // Lewati pelanggan dengan paket gratis / royalti (nominal Rp 0) agar tidak menerbitkan tagihan
+      if (amount <= 0 && Number(pkg.price) <= 0) {
+        if (bump) bumpPromo.run(c.id);
+        if (c.status === 'ditangguhkan') {
+          db.prepare("UPDATE customers SET status = 'active' WHERE id = ?").run(c.id);
+        }
+        continue;
+      }
+
       insert.run(c.id, month, year, amount, notesAuto);
       if (bump) bumpPromo.run(c.id);
 
@@ -145,6 +155,15 @@ function generateInvoiceForCustomer(customerId, month, year) {
   if (!pkg) throw new Error('Paket pelanggan tidak ditemukan');
 
   const { amount, bumpPromo: bump, notesAuto } = computeInvoiceAmountAndMeta(customer, pkg, m, y);
+
+  // Jika paket gratis / royalti (Rp 0), jangan terbitkan tagihan
+  if (amount <= 0 && Number(pkg.price) <= 0) {
+    if (bump) {
+      db.prepare('UPDATE customers SET promo_cycles_used = COALESCE(promo_cycles_used,0) + 1 WHERE id=?').run(cid);
+    }
+    return { created: false, isFreePackage: true, customerName: customer.name };
+  }
+
   const r = db.prepare('INSERT INTO invoices (customer_id, period_month, period_year, amount, notes) VALUES (?, ?, ?, ?, ?)').run(cid, m, y, amount, notesAuto);
   if (bump) {
     db.prepare('UPDATE customers SET promo_cycles_used = COALESCE(promo_cycles_used,0) + 1 WHERE id=?').run(cid);
@@ -696,6 +715,9 @@ function createInstallProrataCatchUpInvoice(customerId) {
   const dim = daysInMonth(periodYear, periodMonth);
   const billableDays = Math.min(dim, Math.max(1, dim - inst.d + 1));
   const basePrice = Number(pkg.price) || 0;
+  if (basePrice <= 0) {
+    throw new Error('Paket ini adalah paket bonus / royalti (Rp 0), tidak memerlukan tagihan susulan');
+  }
   const baseAmount = Math.max(0, Math.round(basePrice * (billableDays / dim)));
   
   let taxAmount = 0;

@@ -92,7 +92,7 @@ function startCronJobs() {
 
     while (true) {
       const batch = db.prepare(
-        `SELECT c.*, p.billing_type AS package_billing_type
+        `SELECT c.*, p.billing_type AS package_billing_type, p.price AS package_price
          FROM customers c LEFT JOIN packages p ON c.package_id = p.id
          WHERE c.status = 'active' AND c.id > ?
          ORDER BY c.id ASC
@@ -105,6 +105,9 @@ function startCronJobs() {
         lastId = c.id;
         const isAutoIsolateEnabled = c.auto_isolate !== 0;
         if (!isAutoIsolateEnabled) continue;
+
+        // Pelanggan dengan paket bonus royalti / gratis (harga Rp 0) dibebaskan dari isolir otomatis
+        if (c.package_price !== null && Number(c.package_price) <= 0) continue;
 
         const isPrepaid = c.package_billing_type === 'prepaid';
 
@@ -127,9 +130,9 @@ function startCronJobs() {
           // Tanggal penagihan kolektor (billing_day) khusus untuk jadwal kunjungan dan tidak menunda isolir otomatis.
           const effectiveIsolirDay = defaultIsolirDay;
 
-          // Ambil semua tagihan yang belum lunas (unpaid) untuk pelanggan ini
+          // Ambil semua tagihan yang belum lunas (unpaid) dengan nominal > 0 untuk pelanggan ini
           const unpaidInvoices = db.prepare(
-            'SELECT id, period_month, period_year, amount FROM invoices WHERE customer_id = ? AND status = ?'
+            'SELECT id, period_month, period_year, amount FROM invoices WHERE customer_id = ? AND status = ? AND amount > 0'
           ).all(c.id, 'unpaid');
 
           if (unpaidInvoices.length === 0) continue;
