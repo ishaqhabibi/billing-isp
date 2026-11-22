@@ -1760,6 +1760,14 @@
       align-items: center;
       padding: 0 16px env(safe-area-inset-bottom, 0);
       box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, visibility 0.28s;
+    }
+
+    body.map-is-fullscreen .flutter-navigation-bar {
+      transform: translateY(120%) !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      visibility: hidden !important;
     }
 
     .m3-nav-item {
@@ -1824,7 +1832,7 @@
 
     .nearest-target-drawer {
       position: fixed;
-      bottom: 84px;
+      bottom: calc(88px + env(safe-area-inset-bottom, 0px));
       left: 12px;
       right: 12px;
       max-width: 456px;
@@ -1839,7 +1847,7 @@
       z-index: 990;
       display: none;
       animation: slideUpDrawer 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      transition: padding 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.22s, box-shadow 0.22s;
+      transition: padding 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.22s, box-shadow 0.22s, bottom 0.25s ease;
     }
 
     @keyframes slideUpDrawer {
@@ -1906,10 +1914,149 @@
     /* Minimized Peek Mode */
     .nearest-target-drawer.is-minimized {
       padding: 6px 14px 8px;
-      bottom: 80px;
+      bottom: calc(84px + env(safe-area-inset-bottom, 0px));
       border-radius: 18px;
       box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
       cursor: pointer;
+    }
+
+    /* Top Header Inline Stepper */
+    .drawer-stepper-pill {
+      display: inline-flex;
+      align-items: center;
+      background: var(--m3-surface-container-high);
+      border: 1px solid var(--m3-outline-variant);
+      border-radius: 99px;
+      padding: 2px 5px;
+      gap: 3px;
+    }
+
+    .btn-stepper-step {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--m3-on-surface);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      cursor: pointer;
+      padding: 0;
+      transition: background 0.15s, color 0.15s, transform 0.1s;
+    }
+
+    .btn-stepper-step:active {
+      transform: scale(0.88);
+      background: var(--m3-primary-container);
+      color: var(--m3-primary);
+    }
+
+    /* Bottom Action Row with High Ergonomics */
+    .drawer-action-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--m3-outline-variant);
+      gap: 8px;
+    }
+
+    .btn-target-nav {
+      height: 38px;
+      padding: 0 12px;
+      border-radius: 10px;
+      border: 1px solid var(--m3-outline-variant);
+      background: var(--m3-surface-container-high);
+      color: var(--m3-on-surface);
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-target-nav:active {
+      transform: scale(0.94);
+      background: var(--m3-surface-container-highest);
+    }
+
+    .btn-target-nav-next {
+      background: var(--m3-primary-container);
+      color: var(--m3-primary);
+      border-color: rgba(2, 132, 199, 0.4);
+      font-weight: 800;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.22);
+    }
+
+    .btn-target-nav-next:active {
+      background: var(--m3-primary);
+      color: #ffffff;
+    }
+
+    .btn-drawer-maps {
+      height: 38px;
+      padding: 0 12px;
+      border-radius: 10px;
+      background: var(--m3-surface-container-high);
+      border: 1px solid var(--m3-outline-variant);
+      color: var(--m3-primary);
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .btn-drawer-maps:active {
+      transform: scale(0.94);
+    }
+
+    .btn-drawer-pay {
+      height: 38px;
+      padding: 0 16px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border: none;
+      color: #ffffff;
+      font-size: 12.5px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35);
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .btn-drawer-pay:active {
+      transform: scale(0.94);
+      box-shadow: 0 1px 4px rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-peek-nav {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 1px solid var(--m3-outline-variant);
+      background: var(--m3-surface-container-high);
+      color: var(--m3-on-surface);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-peek-next {
+      background: var(--m3-primary-container);
+      color: var(--m3-primary);
+      border-color: rgba(2, 132, 199, 0.35);
     }
 
     .nearest-target-drawer.is-minimized .drawer-expanded-body {
@@ -2262,15 +2409,17 @@
     }
 
     #collectorMapView.is-fullscreen .map-gps-pill {
-      top: 118px;
+      display: none !important; /* Header already cleanly displays live GPS status */
     }
 
     #collectorMapView.is-fullscreen .nearest-target-drawer {
-      bottom: 16px;
+      bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important;
+      z-index: 100000 !important;
     }
 
     #collectorMapView.is-fullscreen .nearest-target-drawer.is-minimized {
-      bottom: 14px;
+      bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+      z-index: 100000 !important;
     }
 
     /* Fullscreen Top Header */
@@ -3176,17 +3325,23 @@
                 </div>
 
                 <!-- 1. MINIMIZED PEEK BAR (Shown when .is-minimized) -->
-                <div class="drawer-peek-bar" onclick="toggleDrawerMinimize()" style="display: none;">
-                  <div class="d-flex align-items-center gap-2" style="flex: 1; min-width: 0;">
+                <div class="drawer-peek-bar" style="display: none;">
+                  <div class="d-flex align-items-center gap-2" style="flex: 1; min-width: 0; cursor: pointer;" onclick="toggleDrawerMinimize()">
                     <span class="target-order-badge-mini" id="peekTargetBadge">#1</span>
                     <div class="peek-cust-info">
                       <span class="peek-cust-name" id="peekCustName">-</span>
                       <span class="peek-cust-dist" id="peekCustDist">• 0 m</span>
                     </div>
                   </div>
-                  <div class="d-flex align-items-center gap-2" style="flex-shrink: 0;">
-                    <span class="peek-cust-amount" id="peekCustAmount">Rp 0</span>
-                    <button type="button" class="btn-drawer-mini-toggle" title="Perluas Detail">
+                  <div class="d-flex align-items-center gap-1" style="flex-shrink: 0;">
+                    <span class="peek-cust-amount me-1" id="peekCustAmount">Rp 0</span>
+                    <button type="button" class="btn-peek-nav" onclick="stepTargetDrawer(-1)" title="Target Sebelumnya">
+                      <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button type="button" class="btn-peek-nav btn-peek-next" onclick="stepTargetDrawer(1)" title="Target Berikutnya">
+                      <i class="bi bi-chevron-right"></i>
+                    </button>
+                    <button type="button" class="btn-drawer-mini-toggle ms-1" onclick="toggleDrawerMinimize()" title="Perluas Detail">
                       <i class="bi bi-chevron-up"></i>
                     </button>
                   </div>
@@ -3195,14 +3350,23 @@
                 <!-- 2. EXPANDED FULL BODY (Hidden when .is-minimized) -->
                 <div class="drawer-expanded-body">
                   <div class="target-drawer-header">
-                    <div class="d-flex align-items-center gap-1" style="flex:1; min-width:0;">
-                      <span class="target-order-badge" id="drawerTargetOrderBadge">#1</span>
+                    <div class="d-flex align-items-center gap-2" style="flex: 1; min-width: 0;">
+                      <!-- Quick Stepper inline with order badge -->
+                      <div class="drawer-stepper-pill">
+                        <button type="button" class="btn-stepper-step" onclick="stepTargetDrawer(-1)" title="Sebelumnya">
+                          <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <span class="target-order-badge" id="drawerTargetOrderBadge" style="background:transparent; padding:0 4px;">#1</span>
+                        <button type="button" class="btn-stepper-step" onclick="stepTargetDrawer(1)" title="Berikutnya">
+                          <i class="bi bi-chevron-right"></i>
+                        </button>
+                      </div>
                       <span class="badge bg-primary-subtle text-primary border border-primary border-opacity-25"
                         style="font-size:10px; font-weight:700; white-space:nowrap;" id="drawerRoutePill">
                         <i class="bi bi-sign-turn-right-fill me-1"></i>Rute Jalan
                       </span>
                     </div>
-                    <div class="d-flex align-items-center gap-2" style="flex-shrink:0;">
+                    <div class="d-flex align-items-center gap-2" style="flex-shrink: 0;">
                       <span class="target-dist-val" id="drawerTargetDist" style="white-space:nowrap;">0 m</span>
                       <button type="button" class="btn-drawer-toggle" onclick="toggleDrawerMinimize()"
                         title="Kecilkan Kartu">
@@ -3211,44 +3375,42 @@
                     </div>
                   </div>
 
-                  <div class="d-flex justify-content-between align-items-start mt-1">
-                    <div style="flex:1; min-width:0; padding-right:8px;">
+                  <div class="d-flex justify-content-between align-items-start mt-2">
+                    <div style="flex: 1; min-width: 0; padding-right: 8px;">
                       <div
-                        style="font-weight: 800; font-size: 15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+                        style="font-weight: 800; font-size: 15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color: var(--m3-on-surface);"
                         id="drawerCustName">-</div>
                       <div
                         style="font-size: 12px; color: var(--m3-on-surface-variant); margin-top: 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
                         id="drawerCustAddress">-</div>
                     </div>
-                    <div style="font-size: 16px; font-weight: 900; color: #ef4444; flex-shrink:0;"
+                    <div style="font-size: 16px; font-weight: 900; color: #ef4444; flex-shrink: 0; text-align: right;"
                       id="drawerCustAmount">Rp 0</div>
                   </div>
 
-                  <div
-                    class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top border-secondary border-opacity-10 gap-2">
-                    <!-- Prev / Next Target Buttons -->
-                    <div class="btn-group btn-group-sm" role="group">
-                      <button type="button" class="btn btn-outline-secondary" onclick="stepTargetDrawer(-1)"
-                        title="Target Sebelumnya"
-                        style="border-radius:10px 0 0 10px; font-weight:700; padding:6px 12px;">
+                  <!-- High-Contrast Ergonomic Action Row -->
+                  <div class="drawer-action-row mt-3 pt-2">
+                    <!-- Prev / Next Navigation Buttons with Labels & Icons -->
+                    <div class="d-flex align-items-center gap-1">
+                      <button type="button" class="btn-target-nav" onclick="stepTargetDrawer(-1)" title="Target Sebelumnya">
                         <i class="bi bi-chevron-left"></i>
+                        <span>Prev</span>
                       </button>
-                      <button type="button" class="btn btn-outline-secondary" onclick="stepTargetDrawer(1)"
-                        title="Target Berikutnya"
-                        style="border-radius:0 10px 10px 0; font-weight:700; padding:6px 12px;">
+                      <button type="button" class="btn-target-nav btn-target-nav-next" onclick="stepTargetDrawer(1)" title="Target Berikutnya">
+                        <span>Next</span>
                         <i class="bi bi-chevron-right"></i>
                       </button>
                     </div>
 
-                    <div class="d-flex gap-2">
-                      <a href="#" target="_blank" class="btn btn-sm btn-primary" id="drawerMapsRouteBtn"
-                        style="border-radius:10px; font-weight:800; font-size:12px; display:inline-flex; align-items:center; gap:5px; box-shadow:0 3px 10px rgba(2,132,199,0.35);">
+                    <!-- Maps & Payment Action Buttons -->
+                    <div class="d-flex align-items-center gap-2 ms-auto">
+                      <a href="#" target="_blank" class="btn-drawer-maps" id="drawerMapsRouteBtn" title="Buka Rute di Google Maps">
                         <i class="bi bi-google"></i>
-                        <span>Google Maps</span>
+                        <span>Maps</span>
                       </a>
-                      <button type="button" class="btn btn-sm btn-success" id="drawerPayBtn"
-                        style="border-radius:10px; font-weight:800; font-size:12px; padding:6px 14px;">
-                        Bayar
+                      <button type="button" class="btn-drawer-pay" id="drawerPayBtn">
+                        <i class="bi bi-cash-coin me-1"></i>
+                        <span>Bayar</span>
                       </button>
                     </div>
                   </div>
@@ -4604,6 +4766,7 @@
 
       if (isMapFullscreen) {
         mapView.classList.add('is-fullscreen');
+        document.body.classList.add('map-is-fullscreen');
         if (icon) icon.className = 'bi bi-fullscreen-exit';
         if (btn) {
           btn.classList.add('is-active');
@@ -4615,6 +4778,7 @@
         } catch (e) {}
       } else {
         mapView.classList.remove('is-fullscreen');
+        document.body.classList.remove('map-is-fullscreen');
         if (icon) icon.className = 'bi bi-arrows-fullscreen';
         if (btn) {
           btn.classList.remove('is-active');
