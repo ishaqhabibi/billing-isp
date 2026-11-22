@@ -1996,6 +1996,36 @@
       color: #ffffff;
     }
 
+    /* Disabled state: visual cue when reaching start or end of targets */
+    .btn-target-nav:disabled,
+    .btn-target-nav[disabled],
+    .btn-peek-nav:disabled,
+    .btn-peek-nav[disabled] {
+      opacity: 0.35 !important;
+      cursor: not-allowed !important;
+      pointer-events: none !important;
+      box-shadow: none !important;
+      filter: grayscale(0.85) !important;
+    }
+
+    @media (max-width: 380px) {
+      .btn-target-nav {
+        padding: 0 9px;
+        font-size: 11px;
+      }
+      .btn-drawer-maps,
+      .btn-drawer-pay {
+        padding: 0 10px;
+        font-size: 11.5px;
+      }
+    }
+
+    @media (max-width: 335px) {
+      .btn-target-nav span {
+        display: none;
+      }
+    }
+
     .btn-drawer-maps {
       height: 38px;
       padding: 0 12px;
@@ -3363,10 +3393,10 @@
                   </div>
                   <div class="d-flex align-items-center gap-1" style="flex-shrink: 0;">
                     <span class="peek-cust-amount me-1" id="peekCustAmount">Rp 0</span>
-                    <button type="button" class="btn-peek-nav" onclick="stepTargetDrawer(-1)" title="Target Sebelumnya">
+                    <button type="button" class="btn-peek-nav" id="btnPeekPrev" onclick="stepTargetDrawer(-1)" title="Target Sebelumnya">
                       <i class="bi bi-chevron-left"></i>
                     </button>
-                    <button type="button" class="btn-peek-nav btn-peek-next" onclick="stepTargetDrawer(1)" title="Target Berikutnya">
+                    <button type="button" class="btn-peek-nav btn-peek-next" id="btnPeekNext" onclick="stepTargetDrawer(1)" title="Target Berikutnya">
                       <i class="bi bi-chevron-right"></i>
                     </button>
                     <button type="button" class="btn-drawer-mini-toggle ms-1" onclick="toggleDrawerMinimize()" title="Perluas Detail">
@@ -3414,14 +3444,14 @@
 
                   <!-- High-Contrast Ergonomic Action Row -->
                   <div class="drawer-action-row mt-3 pt-2">
-                    <!-- Prev / Next Navigation Buttons with Labels & Icons -->
+                    <!-- Navigasi Target: Sebelumnya & Berikutnya (Bahasa Indonesia) -->
                     <div class="d-flex align-items-center gap-1">
-                      <button type="button" class="btn-target-nav" onclick="stepTargetDrawer(-1)" title="Target Sebelumnya">
+                      <button type="button" class="btn-target-nav" id="btnTargetPrev" onclick="stepTargetDrawer(-1)" title="Target Sebelumnya">
                         <i class="bi bi-chevron-left"></i>
-                        <span>Prev</span>
+                        <span>Sebelumnya</span>
                       </button>
-                      <button type="button" class="btn-target-nav btn-target-nav-next" onclick="stepTargetDrawer(1)" title="Target Berikutnya">
-                        <span>Next</span>
+                      <button type="button" class="btn-target-nav btn-target-nav-next" id="btnTargetNext" onclick="stepTargetDrawer(1)" title="Target Berikutnya">
+                        <span>Berikutnya</span>
                         <i class="bi bi-chevron-right"></i>
                       </button>
                     </div>
@@ -5342,6 +5372,20 @@
       if (peekName) peekName.textContent = custName;
       if (peekAmount) peekAmount.textContent = 'Rp ' + Number(custAmount).toLocaleString('id-ID');
 
+      // Update status tombol Sebelumnya / Berikutnya (Berhenti jika sudah di ujung, tidak looping terus)
+      const isFirst = index <= 0;
+      const isLast = index >= filteredTargets.length - 1;
+
+      const btnPrev = document.getElementById('btnTargetPrev');
+      const btnNext = document.getElementById('btnTargetNext');
+      if (btnPrev) btnPrev.disabled = isFirst;
+      if (btnNext) btnNext.disabled = isLast;
+
+      const btnPeekPrev = document.getElementById('btnPeekPrev');
+      const btnPeekNext = document.getElementById('btnPeekNext');
+      if (btnPeekPrev) btnPeekPrev.disabled = isFirst;
+      if (btnPeekNext) btnPeekNext.disabled = isLast;
+
       const routeBtn = document.getElementById('drawerMapsRouteBtn');
       if (routeBtn) {
         routeBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(target.lat + ',' + target.lng)}&travelmode=driving`;
@@ -5361,9 +5405,13 @@
     function stepTargetDrawer(direction) {
       if (!filteredTargets || filteredTargets.length === 0) return;
       let newIdx = currentActiveTargetIndex + direction;
-      if (newIdx < 0) newIdx = filteredTargets.length - 1;
-      if (newIdx >= filteredTargets.length) newIdx = 0;
-      showNearestTargetDrawer(newIdx);
+      // Berhenti di batas akhir/awal (tidak looping terus menerus)
+      if (newIdx < 0) newIdx = 0;
+      if (newIdx >= filteredTargets.length) newIdx = filteredTargets.length - 1;
+
+      if (newIdx !== currentActiveTargetIndex) {
+        showNearestTargetDrawer(newIdx);
+      }
     }
 
     // Touch Swipe Gesture on Drawer (Swipe Down -> Minimize, Swipe Up -> Expand)
