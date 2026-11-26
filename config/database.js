@@ -1284,6 +1284,16 @@ try {
   if (!custCols.some(c => c.name === 'optical_last_sync')) {
     db.exec("ALTER TABLE customers ADD COLUMN optical_last_sync DATETIME DEFAULT NULL");
   }
+  if (!custCols.some(c => c.name === 'genieacs_auto_push')) {
+    db.exec("ALTER TABLE customers ADD COLUMN genieacs_auto_push INTEGER DEFAULT 0");
+  }
+  if (!custCols.some(c => c.name === 'genieacs_last_pushed_at')) {
+    db.exec("ALTER TABLE customers ADD COLUMN genieacs_last_pushed_at DATETIME DEFAULT NULL");
+  }
+  if (!custCols.some(c => c.name === 'genieacs_last_push_note')) {
+    db.exec("ALTER TABLE customers ADD COLUMN genieacs_last_push_note TEXT DEFAULT ''");
+  }
+  db.exec("CREATE INDEX IF NOT EXISTS idx_customers_genieacs_autopush ON customers(genieacs_auto_push)");
 
   // Optical power measurement audit trail & history table
   db.exec(`

@@ -4291,6 +4291,9 @@
                 <button type="button" id="v_btn_sync_optical" class="btn btn-g btn-sm" style="font-size:11.5px; padding:4px 10px;" onclick="syncOpticalFromModal()">
                   <i class="bi bi-arrow-repeat me-1"></i> Sinkron GenieACS
                 </button>
+                <button type="button" id="v_btn_push_genieacs" class="btn btn-p btn-sm" style="font-size:11.5px; padding:4px 10px;" onclick="pushCustomerGenieacsConfig(false)" title="Push PPPoE (VLAN 100) + ACL ke ONT FiberHome D2">
+                  <i class="bi bi-cloud-upload me-1"></i> Push PPPoE &amp; ACL
+                </button>
               </div>
             </div>
 
@@ -5526,6 +5529,48 @@ async function syncOpticalFromModal() {
     }
   } catch (err) {
     if (fb) fb.textContent = 'Gagal sync: ' + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origHtml;
+  }
+}
+
+async function pushCustomerGenieacsConfig(force) {
+  const customerId = window._activeOpticalCustomerId;
+  const btn = document.getElementById('v_btn_push_genieacs');
+  const fb = document.getElementById('v_opt_sync_feedback');
+  if (!customerId || !btn) return;
+  const origHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Mengirim...';
+  if (fb) fb.textContent = 'Mengecek struktur WAN & ACL ONT di GenieACS...';
+
+  try {
+    const res = await fetch(`/admin/api/customers/${customerId}/push-genieacs-config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ force: Boolean(force) })
+    });
+    const data = await res.json();
+    if (data.needsConfirm) {
+      if (fb) fb.textContent = `Dilewati aman: PPPoE "${data.existingUsername || '-'}" sudah aktif di WCD.${data.wcdIndex || '?'}`;
+      const okOverwrite = confirm(
+        `ONT ini sudah terisi PPPoE "${data.existingUsername}" di WANConnectionDevice.${data.wcdIndex}.\n\nYakin ingin menimpa PPPoE (VLAN 100) + ACL sesuai data pelanggan ini?`
+      );
+      if (okOverwrite) {
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+        return await pushCustomerGenieacsConfig(true);
+      }
+      return;
+    }
+    if (!data.ok) {
+      if (fb) fb.textContent = data.message || data.error || 'Gagal push ke GenieACS';
+      return;
+    }
+    if (fb) fb.textContent = data.message || 'Konfigurasi PPPoE + ACL berhasil dikirim';
+  } catch (err) {
+    if (fb) fb.textContent = 'Error push: ' + err.message;
   } finally {
     btn.disabled = false;
     btn.innerHTML = origHtml;

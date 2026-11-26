@@ -819,6 +819,24 @@ function startCronJobs() {
     }
   });
 
+  // 10. Auto-Push PPPoE (VLAN 100) + ACL FiberHome D2 untuk pelanggan baru (Non-Overwrite Guard)
+  const genieacsProvSvc = require('./genieacsProvisionService');
+  let isGenieacsAutoPushRunning = false;
+  cron.schedule('*/5 * * * *', async () => {
+    if (isGenieacsAutoPushRunning) return;
+    isGenieacsAutoPushRunning = true;
+    try {
+      const res = await genieacsProvSvc.processPendingAutoPushQueue();
+      if (res && (res.pushed > 0 || res.skipped > 0)) {
+        logger.info(`[CRON] GenieACS Auto-Push: dicek=${res.checked}, push=${res.pushed}, skip_aman=${res.skipped}, tunda=${res.deferred}`);
+      }
+    } catch (e) {
+      logger.warn(`[CRON] GenieACS Auto-Push error: ${e.message}`);
+    } finally {
+      isGenieacsAutoPushRunning = false;
+    }
+  });
+
   logger.info('[CRON] Semua tugas penjadwalan telah aktif.');
 }
 

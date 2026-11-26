@@ -2761,8 +2761,29 @@ router.post('/api/remote-enable/:deviceId', requireAdmin, async (req, res) => {
         
         const server = servers[0];
         const baseUrl = normalizeUrl(server.url);
+        const axConfig = { ...getAxiosConfig(server), timeout: 12000 };
         const deviceId = String(req.params.deviceId || '');
-        
+
+        let devData = null;
+        try {
+            const devRes = await axios.get(`${baseUrl}/devices`, {
+                ...axConfig,
+                params: { query: JSON.stringify({ _id: deviceId }), limit: 1 }
+            });
+            devData = Array.isArray(devRes.data) && devRes.data[0] ? devRes.data[0] : null;
+        } catch (_) {}
+
+        const manu = String(devData?._deviceId?._Manufacturer || '').toLowerCase();
+        const oui = String(devData?._deviceId?._OUI || '').toUpperCase();
+        const isFiberhome = manu.includes('fiberhome') || oui === '000AC2' || Boolean(devData?.InternetGatewayDevice?.X_FH_ACL);
+
+        if (isFiberhome) {
+            const genieacsProv = require('../services/genieacsProvisionService');
+            const ax = genieacsApi.createAxiosInstance(server);
+            await genieacsProv.pushFiberhomeAclTasks(ax, deviceId, devData);
+            return res.json({ success: true, message: 'ACL Remote WAN FiberHome (X_FH_ACL) diaktifkan sesuai standar brg1101' });
+        }
+
         await axios.post(
             `${baseUrl}/devices/${encodeURIComponent(deviceId)}/tasks`,
             { 

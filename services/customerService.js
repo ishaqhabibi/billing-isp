@@ -232,8 +232,8 @@ function createCustomer(data) {
         : null);
 
   return db.prepare(`
-    INSERT INTO customers (nik, name, phone, email, address, area, customer_code, package_id, router_id, olt_id, odc_id, odp_id, pon_port, odp_port, photo_house, photo_customer, photo_optical_power, initial_rx_power, lat, lng, genieacs_tag, pppoe_username, pppoe_password, pppoe_remote_address, isolir_profile, status, install_date, expired_at, notes, auto_isolate, isolate_day, billing_day, connection_type, static_ip, mac_address, hotspot_username, hotspot_password, hotspot_profile, collector_id, is_radius, ont_sn)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO customers (nik, name, phone, email, address, area, customer_code, package_id, router_id, olt_id, odc_id, odp_id, pon_port, odp_port, photo_house, photo_customer, photo_optical_power, initial_rx_power, lat, lng, genieacs_tag, pppoe_username, pppoe_password, pppoe_remote_address, isolir_profile, status, install_date, expired_at, notes, auto_isolate, isolate_day, billing_day, connection_type, static_ip, mac_address, hotspot_username, hotspot_password, hotspot_profile, collector_id, is_radius, ont_sn, genieacs_auto_push)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     data.nik ? String(data.nik).trim() : '',
     data.name, data.phone || '', data.email || '', data.address || '',
@@ -271,7 +271,8 @@ function createCustomer(data) {
     data.hotspot_profile || '',
     data.collector_id ? parseInt(data.collector_id) : null,
     data.is_radius !== undefined ? parseInt(data.is_radius) : 1,
-    ontSn
+    ontSn,
+    data.genieacs_auto_push ? 1 : 0
   );
 }
 

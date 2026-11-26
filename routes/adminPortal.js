@@ -1554,6 +1554,24 @@ router.post('/api/sync-genieacs-optical', requireAdminSession, async (req, res) 
   }
 });
 
+router.post('/api/customers/:id/push-genieacs-config', requireAdminSession, express.json(), async (req, res) => {
+  try {
+    const customerId = Number(req.params.id);
+    const force = Boolean(req.body && req.body.force);
+    const genieacsProv = require('../services/genieacsProvisionService');
+    const result = await genieacsProv.provisionCustomerDevice(customerId, {
+      force,
+      triggerSource: force ? 'manual_force' : 'manual'
+    });
+    if (result.skipped && result.reason === 'existing_pppoe_present') {
+      return res.json({ ok: false, needsConfirm: true, ...result });
+    }
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // --- TECHNICIAN MANAGEMENT ---
 router.get('/technicians', requireAdminSession, requireSidebarMenuAccess('technicians'), restrictToAdmin, (req, res) => {
   const technicians = adminSvc.getAllTechnicians();
@@ -2987,6 +3005,12 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
     const wantsRadius = (req.body.sync_to_radius === '1' || req.body.sync_to_radius === 1 || Number(req.body.is_radius) === 1);
     const isRadius = wantsRadius ? 1 : 0;
     req.body.is_radius = isRadius;
+    req.body.genieacs_auto_push = (
+      connectionType === 'pppoe' &&
+      String(req.body.ont_sn || '').trim() &&
+      String(req.body.pppoe_username || '').trim() &&
+      String(req.body.pppoe_password || '').trim()
+    ) ? 1 : 0;
 
     const createRes = customerSvc.createCustomer(req.body);
     const newCustId = createRes && createRes.lastInsertRowid ? createRes.lastInsertRowid : null;
@@ -3088,6 +3112,14 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
       syncGenieacsNocTags(req.body.ont_sn, { ...req.body, id: newCustId }).catch(err => {
         logger.error(`[GenieACS Sync] Background sync error for new customer ${newCustId}:`, err);
       });
+    }
+    // AUTO-PUSH PPPoE (VLAN 100) + ACL FIBERHOME JIKA PELANGGAN BARU & ONT BELUM PUNYA PPPoE AKTIF
+    if (newCustId && req.body.genieacs_auto_push === 1) {
+      require('../services/genieacsProvisionService')
+        .provisionCustomerDevice(newCustId, { force: false, triggerSource: 'create_customer' })
+        .catch(err => {
+          logger.warn(`[GenieACS Auto-Push] Background error for customer #${newCustId}: ${err.message}`);
+        });
     }
     if (connectionType === 'hotspot' && req.body.hotspot_username) {
       const disabled = String(req.body.status || 'active').toLowerCase() !== 'active';
