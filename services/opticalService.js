@@ -65,13 +65,30 @@ function logOpticalMeasurement(data) {
   return { id: info.lastInsertRowid, targetType, targetId, measuredPower, refLoss };
 }
 
-function getOpticalHistory(targetType, targetId, limit = 20) {
+function getOpticalHistory(targetType, targetId, limit = 100, days = null) {
+  const safeType = String(targetType).toLowerCase();
+  const safeId = parseInt(targetId, 10);
+  const safeLimit = Math.min(500, Math.max(1, parseInt(limit, 10) || 100));
+  const safeDays = (days !== null && days !== undefined && days !== '') ? parseInt(days, 10) : 0;
+
+  if (safeDays > 0) {
+    return db.prepare(`
+      SELECT * FROM (
+        SELECT * FROM optical_power_history
+        WHERE target_type = ? AND target_id = ?
+          AND datetime(created_at) >= datetime(NOW_LOCAL(), ?)
+        ORDER BY id DESC
+        LIMIT ?
+      ) ORDER BY id ASC
+    `).all(safeType, safeId, `-${safeDays} days`, safeLimit);
+  }
+
   return db.prepare(`
     SELECT * FROM optical_power_history
     WHERE target_type = ? AND target_id = ?
     ORDER BY id DESC
     LIMIT ?
-  `).all(String(targetType).toLowerCase(), parseInt(targetId, 10), Math.min(100, Math.max(1, parseInt(limit, 10) || 20)));
+  `).all(safeType, safeId, safeLimit);
 }
 
 /**
@@ -113,40 +130,114 @@ async function snapCableToRoad(startLat, startLng, endLat, endLng) {
 /**
  * SINKRONISASI REDAMAN PELANGGAN DARI GENIEACS TR-069
  */
-async function syncCustomerOpticalPowerFromGenieACS() {
+const RX_POWER_PATHS = [
+  'VirtualParameters.RXPower',
+  'VirtualParameters.redaman',
+  'InternetGatewayDevice.X_FH_PON_MANAGE.RxPower',
+  'InternetGatewayDevice.X_FH_PON_MANAGE.RXPower',
+  'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_FH_WANGponLinkConfig.RXPower',
+  'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_FH_WANGponLinkConfig.RxPower',
+  'InternetGatewayDevice.WANDevice.1.WANPONInterfaceConfig.RXPower',
+  'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANOAM.RXPower',
+  'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_HW_OpticalSignal.RXPower',
+  'InternetGatewayDevice.WANDevice.1.X_GponInterfaceConfig.RXPower',
+  'InternetGatewayDevice.WANDevice.1.X_GponInterfaceConfig.RxPower',
+  'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower',
+  'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RxPower',
+  'InternetGatewayDevice.WANDevice.1.X_ZTE_GponInterfaceConfig.RXPower',
+  'InternetGatewayDevice.WANDevice.1.X_ZTE_GponInterfaceConfig.RxPower',
+  'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_ZTE_OpticalSignal.RXPower',
+  'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_ZTE_OpticalSignal.RxPower',
+  'InternetGatewayDevice.WANDevice.1.X_HW_GponInterfaceConfig.RXPower',
+  'InternetGatewayDevice.WANDevice.1.X_HW_GponInterfaceConfig.RxPower',
+  'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.RXPower',
+  'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.RXPower',
+  'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.RxPower',
+  'InternetGatewayDevice.WANDevice.1.X_CMCC_EponInterfaceConfig.RXPower',
+  'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.RXPower',
+  'InternetGatewayDevice.WANDevice.1.X_CT-COM_EponInterfaceConfig.RXPower',
+  'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.RXPower',
+  'InternetGatewayDevice.WANDevice.1.X_CU_WANEPONInterfaceConfig.OpticalTransceiver.RXPower',
+  'InternetGatewayDevice.WANDevice.1.WANEponInterfaceConfig.OpticalPower.RxPower',
+  'InternetGatewayDevice.WANDevice.1.WANGponInterfaceConfig.OpticalPower.RxPower',
+  'Device.Optical.Interface.1.OpticalSignalLevel',
+  'Device.XPON.Interface.1.Stats.RXPower'
+];
+
+const OPTICAL_PROJECTION_FIELDS = [
+  '_id',
+  '_tags',
+  '_lastInform',
+  '_deviceId',
+  'DeviceID._SerialNumber',
+  'InternetGatewayDevice.DeviceInfo.SerialNumber',
+  'Device.DeviceInfo.SerialNumber',
+  'VirtualParameters.pppoeUsername',
+  'VirtualParameters.pppUsername',
+  'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Username',
+  'Device.PPP.Interface.1.Username',
+  ...RX_POWER_PATHS
+];
+
+async function syncCustomerOpticalPowerFromGenieACS(options = {}) {
   if (!genieacs || typeof genieacs.getDevices !== 'function') {
     throw new Error('Modul GenieACS belum terpasang atau tidak aktif');
   }
 
-  const devices = await genieacs.getDevices();
+  const maxStaleHours = options.maxStaleHours !== undefined ? Number(options.maxStaleHours) : 24;
+  const deadbandDb = options.deadbandDb !== undefined ? Number(options.deadbandDb) : 0.3;
+  const heartbeatHours = options.heartbeatHours !== undefined ? Number(options.heartbeatHours) : 6;
+
+  const devices = await genieacs.getDevices(null, OPTICAL_PROJECTION_FIELDS);
   if (!Array.isArray(devices) || devices.length === 0) {
-    return { ok: true, syncedCount: 0, message: 'Tidak ada perangkat ditemukan di GenieACS' };
+    return {
+      ok: true,
+      syncedCount: 0,
+      loggedCount: 0,
+      skippedStaleCount: 0,
+      totalDevicesFetched: 0,
+      updatedCustomers: [],
+      message: 'Tidak ada perangkat ditemukan di GenieACS'
+    };
   }
 
-  // Load semua pelanggan aktif
-  const customers = db.prepare('SELECT id, name, pppoe_username, phone, genieacs_tag, optical_rx_power FROM customers').all();
+  // Load semua pelanggan + histori terakhir dalam satu query agar bebas N+1
+  const customers = db.prepare(`
+    SELECT id, name, pppoe_username, phone, genieacs_tag, ont_sn, optical_rx_power, optical_status
+    FROM customers
+  `).all();
   const custMap = new Map();
   customers.forEach(c => {
     if (c.pppoe_username) custMap.set(String(c.pppoe_username).trim().toLowerCase(), c);
     if (c.genieacs_tag) custMap.set(String(c.genieacs_tag).trim().toLowerCase(), c);
+    if (c.ont_sn) custMap.set(String(c.ont_sn).trim().toLowerCase(), c);
     if (c.phone) custMap.set(String(c.phone).trim().replace(/\D/g, ''), c);
   });
 
-  const rxPowerPaths = [
-    'VirtualParameters.RXPower',
-    'VirtualParameters.redaman',
-    'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.RXPower',
-    'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.RxPower',
-    'InternetGatewayDevice.WANDevice.1.X_HW_GponInterfaceConfig.RXPower',
-    'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.RXPower',
-    'InternetGatewayDevice.WANDevice.1.WANPONInterfaceConfig.RXPower',
-    'InternetGatewayDevice.WANDevice.1.WANEponInterfaceConfig.OpticalPower.RxPower',
-    'InternetGatewayDevice.WANDevice.1.WANGponInterfaceConfig.OpticalPower.RxPower',
-    'Device.XPON.Interface.1.Stats.RXPower'
-  ];
+  const latestHistoryRows = db.prepare(`
+    SELECT o1.target_id, o1.measured_power_dbm, o1.created_at
+    FROM optical_power_history o1
+    INNER JOIN (
+      SELECT target_id, MAX(id) AS max_id
+      FROM optical_power_history
+      WHERE target_type = 'customer'
+      GROUP BY target_id
+    ) o2 ON o1.id = o2.max_id
+  `).all();
+  const latestHistoryMap = new Map(latestHistoryRows.map(r => [Number(r.target_id), r]));
+
+  function getNestedValue(device, pathStr) {
+    const parts = pathStr.split('.');
+    let cur = device;
+    for (const part of parts) {
+      if (!cur || typeof cur !== 'object') return undefined;
+      cur = cur[part];
+    }
+    return cur && cur._value !== undefined ? cur._value : cur;
+  }
 
   function extractRx(device) {
-    for (const p of rxPowerPaths) {
+    for (const p of RX_POWER_PATHS) {
       const parts = p.split('.');
       let cur = device;
       for (const part of parts) {
@@ -155,7 +246,7 @@ async function syncCustomerOpticalPowerFromGenieACS() {
       }
       if (cur && cur._value !== undefined) {
         let val = parseFloat(cur._value);
-        if (!isNaN(val)) {
+        if (Number.isFinite(val)) {
           // Normalisasi skala jika perangkat mengembalikan nilai integer tanpa desimal (misal 2140 = -21.4 dBm)
           if (val > 100) val = -(val / 100);
           else if (val > 0 && val < 100) val = -val;
@@ -168,27 +259,49 @@ async function syncCustomerOpticalPowerFromGenieACS() {
 
   function getDeviceIdentifiers(device) {
     const list = [];
-    if (device._id) list.push(String(device._id).toLowerCase());
+    if (device._id) list.push(String(device._id).trim().toLowerCase());
     if (device._tags && Array.isArray(device._tags)) {
       device._tags.forEach(t => {
-        list.push(String(t).toLowerCase());
-        if (t.startsWith('pppoe:')) list.push(t.replace('pppoe:', '').toLowerCase());
+        const cleanTag = String(t).trim().toLowerCase();
+        list.push(cleanTag);
+        if (cleanTag.startsWith('pppoe:')) list.push(cleanTag.replace('pppoe:', '').trim());
       });
     }
-    // Serial number
+
+    const pppCandidates = [
+      getNestedValue(device, 'VirtualParameters.pppoeUsername'),
+      getNestedValue(device, 'VirtualParameters.pppUsername'),
+      getNestedValue(device, 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Username'),
+      getNestedValue(device, 'Device.PPP.Interface.1.Username')
+    ];
+    pppCandidates.forEach(u => {
+      if (u && typeof u === 'string') list.push(u.trim().toLowerCase());
+    });
+
     const sn = device._deviceId?._SerialNumber ||
-               device.DeviceID?._SerialNumber?._value || 
+               device.DeviceID?._SerialNumber?._value ||
                device.InternetGatewayDevice?.DeviceInfo?.SerialNumber?._value ||
                device.Device?.DeviceInfo?.SerialNumber?._value;
-    if (sn) list.push(String(sn).toLowerCase());
+    if (sn) list.push(String(sn).trim().toLowerCase());
 
     return list;
   }
 
-  let syncedCount = 0;
+  const updates = [];
+  const historyInserts = [];
   const updatedCustomers = [];
+  const seenCustomerIds = new Set();
+  let skippedStaleCount = 0;
 
   for (const dev of devices) {
+    if (maxStaleHours > 0 && dev._lastInform) {
+      const informMs = new Date(dev._lastInform).getTime();
+      if (Number.isFinite(informMs) && (Date.now() - informMs) > maxStaleHours * 3600 * 1000) {
+        skippedStaleCount++;
+        continue;
+      }
+    }
+
     const rx = extractRx(dev);
     if (rx === null) continue;
 
@@ -201,46 +314,152 @@ async function syncCustomerOpticalPowerFromGenieACS() {
       }
     }
 
-    if (matchedCust) {
-      let status = 'normal';
-      if (rx <= -27 || rx >= -8) status = 'critical';
-      else if (rx <= -24) status = 'warning';
+    if (!matchedCust || seenCustomerIds.has(matchedCust.id)) continue;
+    seenCustomerIds.add(matchedCust.id);
 
-      // Update pelanggan
-      db.prepare(`
-        UPDATE customers 
-        SET optical_rx_power = ?, optical_status = ?, optical_last_sync = NOW_LOCAL() 
-        WHERE id = ?
-      `).run(rx, status, matchedCust.id);
+    let status = 'normal';
+    if (rx <= -27 || rx >= -8) status = 'critical';
+    else if (rx <= -24) status = 'warning';
 
-      // Log ke optical_power_history jika ada perubahan signifikan (> 0.5 dB) atau pertama kali
-      const lastPower = matchedCust.optical_rx_power != null ? parseFloat(matchedCust.optical_rx_power) : null;
-      if (lastPower === null || Math.abs(rx - lastPower) >= 0.5) {
-        db.prepare(`
-          INSERT INTO optical_power_history (
-            target_type, target_id, target_name, target_port,
-            measured_power_dbm, reference_loss_db, measured_by, notes, created_at
-          )
-          VALUES ('customer', ?, ?, 'ONU RX', ?, ?, 'GenieACS TR-069', 'Auto-sync background', NOW_LOCAL())
-        `).run(
-          matchedCust.id,
-          matchedCust.name,
-          rx,
-          lastPower !== null ? parseFloat((rx - lastPower).toFixed(2)) : 0
-        );
+    updates.push({ id: matchedCust.id, rx, status });
+
+    const prevHist = latestHistoryMap.get(Number(matchedCust.id));
+    const prevRx = prevHist
+      ? parseFloat(prevHist.measured_power_dbm)
+      : (matchedCust.optical_rx_power != null ? parseFloat(matchedCust.optical_rx_power) : null);
+    const prevStatus = matchedCust.optical_status || 'normal';
+    const deltaDb = (prevRx !== null && Number.isFinite(prevRx)) ? parseFloat((rx - prevRx).toFixed(2)) : 0;
+
+    let elapsedHours = Infinity;
+    if (prevHist && prevHist.created_at) {
+      const parsedMs = new Date(String(prevHist.created_at).replace(' ', 'T')).getTime();
+      if (Number.isFinite(parsedMs)) {
+        elapsedHours = (Date.now() - parsedMs) / (3600 * 1000);
       }
-
-      syncedCount++;
-      updatedCustomers.push({ id: matchedCust.id, name: matchedCust.name, rxPower: rx, status });
     }
+
+    const isFirstLog = !prevHist;
+    const isSignificantChange = prevRx === null || !Number.isFinite(prevRx) || Math.abs(rx - prevRx) >= deadbandDb;
+    const isStatusChanged = prevStatus !== status;
+    const isHeartbeatDue = elapsedHours >= heartbeatHours;
+
+    if (isFirstLog || isSignificantChange || isStatusChanged || isHeartbeatDue) {
+      let reason = 'Heartbeat 6 jam';
+      if (isFirstLog) reason = 'Pencatatan awal GenieACS';
+      else if (isStatusChanged) reason = `Perubahan status (${prevStatus} -> ${status})`;
+      else if (isSignificantChange) reason = `Perubahan redaman ${deltaDb >= 0 ? '+' : ''}${deltaDb} dB`;
+
+      historyInserts.push({
+        targetId: matchedCust.id,
+        targetName: matchedCust.name,
+        rx,
+        deltaDb,
+        notes: reason
+      });
+    }
+
+    updatedCustomers.push({ id: matchedCust.id, name: matchedCust.name, rxPower: rx, status, deltaDb });
   }
 
-  return { ok: true, syncedCount, updatedCustomers };
+  const updateStmt = db.prepare(`
+    UPDATE customers
+    SET optical_rx_power = ?, optical_status = ?, optical_last_sync = NOW_LOCAL()
+    WHERE id = ?
+  `);
+  const insertHistStmt = db.prepare(`
+    INSERT INTO optical_power_history (
+      target_type, target_id, target_name, target_port,
+      measured_power_dbm, reference_loss_db, measured_by, notes, created_at
+    )
+    VALUES ('customer', ?, ?, 'ONU RX', ?, ?, 'GenieACS TR-069', ?, NOW_LOCAL())
+  `);
+
+  const runBatch = db.transaction(() => {
+    for (const u of updates) {
+      updateStmt.run(u.rx, u.status, u.id);
+    }
+    for (const h of historyInserts) {
+      insertHistStmt.run(h.targetId, h.targetName, h.rx, h.deltaDb, h.notes);
+    }
+  });
+  runBatch();
+
+  return {
+    ok: true,
+    syncedCount: updates.length,
+    loggedCount: historyInserts.length,
+    skippedStaleCount,
+    totalDevicesFetched: devices.length,
+    updatedCustomers
+  };
+}
+
+/**
+ * Ambil daftar pelanggan dengan indikasi penurunan redaman / status warning-critical
+ */
+function getDegradedCustomers(options = {}) {
+  const hours = Math.max(1, parseInt(options.hours, 10) || 24);
+  const dropThresholdDb = Number(options.dropThresholdDb) || 2.0;
+  const limit = Math.min(200, Math.max(1, parseInt(options.limit, 10) || 50));
+
+  const rows = db.prepare(`
+    SELECT
+      c.id, c.name, c.pppoe_username, c.phone, c.area,
+      c.optical_rx_power, c.initial_rx_power, c.optical_status, c.optical_last_sync,
+      (
+        SELECT MAX(measured_power_dbm)
+        FROM optical_power_history h
+        WHERE h.target_type = 'customer' AND h.target_id = c.id
+          AND datetime(h.created_at) >= datetime(NOW_LOCAL(), ?)
+      ) AS best_rx_window
+    FROM customers c
+    WHERE c.optical_rx_power IS NOT NULL
+      AND (
+        c.optical_status IN ('warning', 'critical')
+        OR (c.initial_rx_power IS NOT NULL AND c.optical_rx_power <= c.initial_rx_power - ?)
+        OR EXISTS (
+          SELECT 1 FROM optical_power_history h
+          WHERE h.target_type = 'customer' AND h.target_id = c.id
+            AND datetime(h.created_at) >= datetime(NOW_LOCAL(), ?)
+            AND h.measured_power_dbm >= c.optical_rx_power + ?
+        )
+      )
+    ORDER BY
+      CASE WHEN c.optical_status = 'critical' THEN 0 WHEN c.optical_status = 'warning' THEN 1 ELSE 2 END,
+      c.optical_rx_power ASC
+    LIMIT ?
+  `).all(`-${hours} hours`, dropThresholdDb, `-${hours} hours`, dropThresholdDb, limit);
+
+  return rows.map(r => {
+    const currentRx = r.optical_rx_power != null ? parseFloat(r.optical_rx_power) : null;
+    const initRx = r.initial_rx_power != null ? parseFloat(r.initial_rx_power) : null;
+    const bestWindow = r.best_rx_window != null ? parseFloat(r.best_rx_window) : null;
+    return {
+      ...r,
+      drop_from_initial_db: (currentRx !== null && initRx !== null) ? parseFloat((currentRx - initRx).toFixed(2)) : null,
+      recent_drop_db: (currentRx !== null && bestWindow !== null) ? parseFloat((currentRx - bestWindow).toFixed(2)) : null
+    };
+  });
+}
+
+/**
+ * Hapus log histori redaman yang lebih tua dari retentionDays hari agar DB SQLite tetap ringan
+ */
+function cleanupOldOpticalHistory(retentionDays = 90) {
+  const days = Math.max(7, parseInt(retentionDays, 10) || 90);
+  const info = db.prepare(`
+    DELETE FROM optical_power_history
+    WHERE datetime(created_at) < datetime(NOW_LOCAL(), ?)
+  `).run(`-${days} days`);
+  return { ok: true, deletedCount: info.changes, retentionDays: days };
 }
 
 module.exports = {
   logOpticalMeasurement,
   getOpticalHistory,
   snapCableToRoad,
-  syncCustomerOpticalPowerFromGenieACS
+  syncCustomerOpticalPowerFromGenieACS,
+  getDegradedCustomers,
+  cleanupOldOpticalHistory,
+  OPTICAL_PROJECTION_FIELDS
 };

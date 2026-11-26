@@ -33,7 +33,7 @@ function getBackupTimestamp() {
 }
 
 /**
- * Backup database SQLite
+ * Backup database SQLite secara aman (WAL-safe menggunakan VACUUM INTO + fallback checkpoint)
  */
 function backupDatabase() {
   try {
@@ -41,14 +41,28 @@ function backupDatabase() {
     const backupFileName = `billing_db_${timestamp}.db`;
     const backupFilePath = path.join(backupDir, backupFileName);
 
-    // Copy database file
-    fs.copyFileSync(dbPath, backupFilePath);
+    let vacuumOk = false;
+    try {
+      const db = require('../config/database');
+      const escapedPath = backupFilePath.replace(/'/g, "''");
+      db.exec(`VACUUM INTO '${escapedPath}'`);
+      vacuumOk = true;
+    } catch (vacErr) {
+      logger.warn(`[Backup] VACUUM INTO fallback ke wal_checkpoint + copyFileSync: ${vacErr.message}`);
+      try {
+        const db = require('../config/database');
+        db.pragma('wal_checkpoint(TRUNCATE)');
+      } catch (_) {}
+      if (fs.existsSync(backupFilePath)) {
+        try { fs.unlinkSync(backupFilePath); } catch (_) {}
+      }
+      fs.copyFileSync(dbPath, backupFilePath);
+    }
 
-    // Compress backup (optional - bisa ditambahkan nanti)
     const stats = fs.statSync(backupFilePath);
     const sizeKB = Math.round(stats.size / 1024);
 
-    logger.info(`[Backup] Database backup created: ${backupFileName} (${sizeKB} KB)`);
+    logger.info(`[Backup] Database backup created (${vacuumOk ? 'VACUUM INTO' : 'checkpoint+copy'}): ${backupFileName} (${sizeKB} KB)`);
     
     return {
       success: true,
@@ -392,6 +406,8 @@ function scheduleAutoBackup() {
     
     if (result.database.success && result.settings.success) {
       logger.info('[Backup] Scheduled backup completed successfully');
+      cleanupOldBackups(30);
+      checkBackupCapacity(500);
     } else {
       logger.error('[Backup] Scheduled backup failed');
     }

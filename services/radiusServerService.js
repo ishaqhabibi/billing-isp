@@ -77,8 +77,39 @@ function findUserCredentials(username) {
         try {
           const pppoeUser = db.prepare(`SELECT secret FROM pppoe_users WHERE username = ? LIMIT 1`).get(cleanUsername);
           if (pppoeUser) secret = pppoeUser.secret || '';
-        } catch (e) {}
+        } catch (e) { }
       }
+
+      // Override speed jika pelanggan memiliki Add-On Speed aktif yang profilnya cocok dengan paket
+      let speedUp = cust.speed_up || 0;
+      let speedDown = cust.speed_down || 0;
+      let speedUpUpto = cust.speed_up_upto || 0;
+      let speedDownUpto = cust.speed_down_upto || 0;
+      let packageName = cust.package_name || '';
+
+      try {
+        const activeAddon = db.prepare(`
+          SELECT addon_profile
+          FROM customer_addons
+          WHERE customer_id = ? AND status = 'active' AND datetime(expired_at) >= datetime(NOW_LOCAL())
+          ORDER BY id DESC LIMIT 1
+        `).get(cust.id);
+        if (activeAddon && activeAddon.addon_profile) {
+          const addonPkg = db.prepare(`
+            SELECT name, speed_up, speed_down, speed_up_upto, speed_down_upto
+            FROM packages
+            WHERE LOWER(name) = LOWER(?)
+            LIMIT 1
+          `).get(activeAddon.addon_profile);
+          if (addonPkg) {
+            speedUp = addonPkg.speed_up || speedUp;
+            speedDown = addonPkg.speed_down || speedDown;
+            speedUpUpto = addonPkg.speed_up_upto || 0;
+            speedDownUpto = addonPkg.speed_down_upto || 0;
+            packageName = addonPkg.name || activeAddon.addon_profile;
+          }
+        }
+      } catch (_) { }
 
       return {
         type: 'customer',
@@ -87,11 +118,11 @@ function findUserCredentials(username) {
         secret: secret,
         status: cust.status,
         staticIp: cust.static_ip,
-        speedUp: cust.speed_up || 0,
-        speedDown: cust.speed_down || 0,
-        speedUpUpto: cust.speed_up_upto || 0,
-        speedDownUpto: cust.speed_down_upto || 0,
-        packageName: cust.package_name || ''
+        speedUp,
+        speedDown,
+        speedUpUpto,
+        speedDownUpto,
+        packageName
       };
     }
   } catch (err) {
@@ -250,7 +281,7 @@ function handleAuthMessage(msg, rinfo) {
       DELETE FROM radius_accounting
       WHERE username = ? AND session_id LIKE 'auth-%'
     `).run(username);
-  } catch (e) {}
+  } catch (e) { }
 
   // 3. Cek Batasan Sesi Login Ganda (Simultaneous-Use / Multi-Login)
   const limitSimultaneous = getSetting('radius_limit_simultaneous', '1') === '1';
@@ -339,7 +370,7 @@ function handleAuthMessage(msg, rinfo) {
       authSessionId,
       reqPacket.parsedAttrs.callingStationId || ''
     );
-  } catch (e) {}
+  } catch (e) { }
 
   sendAuthResponse(CODES.ACCESS_ACCEPT, reqPacket, responseAttrs, secret, rinfo);
 }
@@ -452,7 +483,7 @@ function handleAcctMessage(msg, rinfo) {
         // Hapus entri auth-* lama untuk user ini ketika sesi accounting asli dimulai
         try {
           db.prepare(`DELETE FROM radius_accounting WHERE username = ? AND session_id LIKE 'auth-%'`).run(username);
-        } catch (e) {}
+        } catch (e) { }
 
         stmt.run(
           username, nasIp, effectiveFramedIp, acctSessionId, acctStatusType,
@@ -474,7 +505,7 @@ function handleAcctMessage(msg, rinfo) {
             VALUES (?, ?, ?)
           `).run(pppoeUser.id, totalBytesIn, totalBytesOut);
         }
-      } catch (e) {}
+      } catch (e) { }
 
       // Catat sampel pemakaian ke customer_usage jika terdaftar di customers
       try {
@@ -492,7 +523,7 @@ function handleAcctMessage(msg, rinfo) {
               updated_at = NOW_LOCAL()
           `).run(cust.id, month, year, totalBytesIn, totalBytesOut);
         }
-      } catch (e) {}
+      } catch (e) { }
     } catch (err) {
       logger.error(`[RADIUS Acct] Gagal simpan accounting: ${err.message}`);
     }
@@ -562,16 +593,16 @@ function stop() {
   try {
     if (authSocket) {
       authSocket.removeAllListeners();
-      try { authSocket.close(); } catch (_) {}
+      try { authSocket.close(); } catch (_) { }
     }
-  } catch (_) {}
+  } catch (_) { }
 
   try {
     if (acctSocket) {
       acctSocket.removeAllListeners();
-      try { acctSocket.close(); } catch (_) {}
+      try { acctSocket.close(); } catch (_) { }
     }
-  } catch (_) {}
+  } catch (_) { }
 
   authSocket = null;
   acctSocket = null;
@@ -635,12 +666,12 @@ function formatRateLimit(upVal, downVal, defaultVal = '5M/10M', uptoUp = 0, upto
   if (uptoUpKbps > 0 && uptoDownKbps > 0 && (uptoUpKbps > upKbps || uptoDownKbps > downKbps)) {
     const rxBurstStr = kbpsToStr(uptoDownKbps);  // RX-burst = Download burst
     const txBurstStr = kbpsToStr(uptoUpKbps);    // TX-burst = Upload burst
-    
+
     // Format MikroTik: "rx/tx rx-burst/tx-burst rx-threshold/tx-threshold burst-time"
     // Threshold default 50% dari burst, waktu burst 8 detik
     const rxThresholdStr = kbpsToStr(Math.round(uptoDownKbps * 0.5));
     const txThresholdStr = kbpsToStr(Math.round(uptoUpKbps * 0.5));
-    
+
     return `${rxStr}/${txStr} ${rxBurstStr}/${txBurstStr} ${rxThresholdStr}/${txThresholdStr} 8`;
   }
 
@@ -758,7 +789,7 @@ function getAccountingLogs(limit = 100) {
 async function disconnectSession(username, sessionId, nasIp) {
   try {
     const mikrotikSvc = require('./mikrotikService');
-    
+
     // 1. Clear session entry from radius_accounting database table
     if (sessionId) {
       db.prepare(`
@@ -780,7 +811,7 @@ async function disconnectSession(username, sessionId, nasIp) {
       const r = db.prepare('SELECT id FROM routers WHERE host = ?').get(nasIp);
       if (r) routerId = r.id;
     }
-    
+
     await mikrotikSvc.kickPppoeUser(username, routerId);
     return true;
   } catch (err) {

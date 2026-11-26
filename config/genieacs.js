@@ -475,25 +475,27 @@ const axiosInstance = axios.create({
 // GenieACS API wrapper
 const genieacsApi = {
     // Get devices from all servers or specific server
-    async getDevices(serverId = null) {
+    async getDevices(serverId = null, projection = null) {
         try {
             logger.debug('[GenieACS] Getting all devices...');
             
             const servers = serverId ? [getACSServer(serverId)].filter(Boolean) : getAllACSServers();
             const allDevices = [];
+            const requestConfig = { timeout: 45000 };
+            if (projection) {
+                requestConfig.params = {
+                    projection: Array.isArray(projection) ? projection.join(',') : String(projection)
+                };
+            }
             
             for (const server of servers) {
                 try {
                     const instance = createAxiosInstance(server);
                     let response;
                     try {
-                        response = await instance.get('/devices', {
-                            timeout: 45000
-                        });
+                        response = await instance.get('/devices', requestConfig);
                     } catch (e) {
-                        response = await instance.get('/api/devices', {
-                            timeout: 45000
-                        });
+                        response = await instance.get('/api/devices', requestConfig);
                     }
                     
                     const devices = response.data || [];

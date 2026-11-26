@@ -6,6 +6,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="/css/admin.css?v=2.7">
   <style>
     .usage-bar { height: 4px; background: var(--bg3); border-radius: 2px; margin: 4px 0; overflow: hidden; width: 100px; }
@@ -2376,6 +2377,16 @@
                       <span class="text-muted">&bull; <%= c.router_name %></span>
                     <% } %>
                   </div>
+                  <% if (c.active_addon_profile) { 
+                    const addonExp = c.active_addon_expired_at ? String(c.active_addon_expired_at).slice(0, 10) : '-';
+                    const addonPriceNum = Number(c.active_addon_price || 0);
+                  %>
+                    <div style="margin-top:3px;">
+                      <span class="badge" style="background:rgba(139,92,246,0.14); color:#7c3aed; border:1px solid rgba(139,92,246,0.3); font-size:9.5px; padding:2px 6px; font-weight:700;" title="Add-On Speed Sementara s.d <%= addonExp %> (Diam-diam kembali normal saat habis)">
+                        <i class="bi bi-lightning-charge-fill"></i> Boost: <%= c.active_addon_profile %> (<%= addonPriceNum > 0 ? ('Rp ' + addonPriceNum.toLocaleString('id-ID')) : 'Gratis PSB' %> &bull; s.d <%= addonExp %>)
+                      </span>
+                    </div>
+                  <% } %>
                   <% if (c.package_billing_type === 'prepaid' || c.expired_at) { 
                     const expDateStr = c.expired_at ? String(c.expired_at).slice(0, 10) : '-';
                     const isExpired = c.expired_at ? (new Date(c.expired_at) < new Date()) : false;
@@ -2716,6 +2727,57 @@
                 <option value="EXPIRED" selected>EXPIRED</option>
                 <option value="isolir">isolir</option>
               </select>
+            </div>
+          </div>
+
+          <!-- ADD-ON / PROMO SPEED SEMENTARA (PSB / BOOST) -->
+          <div style="background:rgba(139,92,246,0.06); border:1px solid rgba(139,92,246,0.28); border-radius:12px; padding:14px; margin-top:10px;">
+            <label style="display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; margin:0;">
+              <span style="display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px; color:var(--text);">
+                <i class="bi bi-lightning-charge-fill" style="color:#8b5cf6;"></i>
+                Aktifkan Add-On / Promo Speed Sementara (Opsional)
+              </span>
+              <input type="checkbox" name="addon_enabled" value="1" id="add_addon_enabled" onchange="toggleAddonFields('add')" style="width:18px; height:18px; accent-color:#8b5cf6; cursor:pointer;">
+            </label>
+            <div style="font-size:11px; color:var(--muted); margin-top:4px;">
+              Pelanggan memakai profil kecepatan MikroTik pilihan hingga tanggal berakhir, lalu diam-diam kembali ke paket normal.
+            </div>
+            <div id="add_addon_fields" style="display:none; margin-top:12px; padding-top:12px; border-top:1px dashed rgba(139,92,246,0.25);">
+              <div class="form-row">
+                <div class="fg">
+                  <label class="fl"><i class="bi bi-speedometer2 me-1"></i> Profile MikroTik Tujuan *</label>
+                  <select class="fs" name="addon_profile" id="add_addon_profile">
+                    <option value="">-- Pilih Profile MikroTik --</option>
+                    <% packages.forEach(p => { %>
+                    <option value="<%= p.name %>"><%= p.name %></option>
+                    <% }) %>
+                  </select>
+                </div>
+                <div class="fg">
+                  <label class="fl"><i class="bi bi-calendar-event me-1"></i> Berlaku Sampai Tanggal *</label>
+                  <input class="fc" type="date" name="addon_expired_at" id="add_addon_expired_at">
+                </div>
+              </div>
+              <div class="form-row" style="margin-bottom:0;">
+                <div class="fg" style="margin-bottom:0;">
+                  <label class="fl"><i class="bi bi-tag me-1"></i> Jenis Biaya Add-On</label>
+                  <select class="fs" name="addon_billing_mode" id="add_addon_billing_mode" onchange="toggleAddonBillingMode('add')">
+                    <option value="free" selected>Gratis (Promo PSB — Rp 0)</option>
+                    <option value="one_time">Berbayar — Sekali Tagih (Boost)</option>
+                    <option value="recurring">Berbayar — Bulanan Selama Aktif</option>
+                  </select>
+                </div>
+                <div class="fg" id="add_addon_paid_wrap" style="display:none; margin-bottom:0;">
+                  <label class="fl"><i class="bi bi-cash me-1"></i> Nominal Biaya &amp; Penagihan</label>
+                  <div style="display:flex; gap:6px;">
+                    <input class="fc" type="number" name="addon_price" id="add_addon_price" min="0" step="1000" placeholder="Rp (mis. 25000)" style="width:45%;">
+                    <select class="fs" name="addon_billing_action" id="add_addon_billing_action" style="width:55%;">
+                      <option value="separate_invoice">Buat Tagihan Sekarang</option>
+                      <option value="next_invoice">Ikut Tagihan Berikutnya</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -3276,6 +3338,59 @@
             <label class="fl"><i class="bi bi-calendar-x me-1"></i> Tanggal Berakhir Langganan (Khusus Prabayar)</label>
             <input class="fc" type="date" name="expired_at" id="e_expired_at">
           </div>
+
+          <!-- ADD-ON / PROMO SPEED SEMENTARA (EDIT) -->
+          <input type="hidden" name="addon_form_present" value="1">
+          <div style="background:rgba(139,92,246,0.06); border:1px solid rgba(139,92,246,0.28); border-radius:12px; padding:14px; margin-top:12px;">
+            <label style="display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; margin:0;">
+              <span style="display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px; color:var(--text);">
+                <i class="bi bi-lightning-charge-fill" style="color:#8b5cf6;"></i>
+                Add-On / Promo Speed Sementara
+              </span>
+              <input type="checkbox" name="addon_enabled" value="1" id="e_addon_enabled" onchange="toggleAddonFields('e')" style="width:18px; height:18px; accent-color:#8b5cf6; cursor:pointer;">
+            </label>
+            <div style="font-size:11px; color:var(--muted); margin-top:4px;">
+              Aktifkan untuk menaikkan/mengubah profil MikroTik hingga tanggal tertentu (hapus centang &amp; simpan untuk mengembalikan ke paket normal).
+            </div>
+            <div id="e_addon_fields" style="display:none; margin-top:12px; padding-top:12px; border-top:1px dashed rgba(139,92,246,0.25);">
+              <div class="form-row">
+                <div class="fg">
+                  <label class="fl"><i class="bi bi-speedometer2 me-1"></i> Profile MikroTik Tujuan *</label>
+                  <select class="fs" name="addon_profile" id="e_addon_profile">
+                    <option value="">-- Pilih Profile MikroTik --</option>
+                    <% packages.forEach(p => { %>
+                    <option value="<%= p.name %>"><%= p.name %></option>
+                    <% }) %>
+                  </select>
+                </div>
+                <div class="fg">
+                  <label class="fl"><i class="bi bi-calendar-event me-1"></i> Berlaku Sampai Tanggal *</label>
+                  <input class="fc" type="date" name="addon_expired_at" id="e_addon_expired_at">
+                </div>
+              </div>
+              <div class="form-row" style="margin-bottom:0;">
+                <div class="fg" style="margin-bottom:0;">
+                  <label class="fl"><i class="bi bi-tag me-1"></i> Jenis Biaya Add-On</label>
+                  <select class="fs" name="addon_billing_mode" id="e_addon_billing_mode" onchange="toggleAddonBillingMode('e')">
+                    <option value="free">Gratis (Promo PSB — Rp 0)</option>
+                    <option value="one_time">Berbayar — Sekali Tagih (Boost)</option>
+                    <option value="recurring">Berbayar — Bulanan Selama Aktif</option>
+                  </select>
+                </div>
+                <div class="fg" id="e_addon_paid_wrap" style="display:none; margin-bottom:0;">
+                  <label class="fl"><i class="bi bi-cash me-1"></i> Nominal Biaya &amp; Penagihan (Opsi A)</label>
+                  <div style="display:flex; gap:6px;">
+                    <input class="fc" type="number" name="addon_price" id="e_addon_price" min="0" step="1000" placeholder="Rp (mis. 25000)" style="width:42%;">
+                    <select class="fs" name="addon_billing_action" id="e_addon_billing_action" style="width:58%;">
+                      <option value="add_to_unpaid">Tambah ke Tagihan Belum Bayar</option>
+                      <option value="separate_invoice">Buat Tagihan Add-On Terpisah</option>
+                      <option value="next_invoice">Ikut Tagihan Bulan Depan</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- PANE 3: KREDENSIAL & AUTENTIKASI (RADIUS / MIKROTIK) -->
@@ -3807,6 +3922,10 @@
           <span class="cust-kpi-pill-label"><i class="bi bi-box-seam text-primary me-1"></i> Paket</span>
           <strong id="v_package" class="cust-kpi-pill-val">-</strong>
         </div>
+        <div class="cust-kpi-pill" id="v_addon_kpi_pill" style="display:none; border-color:rgba(139,92,246,0.35); background:rgba(139,92,246,0.08);">
+          <span class="cust-kpi-pill-label" style="color:#8b5cf6;"><i class="bi bi-lightning-charge-fill me-1"></i> Add-On Aktif</span>
+          <strong id="v_addon_pill_val" class="cust-kpi-pill-val" style="color:#7c3aed;">-</strong>
+        </div>
         <div class="cust-kpi-pill">
           <span class="cust-kpi-pill-label"><i class="bi bi-clock-history text-warning me-1"></i> Masa Aktif / Billing</span>
           <span id="v_expired_at" class="cust-kpi-pill-val">-</span>
@@ -3918,6 +4037,65 @@
               <strong id="v_total_fup" style="color:var(--text); font-weight:700;">-</strong>
             </div>
           </div>
+        </div>
+
+        <!-- Panel Add-On Speed & Promo PSB Cepat -->
+        <div class="cust-card-panel" style="margin-top:14px; border-color:rgba(139,92,246,0.28);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+            <span style="font-size:12.5px; font-weight:700; color:var(--text);">
+              <i class="bi bi-lightning-charge-fill me-1" style="color:#8b5cf6;"></i> Add-On / Promo Speed Sementara
+            </span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span id="v_addon_status_badge" class="badge bm" style="font-size:10.5px;">Tidak Ada Add-On Aktif</span>
+              <form id="v_addon_cancel_form" method="POST" action="" style="display:none; margin:0;" onsubmit="return confirm('Hentikan Add-On ini dan kembalikan kecepatan ke paket normal secara diam-diam?')">
+                <button type="submit" class="btn btn-sm" style="background:rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.3); font-size:11px; padding:3px 9px; font-weight:700;">
+                  <i class="bi bi-stop-circle me-1"></i> Hentikan Add-On
+                </button>
+              </form>
+            </div>
+          </div>
+          <div id="v_addon_active_info" style="font-size:11.5px; color:var(--muted); margin-bottom:10px;">
+            Aktifkan profile kecepatan sementara (gratis PSB atau berbayar). Saat tanggal berakhir lewat, sistem diam-diam mengembalikan pelanggan ke paket normal.
+          </div>
+          <form id="v_addon_quick_form" method="POST" action="" style="display:grid; grid-template-columns:1.2fr 1fr 1fr 1fr auto; gap:8px; align-items:end;">
+            <div>
+              <label class="fl" style="font-size:10.5px;">Profile MikroTik</label>
+              <select class="fs" name="addon_profile" id="quick_addon_profile" required style="font-size:12px;">
+                <option value="">-- Pilih Profile --</option>
+                <% packages.forEach(p => { %>
+                <option value="<%= p.name %>"><%= p.name %></option>
+                <% }) %>
+              </select>
+            </div>
+            <div>
+              <label class="fl" style="font-size:10.5px;">Berlaku Sampai</label>
+              <input class="fc" type="date" name="expired_at" id="quick_addon_expired_at" required style="font-size:12px;">
+            </div>
+            <div>
+              <label class="fl" style="font-size:10.5px;">Biaya Add-On</label>
+              <select class="fs" name="billing_mode" id="quick_addon_billing_mode" onchange="toggleAddonBillingMode('quick')" style="font-size:12px;">
+                <option value="free">Gratis PSB (Rp 0)</option>
+                <option value="one_time">Berbayar Sekali</option>
+                <option value="recurring">Berbayar Bulanan</option>
+              </select>
+            </div>
+            <div id="quick_addon_paid_wrap" style="display:none;">
+              <label class="fl" style="font-size:10.5px;">Nominal &amp; Tagihan</label>
+              <div style="display:flex; gap:4px;">
+                <input class="fc" type="number" name="price" id="quick_addon_price" min="0" step="1000" placeholder="Rp" style="font-size:12px; width:48%;">
+                <select class="fs" name="billing_action" id="quick_addon_billing_action" style="font-size:11px; width:52%;">
+                  <option value="add_to_unpaid">Ke Unpaid</option>
+                  <option value="separate_invoice">Inv Baru</option>
+                  <option value="next_invoice">Bln Depan</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <button type="submit" class="btn btn-p btn-sm" style="height:36px; font-weight:700; white-space:nowrap;">
+                <i class="bi bi-check2-circle me-1"></i> Terapkan
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 
@@ -4091,6 +4269,71 @@
                   <span class="text-muted" style="font-size:11.5px;"><i class="bi bi-activity me-1"></i> Belum ada foto</span>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <!-- Grafik & Riwayat Redaman Optik (GenieACS) -->
+          <div class="cust-card-panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+              <div>
+                <div style="font-size:12.5px; font-weight:700; color:var(--text);">
+                  <i class="bi bi-graph-down text-info me-1"></i> Riwayat Redaman Optik (GenieACS)
+                </div>
+                <div style="font-size:11px; color:var(--muted);">Pencatatan otomatis tiap 30 menit (hemat DB: catat saat berubah &ge;0.3 dB atau heartbeat 6 jam)</div>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <select id="v_optical_days" onchange="if(window._activeOpticalCustomerId) loadCustomerOpticalHistory(window._activeOpticalCustomerId, Number(this.value))" style="background:var(--bg2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:11.5px;">
+                  <option value="1">24 Jam</option>
+                  <option value="7" selected>7 Hari</option>
+                  <option value="30">30 Hari</option>
+                  <option value="90">90 Hari</option>
+                </select>
+                <button type="button" id="v_btn_sync_optical" class="btn btn-g btn-sm" style="font-size:11.5px; padding:4px 10px;" onclick="syncOpticalFromModal()">
+                  <i class="bi bi-arrow-repeat me-1"></i> Sinkron GenieACS
+                </button>
+              </div>
+            </div>
+
+            <div class="cust-modal-grid-3" style="gap:10px; margin-bottom:12px;">
+              <div class="cust-kpi-card">
+                <div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; font-weight:700;">RX Live / Terakhir</div>
+                <div id="v_opt_current_rx" style="font-size:16px; font-weight:800; font-family:monospace; color:var(--text); margin-top:4px;">- dBm</div>
+                <div id="v_opt_sync_time" style="font-size:10.5px; color:var(--muted); margin-top:2px;">Belum pernah sinkron</div>
+              </div>
+              <div class="cust-kpi-card">
+                <div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; font-weight:700;">Selisih dari Awal PSB</div>
+                <div id="v_opt_baseline_diff" style="font-size:16px; font-weight:800; font-family:monospace; color:var(--text); margin-top:4px;">- dB</div>
+                <div id="v_opt_baseline_note" style="font-size:10.5px; color:var(--muted); margin-top:2px;">-</div>
+              </div>
+              <div class="cust-kpi-card">
+                <div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; font-weight:700;">Status Optik</div>
+                <div id="v_opt_live_status" style="margin-top:6px;"><span class="badge bm">-</span></div>
+                <div id="v_opt_sync_feedback" style="font-size:10.5px; color:var(--muted); margin-top:4px;">-</div>
+              </div>
+            </div>
+
+            <div id="v_optical_chart_wrap" style="position:relative; height:210px; background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:10px; margin-bottom:12px;">
+              <canvas id="v_optical_chart"></canvas>
+              <div id="v_optical_chart_empty" style="display:none; position:absolute; inset:0; align-items:center; justify-content:center; flex-direction:column; gap:6px; color:var(--muted); font-size:12px;">
+                <i class="bi bi-activity" style="font-size:22px; opacity:0.6;"></i>
+                <span>Belum ada data riwayat redaman pada rentang waktu ini</span>
+              </div>
+            </div>
+
+            <div style="max-height:190px; overflow-y:auto; border:1px solid var(--border); border-radius:8px;">
+              <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+                <thead>
+                  <tr style="background:var(--bg2); color:var(--muted); text-align:left; border-bottom:1px solid var(--border);">
+                    <th style="padding:7px 10px;">Waktu</th>
+                    <th style="padding:7px 10px;">RX Power</th>
+                    <th style="padding:7px 10px;">Perubahan</th>
+                    <th style="padding:7px 10px;">Keterangan</th>
+                  </tr>
+                </thead>
+                <tbody id="v_optical_history_tbody">
+                  <tr><td colspan="4" style="padding:12px; text-align:center; color:var(--muted);">Buka tab untuk memuat riwayat redaman...</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -4627,6 +4870,17 @@ function openModal(id){
       const addOdpWrapper = document.getElementById('add_odp_ports_wrapper');
       if (addOdpWrapper) addOdpWrapper.style.display = 'none';
       if (typeof fetchAvailableOnus === 'function') fetchAvailableOnus();
+      const addAddonChk = document.getElementById('add_addon_enabled');
+      if (addAddonChk) {
+        addAddonChk.checked = false;
+        toggleAddonFields('add');
+      }
+      if (document.getElementById('add_addon_billing_mode')) {
+        document.getElementById('add_addon_billing_mode').value = 'free';
+        toggleAddonBillingMode('add');
+      }
+      if (document.getElementById('add_addon_price')) document.getElementById('add_addon_price').value = '';
+      if (document.getElementById('add_addon_expired_at')) document.getElementById('add_addon_expired_at').value = '';
     }
   }
 }
@@ -5072,6 +5326,212 @@ function handleOdcChange(type = 'add') {
   if (typeof updateGenieacsTagsPreview === 'function') updateGenieacsTagsPreview(type);
 }
 
+window._activeOpticalCustomerId = null;
+window._opticalLoadedForCust = null;
+window._opticalChartInstance = null;
+
+function escOpticalHtml(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function updateOpticalSummaryPills(custObj) {
+  const curEl = document.getElementById('v_opt_current_rx');
+  const timeEl = document.getElementById('v_opt_sync_time');
+  const diffEl = document.getElementById('v_opt_baseline_diff');
+  const diffNoteEl = document.getElementById('v_opt_baseline_note');
+  const statusEl = document.getElementById('v_opt_live_status');
+  if (!curEl || !custObj) return;
+
+  const curRx = (custObj.optical_rx_power !== null && custObj.optical_rx_power !== undefined && custObj.optical_rx_power !== '')
+    ? Number(custObj.optical_rx_power) : null;
+  const initRx = (custObj.initial_rx_power !== null && custObj.initial_rx_power !== undefined && custObj.initial_rx_power !== '')
+    ? Number(custObj.initial_rx_power) : null;
+
+  curEl.textContent = curRx !== null && !Number.isNaN(curRx) ? `${curRx.toFixed(2)} dBm` : '- dBm';
+  if (timeEl) {
+    timeEl.textContent = custObj.optical_last_sync
+      ? ('Sync: ' + String(custObj.optical_last_sync).replace('T', ' ').slice(0, 16))
+      : 'Belum ada sinkronisasi GenieACS';
+  }
+
+  if (diffEl && diffNoteEl) {
+    if (curRx !== null && initRx !== null && !Number.isNaN(curRx) && !Number.isNaN(initRx)) {
+      const diff = Number((curRx - initRx).toFixed(2));
+      diffEl.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(2)} dB`;
+      diffEl.style.color = diff <= -2.0 ? '#ef4444' : (diff <= -1.0 ? '#f59e0b' : '#10b981');
+      diffNoteEl.textContent = `Awal PSB: ${initRx.toFixed(2)} dBm`;
+    } else {
+      diffEl.textContent = '- dB';
+      diffEl.style.color = 'var(--text)';
+      diffNoteEl.textContent = initRx !== null ? `Awal PSB: ${initRx.toFixed(2)} dBm` : 'Baseline PSB belum diisi';
+    }
+  }
+
+  if (statusEl) {
+    const st = String(custObj.optical_status || '').toLowerCase();
+    if (curRx === null) {
+      statusEl.innerHTML = '<span class="badge bm">Belum Terukur</span>';
+    } else if (st === 'critical' || curRx <= -27 || curRx >= -8) {
+      statusEl.innerHTML = '<span class="badge bd"><i class="bi bi-x-octagon me-1"></i>Kritis</span>';
+    } else if (st === 'warning' || curRx <= -24) {
+      statusEl.innerHTML = '<span class="badge bw"><i class="bi bi-exclamation-triangle me-1"></i>Waspada</span>';
+    } else {
+      statusEl.innerHTML = '<span class="badge bs"><i class="bi bi-check-circle me-1"></i>Normal</span>';
+    }
+  }
+}
+
+async function loadCustomerOpticalHistory(customerId, days) {
+  if (!customerId) return;
+  const daysVal = Number(days || document.getElementById('v_optical_days')?.value || 7);
+  const tbody = document.getElementById('v_optical_history_tbody');
+  const emptyOverlay = document.getElementById('v_optical_chart_empty');
+  const canvas = document.getElementById('v_optical_chart');
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="4" style="padding:12px; text-align:center; color:var(--muted);"><i class="bi bi-arrow-repeat"></i> Memuat histori redaman...</td></tr>';
+  }
+
+  try {
+    const res = await fetch(`/admin/api/optical-history/customer/${customerId}?days=${daysVal}&limit=120`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Gagal memuat data');
+
+    window._opticalLoadedForCust = customerId;
+    if (data.customer) updateOpticalSummaryPills(data.customer);
+
+    const history = Array.isArray(data.history) ? data.history : [];
+    if (window._opticalChartInstance) {
+      window._opticalChartInstance.destroy();
+      window._opticalChartInstance = null;
+    }
+
+    if (history.length === 0) {
+      if (emptyOverlay) emptyOverlay.style.display = 'flex';
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="4" style="padding:12px; text-align:center; color:var(--muted);">Belum ada catatan riwayat redaman pada rentang waktu ini.</td></tr>';
+      }
+      return;
+    }
+
+    if (emptyOverlay) emptyOverlay.style.display = 'none';
+
+    if (canvas && typeof Chart !== 'undefined') {
+      const labels = history.map(h => String(h.created_at || '').slice(5, 16).replace('T', ' '));
+      const values = history.map(h => Number(h.measured_power_dbm));
+      const datasets = [
+        {
+          label: 'RX Power (dBm)',
+          data: values,
+          borderColor: '#38bdf8',
+          backgroundColor: 'rgba(56, 189, 248, 0.14)',
+          borderWidth: 2,
+          pointRadius: history.length > 40 ? 1.5 : 3,
+          pointHoverRadius: 5,
+          tension: 0.25,
+          fill: true
+        }
+      ];
+
+      const initVal = data.customer && data.customer.initial_rx_power != null && data.customer.initial_rx_power !== ''
+        ? Number(data.customer.initial_rx_power) : null;
+      if (initVal !== null && !Number.isNaN(initVal)) {
+        datasets.push({
+          label: `Baseline PSB (${initVal.toFixed(2)} dBm)`,
+          data: labels.map(() => initVal),
+          borderColor: '#10b981',
+          borderWidth: 1.5,
+          borderDash: [5, 5],
+          pointRadius: 0,
+          fill: false
+        });
+      }
+
+      const mutedColor = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#94a3b8';
+      window._opticalChartInstance = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { labels: { color: mutedColor, boxWidth: 12, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                afterBody: (items) => {
+                  const idx = items && items[0] ? items[0].dataIndex : -1;
+                  const row = idx >= 0 ? history[idx] : null;
+                  return row && row.notes ? [`Catatan: ${row.notes}`] : [];
+                }
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: mutedColor, maxTicksLimit: 8, font: { size: 10 } }, grid: { color: 'rgba(148,163,184,0.1)' } },
+            y: { ticks: { color: mutedColor, font: { size: 10 }, callback: v => v + ' dBm' }, grid: { color: 'rgba(148,163,184,0.12)' } }
+          }
+        }
+      });
+    }
+
+    if (tbody) {
+      const descRows = history.slice().reverse();
+      tbody.innerHTML = descRows.map(h => {
+        const rx = Number(h.measured_power_dbm);
+        const delta = Number(h.reference_loss_db || 0);
+        const deltaStr = delta === 0 ? '<span style="color:var(--muted);">0.00 dB</span>'
+          : (delta < 0
+            ? `<span style="color:#ef4444; font-weight:700;">${delta.toFixed(2)} dB</span>`
+            : `<span style="color:#10b981; font-weight:700;">+${delta.toFixed(2)} dB</span>`);
+        const rxColor = (rx <= -27 || rx >= -8) ? '#ef4444' : (rx <= -24 ? '#f59e0b' : 'var(--text)');
+        return `
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:7px 10px; font-family:monospace; color:var(--muted); white-space:nowrap;">${escOpticalHtml(String(h.created_at || '').slice(0, 16))}</td>
+            <td style="padding:7px 10px; font-family:monospace; font-weight:700; color:${rxColor};">${rx.toFixed(2)} dBm</td>
+            <td style="padding:7px 10px; font-family:monospace;">${deltaStr}</td>
+            <td style="padding:7px 10px; color:var(--text);">${escOpticalHtml(h.notes || h.measured_by || '-')}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+  } catch (err) {
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="4" style="padding:12px; text-align:center; color:#ef4444;">Gagal memuat riwayat: ${escOpticalHtml(err.message)}</td></tr>`;
+    }
+  }
+}
+
+async function syncOpticalFromModal() {
+  const btn = document.getElementById('v_btn_sync_optical');
+  const fb = document.getElementById('v_opt_sync_feedback');
+  if (!btn) return;
+  const origHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Menyinkronkan...';
+  if (fb) fb.textContent = 'Menarik projection dari GenieACS...';
+
+  try {
+    const res = await fetch('/admin/api/sync-genieacs-optical', { method: 'POST' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Sync GenieACS gagal');
+    if (fb) {
+      fb.textContent = `Tersinkron ${data.syncedCount || 0} ONU (${data.loggedCount || 0} log baru)`;
+    }
+    if (window._activeOpticalCustomerId) {
+      await loadCustomerOpticalHistory(window._activeOpticalCustomerId);
+    }
+  } catch (err) {
+    if (fb) fb.textContent = 'Gagal sync: ' + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origHtml;
+  }
+}
+
 function switchCustDetailTab(tabKey, btn) {
   document.querySelectorAll('.cust-detail-pane').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.cust-detail-tab-btn').forEach(el => el.classList.remove('active'));
@@ -5083,6 +5543,9 @@ function switchCustDetailTab(tabKey, btn) {
     const defaultBtn = document.getElementById('tab_btn_' + tabKey);
     if (defaultBtn) defaultBtn.classList.add('active');
   }
+  if (tabKey === 'docs' && window._activeOpticalCustomerId && window._opticalLoadedForCust !== window._activeOpticalCustomerId) {
+    loadCustomerOpticalHistory(window._activeOpticalCustomerId);
+  }
 }
 
 function viewCustDetail(idx) {
@@ -5092,6 +5555,12 @@ function viewCustDetail(idx) {
       alert('Data pelanggan tidak ditemukan.');
       return;
     }
+
+    window._activeOpticalCustomerId = c.id;
+    window._opticalLoadedForCust = null;
+    updateOpticalSummaryPills(c);
+    const fbReset = document.getElementById('v_opt_sync_feedback');
+    if (fbReset) fbReset.textContent = '-';
 
     const username = String(c.pppoe_username || c.hotspot_username || c.name || '').trim().toLowerCase();
     const session = activeSessionsMapObj && activeSessionsMapObj.get ? activeSessionsMapObj.get(username) : null;
@@ -5145,6 +5614,7 @@ function viewCustDetail(idx) {
     if (document.getElementById('v_phone')) document.getElementById('v_phone').textContent = c.phone || '-';
     if (document.getElementById('v_address_area')) document.getElementById('v_address_area').textContent = (c.address || '-') + (c.area ? ` [Area: ${c.area}]` : '');
     if (document.getElementById('v_package')) document.getElementById('v_package').textContent = c.package_name ? `${c.package_name} (Rp ${Number(c.package_price||0).toLocaleString('id-ID')})` : '-';
+    if (typeof populateCustomerDetailAddon === 'function') populateCustomerDetailAddon(c);
     if (document.getElementById('v_expired_at')) {
       if (c.package_billing_type === 'prepaid' || c.expired_at) {
         const expStr = c.expired_at ? String(c.expired_at).slice(0, 10) : '-';
@@ -7152,6 +7622,35 @@ function editCust(idx) {
   if (document.getElementById('e_expired_at')) {
     document.getElementById('e_expired_at').value = c.expired_at ? String(c.expired_at).slice(0, 10) : '';
   }
+  const eAddonChk = document.getElementById('e_addon_enabled');
+  if (eAddonChk) {
+    const hasActiveAddon = !!(c.active_addon_id && c.active_addon_profile);
+    eAddonChk.checked = hasActiveAddon;
+    const eProf = document.getElementById('e_addon_profile');
+    if (eProf) {
+      if (hasActiveAddon && !Array.from(eProf.options).some(o => o.value === c.active_addon_profile)) {
+        const extraOpt = document.createElement('option');
+        extraOpt.value = c.active_addon_profile;
+        extraOpt.textContent = c.active_addon_profile;
+        eProf.appendChild(extraOpt);
+      }
+      eProf.value = hasActiveAddon ? c.active_addon_profile : '';
+    }
+    if (document.getElementById('e_addon_expired_at')) {
+      document.getElementById('e_addon_expired_at').value = (hasActiveAddon && c.active_addon_expired_at) ? String(c.active_addon_expired_at).slice(0, 10) : '';
+    }
+    if (document.getElementById('e_addon_billing_mode')) {
+      document.getElementById('e_addon_billing_mode').value = (hasActiveAddon && c.active_addon_billing_mode) ? c.active_addon_billing_mode : 'free';
+    }
+    if (document.getElementById('e_addon_price')) {
+      document.getElementById('e_addon_price').value = (hasActiveAddon && Number(c.active_addon_price || 0) > 0) ? c.active_addon_price : '';
+    }
+    if (document.getElementById('e_addon_billing_action')) {
+      document.getElementById('e_addon_billing_action').value = (hasActiveAddon && c.active_addon_billing_action && c.active_addon_billing_action !== 'none') ? c.active_addon_billing_action : 'add_to_unpaid';
+    }
+    toggleAddonFields('e');
+    toggleAddonBillingMode('e');
+  }
   document.getElementById('e_notes').value=c.notes||'';
   document.getElementById('e_auto_isolate').value=(c.auto_isolate !== undefined ? c.auto_isolate : 1);
   const billDayVal = (c.billing_day || c.isolate_day || '');
@@ -7600,6 +8099,81 @@ function loadRouterLists(type, routerId = '', excludeCustomerId = '') {
   }
 }
 
+function toggleAddonFields(prefix) {
+  const chk = document.getElementById(prefix + '_addon_enabled');
+  const box = document.getElementById(prefix + '_addon_fields');
+  const prof = document.getElementById(prefix + '_addon_profile');
+  const exp = document.getElementById(prefix + '_addon_expired_at');
+  const on = !!(chk && chk.checked);
+  if (box) box.style.display = on ? 'block' : 'none';
+  if (prof) prof.required = on;
+  if (exp) exp.required = on;
+}
+
+function toggleAddonBillingMode(prefix) {
+  const modeEl = document.getElementById(prefix + '_addon_billing_mode');
+  const wrap = document.getElementById(prefix + '_addon_paid_wrap');
+  const priceEl = document.getElementById(prefix + '_addon_price');
+  if (!modeEl || !wrap) return;
+  const isPaid = modeEl.value !== 'free';
+  wrap.style.display = isPaid ? 'block' : 'none';
+  if (priceEl) priceEl.required = isPaid && (prefix === 'quick' || !!document.getElementById(prefix + '_addon_enabled')?.checked);
+}
+
+function populateCustomerDetailAddon(c) {
+  const pill = document.getElementById('v_addon_kpi_pill');
+  const pillVal = document.getElementById('v_addon_pill_val');
+  const badge = document.getElementById('v_addon_status_badge');
+  const info = document.getElementById('v_addon_active_info');
+  const cancelForm = document.getElementById('v_addon_cancel_form');
+  const quickForm = document.getElementById('v_addon_quick_form');
+  if (quickForm) quickForm.action = '/admin/customers/' + c.id + '/addon/activate';
+  if (cancelForm) cancelForm.action = '/admin/customers/' + c.id + '/addon/cancel';
+
+  const hasAddon = !!(c && c.active_addon_id && c.active_addon_profile);
+  if (hasAddon) {
+    const expStr = c.active_addon_expired_at ? String(c.active_addon_expired_at).slice(0, 10) : '-';
+    const pNum = Number(c.active_addon_price || 0);
+    const modeLabel = pNum > 0
+      ? (c.active_addon_billing_mode === 'recurring' ? `Rp ${pNum.toLocaleString('id-ID')}/bln` : `Rp ${pNum.toLocaleString('id-ID')} (Sekali)`)
+      : 'Gratis Promo PSB';
+    if (pill) pill.style.display = 'flex';
+    if (pillVal) pillVal.textContent = `${c.active_addon_profile} s.d ${expStr}`;
+    if (badge) {
+      badge.className = 'badge';
+      badge.style.cssText = 'background:rgba(139,92,246,0.16); color:#7c3aed; border:1px solid rgba(139,92,246,0.35); font-size:10.5px; font-weight:700;';
+      badge.textContent = `Aktif: ${c.active_addon_profile} s.d ${expStr}`;
+    }
+    if (info) {
+      info.innerHTML = `Pelanggan sedang menggunakan profile <strong>${c.active_addon_profile}</strong> (${modeLabel}) hingga <strong>${expStr} 23:59</strong>. Setelah lewat, sistem diam-diam mengembalikan ke paket normal (<strong>${c.package_name || c.active_addon_original_profile || '-'}</strong>).`;
+    }
+    if (cancelForm) cancelForm.style.display = 'inline';
+    if (document.getElementById('quick_addon_profile')) document.getElementById('quick_addon_profile').value = c.active_addon_profile;
+    if (document.getElementById('quick_addon_expired_at')) document.getElementById('quick_addon_expired_at').value = expStr;
+    if (document.getElementById('quick_addon_billing_mode')) document.getElementById('quick_addon_billing_mode').value = c.active_addon_billing_mode || 'free';
+    if (document.getElementById('quick_addon_price')) document.getElementById('quick_addon_price').value = pNum > 0 ? pNum : '';
+  } else {
+    if (pill) pill.style.display = 'none';
+    if (badge) {
+      badge.className = 'badge bm';
+      badge.style.cssText = 'font-size:10.5px;';
+      badge.textContent = 'Tidak Ada Add-On Aktif';
+    }
+    if (info) {
+      info.textContent = 'Aktifkan profile kecepatan sementara (gratis PSB atau berbayar). Saat tanggal berakhir lewat, sistem diam-diam mengembalikan pelanggan ke paket normal.';
+    }
+    if (cancelForm) cancelForm.style.display = 'none';
+    if (document.getElementById('quick_addon_profile')) document.getElementById('quick_addon_profile').value = '';
+    if (document.getElementById('quick_addon_expired_at')) document.getElementById('quick_addon_expired_at').value = '';
+    if (document.getElementById('quick_addon_billing_mode')) document.getElementById('quick_addon_billing_mode').value = 'free';
+    if (document.getElementById('quick_addon_price')) document.getElementById('quick_addon_price').value = '';
+  }
+  toggleAddonBillingMode('quick');
+  if (typeof loadMikrotikProfiles === 'function' && c && c.router_id) {
+    loadMikrotikProfiles(c.router_id);
+  }
+}
+
 async function loadMikrotikProfiles(routerId = '') {
   try {
     const url = routerId ? `/admin/api/mikrotik/profiles/${routerId}` : '/admin/api/mikrotik/profiles';
@@ -7612,17 +8186,44 @@ async function loadMikrotikProfiles(routerId = '') {
     const currAdd = (selAdd && selAdd.value) ? selAdd.value : 'EXPIRED';
     const currEdit = (selEdit && selEdit.value) ? selEdit.value : 'EXPIRED';
     const defaultOpt = '<option value="EXPIRED">EXPIRED</option><option value="isolir">isolir</option>';
-    selAdd.innerHTML = defaultOpt;
-    selEdit.innerHTML = defaultOpt;
+    if (selAdd) selAdd.innerHTML = defaultOpt;
+    if (selEdit) selEdit.innerHTML = defaultOpt;
 
-    profiles.forEach(p => {
-      if(p.name === 'isolir' || p.name === 'EXPIRED') return;
+    const validProfiles = [];
+    (Array.isArray(profiles) ? profiles : []).forEach(p => {
+      if (!p || !p.name || p.name === 'isolir' || p.name === 'EXPIRED') return;
+      validProfiles.push(p.name);
       const opt = `<option value="${p.name}">${p.name}</option>`;
-      selAdd.innerHTML += opt;
-      selEdit.innerHTML += opt;
+      if (selAdd) selAdd.innerHTML += opt;
+      if (selEdit) selEdit.innerHTML += opt;
     });
     if (selAdd && currAdd) selAdd.value = currAdd;
     if (selEdit && currEdit) selEdit.value = currEdit;
+
+    // Populasi dropdown Add-On Profile (MikroTik profiles + nama paket lokal yang belum terdaftar)
+    const pkgNames = Array.isArray(packagesData) ? packagesData.map(pk => pk.name).filter(Boolean) : [];
+    const mergedAddonNames = [...new Set([...validProfiles, ...pkgNames])];
+    ['add_addon_profile', 'e_addon_profile', 'quick_addon_profile'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      const prevVal = sel.value;
+      sel.innerHTML = '<option value="">-- Pilih Profile MikroTik --</option>';
+      mergedAddonNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        sel.appendChild(opt);
+      });
+      if (prevVal) {
+        if (!Array.from(sel.options).some(o => o.value === prevVal)) {
+          const opt = document.createElement('option');
+          opt.value = prevVal;
+          opt.textContent = prevVal;
+          sel.appendChild(opt);
+        }
+        sel.value = prevVal;
+      }
+    });
   } catch (e) {
     console.error('Failed to load MikroTik profiles', e);
   }

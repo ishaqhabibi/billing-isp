@@ -83,7 +83,15 @@ function getAllCustomers(search = '', routerId = null, filterStatus = '', filter
            odc.name as odc_name,
            odp.name as odp_name,
            (SELECT COUNT(*) FROM invoices WHERE customer_id=c.id AND status='unpaid') as unpaid_count,
-           u.bytes_in, u.bytes_out
+           u.bytes_in, u.bytes_out,
+           ca.id as active_addon_id,
+           ca.addon_profile as active_addon_profile,
+           ca.original_profile as active_addon_original_profile,
+           ca.price as active_addon_price,
+           ca.billing_mode as active_addon_billing_mode,
+           ca.billing_action as active_addon_billing_action,
+           ca.start_at as active_addon_start_at,
+           ca.expired_at as active_addon_expired_at
     FROM customers c
     LEFT JOIN packages p ON c.package_id = p.id
     LEFT JOIN routers r ON c.router_id = r.id
@@ -91,6 +99,11 @@ function getAllCustomers(search = '', routerId = null, filterStatus = '', filter
     LEFT JOIN odcs odc ON c.odc_id = odc.id
     LEFT JOIN odps odp ON c.odp_id = odp.id
     LEFT JOIN customer_usage u ON u.customer_id = c.id AND u.period_month = ${month} AND u.period_year = ${year}
+    LEFT JOIN customer_addons ca ON ca.id = (
+      SELECT id FROM customer_addons
+      WHERE customer_id = c.id AND status = 'active' AND datetime(expired_at) >= datetime(NOW_LOCAL())
+      ORDER BY id DESC LIMIT 1
+    )
   `;
 
   const whereClauses = [];
@@ -161,13 +174,34 @@ function getCustomerById(id) {
            p.promo_cycles as package_promo_cycles,
            p.prorate_first_invoice as package_prorate_first_invoice,
            p.use_ppn, p.ppn_percentage, p.use_uso, p.uso_percentage,
-           r.name as router_name, o.name as olt_name, odc.name as odc_name, odp.name as odp_name
+           r.name as router_name, o.name as olt_name, odc.name as odc_name, odp.name as odp_name,
+           ca.id as active_addon_id,
+           ca.addon_profile as active_addon_profile,
+           ca.original_profile as active_addon_original_profile,
+           ca.price as active_addon_price,
+           ca.billing_mode as active_addon_billing_mode,
+           ca.billing_action as active_addon_billing_action,
+           ca.start_at as active_addon_start_at,
+           ca.expired_at as active_addon_expired_at,
+           ca.id as active_addon_id,
+           ca.addon_profile as active_addon_profile,
+           ca.original_profile as active_addon_original_profile,
+           ca.price as active_addon_price,
+           ca.billing_mode as active_addon_billing_mode,
+           ca.billing_action as active_addon_billing_action,
+           ca.start_at as active_addon_start_at,
+           ca.expired_at as active_addon_expired_at
     FROM customers c 
     LEFT JOIN packages p ON c.package_id = p.id 
     LEFT JOIN routers r ON c.router_id = r.id
     LEFT JOIN olts o ON c.olt_id = o.id
     LEFT JOIN odcs odc ON c.odc_id = odc.id
-    LEFT JOIN odps odp ON c.odp_id = odp.id
+    LEFT JOIN odps odp ON c.odp_id = odp.id
+    LEFT JOIN customer_addons ca ON ca.id = (
+      SELECT id FROM customer_addons
+      WHERE customer_id = c.id AND status = 'active' AND datetime(expired_at) >= datetime(NOW_LOCAL())
+      ORDER BY id DESC LIMIT 1
+    )
     WHERE c.id = ?
   `).get(id);
 }
@@ -795,7 +829,8 @@ async function activateCustomer(id, targetStatus = 'active') {
       }, effectiveRouterId);
     } else if (customer.pppoe_username) {
       const pkg = getPackageById(customer.package_id);
-      const targetProfile = pkg ? pkg.name : 'default';
+      const addonSvc = require('./addonService');
+      const targetProfile = addonSvc.getEffectiveProfileForCustomer({ ...customer, status: targetStatus }, pkg);
       
       // Validasi profile tidak kosong
       if (!targetProfile || String(targetProfile).trim() === '') {

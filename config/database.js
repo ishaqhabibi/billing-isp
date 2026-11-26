@@ -1300,9 +1300,37 @@ try {
       created_at DATETIME DEFAULT (NOW_LOCAL())
     );
     CREATE INDEX IF NOT EXISTS idx_optical_target ON optical_power_history(target_type, target_id);
+    CREATE INDEX IF NOT EXISTS idx_optical_target_created ON optical_power_history(target_type, target_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_optical_created ON optical_power_history(created_at);
   `);
 } catch (e) {
   console.error('Failed to migrate optical infrastructure columns:', e);
+}
+
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS customer_addons (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+      addon_profile TEXT NOT NULL,
+      original_profile TEXT DEFAULT '',
+      price INTEGER NOT NULL DEFAULT 0,
+      billing_mode TEXT NOT NULL DEFAULT 'free',
+      billing_action TEXT DEFAULT 'next_invoice',
+      billed_invoice_id INTEGER REFERENCES invoices(id) ON DELETE SET NULL,
+      start_at DATETIME DEFAULT (NOW_LOCAL()),
+      expired_at DATETIME NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      notes TEXT DEFAULT '',
+      created_by TEXT DEFAULT 'Admin',
+      created_at DATETIME DEFAULT (NOW_LOCAL()),
+      expired_processed_at DATETIME DEFAULT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_customer_addons_active_exp ON customer_addons(status, expired_at);
+    CREATE INDEX IF NOT EXISTS idx_customer_addons_customer ON customer_addons(customer_id, status);
+  `);
+} catch (e) {
+  console.error('Failed to migrate customer_addons table:', e);
 }
 
 module.exports = db;

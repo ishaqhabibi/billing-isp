@@ -190,7 +190,7 @@ function sanitizeMenuStates(input) {
   for (const menu of MENU_DEFINITIONS) {
     const defaultState = DEFAULT_MENU_STATES[menu.key] || STATE_VISIBLE;
     let state = input && input[menu.key] ? input[menu.key] : defaultState;
-    
+
     clean[menu.key] = normalizeState(state);
   }
   return clean;

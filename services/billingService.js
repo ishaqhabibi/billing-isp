@@ -3,6 +3,7 @@
  */
 const db = require('../config/database');
 const auditTrail = require('./auditTrailService');
+const addonSvc = require('./addonService');
 const { getCurrentDateInTimezone } = require('../config/settingsManager');
 
 function daysInMonth(year, month1to12) {
@@ -58,15 +59,33 @@ function computeInvoiceAmountAndMeta(customer, pkg, periodMonth, periodYear) {
     }
   }
 
-  const baseAmount = amount;
+  const addonSvc = require('./addonService');
+  const billableAddons = addonSvc.getBillableAddonsForPeriod(customer.id, periodMonth, periodYear);
+  let addonTotal = 0;
+  const addonIdsToMark = [];
+  const addonMetaParts = [];
+  for (const a of billableAddons) {
+    const ap = Number(a.price) || 0;
+    if (ap > 0) {
+      addonTotal += ap;
+      if (a.billing_mode === 'one_time') addonIdsToMark.push(a.id);
+      const expShort = a.expired_at ? String(a.expired_at).slice(0, 10) : '-';
+      addonMetaParts.push(`+ Add-On ${a.addon_profile} (s.d ${expShort}): Rp ${ap.toLocaleString('id-ID')}`);
+    }
+  }
+
+  const baseAmount = amount + addonTotal;
   let taxAmount = 0;
   const metaParts = [];
-  
+
   if (usePromo) {
     metaParts.push(`Promo siklus ${promoUsed + 1}/${promoCycles} @ Rp ${Number(promoPrice).toLocaleString('id-ID')}`);
   }
   if (prorated && billableDays != null && dim != null) {
     metaParts.push(`Prorata ${billableDays}/${dim} hari`);
+  }
+  if (addonMetaParts.length > 0) {
+    metaParts.push(...addonMetaParts);
   }
 
   // PPN Calculation
@@ -91,14 +110,16 @@ function computeInvoiceAmountAndMeta(customer, pkg, periodMonth, periodYear) {
   return {
     amount: Math.max(0, Math.round(finalAmount)),
     bumpPromo: usePromo,
-    notesAuto
+    notesAuto,
+    addonIdsToMark
   };
 }
 
 function generateMonthlyInvoices(month, year) {
+  const addonSvc = require('./addonService');
   // Hanya generate untuk pelanggan aktif dan ditangguhkan. Pelanggan isolir (suspended) TIDAK di-generate tagihan baru.
   const customers = db.prepare("SELECT * FROM customers WHERE status IN ('active','ditangguhkan') AND package_id IS NOT NULL").all();
-  const existing  = db.prepare('SELECT customer_id FROM invoices WHERE period_month=? AND period_year=?').all(month, year);
+  const existing = db.prepare('SELECT customer_id FROM invoices WHERE period_month=? AND period_year=?').all(month, year);
   const existingIds = new Set(existing.map(e => e.customer_id));
   const insert = db.prepare(`INSERT INTO invoices (customer_id, period_month, period_year, amount, notes) VALUES (?, ?, ?, ?, ?)`);
   const bumpPromo = db.prepare('UPDATE customers SET promo_cycles_used = COALESCE(promo_cycles_used,0) + 1 WHERE id=?');
@@ -108,10 +129,10 @@ function generateMonthlyInvoices(month, year) {
       if (existingIds.has(c.id)) continue;
       const pkg = db.prepare('SELECT * FROM packages WHERE id=?').get(c.package_id);
       if (!pkg) continue;
-      const { amount, bumpPromo: bump, notesAuto } = computeInvoiceAmountAndMeta(c, pkg, month, year);
+      const { amount, bumpPromo: bump, notesAuto, addonIdsToMark } = computeInvoiceAmountAndMeta(c, pkg, month, year);
 
-      // Lewati pelanggan dengan paket gratis / royalti (nominal Rp 0) agar tidak menerbitkan tagihan
-      if (amount <= 0 && Number(pkg.price) <= 0) {
+      // Lewati pelanggan dengan paket gratis / royalti (nominal Rp 0) agar tidak menerbitkan tagihan, kecuali ada add-on berbayar
+      if (amount <= 0 && Number(pkg.price) <= 0 && (!addonIdsToMark || addonIdsToMark.length === 0)) {
         if (bump) bumpPromo.run(c.id);
         if (c.status === 'ditangguhkan') {
           db.prepare("UPDATE customers SET status = 'active' WHERE id = ?").run(c.id);
@@ -119,7 +140,10 @@ function generateMonthlyInvoices(month, year) {
         continue;
       }
 
-      insert.run(c.id, month, year, amount, notesAuto);
+      const r = insert.run(c.id, month, year, amount, notesAuto);
+      if (addonIdsToMark && addonIdsToMark.length > 0) {
+        addonSvc.linkAddonsToInvoice(addonIdsToMark, r.lastInsertRowid);
+      }
       if (bump) bumpPromo.run(c.id);
 
       // Jika pelanggan berstatus 'ditangguhkan', otomatis ubah kembali ke 'active' saat tagihan baru terbit di awal bulan
@@ -135,6 +159,7 @@ function generateMonthlyInvoices(month, year) {
 }
 
 function generateInvoiceForCustomer(customerId, month, year) {
+  const addonSvc = require('./addonService');
   const cid = Number(customerId);
   const m = Number(month);
   const y = Number(year);
@@ -154,10 +179,10 @@ function generateInvoiceForCustomer(customerId, month, year) {
   const pkg = db.prepare('SELECT * FROM packages WHERE id=?').get(customer.package_id);
   if (!pkg) throw new Error('Paket pelanggan tidak ditemukan');
 
-  const { amount, bumpPromo: bump, notesAuto } = computeInvoiceAmountAndMeta(customer, pkg, m, y);
+  const { amount, bumpPromo: bump, notesAuto, addonIdsToMark } = computeInvoiceAmountAndMeta(customer, pkg, m, y);
 
-  // Jika paket gratis / royalti (Rp 0), jangan terbitkan tagihan
-  if (amount <= 0 && Number(pkg.price) <= 0) {
+  // Jika paket gratis / royalti (Rp 0), jangan terbitkan tagihan kecuali ada add-on berbayar
+  if (amount <= 0 && Number(pkg.price) <= 0 && (!addonIdsToMark || addonIdsToMark.length === 0)) {
     if (bump) {
       db.prepare('UPDATE customers SET promo_cycles_used = COALESCE(promo_cycles_used,0) + 1 WHERE id=?').run(cid);
     }
@@ -165,6 +190,9 @@ function generateInvoiceForCustomer(customerId, month, year) {
   }
 
   const r = db.prepare('INSERT INTO invoices (customer_id, period_month, period_year, amount, notes) VALUES (?, ?, ?, ?, ?)').run(cid, m, y, amount, notesAuto);
+  if (addonIdsToMark && addonIdsToMark.length > 0) {
+    addonSvc.linkAddonsToInvoice(addonIdsToMark, r.lastInsertRowid);
+  }
   if (bump) {
     db.prepare('UPDATE customers SET promo_cycles_used = COALESCE(promo_cycles_used,0) + 1 WHERE id=?').run(cid);
   }
@@ -226,9 +254,10 @@ function payInvoicesForCustomerMonths(customerId, year, months, paidByName, note
       let invoiceId = inv ? inv.id : null;
       let amount = inv ? Number(inv.amount) : 0;
       if (!invoiceId) {
-        const { amount: computed, bumpPromo: bump, notesAuto } = computeInvoiceAmountAndMeta(customer, pkg, m, y);
+        const { amount: computed, bumpPromo: bump, notesAuto, oneTimeAddonIds } = computeInvoiceAmountAndMeta(customer, pkg, m, y);
         const r = insertInv.run(cid, m, y, computed, notesAuto);
         invoiceId = r.lastInsertRowid;
+        addonSvc.linkAddonsToInvoice(oneTimeAddonIds, invoiceId);
         summary.createdMonths.push(m);
         amount = computed;
         if (bump) bumpPromo.run(cid);
@@ -301,8 +330,8 @@ function getAllInvoices({ month, year, status, search, limit = 300 } = {}) {
     WHERE 1=1
   `;
   const params = [];
-  if (month)  { q += ' AND i.period_month=?'; params.push(parseInt(month)); }
-  if (year)   { q += ' AND i.period_year=?';  params.push(parseInt(year)); }
+  if (month) { q += ' AND i.period_month=?'; params.push(parseInt(month)); }
+  if (year) { q += ' AND i.period_year=?'; params.push(parseInt(year)); }
   if (status && status !== 'all') { q += ' AND i.status=?'; params.push(status); }
   if (search) {
     q += ' AND (c.name LIKE ? OR c.phone LIKE ? OR c.genieacs_tag LIKE ?)';
@@ -312,7 +341,7 @@ function getAllInvoices({ month, year, status, search, limit = 300 } = {}) {
   q += ` ORDER BY i.period_year DESC, i.period_month DESC, c.name ASC LIMIT ${parseInt(limit)}`;
   const rows = db.prepare(q).all(...params);
 
-  const mns = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+  const mns = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
   const customerUnpaidCache = {};
 
   return rows.map(inv => {
@@ -330,7 +359,7 @@ function getAllInvoices({ month, year, status, search, limit = 300 } = {}) {
       const unpaidCount = unpaidList.length;
       const totalUnpaidAmount = unpaidList.reduce((sum, u) => sum + (Number(u.amount) || 0), 0);
       const unpaidPeriods = unpaidList.map(u => `${mns[u.period_month - 1]} ${u.period_year}`).join(', ');
-      
+
       const code = Number(inv.qris_unique_code || 0);
       const qrisAmt = Number(inv.qris_amount_unique || 0);
       const accumulatedQrisAmount = (code > 0 && totalUnpaidAmount > 0)
@@ -409,7 +438,7 @@ function renewCustomerPrepaidValidity(customerId, multiplier = 1) {
         customerSvc.activateCustomer(customerId).catch(err => {
           logger.warn(`[Prepaid Renewal] Auto activate error for ${customer.name}: ${err.message}`);
         });
-      } catch (e) {}
+      } catch (e) { }
     }
 
     return newExpiredAt;
@@ -498,8 +527,8 @@ function deleteInvoice(id, actor = null) {
 }
 
 function getInvoiceSummary(month, year) {
-  const total  = db.prepare('SELECT COUNT(*) as count, SUM(amount) as total FROM invoices WHERE period_month=? AND period_year=?').get(month, year);
-  const paid   = db.prepare("SELECT COUNT(*) as count, SUM(amount) as total FROM invoices WHERE period_month=? AND period_year=? AND status='paid'").get(month, year);
+  const total = db.prepare('SELECT COUNT(*) as count, SUM(amount) as total FROM invoices WHERE period_month=? AND period_year=?').get(month, year);
+  const paid = db.prepare("SELECT COUNT(*) as count, SUM(amount) as total FROM invoices WHERE period_month=? AND period_year=? AND status='paid'").get(month, year);
   const unpaid = db.prepare("SELECT COUNT(*) as count, SUM(amount) as total FROM invoices WHERE period_month=? AND period_year=? AND status='unpaid'").get(month, year);
   return { total, paid, unpaid };
 }
@@ -520,15 +549,15 @@ function getDashboardStats() {
   const now = getCurrentDateInTimezone();
   const m = now.getMonth() + 1;
   const y = now.getFullYear();
-  const totalRevenue  = db.prepare("SELECT SUM(amount) as t FROM invoices WHERE status='paid'").get();
-  const thisMonth     = db.prepare("SELECT SUM(amount) as t FROM invoices WHERE status='paid' AND period_month=? AND period_year=?").get(m, y);
+  const totalRevenue = db.prepare("SELECT SUM(amount) as t FROM invoices WHERE status='paid'").get();
+  const thisMonth = db.prepare("SELECT SUM(amount) as t FROM invoices WHERE status='paid' AND period_month=? AND period_year=?").get(m, y);
   const pendingAmount = db.prepare("SELECT SUM(amount) as t FROM invoices WHERE status='unpaid'").get();
-  const unpaidCount   = db.prepare("SELECT COUNT(*) as c FROM invoices WHERE status='unpaid'").get();
+  const unpaidCount = db.prepare("SELECT COUNT(*) as c FROM invoices WHERE status='unpaid'").get();
   return {
-    totalRevenue:  totalRevenue.t  || 0,
-    thisMonth:     thisMonth.t     || 0,
+    totalRevenue: totalRevenue.t || 0,
+    thisMonth: thisMonth.t || 0,
     pendingAmount: pendingAmount.t || 0,
-    unpaidCount:   unpaidCount.c   || 0,
+    unpaidCount: unpaidCount.c || 0,
   };
 }
 
@@ -586,13 +615,13 @@ function getInvoicesByAny(val) {
   const raw = String(val || '').trim();
   if (!raw || raw === '-' || raw === 'N/A') return [];
   const cleanVal = raw.replace(/\D/g, '');
-  
+
   // 1. Cek numeric customer ID langsung (misal '1', '25')
   let customer = null;
   if (/^\d+$/.test(raw) && raw.length <= 6) {
     customer = db.prepare('SELECT id FROM customers WHERE id = ?').get(parseInt(raw, 10));
   }
-  
+
   // 2. Cek customer_code (URG010101, urg010101)
   if (!customer) {
     customer = db.prepare('SELECT id FROM customers WHERE customer_code = ? OR customer_code = ?').get(raw, raw.toUpperCase());
@@ -603,7 +632,7 @@ function getInvoicesByAny(val) {
     const suffix = cleanVal.slice(-9);
     customer = db.prepare(`SELECT id FROM customers WHERE phone LIKE ?`).get(`%${suffix}`);
   }
-  
+
   // 4. Cek PPPoE username atau GenieACS tag persis
   if (!customer) {
     customer = db.prepare(`SELECT id FROM customers WHERE pppoe_username = ? OR genieacs_tag = ?`).get(raw, raw);
@@ -629,7 +658,7 @@ function getInvoicesByAny(val) {
 
   const keyword = raw.toLowerCase();
   if (keyword.length < 3) return [];
-  
+
   return db.prepare(`
     SELECT i.*,
            c.name as customer_name,
@@ -719,7 +748,7 @@ function createInstallProrataCatchUpInvoice(customerId) {
     throw new Error('Paket ini adalah paket bonus / royalti (Rp 0), tidak memerlukan tagihan susulan');
   }
   const baseAmount = Math.max(0, Math.round(basePrice * (billableDays / dim)));
-  
+
   let taxAmount = 0;
   const metaParts = [`Susulan prorata bulan pasang (${billableDays}/${dim} hari, dasar harga reguler Rp ${basePrice.toLocaleString('id-ID')})`];
 
@@ -758,10 +787,10 @@ function createInstallProrataCatchUpInvoice(customerId) {
 }
 
 function updatePaymentInfo(invoiceId, data) {
-  const { 
-    gateway, order_id, link, reference, payload, expires_at 
+  const {
+    gateway, order_id, link, reference, payload, expires_at
   } = data;
-  
+
   return db.prepare(`
     UPDATE invoices SET 
       payment_gateway = ?,

@@ -757,6 +757,68 @@ function startCronJobs() {
     }
   });
 
+  // 8. Kedaluwarsa Add-On Speed / Promo PSB (Setiap 15 Menit - Diam-diam Kembali ke Paket Normal)
+  const addonService = require('./addonService');
+  cron.schedule('*/15 * * * *', async () => {
+    try {
+      await addonService.processExpiredAddons();
+    } catch (e) {
+      logger.error(`[CRON] Error Expired Add-On Check: ${e.message}`);
+    }
+  });
+  setTimeout(() => {
+    addonService.processExpiredAddons().catch(e => {
+      logger.error(`[CRON] Startup Expired Add-On Check: ${e.message}`);
+    });
+  }, 15000);
+
+  // 7. Auto-Expire Add-On Speed / Promo PSB (Diam-diam kembali ke paket normal)
+  cron.schedule('*/15 * * * *', async () => {
+    try {
+      const addonSvc = require('./addonService');
+      const res = await addonSvc.processExpiredAddons();
+      if (res && res.processed > 0) {
+        logger.info(`[CRON] Add-On Expired diproses: ${res.processed} pelanggan dikembalikan ke profil normal.`);
+      }
+    } catch (e) {
+      logger.error(`[CRON] Error Add-On Expiry: ${e.message}`);
+    }
+  });
+  setTimeout(() => {
+    try {
+      require('./addonService').processExpiredAddons().catch(() => {});
+    } catch (_) {}
+  }, 15000);
+
+  // 9. History Redaman Optik (GenieACS Passive Projection Polling setiap 30 menit + Retensi 90 hari)
+  const opticalSvc = require('./opticalService');
+  let isOpticalSyncRunning = false;
+  cron.schedule('*/30 * * * *', async () => {
+    if (isOpticalSyncRunning) return;
+    isOpticalSyncRunning = true;
+    try {
+      const res = await opticalSvc.syncCustomerOpticalPowerFromGenieACS();
+      if (res && (res.syncedCount > 0 || res.loggedCount > 0)) {
+        logger.info(`[CRON] Optical Sync GenieACS: ${res.syncedCount} perangkat disinkron, ${res.loggedCount} histori baru dicatat (stale dilewati: ${res.skippedStaleCount || 0}).`);
+      }
+    } catch (e) {
+      logger.warn(`[CRON] Optical Sync GenieACS dilewati/gagal: ${e.message}`);
+    } finally {
+      isOpticalSyncRunning = false;
+    }
+  });
+
+  cron.schedule('15 3 * * *', () => {
+    try {
+      const res = opticalSvc.cleanupOldOpticalHistory(90);
+      if (res && res.deletedCount > 0) {
+        logger.info(`[CRON] Pembersihan histori redaman > 90 hari: ${res.deletedCount} baris dihapus.`);
+      }
+    } catch (e) {
+      logger.error(`[CRON] Error Pembersihan Histori Redaman: ${e.message}`);
+    }
+  });
+
   logger.info('[CRON] Semua tugas penjadwalan telah aktif.');
 }
 

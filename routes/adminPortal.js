@@ -1466,8 +1466,35 @@ router.get('/api/odps/:id/ports', requireAdminSession, (req, res) => {
 router.get('/api/optical-history/:targetType/:targetId', requireAdminSession, (req, res) => {
   try {
     const { targetType, targetId } = req.params;
-    const history = opticalSvc.getOpticalHistory(targetType, targetId, 50);
-    res.json({ ok: true, history });
+    const limit = req.query.limit ? parseInt(req.query.limit, 10) : 100;
+    const days = req.query.days ? parseInt(req.query.days, 10) : null;
+    const history = opticalSvc.getOpticalHistory(targetType, targetId, limit, days);
+    let customer = null;
+    if (String(targetType).toLowerCase() === 'customer') {
+      const c = customerSvc.getCustomerById(Number(targetId));
+      if (c) {
+        customer = {
+          id: c.id,
+          name: c.name,
+          initial_rx_power: c.initial_rx_power,
+          optical_rx_power: c.optical_rx_power,
+          optical_status: c.optical_status || 'normal',
+          optical_last_sync: c.optical_last_sync || null
+        };
+      }
+    }
+    res.json({ ok: true, history, customer });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+router.get('/api/optical-degraded', requireAdminSession, (req, res) => {
+  try {
+    const hours = req.query.hours ? parseInt(req.query.hours, 10) : 24;
+    const dropThresholdDb = req.query.drop ? parseFloat(req.query.drop) : 2.0;
+    const customers = opticalSvc.getDegradedCustomers({ hours, dropThresholdDb });
+    res.json({ ok: true, count: customers.length, customers });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
@@ -2963,6 +2990,26 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
 
     const createRes = customerSvc.createCustomer(req.body);
     const newCustId = createRes && createRes.lastInsertRowid ? createRes.lastInsertRowid : null;
+
+    // Aktifkan Add-On / Promo Speed PSB jika dicentang
+    let activeAddonProfile = null;
+    if (newCustId && req.body.addon_enabled === '1' && String(req.body.addon_profile || '').trim() && req.body.addon_expired_at) {
+      const addonSvc = require('../services/addonService');
+      const actor = req.session?.adminUser || req.session?.cashierName || 'Admin';
+      const addonRes = await addonSvc.activateCustomerAddon(newCustId, {
+        addon_profile: String(req.body.addon_profile).trim(),
+        expired_at: req.body.addon_expired_at,
+        billing_mode: req.body.addon_billing_mode || 'free',
+        price: req.body.addon_price || 0,
+        billing_action: req.body.addon_billing_action || 'separate_invoice',
+        notes: req.body.addon_notes || '',
+        created_by: actor,
+        skipNetworkSync: connectionType === 'pppoe' && (!radiusEnabled || !isRadius)
+      });
+      if (addonRes && addonRes.addon) {
+        activeAddonProfile = addonRes.addon.addon_profile;
+      }
+    }
     
     // ========================================================================
     // SYNC KE MIKROTIK - PENTING: SECRET TIDAK PERNAH DIHAPUS!
@@ -2984,6 +3031,8 @@ router.post('/customers', requireAdminSession, (req, res, next) => {
       let targetProfile = '';
       if (req.body.status === 'suspended') {
         targetProfile = req.body.isolir_profile || 'EXPIRED';
+      } else if (activeAddonProfile) {
+        targetProfile = activeAddonProfile;
       } else if (req.body.package_id) {
         const pkg = customerSvc.getPackageById(req.body.package_id);
         if (pkg) targetProfile = pkg.name;
@@ -3238,6 +3287,39 @@ router.post('/customers/:id/update', requireAdminSession, (req, res, next) => {
     const oldCustomer = customerSvc.getCustomerById(customerId);
     
     customerSvc.updateCustomer(req.params.id, req.body);
+
+    // Kelola Add-On / Promo Speed saat edit pelanggan
+    const addonSvc = require('../services/addonService');
+    const prevAddon = addonSvc.getActiveAddonByCustomerId(customerId);
+    const skipDirectSync = (connectionType === 'pppoe' && shouldSyncToMikrotik);
+    if (req.body.addon_enabled === '1' && String(req.body.addon_profile || '').trim() && req.body.addon_expired_at) {
+      const reqProfile = String(req.body.addon_profile).trim();
+      const reqExpNorm = addonSvc.normalizeExpiredAt(req.body.addon_expired_at);
+      const reqMode = String(req.body.addon_billing_mode || 'free').trim().toLowerCase();
+      const reqPrice = reqMode === 'free' ? 0 : Math.max(0, Math.round(Number(req.body.addon_price) || 0));
+      const unchanged = prevAddon
+        && prevAddon.addon_profile === reqProfile
+        && String(prevAddon.expired_at).slice(0, 10) === String(reqExpNorm).slice(0, 10)
+        && prevAddon.billing_mode === reqMode
+        && Number(prevAddon.price) === reqPrice;
+
+      if (!unchanged) {
+        const actor = req.session?.adminUser || req.session?.cashierName || 'Admin';
+        await addonSvc.activateCustomerAddon(customerId, {
+          addon_profile: reqProfile,
+          expired_at: req.body.addon_expired_at,
+          billing_mode: reqMode,
+          price: reqPrice,
+          billing_action: req.body.addon_billing_action || 'next_invoice',
+          notes: req.body.addon_notes || '',
+          created_by: actor,
+          skipNetworkSync: skipDirectSync
+        });
+      }
+    } else if (prevAddon && req.body.addon_form_present === '1') {
+      const actor = req.session?.adminUser || req.session?.cashierName || 'Admin';
+      await addonSvc.cancelCustomerAddon(customerId, prevAddon.id, actor);
+    }
     
     // ========================================================================
     // SYNC KE MIKROTIK SAAT EDIT - PENTING: SECRET TIDAK PERNAH DIHAPUS!
@@ -3265,7 +3347,7 @@ router.post('/customers/:id/update', requireAdminSession, (req, res, next) => {
           targetProfile = req.body.isolir_profile || 'EXPIRED';
         } else if (req.body.package_id) {
           const pkg = customerSvc.getPackageById(req.body.package_id);
-          if (pkg) targetProfile = pkg.name;
+          targetProfile = addonSvc.getEffectiveProfileForCustomer({ ...req.body, id: customerId }, pkg);
         }
         
         if (targetProfile) {
@@ -3678,6 +3760,52 @@ router.get('/api/customers/:id/invoices', requireAdminSession, (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+router.get('/api/customers/:id/addons', requireAdminSession, (req, res) => {
+  try {
+    const addonSvc = require('../services/addonService');
+    const active = addonSvc.getActiveAddonByCustomerId(req.params.id);
+    const history = addonSvc.getAddonsByCustomerId(req.params.id, 15);
+    res.json({ ok: true, active, history });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+router.post('/customers/:id/addon/activate', requireAdminSession, express.urlencoded({ extended: true }), async (req, res) => {
+  try {
+    const addonSvc = require('../services/addonService');
+    const actor = req.session?.adminUser || req.session?.cashierName || 'Admin';
+    const result = await addonSvc.activateCustomerAddon(req.params.id, {
+      addon_profile: req.body.addon_profile,
+      expired_at: req.body.expired_at,
+      billing_mode: req.body.billing_mode || 'free',
+      price: req.body.price || 0,
+      billing_action: req.body.billing_action || 'next_invoice',
+      notes: req.body.notes || '',
+      created_by: actor
+    });
+    req.session._msg = { type: 'success', text: `Add-On Speed '${result.addon.addon_profile}' aktif s.d ${String(result.addon.expired_at).slice(0, 10)}.` };
+  } catch (e) {
+    req.session._msg = { type: 'error', text: 'Gagal mengaktifkan Add-On: ' + e.message };
+  }
+  res.redirect('/admin/customers');
+});
+
+router.post('/customers/:id/addon/cancel', requireAdminSession, async (req, res) => {
+  try {
+    const addonSvc = require('../services/addonService');
+    const actor = req.session?.adminUser || req.session?.cashierName || 'Admin';
+    const result = await addonSvc.cancelCustomerAddon(req.params.id, req.body?.addon_id || null, actor);
+    req.session._msg = {
+      type: result.cancelled ? 'success' : 'info',
+      text: result.cancelled ? `Add-On dihentikan, profil dikembalikan ke '${result.restoredProfile}'.` : 'Tidak ada Add-On aktif.'
+    };
+  } catch (e) {
+    req.session._msg = { type: 'error', text: 'Gagal menghentikan Add-On: ' + e.message };
+  }
+  res.redirect('/admin/customers');
 });
 
 router.post('/customers/:id/billing/generate', requireAdminSession, express.urlencoded({ extended: true }), (req, res) => {
