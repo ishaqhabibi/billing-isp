@@ -41,13 +41,10 @@ function updateThemeToggleIcons(theme) {
   const isLight = (theme === 'light');
   document.querySelectorAll('.theme-toggle-icon').forEach(icon => {
     icon.className = isLight ? 'bi bi-moon-stars-fill theme-toggle-icon' : 'bi bi-sun-fill theme-toggle-icon';
-    icon.style.color = isLight ? '#2563EB' : '#fbbf24';
+    icon.style.color = isLight ? '#ffffff' : '#fbbf24';
   });
   document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
     btn.setAttribute('title', isLight ? 'Ganti ke Mode Gelap (Dark)' : 'Ganti ke Mode Terang (Light)');
-  });
-  document.querySelectorAll('#themeToggleText').forEach(el => {
-    el.textContent = isLight ? 'Mode Gelap' : 'Mode Terang';
   });
 }
 

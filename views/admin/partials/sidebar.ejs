@@ -1,206 +1,215 @@
 <!-- views/admin/partials/sidebar.ejs -->
 <script src="/js/theme.js"></script>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
 <aside class="sidebar" id="sidebar">
-  <!-- ── 1. FIGCRAFT BRAND HEADER (215x46) ── -->
-  <div class="sb-brand-header">
-    <div class="sb-logo-circle">
-      <span>NOC</span>
-    </div>
-    <div class="sb-text-stack">
-      <div class="sb-brand-title">NOC System</div>
-      <div class="sb-brand-sub"><%= (typeof company !== 'undefined' && company) ? company : 'IndoBSD Billing' %></div>
-      <div class="sb-version-pill">v1.2.0-dev</div>
-    </div>
-    <button type="button" class="sb-close d-md-none" onclick="toggleSidebar()" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
-  </div>
-
-  <!-- ── 2. FIGCRAFT STATUS ROW (215x24 SISTEM AKTIF) ── -->
-  <div class="sb-status-row">
-    <span class="sb-status-dot"></span>
-    <span class="sb-status-label">SISTEM AKTIF</span>
-  </div>
-
-  <!-- ── 3. COLLAPSE TOGGLE PILL (24x24 ON RIGHT BORDER) ── -->
-  <button type="button" class="sb-collapse-toggle d-none d-md-flex" onclick="toggleSidebarCollapse()" title="Sembunyikan Sidebar">
-    <i class="bi bi-chevron-left" id="sbCollapseIcon"></i>
-  </button>
-
-  <!-- ── 4. FIGCRAFT NAV CONTAINER WITH TREE CONNECTORS ── -->
-  <nav class="sb-nav" id="sidebarNav">
-    <%
-      const navSections = [
-        {
-          key: 'overview',
-          title: 'IKHTISAR',
-          icon: 'bi bi-compass',
-          iconColor: '#6366F1',
-          items: [
-            { label: 'Beranda', href: '/admin', icon: 'bi bi-house-door', iconColor: '#6D28D9', active: ['dashboard'] }
-          ]
-        },
-        {
-          key: 'customers',
-          title: 'PELANGGAN & LAYANAN',
-          icon: 'bi bi-briefcase',
-          iconColor: '#F59E0B',
-          items: [
-            { label: 'Pendaftaran & Pasang', href: '/admin/collector/live', icon: 'bi bi-activity', iconColor: '#F43F5E', active: ['collector_live'] },
-            { label: 'Pelanggan', href: '/admin/customers', icon: 'bi bi-people', iconColor: '#64748B', active: ['customers'] },
-            { label: 'Tiket Gangguan', href: '/admin/tickets', icon: 'bi bi-exclamation-triangle', iconColor: '#EF4444', active: ['tickets'] },
-            { label: 'Paket Internet', href: '/admin/packages', icon: 'bi bi-box-seam', iconColor: '#F97316', active: ['packages', 'voucher_packages'] }
-          ]
-        },
-        {
-          key: 'billing',
-          title: 'BILLING & KEUANGAN',
-          icon: 'bi bi-shield-check',
-          iconColor: '#10B981',
-          items: [
-            { label: 'Tagihan Bulanan', href: '/admin/billing', icon: 'bi bi-receipt', iconColor: '#F59E0B', active: ['billing'] },
-            { label: 'Setoran Kolektor', href: '/admin/collector-settlements', icon: 'bi bi-wallet2', iconColor: '#10B981', active: ['collector_settlements', 'collector_payments'] },
-            { label: 'Laporan Keuangan', href: '/admin/reports', icon: 'bi bi-graph-up-arrow', iconColor: '#10B981', active: ['reports', 'cash_in', 'expenses'] }
-          ]
-        },
-        {
-          key: 'infra',
-          title: 'INFRASTRUKTUR & NOC',
-          icon: 'bi bi-hdd-stack',
-          iconColor: '#3B82F6',
-          items: [
-            { label: 'Router MikroTik', href: '/admin/mikrotik', icon: 'bi bi-router', iconColor: '#F43F5E', active: ['mikrotik', 'routers'] },
-            { label: 'Server RADIUS', href: '/admin/radius-settings', icon: 'bi bi-hdd-network', iconColor: '#6366F1', active: ['radius_settings'] },
-            { label: 'Monitoring OLT', href: '/admin/olts', icon: 'bi bi-ethernet', iconColor: '#06B6D4', active: ['olts'] },
-            { label: 'GenieACS (TR-069)', href: '/admin/acs', icon: 'bi bi-modem', iconColor: '#8B5CF6', active: ['acs_pro', 'onu_provision'] },
-            { label: 'Wilayah & Peta FTTH', href: '/admin/map', icon: 'bi bi-geo-alt', iconColor: '#3B82F6', active: ['map', 'areas'] }
-          ]
-        },
-        {
-          key: 'system',
-          title: 'SISTEM & KEAMANAN',
-          icon: 'bi bi-shield-check',
-          iconColor: '#10B981',
-          items: [
-            { label: 'WhatsApp Gateway', href: '/admin/whatsapp', icon: 'bi bi-whatsapp', iconColor: '#0EA5E9', active: ['whatsapp', 'broadcast'] },
-            { label: 'Log Login User', href: '/admin/audit-logs', icon: 'bi bi-shield-lock', iconColor: '#0EA5E9', active: ['audit_logs'] },
-            { label: 'Pengaturan', href: '/admin/settings', icon: 'bi bi-gear', iconColor: '#64748B', active: ['settings', 'sidebar_settings'] }
-          ]
-        }
-      ];
-    %>
-
-    <% navSections.forEach((section, sIdx) => { %>
-      <div class="sb-nav-group">
-        <div class="sb-group-header" onclick="toggleNavGroup('sbGroup_<%= sIdx %>')">
-          <div class="sb-group-header-left">
-            <i class="<%= section.icon %>" style="color: <%= section.iconColor %>;"></i>
-            <span class="sb-group-title"><%= section.title %></span>
-          </div>
-          <i class="bi bi-chevron-down sb-group-chevron" id="chevron_<%= sIdx %>"></i>
-        </div>
-        
-        <div class="sb-tree-list" id="sbGroup_<%= sIdx %>">
-          <% section.items.forEach((item, iIdx) => { %>
-            <% const isLast = (iIdx === section.items.length - 1); %>
-            <% const isCurrentActive = item.active.includes(activePage); %>
-            <div class="sb-tree-row">
-              <div class="sb-tree-connector <%= isLast ? 'is-last' : '' %>">
-                <span class="sb-curve-line"></span>
-              </div>
-              <a href="<%= item.href %>" class="sb-nav-item <%= isCurrentActive ? 'active' : '' %>">
-                <i class="<%= item.icon %>" style="color: <%= item.iconColor %>;"></i>
-                <span class="sb-nav-label"><%= item.label %></span>
-              </a>
-            </div>
-          <% }) %>
-        </div>
+  <div class="sb-brand">
+    <div class="sb-icon"><i class="bi bi-wifi"></i></div>
+    <div style="flex:1">
+      <div class="sb-name">
+        <%= company %>
       </div>
-    <% }) %>
-  </nav>
-
-  <!-- ── 5. FIGCRAFT USER FOOTER CARD (215x50) ── -->
-  <div class="sb-user-footer">
-    <div class="sb-user-avatar">
-      <span><%= (typeof session !== 'undefined' && session && session.adminUser ? session.adminUser.substring(0, 2).toUpperCase() : 'AD') %></span>
+      <div class="sb-sub"><%= t('admin.panel', 'Admin Panel') %></div>
+      <div style="margin-top:8px;display:flex;gap:6px;align-items:center">
+        <a href="/lang/id" class="btn btn-g btn-sm" style="padding:4px 8px">ID</a>
+        <a href="/lang/en" class="btn btn-g btn-sm" style="padding:4px 8px">EN</a>
+        <button type="button" class="btn btn-g btn-sm theme-toggle-btn" onclick="toggleAppTheme()" title="Ganti Tema Dark / Light" style="padding:4px 8px;margin-left:auto">
+          <i class="bi bi-moon-stars-fill theme-toggle-icon" style="color:#fbbf24"></i> Tema
+        </button>
+      </div>
+      <% if (typeof multiRouterMode !== 'undefined' && multiRouterMode && allActiveRouters && allActiveRouters.length > 0) { %>
+        <div style="margin-top:10px;padding:8px;background:rgba(255,255,255,0.06);border-radius:10px;border:1px solid rgba(255,255,255,0.1)">
+          <div style="font-size:11px;color:#94a3b8;margin-bottom:4px;font-weight:600;display:flex;align-items:center;gap:4px">
+            <i class="bi bi-router"></i> Router Filter
+          </div>
+          <select class="form-select form-select-sm" style="font-size:12px;cursor:pointer" onchange="window.location.href='/admin/set-active-router?router_id=' + this.value">
+            <option value="all" <%= (!selectedRouterId) ? 'selected' : '' %>>🌐 Semua Router (<%= allActiveRouters.length %>)</option>
+            <% allActiveRouters.forEach(r => { %>
+              <option value="<%= r.id %>" <%= (selectedRouterId === r.id) ? 'selected' : '' %>>
+                🔌 <%= r.name %> (<%= r.host %>)
+              </option>
+            <% }) %>
+          </select>
+        </div>
+      <% } %>
     </div>
-    <div class="sb-user-meta">
-      <div class="sb-user-name"><%= (typeof session !== 'undefined' && session && session.adminUser) ? session.adminUser : 'Administrator' %></div>
-      <div class="sb-user-role"><%= (typeof session !== 'undefined' && session && session.isCashier) ? 'Kasir Billing' : 'Admin ISP' %></div>
-    </div>
-    <a href="/admin/logout" class="sb-logout-btn" title="Keluar">
-      <i class="bi bi-box-arrow-right"></i>
-    </a>
+    <button class="sb-close btn-g btn-sm" onclick="toggleSidebar()"><i class="bi bi-x-lg"></i></button>
   </div>
+  <nav class="sb-nav">
+    <% (sidebarSections || []).forEach((section) => { %>
+      <div class="sb-section"><%= section.labelKey ? t(section.labelKey, section.labelDefault) : section.labelDefault %></div>
+      <% section.items.forEach((item) => { %>
+        <a
+          href="<%= item.hrefResolved %>"
+          class="sb-item <%= (item.activePages || []).includes(activePage) ? 'active' : '' %>"
+          <% if (item.locked) { %>
+            onclick='return showLockedMenuNotice(<%- JSON.stringify(item.lockedMessage) %>)'
+          <% } %>
+        >
+          <i class="<%= item.icon %>"></i>
+          <span><%= item.labelKey ? t(item.labelKey, item.labelDefault) : item.labelDefault %></span>
+          <% if (item.locked) { %>
+            <span style="margin-left:auto;padding:2px 8px;border-radius:999px;background:rgba(245,158,11,.18);color:#fde68a;font-size:11px">Kunci</span>
+          <% } %>
+        </a>
+      <% }) %>
+    <% }) %>
+
+    <div class="sb-section">KONTROL</div>
+    <a href="/admin/sidebar-settings" class="sb-item <%= activePage==='sidebar_settings' ? 'active' : '' %>">
+      <i class="bi bi-layout-sidebar-inset"></i><span>Pengaturan Sidebar</span>
+    </a>
+
+    <a href="/admin/logout" class="sb-item logout">
+      <i class="bi bi-box-arrow-left"></i><span><%= t('common.logout', 'Logout') %></span>
+    </a>
+  </nav>
 </aside>
 
 <script>
 (function() {
-  const sb = document.getElementById('sidebarNav');
+  const sb = document.getElementById('sidebar');
   if (!sb) return;
 
   function restoreSidebarScroll() {
     const savedScroll = sessionStorage.getItem('sidebar_scroll_pos');
     if (savedScroll !== null) {
       sb.scrollTop = parseInt(savedScroll, 10);
+    } else {
+      const active = sb.querySelector('.sb-item.active');
+      if (active) {
+        active.scrollIntoView({ block: 'nearest' });
+      }
     }
   }
 
+  // Restore immediately before paint
   restoreSidebarScroll();
+
+  // Restore again on DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', restoreSidebarScroll);
   }
-  window.addEventListener('load', restoreSidebarScroll);
 
+  // Double check after full load and ensure active item is visible
+  window.addEventListener('load', function() {
+    restoreSidebarScroll();
+    const active = sb.querySelector('.sb-item.active');
+    if (active) {
+      const sbRect = sb.getBoundingClientRect();
+      const aRect = active.getBoundingClientRect();
+      if (aRect.top < sbRect.top || aRect.bottom > sbRect.bottom) {
+        active.scrollIntoView({ block: 'nearest' });
+        sessionStorage.setItem('sidebar_scroll_pos', sb.scrollTop);
+      }
+    }
+  });
+
+  // Track scroll position
   sb.addEventListener('scroll', function() {
     sessionStorage.setItem('sidebar_scroll_pos', sb.scrollTop);
   }, { passive: true });
+
+  // Save on clicking any link in sidebar
+  sb.addEventListener('click', function(e) {
+    const link = e.target.closest('a');
+    if (link) {
+      sessionStorage.setItem('sidebar_scroll_pos', sb.scrollTop);
+    }
+  });
 })();
+</script>
 
-function toggleNavGroup(id) {
-  const list = document.getElementById(id);
-  if (!list) return;
-  const isHidden = list.style.display === 'none';
-  list.style.display = isHidden ? 'flex' : 'none';
-  const chevronId = id.replace('sbGroup_', 'chevron_');
-  const chevron = document.getElementById(chevronId);
-  if (chevron) {
-    chevron.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+<div id="lockedMenuModal" style="display:none;position:fixed;inset:0;z-index:1200;background:rgba(2,6,23,.72);backdrop-filter:blur(4px);padding:16px;align-items:center;justify-content:center">
+  <div style="width:min(100%,420px);background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(30,41,59,.98));border:1px solid rgba(148,163,184,.18);border-radius:18px;box-shadow:0 24px 60px rgba(2,6,23,.45);overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(148,163,184,.14)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:40px;height:40px;border-radius:12px;background:rgba(245,158,11,.16);color:#fde68a;display:grid;place-items:center;font-size:18px">
+          <i class="bi bi-lock-fill"></i>
+        </div>
+        <div>
+          <div style="font-weight:800;color:#f8fafc">Menu Terkunci</div>
+          <div style="font-size:12px;color:#94a3b8">Aktivasi diperlukan untuk membuka fitur ini</div>
+        </div>
+      </div>
+      <button type="button" class="btn btn-g btn-sm" onclick="hideLockedMenuNotice()" style="padding:6px 10px">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div style="padding:18px">
+      <div id="lockedMenuModalMessage" style="color:#e2e8f0;line-height:1.6">
+        Menu ini sedang terkunci.
+      </div>
+      <div style="margin-top:16px;padding:12px 14px;border-radius:14px;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.22);color:#bfdbfe;font-size:13px">
+        Dukung pengembangan aplikasi untuk mendapatkan kode aktivasi (seikhlasnya).
+      </div>
+      <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px">
+        <a href="https://app.alijaya.com/donasi" target="_blank" class="btn btn-p" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:#0f172a;font-weight:800;box-shadow:0 8px 20px rgba(245,158,11,0.35);">
+          <i class="bi bi-heart-fill" style="color:#e11d48"></i> Donasi & Dapatkan Kode Aktivasi
+        </a>
+        <a href="/admin/sidebar-settings" class="btn btn-g" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px" onclick="hideLockedMenuNotice()">
+          <i class="bi bi-layout-sidebar-inset"></i> Buka Pengaturan Sidebar
+        </a>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;padding:0 18px 18px 18px">
+      <button type="button" class="btn btn-p" onclick="hideLockedMenuNotice()">
+        <i class="bi bi-check2-circle"></i> Mengerti
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    const sb = document.getElementById('sidebar');
+    const ov = document.getElementById('sidebarOverlay');
+    sb.classList.toggle('open');
+    ov.classList.toggle('show');
   }
-}
 
-function toggleSidebarCollapse() {
-  const sb = document.getElementById('sidebar');
-  if (sb) {
-    sb.classList.toggle('collapsed');
-    const icon = document.getElementById('sbCollapseIcon');
-    if (icon) {
-      icon.className = sb.classList.contains('collapsed') ? 'bi bi-chevron-right' : 'bi bi-chevron-left';
+  function showLockedMenuNotice(message) {
+    const modal = document.getElementById('lockedMenuModal');
+    const messageBox = document.getElementById('lockedMenuModalMessage');
+    if (messageBox) {
+      messageBox.textContent = message || 'Menu ini sedang terkunci.';
+    }
+    if (modal) {
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+    return false;
+  }
+
+  function hideLockedMenuNotice() {
+    const modal = document.getElementById('lockedMenuModal');
+    if (modal) {
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
     }
   }
-}
+
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') hideLockedMenuNotice();
+  });
 </script>
+
 
 <!-- Bottom Navigation (Mobile Only) -->
 <nav class="bottom-nav" id="bottomNav">
-  <a href="/admin" class="bn-item <%= activePage === 'dashboard' ? 'active' : '' %>">
-    <i class="bi bi-grid-1x2"></i>
-    <span>Beranda</span>
-  </a>
-  <a href="/admin/customers" class="bn-item <%= activePage === 'customers' ? 'active' : '' %>">
-    <i class="bi bi-people"></i>
-    <span>Pelanggan</span>
-  </a>
-  <a href="/admin/billing" class="bn-item <%= activePage === 'billing' ? 'active' : '' %>">
-    <i class="bi bi-receipt"></i>
-    <span>Tagihan</span>
-  </a>
-  <a href="/admin/mikrotik" class="bn-item <%= activePage === 'mikrotik' ? 'active' : '' %>">
-    <i class="bi bi-router"></i>
-    <span>MikroTik</span>
-  </a>
+  <% (sidebarBottomNavItems || []).slice(0, 4).forEach((item) => { %>
+    <a
+      href="<%= item.hrefResolved %>"
+      class="bn-item <%= (item.activePages || []).includes(activePage) ? 'active' : '' %>"
+      <% if (item.locked) { %>
+        onclick='return showLockedMenuNotice(<%- JSON.stringify(item.lockedMessage) %>)'
+      <% } %>
+    >
+      <i class="<%= item.icon %>"></i>
+      <span><%= item.labelKey ? t(item.labelKey, item.labelDefault) : item.labelDefault %></span>
+    </a>
+  <% }) %>
   <button class="bn-item" onclick="toggleSidebar()">
     <i class="bi bi-grid-3x3-gap"></i>
-    <span>Menu</span>
+    <span><%= t('common.menu', 'Menu') %></span>
   </button>
 </nav>
